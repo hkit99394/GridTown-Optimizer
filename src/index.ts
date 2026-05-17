@@ -66,6 +66,7 @@ export {
   buildDeterministicAblationGateReport,
   collectGreedyOrderingLabelsFromBenchmarkSuite,
   collectCrossModeBenchmarkBudgetAblationDecisionTraceEvents,
+  buildCrossModeTelemetryManifest,
   buildCrossModeBenchmarkParams,
   collectCrossModeBenchmarkDecisionTraceEvents,
   formatDeterministicAblationGateReport,
@@ -92,6 +93,7 @@ export {
   runLearnedRankingLabelSuite,
   runCrossModeBenchmarkBudgetAblations,
   runCrossModeBenchmarkSuite,
+  writeCrossModeTelemetryManifest,
   DEFAULT_ROAD_SEMANTICS_SCORECARD_CASES,
   DEFAULT_ROAD_SEMANTICS_SCORECARD_OPTIONS,
   evaluateRoadSemanticsScorecardFixtures,
@@ -107,6 +109,18 @@ export {
   listProductWorkflowBenchmarkCaseNames,
   runProductWorkflowBenchmarkSuite,
   writeProductWorkflowBenchmarkArtifact,
+  buildProductWorkflowTelemetryManifest,
+  writeProductWorkflowTelemetryManifest,
+  SOLVER_TELEMETRY_MANIFEST_SCHEMA_VERSION,
+  SOLVER_TELEMETRY_MANIFEST_TYPE,
+  buildSolverTelemetryManifest,
+  buildSolverTelemetryRunManifest,
+  captureSolverTelemetryManifestGit,
+  captureSolverTelemetryManifestHardware,
+  formatNpmScriptCommand,
+  formatSolverTelemetryManifestIssues,
+  validateSolverTelemetryManifest,
+  writeSolverTelemetryManifest,
   EXPERIMENT_REGISTRY_SCHEMA_VERSION,
   DEFAULT_EXPERIMENT_REGISTRY_PATH,
   EXPERIMENT_REGISTRY_ARTIFACT_TYPES,
@@ -120,6 +134,7 @@ export {
   validateExperimentRegistryEntry,
 } from "./benchmarks/index.js";
 export * from "./benchmarks/experimentRegistry.js";
+export * from "./benchmarks/telemetryManifest.js";
 export {
   assertValidLayout,
   assertValidLayoutConstraints,

@@ -160,6 +160,15 @@ Acceptance gates:
 - LNS runs include operator/window attempts, feasible repairs, improvements, neutral repairs, recoverable failures, elapsed time, and selected-window context.
 - Experiment registry append/check flows can validate these manifests without rerunning the solver.
 
+Completion evidence, 2026-05-17:
+
+- `npm run benchmark:scorecard -- --modes=auto,greedy,lns,cp-sat --budget=5 --seeds=7 --manifest-output=artifacts/telemetry-manifests/2026-05-17/solver-telemetry-manifest.json` produced a 16-run solver telemetry manifest.
+- The solver manifest records exact command, git SHA, branch, dirty-state marker, captured hardware, artifact path, case, seed, budget, solver params, stage timings, first-feasible time, best-score time, final status, and final validation result.
+- The solver manifest covers 4 Auto, 4 Greedy, 4 LNS, and 4 CP-SAT runs. CP-SAT-backed runs include status, upper bound, population gap, branch/conflict telemetry where available, and model/candidate-size metadata.
+- LNS runs record attempts, feasible repairs, improvements, neutral repairs, recoverable failures, elapsed time, and selected-window context.
+- `npm run benchmark:product-workflows -- --output=artifacts/product-workflows/2026-05-17/product-workflow-benchmark.json --manifest-output=artifacts/telemetry-manifests/2026-05-17/product-workflow-telemetry-manifest.json` produced a 32-run product workflow telemetry manifest for the 8-case corpus at 1s, 5s, 30s, and 120s.
+- Registry entry `solver-telemetry-manifests-2026-05-17` records the Phase 3 evidence, and `npm run experiment-registry:check` validates telemetry manifest artifacts from registry `artifactPaths` without rerunning the solver.
+
 ### Phase 4: Adaptive LNS Operator Set
 
 Dependencies:
@@ -203,7 +212,7 @@ Status vocabulary:
 | --- | --- | --- | ---: | --- | --- |
 | 1 | CP-SAT road-semantics verification closeout | delivered | 5.0 | Phase 1 now has a passing 5-case road-semantics artifact, CP-SAT coverage on every adversarial case, registry-style artifact metadata, a default greedy/CP-SAT cross-mode smoke check, and strict registry entry `road-semantics-scorecard-2026-05-17-v2`. | CP-SAT, TypeScript validation, and the formal spec agree on multi-anchor, roadless-boundary, row/column anchor, and disconnected-road feasibility semantics. |
 | 2 | Product-shaped benchmark corpus | delivered | 4.5 | Phase 2 now has 8 planner-shaped payloads with manual-layout replay, expansion-comparison replay, fixed seed `7`, dev/holdout splits, and 1s/5s/30s/120s population reporting. | `artifacts/product-workflows/2026-05-17/product-workflow-benchmark.json` passes with 8/8 cases and no manual-over-budget misses. |
-| 3 | Solver telemetry manifests | active | 4.0 | Persist stage-level candidate counts, CP-SAT model size, first-feasible time, best-score time, status/gap, operator outcome, wall time, CPU budget, and hardware metadata. | Every benchmark and workflow run can explain where time was spent and why a candidate change did or did not improve. |
+| 3 | Solver telemetry manifests | delivered | 4.0 | Phase 3 now has reusable solver telemetry manifests, CLI manifest writers for cross-mode and product workflow runs, registry-side manifest validation, and strict registry entry `solver-telemetry-manifests-2026-05-17`. | Every benchmark and workflow run can explain where time was spent and why a candidate change did or did not improve. |
 | 4 | Adaptive LNS operator set | active | 4.5 | Add semantic destroy/repair operators beyond fixed rectangles: weak services, residential headroom clusters, service-overlap conflicts, road gates/chokes, frontier congestion, and random exploration windows. | Equal-budget LNS/Auto scorecards improve time-to-best or fixed-budget population without worst-decile regression. |
 | 5 | Auto budget policy retuning | partial | 3.5 | Retune greedy seed, LNS repair, and CP-SAT reserve budgets only after telemetry and benchmark corpus identify a real bottleneck. | New budget policy beats baseline on protected scorecards or reaches equal population faster with CPU cost accounted for. |
 | 6 | Exact small-window DP repair | gated | 3.0 | Add bitmask/profile-DP repair only for tiny LNS neighborhoods, narrow corridors, and CP-SAT alignment oracles when telemetry shows CP-SAT startup/model overhead dominates. | DP matches exact evaluator results and beats CP-SAT repair wall time on small windows, improving LNS/Auto time-to-best without regressions. |
@@ -224,6 +233,7 @@ Status vocabulary:
 | Experiment registry hardening | delivered | `artifacts/experiments/index.jsonl`; `npm run experiment-registry:check` | Future artifacts can be checked and appended with strict metadata. |
 | CP-SAT road-semantics alignment | delivered | `artifacts/road-semantics-scorecard/2026-05-17/road-semantics-scorecard.json`; registry run `road-semantics-scorecard-2026-05-17-v2`; targeted tests | Per-component road-anchor semantics are the trusted baseline for future repair and proof work. |
 | Product workflow benchmark corpus | delivered | `artifacts/product-workflows/2026-05-17/product-workflow-benchmark.json`; `npm run benchmark:product-workflows` | Promotion and telemetry work now has stable planner-shaped dev/holdout case names. |
+| Solver telemetry manifests | delivered | `artifacts/telemetry-manifests/2026-05-17/solver-telemetry-manifest.json`; `artifacts/telemetry-manifests/2026-05-17/product-workflow-telemetry-manifest.json`; registry run `solver-telemetry-manifests-2026-05-17` | Registry checks can validate manifest metadata and per-run telemetry without rerunning solvers. |
 | Adaptive LNS | active | Current LNS has ranked windows and replay labels but not operator scoring | Main next quality engine after model alignment and telemetry. |
 | Exact small-window DP repair | gated | Existing exact assignment DP shows the pattern is useful for bounded subproblems, but no LNS window DP exists | Candidate subroutine only; route tiny repairs to DP if telemetry proves CP-SAT overhead dominates. |
 | Model training path | gated | No `python/ml/` scaffold, offline metric report, trained model, or feature-flagged scorer is promoted | No learned default path. |
@@ -247,15 +257,14 @@ These are not next actions. Move them into the active table only after the trigg
 
 ## Combined Ordering
 
-1. Use the registered road-semantics and product workflow baselines as the stable benchmark base for promotion decisions.
-2. Persist stage-level telemetry manifests for solver and workflow runs.
-3. Implement adaptive LNS operators and operator scoring.
-4. Retune Auto budgets from evidence, not by intuition.
-5. Add exact small-window DP repair only if telemetry shows a small-repair CP-SAT overhead bottleneck.
-6. Explore service-master decomposition if coverage/service pressure cases justify it.
-7. Scale LNS replay labels from adaptive operator outcomes.
-8. Revisit learned rankers only after offline holdout and equal-budget online gates pass.
-9. Revisit portfolio, GPU, distributed workers, or alternative solvers only after they have a measured bottleneck and CPU-normalized win path.
+1. Use the registered road-semantics, product workflow, and telemetry baselines as the stable benchmark base for promotion decisions.
+2. Implement adaptive LNS operators and operator scoring.
+3. Retune Auto budgets from evidence, not by intuition.
+4. Add exact small-window DP repair only if telemetry shows a small-repair CP-SAT overhead bottleneck.
+5. Explore service-master decomposition if coverage/service pressure cases justify it.
+6. Scale LNS replay labels from adaptive operator outcomes.
+7. Revisit learned rankers only after offline holdout and equal-budget online gates pass.
+8. Revisit portfolio, GPU, distributed workers, or alternative solvers only after they have a measured bottleneck and CPU-normalized win path.
 
 ## Discipline
 

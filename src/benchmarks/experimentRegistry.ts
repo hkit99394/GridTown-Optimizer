@@ -3,6 +3,8 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
+import { validateSolverTelemetryManifest } from "./telemetryManifest.js";
+
 export const EXPERIMENT_REGISTRY_SCHEMA_VERSION = 1;
 export const DEFAULT_EXPERIMENT_REGISTRY_PATH = "artifacts/experiments/index.jsonl";
 export const EXPERIMENT_REGISTRY_ARTIFACT_TYPES = [
@@ -258,6 +260,40 @@ function validateArtifactPath(
       runId,
       field: "artifactPaths",
     });
+    return;
+  }
+
+  validateTelemetryManifestArtifact(path.resolve(rootDir, normalized), artifactPath, issues, lineNumber, runId);
+}
+
+function validateTelemetryManifestArtifact(
+  resolvedPath: string,
+  artifactPath: string,
+  issues: ExperimentRegistryIssue[],
+  lineNumber?: number,
+  runId?: string
+): void {
+  if (!artifactPath.endsWith(".json")) return;
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(fs.readFileSync(resolvedPath, "utf8"));
+  } catch {
+    return;
+  }
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed) || (parsed as Record<string, unknown>).manifestType !== "solver-telemetry") {
+    return;
+  }
+  for (const manifestIssue of validateSolverTelemetryManifest(parsed)) {
+    issue(
+      issues,
+      `telemetry-manifest-${manifestIssue.code}`,
+      `Telemetry manifest '${artifactPath}' ${manifestIssue.message}`,
+      {
+        lineNumber,
+        runId,
+        field: `artifactPaths:${manifestIssue.path}`,
+      }
+    );
   }
 }
 

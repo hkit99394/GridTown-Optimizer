@@ -1,0 +1,5063 @@
+{
+  "schemaVersion": 1,
+  "manifestType": "solver-telemetry",
+  "manifestId": "product-workflow-2026-05-17",
+  "benchmarkName": "product-workflow",
+  "generatedAt": "2026-05-17T11:28:24.215Z",
+  "commands": [
+    "npm run benchmark:product-workflows -- --output=artifacts/product-workflows/2026-05-17/product-workflow-benchmark.json --manifest-output=artifacts/telemetry-manifests/2026-05-17/product-workflow-telemetry-manifest.json"
+  ],
+  "git": {
+    "commit": "7972a5adad2f063737a9e7976f1982ea5ac135de",
+    "branch": "features/solver-road-semantics-evidence-gate",
+    "dirtyState": "dirty",
+    "dirtyFileCount": 11
+  },
+  "hardware": {
+    "captured": true,
+    "platform": "darwin",
+    "arch": "arm64",
+    "cpuModel": "Apple M1 Pro",
+    "logicalCpuCount": 10,
+    "memoryBytes": 17179869184,
+    "totalMemoryBytes": 17179869184,
+    "gpuUsed": false
+  },
+  "artifactPaths": [
+    "artifacts/telemetry-manifests/2026-05-17/product-workflow-telemetry-manifest.json",
+    "artifacts/product-workflows/2026-05-17/product-workflow-benchmark.json"
+  ],
+  "runCount": 32,
+  "runs": [
+    {
+      "runId": "planner-corridor-reuse:greedy:budget-1:seed-7",
+      "benchmarkName": "product-workflow",
+      "caseName": "planner-corridor-reuse",
+      "caseFamily": "corridor",
+      "optimizer": "greedy",
+      "mode": "greedy",
+      "seed": 7,
+      "budget": {
+        "wallClockSeconds": 1,
+        "observedWallClockSeconds": 0.036
+      },
+      "grid": {
+        "rows": 4,
+        "cols": 6,
+        "buildableCells": 18
+      },
+      "solverParams": {
+        "optimizer": "greedy",
+        "serviceTypes": [
+          {
+            "name": "Clinic",
+            "rows": 1,
+            "cols": 1,
+            "bonus": 25,
+            "range": 2,
+            "avail": 1
+          }
+        ],
+        "residentialTypes": [
+          {
+            "name": "Courtyard",
+            "w": 2,
+            "h": 2,
+            "min": 40,
+            "max": 80,
+            "avail": 3
+          },
+          {
+            "name": "Studio Row",
+            "w": 1,
+            "h": 1,
+            "min": 10,
+            "max": 20,
+            "avail": 4
+          }
+        ],
+        "availableBuildings": {
+          "services": 1,
+          "residentials": 2
+        },
+        "greedy": {
+          "restarts": 2,
+          "localSearch": true,
+          "timeLimitSeconds": 1,
+          "randomSeed": 7
+        }
+      },
+      "artifactPaths": [
+        "artifacts/telemetry-manifests/2026-05-17/product-workflow-telemetry-manifest.json",
+        "artifacts/product-workflows/2026-05-17/product-workflow-benchmark.json",
+        "artifacts/telemetry-manifests/2026-05-17/product-workflow-telemetry-manifest.json"
+      ],
+      "timings": {
+        "wallClockSeconds": 0.036,
+        "firstFeasibleSeconds": 0.036,
+        "bestScoreSeconds": 0.036
+      },
+      "final": {
+        "status": "valid",
+        "totalPopulation": 130,
+        "validation": {
+          "valid": true,
+          "errors": []
+        }
+      },
+      "progressSummary": {
+        "currentScore": 130,
+        "bestScore": 130,
+        "activeStage": "greedy",
+        "reuseSource": null,
+        "elapsedTimeSeconds": 0.036,
+        "timeSinceImprovementSeconds": null,
+        "stopReason": null,
+        "exactGap": null,
+        "portfolioWorkerSummary": null
+      },
+      "timeToQuality": {
+        "finalElapsedMs": 36,
+        "finalScore": 130,
+        "bestScore": 130,
+        "firstFeasibleAtMs": 36,
+        "firstImprovementAtMs": 36,
+        "bestScoreAtMs": 36,
+        "improvementCount": 1,
+        "timeCheckpoints": [
+          {
+            "elapsedMs": 5000,
+            "bestScore": 130,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          },
+          {
+            "elapsedMs": 30000,
+            "bestScore": 130,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          },
+          {
+            "elapsedMs": 120000,
+            "bestScore": 130,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          }
+        ],
+        "qualityTargets": [
+          {
+            "ratio": 0.5,
+            "targetScore": 65,
+            "reachedAtMs": 36,
+            "reachedScore": 130
+          },
+          {
+            "ratio": 0.9,
+            "targetScore": 117,
+            "reachedAtMs": 36,
+            "reachedScore": 130
+          },
+          {
+            "ratio": 1,
+            "targetScore": 130,
+            "reachedAtMs": 36,
+            "reachedScore": 130
+          }
+        ]
+      },
+      "stages": [
+        {
+          "name": "greedy",
+          "eventCount": 1,
+          "startedAtSeconds": 0.036,
+          "completedAtSeconds": 0.036,
+          "elapsedSeconds": 0,
+          "firstFeasibleSeconds": 0.036,
+          "bestScoreSeconds": 0.036,
+          "finalScore": 130,
+          "status": "improved"
+        }
+      ],
+      "cpSat": null,
+      "lns": null,
+      "greedy": null
+    },
+    {
+      "runId": "planner-corridor-reuse:greedy:budget-5:seed-7",
+      "benchmarkName": "product-workflow",
+      "caseName": "planner-corridor-reuse",
+      "caseFamily": "corridor",
+      "optimizer": "greedy",
+      "mode": "greedy",
+      "seed": 7,
+      "budget": {
+        "wallClockSeconds": 5,
+        "observedWallClockSeconds": 0.014
+      },
+      "grid": {
+        "rows": 4,
+        "cols": 6,
+        "buildableCells": 18
+      },
+      "solverParams": {
+        "optimizer": "greedy",
+        "serviceTypes": [
+          {
+            "name": "Clinic",
+            "rows": 1,
+            "cols": 1,
+            "bonus": 25,
+            "range": 2,
+            "avail": 1
+          }
+        ],
+        "residentialTypes": [
+          {
+            "name": "Courtyard",
+            "w": 2,
+            "h": 2,
+            "min": 40,
+            "max": 80,
+            "avail": 3
+          },
+          {
+            "name": "Studio Row",
+            "w": 1,
+            "h": 1,
+            "min": 10,
+            "max": 20,
+            "avail": 4
+          }
+        ],
+        "availableBuildings": {
+          "services": 1,
+          "residentials": 2
+        },
+        "greedy": {
+          "restarts": 2,
+          "localSearch": true,
+          "timeLimitSeconds": 5,
+          "randomSeed": 7
+        }
+      },
+      "artifactPaths": [
+        "artifacts/telemetry-manifests/2026-05-17/product-workflow-telemetry-manifest.json",
+        "artifacts/product-workflows/2026-05-17/product-workflow-benchmark.json",
+        "artifacts/telemetry-manifests/2026-05-17/product-workflow-telemetry-manifest.json"
+      ],
+      "timings": {
+        "wallClockSeconds": 0.014,
+        "firstFeasibleSeconds": 0.014,
+        "bestScoreSeconds": 0.014
+      },
+      "final": {
+        "status": "valid",
+        "totalPopulation": 130,
+        "validation": {
+          "valid": true,
+          "errors": []
+        }
+      },
+      "progressSummary": {
+        "currentScore": 130,
+        "bestScore": 130,
+        "activeStage": "greedy",
+        "reuseSource": null,
+        "elapsedTimeSeconds": 0.014,
+        "timeSinceImprovementSeconds": null,
+        "stopReason": null,
+        "exactGap": null,
+        "portfolioWorkerSummary": null
+      },
+      "timeToQuality": {
+        "finalElapsedMs": 14,
+        "finalScore": 130,
+        "bestScore": 130,
+        "firstFeasibleAtMs": 14,
+        "firstImprovementAtMs": 14,
+        "bestScoreAtMs": 14,
+        "improvementCount": 1,
+        "timeCheckpoints": [
+          {
+            "elapsedMs": 5000,
+            "bestScore": 130,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          },
+          {
+            "elapsedMs": 30000,
+            "bestScore": 130,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          },
+          {
+            "elapsedMs": 120000,
+            "bestScore": 130,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          }
+        ],
+        "qualityTargets": [
+          {
+            "ratio": 0.5,
+            "targetScore": 65,
+            "reachedAtMs": 14,
+            "reachedScore": 130
+          },
+          {
+            "ratio": 0.9,
+            "targetScore": 117,
+            "reachedAtMs": 14,
+            "reachedScore": 130
+          },
+          {
+            "ratio": 1,
+            "targetScore": 130,
+            "reachedAtMs": 14,
+            "reachedScore": 130
+          }
+        ]
+      },
+      "stages": [
+        {
+          "name": "greedy",
+          "eventCount": 1,
+          "startedAtSeconds": 0.014,
+          "completedAtSeconds": 0.014,
+          "elapsedSeconds": 0,
+          "firstFeasibleSeconds": 0.014,
+          "bestScoreSeconds": 0.014,
+          "finalScore": 130,
+          "status": "improved"
+        }
+      ],
+      "cpSat": null,
+      "lns": null,
+      "greedy": null
+    },
+    {
+      "runId": "planner-corridor-reuse:greedy:budget-30:seed-7",
+      "benchmarkName": "product-workflow",
+      "caseName": "planner-corridor-reuse",
+      "caseFamily": "corridor",
+      "optimizer": "greedy",
+      "mode": "greedy",
+      "seed": 7,
+      "budget": {
+        "wallClockSeconds": 30,
+        "observedWallClockSeconds": 0.013
+      },
+      "grid": {
+        "rows": 4,
+        "cols": 6,
+        "buildableCells": 18
+      },
+      "solverParams": {
+        "optimizer": "greedy",
+        "serviceTypes": [
+          {
+            "name": "Clinic",
+            "rows": 1,
+            "cols": 1,
+            "bonus": 25,
+            "range": 2,
+            "avail": 1
+          }
+        ],
+        "residentialTypes": [
+          {
+            "name": "Courtyard",
+            "w": 2,
+            "h": 2,
+            "min": 40,
+            "max": 80,
+            "avail": 3
+          },
+          {
+            "name": "Studio Row",
+            "w": 1,
+            "h": 1,
+            "min": 10,
+            "max": 20,
+            "avail": 4
+          }
+        ],
+        "availableBuildings": {
+          "services": 1,
+          "residentials": 2
+        },
+        "greedy": {
+          "restarts": 2,
+          "localSearch": true,
+          "timeLimitSeconds": 30,
+          "randomSeed": 7
+        }
+      },
+      "artifactPaths": [
+        "artifacts/telemetry-manifests/2026-05-17/product-workflow-telemetry-manifest.json",
+        "artifacts/product-workflows/2026-05-17/product-workflow-benchmark.json",
+        "artifacts/telemetry-manifests/2026-05-17/product-workflow-telemetry-manifest.json"
+      ],
+      "timings": {
+        "wallClockSeconds": 0.013,
+        "firstFeasibleSeconds": 0.013,
+        "bestScoreSeconds": 0.013
+      },
+      "final": {
+        "status": "valid",
+        "totalPopulation": 130,
+        "validation": {
+          "valid": true,
+          "errors": []
+        }
+      },
+      "progressSummary": {
+        "currentScore": 130,
+        "bestScore": 130,
+        "activeStage": "greedy",
+        "reuseSource": null,
+        "elapsedTimeSeconds": 0.013,
+        "timeSinceImprovementSeconds": null,
+        "stopReason": null,
+        "exactGap": null,
+        "portfolioWorkerSummary": null
+      },
+      "timeToQuality": {
+        "finalElapsedMs": 13,
+        "finalScore": 130,
+        "bestScore": 130,
+        "firstFeasibleAtMs": 13,
+        "firstImprovementAtMs": 13,
+        "bestScoreAtMs": 13,
+        "improvementCount": 1,
+        "timeCheckpoints": [
+          {
+            "elapsedMs": 5000,
+            "bestScore": 130,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          },
+          {
+            "elapsedMs": 30000,
+            "bestScore": 130,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          },
+          {
+            "elapsedMs": 120000,
+            "bestScore": 130,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          }
+        ],
+        "qualityTargets": [
+          {
+            "ratio": 0.5,
+            "targetScore": 65,
+            "reachedAtMs": 13,
+            "reachedScore": 130
+          },
+          {
+            "ratio": 0.9,
+            "targetScore": 117,
+            "reachedAtMs": 13,
+            "reachedScore": 130
+          },
+          {
+            "ratio": 1,
+            "targetScore": 130,
+            "reachedAtMs": 13,
+            "reachedScore": 130
+          }
+        ]
+      },
+      "stages": [
+        {
+          "name": "greedy",
+          "eventCount": 1,
+          "startedAtSeconds": 0.013,
+          "completedAtSeconds": 0.013,
+          "elapsedSeconds": 0,
+          "firstFeasibleSeconds": 0.013,
+          "bestScoreSeconds": 0.013,
+          "finalScore": 130,
+          "status": "improved"
+        }
+      ],
+      "cpSat": null,
+      "lns": null,
+      "greedy": null
+    },
+    {
+      "runId": "planner-corridor-reuse:greedy:budget-120:seed-7",
+      "benchmarkName": "product-workflow",
+      "caseName": "planner-corridor-reuse",
+      "caseFamily": "corridor",
+      "optimizer": "greedy",
+      "mode": "greedy",
+      "seed": 7,
+      "budget": {
+        "wallClockSeconds": 120,
+        "observedWallClockSeconds": 0.01
+      },
+      "grid": {
+        "rows": 4,
+        "cols": 6,
+        "buildableCells": 18
+      },
+      "solverParams": {
+        "optimizer": "greedy",
+        "serviceTypes": [
+          {
+            "name": "Clinic",
+            "rows": 1,
+            "cols": 1,
+            "bonus": 25,
+            "range": 2,
+            "avail": 1
+          }
+        ],
+        "residentialTypes": [
+          {
+            "name": "Courtyard",
+            "w": 2,
+            "h": 2,
+            "min": 40,
+            "max": 80,
+            "avail": 3
+          },
+          {
+            "name": "Studio Row",
+            "w": 1,
+            "h": 1,
+            "min": 10,
+            "max": 20,
+            "avail": 4
+          }
+        ],
+        "availableBuildings": {
+          "services": 1,
+          "residentials": 2
+        },
+        "greedy": {
+          "restarts": 2,
+          "localSearch": true,
+          "timeLimitSeconds": 120,
+          "randomSeed": 7
+        }
+      },
+      "artifactPaths": [
+        "artifacts/telemetry-manifests/2026-05-17/product-workflow-telemetry-manifest.json",
+        "artifacts/product-workflows/2026-05-17/product-workflow-benchmark.json",
+        "artifacts/telemetry-manifests/2026-05-17/product-workflow-telemetry-manifest.json"
+      ],
+      "timings": {
+        "wallClockSeconds": 0.01,
+        "firstFeasibleSeconds": 0.01,
+        "bestScoreSeconds": 0.01
+      },
+      "final": {
+        "status": "valid",
+        "totalPopulation": 130,
+        "validation": {
+          "valid": true,
+          "errors": []
+        }
+      },
+      "progressSummary": {
+        "currentScore": 130,
+        "bestScore": 130,
+        "activeStage": "greedy",
+        "reuseSource": null,
+        "elapsedTimeSeconds": 0.01,
+        "timeSinceImprovementSeconds": null,
+        "stopReason": null,
+        "exactGap": null,
+        "portfolioWorkerSummary": null
+      },
+      "timeToQuality": {
+        "finalElapsedMs": 10,
+        "finalScore": 130,
+        "bestScore": 130,
+        "firstFeasibleAtMs": 10,
+        "firstImprovementAtMs": 10,
+        "bestScoreAtMs": 10,
+        "improvementCount": 1,
+        "timeCheckpoints": [
+          {
+            "elapsedMs": 5000,
+            "bestScore": 130,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          },
+          {
+            "elapsedMs": 30000,
+            "bestScore": 130,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          },
+          {
+            "elapsedMs": 120000,
+            "bestScore": 130,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          }
+        ],
+        "qualityTargets": [
+          {
+            "ratio": 0.5,
+            "targetScore": 65,
+            "reachedAtMs": 10,
+            "reachedScore": 130
+          },
+          {
+            "ratio": 0.9,
+            "targetScore": 117,
+            "reachedAtMs": 10,
+            "reachedScore": 130
+          },
+          {
+            "ratio": 1,
+            "targetScore": 130,
+            "reachedAtMs": 10,
+            "reachedScore": 130
+          }
+        ]
+      },
+      "stages": [
+        {
+          "name": "greedy",
+          "eventCount": 1,
+          "startedAtSeconds": 0.01,
+          "completedAtSeconds": 0.01,
+          "elapsedSeconds": 0,
+          "firstFeasibleSeconds": 0.01,
+          "bestScoreSeconds": 0.01,
+          "finalScore": 130,
+          "status": "improved"
+        }
+      ],
+      "cpSat": null,
+      "lns": null,
+      "greedy": null
+    },
+    {
+      "runId": "planner-gate-choke:greedy:budget-1:seed-7",
+      "benchmarkName": "product-workflow",
+      "caseName": "planner-gate-choke",
+      "caseFamily": "gate",
+      "optimizer": "greedy",
+      "mode": "greedy",
+      "seed": 7,
+      "budget": {
+        "wallClockSeconds": 1,
+        "observedWallClockSeconds": 0.016
+      },
+      "grid": {
+        "rows": 5,
+        "cols": 5,
+        "buildableCells": 21
+      },
+      "solverParams": {
+        "optimizer": "greedy",
+        "serviceTypes": [
+          {
+            "name": "Gate Service",
+            "rows": 1,
+            "cols": 1,
+            "bonus": 20,
+            "range": 2,
+            "avail": 1
+          }
+        ],
+        "residentialTypes": [
+          {
+            "name": "Gate Home",
+            "w": 1,
+            "h": 1,
+            "min": 10,
+            "max": 20,
+            "avail": 4
+          },
+          {
+            "name": "Gate Block",
+            "w": 2,
+            "h": 2,
+            "min": 40,
+            "max": 80,
+            "avail": 3
+          }
+        ],
+        "availableBuildings": {
+          "services": 1,
+          "residentials": 3
+        },
+        "greedy": {
+          "restarts": 2,
+          "localSearch": true,
+          "timeLimitSeconds": 1,
+          "randomSeed": 7
+        }
+      },
+      "artifactPaths": [
+        "artifacts/telemetry-manifests/2026-05-17/product-workflow-telemetry-manifest.json",
+        "artifacts/product-workflows/2026-05-17/product-workflow-benchmark.json",
+        "artifacts/telemetry-manifests/2026-05-17/product-workflow-telemetry-manifest.json"
+      ],
+      "timings": {
+        "wallClockSeconds": 0.016,
+        "firstFeasibleSeconds": 0.016,
+        "bestScoreSeconds": 0.016
+      },
+      "final": {
+        "status": "valid",
+        "totalPopulation": 60,
+        "validation": {
+          "valid": true,
+          "errors": []
+        }
+      },
+      "progressSummary": {
+        "currentScore": 60,
+        "bestScore": 60,
+        "activeStage": "greedy",
+        "reuseSource": null,
+        "elapsedTimeSeconds": 0.016,
+        "timeSinceImprovementSeconds": null,
+        "stopReason": null,
+        "exactGap": null,
+        "portfolioWorkerSummary": null
+      },
+      "timeToQuality": {
+        "finalElapsedMs": 16,
+        "finalScore": 60,
+        "bestScore": 60,
+        "firstFeasibleAtMs": 16,
+        "firstImprovementAtMs": 16,
+        "bestScoreAtMs": 16,
+        "improvementCount": 1,
+        "timeCheckpoints": [
+          {
+            "elapsedMs": 5000,
+            "bestScore": 60,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          },
+          {
+            "elapsedMs": 30000,
+            "bestScore": 60,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          },
+          {
+            "elapsedMs": 120000,
+            "bestScore": 60,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          }
+        ],
+        "qualityTargets": [
+          {
+            "ratio": 0.5,
+            "targetScore": 30,
+            "reachedAtMs": 16,
+            "reachedScore": 60
+          },
+          {
+            "ratio": 0.9,
+            "targetScore": 54,
+            "reachedAtMs": 16,
+            "reachedScore": 60
+          },
+          {
+            "ratio": 1,
+            "targetScore": 60,
+            "reachedAtMs": 16,
+            "reachedScore": 60
+          }
+        ]
+      },
+      "stages": [
+        {
+          "name": "greedy",
+          "eventCount": 1,
+          "startedAtSeconds": 0.016,
+          "completedAtSeconds": 0.016,
+          "elapsedSeconds": 0,
+          "firstFeasibleSeconds": 0.016,
+          "bestScoreSeconds": 0.016,
+          "finalScore": 60,
+          "status": "improved"
+        }
+      ],
+      "cpSat": null,
+      "lns": null,
+      "greedy": null
+    },
+    {
+      "runId": "planner-gate-choke:greedy:budget-5:seed-7",
+      "benchmarkName": "product-workflow",
+      "caseName": "planner-gate-choke",
+      "caseFamily": "gate",
+      "optimizer": "greedy",
+      "mode": "greedy",
+      "seed": 7,
+      "budget": {
+        "wallClockSeconds": 5,
+        "observedWallClockSeconds": 0.014
+      },
+      "grid": {
+        "rows": 5,
+        "cols": 5,
+        "buildableCells": 21
+      },
+      "solverParams": {
+        "optimizer": "greedy",
+        "serviceTypes": [
+          {
+            "name": "Gate Service",
+            "rows": 1,
+            "cols": 1,
+            "bonus": 20,
+            "range": 2,
+            "avail": 1
+          }
+        ],
+        "residentialTypes": [
+          {
+            "name": "Gate Home",
+            "w": 1,
+            "h": 1,
+            "min": 10,
+            "max": 20,
+            "avail": 4
+          },
+          {
+            "name": "Gate Block",
+            "w": 2,
+            "h": 2,
+            "min": 40,
+            "max": 80,
+            "avail": 3
+          }
+        ],
+        "availableBuildings": {
+          "services": 1,
+          "residentials": 3
+        },
+        "greedy": {
+          "restarts": 2,
+          "localSearch": true,
+          "timeLimitSeconds": 5,
+          "randomSeed": 7
+        }
+      },
+      "artifactPaths": [
+        "artifacts/telemetry-manifests/2026-05-17/product-workflow-telemetry-manifest.json",
+        "artifacts/product-workflows/2026-05-17/product-workflow-benchmark.json",
+        "artifacts/telemetry-manifests/2026-05-17/product-workflow-telemetry-manifest.json"
+      ],
+      "timings": {
+        "wallClockSeconds": 0.014,
+        "firstFeasibleSeconds": 0.014,
+        "bestScoreSeconds": 0.014
+      },
+      "final": {
+        "status": "valid",
+        "totalPopulation": 60,
+        "validation": {
+          "valid": true,
+          "errors": []
+        }
+      },
+      "progressSummary": {
+        "currentScore": 60,
+        "bestScore": 60,
+        "activeStage": "greedy",
+        "reuseSource": null,
+        "elapsedTimeSeconds": 0.014,
+        "timeSinceImprovementSeconds": null,
+        "stopReason": null,
+        "exactGap": null,
+        "portfolioWorkerSummary": null
+      },
+      "timeToQuality": {
+        "finalElapsedMs": 14,
+        "finalScore": 60,
+        "bestScore": 60,
+        "firstFeasibleAtMs": 14,
+        "firstImprovementAtMs": 14,
+        "bestScoreAtMs": 14,
+        "improvementCount": 1,
+        "timeCheckpoints": [
+          {
+            "elapsedMs": 5000,
+            "bestScore": 60,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          },
+          {
+            "elapsedMs": 30000,
+            "bestScore": 60,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          },
+          {
+            "elapsedMs": 120000,
+            "bestScore": 60,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          }
+        ],
+        "qualityTargets": [
+          {
+            "ratio": 0.5,
+            "targetScore": 30,
+            "reachedAtMs": 14,
+            "reachedScore": 60
+          },
+          {
+            "ratio": 0.9,
+            "targetScore": 54,
+            "reachedAtMs": 14,
+            "reachedScore": 60
+          },
+          {
+            "ratio": 1,
+            "targetScore": 60,
+            "reachedAtMs": 14,
+            "reachedScore": 60
+          }
+        ]
+      },
+      "stages": [
+        {
+          "name": "greedy",
+          "eventCount": 1,
+          "startedAtSeconds": 0.014,
+          "completedAtSeconds": 0.014,
+          "elapsedSeconds": 0,
+          "firstFeasibleSeconds": 0.014,
+          "bestScoreSeconds": 0.014,
+          "finalScore": 60,
+          "status": "improved"
+        }
+      ],
+      "cpSat": null,
+      "lns": null,
+      "greedy": null
+    },
+    {
+      "runId": "planner-gate-choke:greedy:budget-30:seed-7",
+      "benchmarkName": "product-workflow",
+      "caseName": "planner-gate-choke",
+      "caseFamily": "gate",
+      "optimizer": "greedy",
+      "mode": "greedy",
+      "seed": 7,
+      "budget": {
+        "wallClockSeconds": 30,
+        "observedWallClockSeconds": 0.014
+      },
+      "grid": {
+        "rows": 5,
+        "cols": 5,
+        "buildableCells": 21
+      },
+      "solverParams": {
+        "optimizer": "greedy",
+        "serviceTypes": [
+          {
+            "name": "Gate Service",
+            "rows": 1,
+            "cols": 1,
+            "bonus": 20,
+            "range": 2,
+            "avail": 1
+          }
+        ],
+        "residentialTypes": [
+          {
+            "name": "Gate Home",
+            "w": 1,
+            "h": 1,
+            "min": 10,
+            "max": 20,
+            "avail": 4
+          },
+          {
+            "name": "Gate Block",
+            "w": 2,
+            "h": 2,
+            "min": 40,
+            "max": 80,
+            "avail": 3
+          }
+        ],
+        "availableBuildings": {
+          "services": 1,
+          "residentials": 3
+        },
+        "greedy": {
+          "restarts": 2,
+          "localSearch": true,
+          "timeLimitSeconds": 30,
+          "randomSeed": 7
+        }
+      },
+      "artifactPaths": [
+        "artifacts/telemetry-manifests/2026-05-17/product-workflow-telemetry-manifest.json",
+        "artifacts/product-workflows/2026-05-17/product-workflow-benchmark.json",
+        "artifacts/telemetry-manifests/2026-05-17/product-workflow-telemetry-manifest.json"
+      ],
+      "timings": {
+        "wallClockSeconds": 0.014,
+        "firstFeasibleSeconds": 0.014,
+        "bestScoreSeconds": 0.014
+      },
+      "final": {
+        "status": "valid",
+        "totalPopulation": 60,
+        "validation": {
+          "valid": true,
+          "errors": []
+        }
+      },
+      "progressSummary": {
+        "currentScore": 60,
+        "bestScore": 60,
+        "activeStage": "greedy",
+        "reuseSource": null,
+        "elapsedTimeSeconds": 0.014,
+        "timeSinceImprovementSeconds": null,
+        "stopReason": null,
+        "exactGap": null,
+        "portfolioWorkerSummary": null
+      },
+      "timeToQuality": {
+        "finalElapsedMs": 14,
+        "finalScore": 60,
+        "bestScore": 60,
+        "firstFeasibleAtMs": 14,
+        "firstImprovementAtMs": 14,
+        "bestScoreAtMs": 14,
+        "improvementCount": 1,
+        "timeCheckpoints": [
+          {
+            "elapsedMs": 5000,
+            "bestScore": 60,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          },
+          {
+            "elapsedMs": 30000,
+            "bestScore": 60,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          },
+          {
+            "elapsedMs": 120000,
+            "bestScore": 60,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          }
+        ],
+        "qualityTargets": [
+          {
+            "ratio": 0.5,
+            "targetScore": 30,
+            "reachedAtMs": 14,
+            "reachedScore": 60
+          },
+          {
+            "ratio": 0.9,
+            "targetScore": 54,
+            "reachedAtMs": 14,
+            "reachedScore": 60
+          },
+          {
+            "ratio": 1,
+            "targetScore": 60,
+            "reachedAtMs": 14,
+            "reachedScore": 60
+          }
+        ]
+      },
+      "stages": [
+        {
+          "name": "greedy",
+          "eventCount": 1,
+          "startedAtSeconds": 0.014,
+          "completedAtSeconds": 0.014,
+          "elapsedSeconds": 0,
+          "firstFeasibleSeconds": 0.014,
+          "bestScoreSeconds": 0.014,
+          "finalScore": 60,
+          "status": "improved"
+        }
+      ],
+      "cpSat": null,
+      "lns": null,
+      "greedy": null
+    },
+    {
+      "runId": "planner-gate-choke:greedy:budget-120:seed-7",
+      "benchmarkName": "product-workflow",
+      "caseName": "planner-gate-choke",
+      "caseFamily": "gate",
+      "optimizer": "greedy",
+      "mode": "greedy",
+      "seed": 7,
+      "budget": {
+        "wallClockSeconds": 120,
+        "observedWallClockSeconds": 0.014
+      },
+      "grid": {
+        "rows": 5,
+        "cols": 5,
+        "buildableCells": 21
+      },
+      "solverParams": {
+        "optimizer": "greedy",
+        "serviceTypes": [
+          {
+            "name": "Gate Service",
+            "rows": 1,
+            "cols": 1,
+            "bonus": 20,
+            "range": 2,
+            "avail": 1
+          }
+        ],
+        "residentialTypes": [
+          {
+            "name": "Gate Home",
+            "w": 1,
+            "h": 1,
+            "min": 10,
+            "max": 20,
+            "avail": 4
+          },
+          {
+            "name": "Gate Block",
+            "w": 2,
+            "h": 2,
+            "min": 40,
+            "max": 80,
+            "avail": 3
+          }
+        ],
+        "availableBuildings": {
+          "services": 1,
+          "residentials": 3
+        },
+        "greedy": {
+          "restarts": 2,
+          "localSearch": true,
+          "timeLimitSeconds": 120,
+          "randomSeed": 7
+        }
+      },
+      "artifactPaths": [
+        "artifacts/telemetry-manifests/2026-05-17/product-workflow-telemetry-manifest.json",
+        "artifacts/product-workflows/2026-05-17/product-workflow-benchmark.json",
+        "artifacts/telemetry-manifests/2026-05-17/product-workflow-telemetry-manifest.json"
+      ],
+      "timings": {
+        "wallClockSeconds": 0.014,
+        "firstFeasibleSeconds": 0.014,
+        "bestScoreSeconds": 0.014
+      },
+      "final": {
+        "status": "valid",
+        "totalPopulation": 60,
+        "validation": {
+          "valid": true,
+          "errors": []
+        }
+      },
+      "progressSummary": {
+        "currentScore": 60,
+        "bestScore": 60,
+        "activeStage": "greedy",
+        "reuseSource": null,
+        "elapsedTimeSeconds": 0.014,
+        "timeSinceImprovementSeconds": null,
+        "stopReason": null,
+        "exactGap": null,
+        "portfolioWorkerSummary": null
+      },
+      "timeToQuality": {
+        "finalElapsedMs": 14,
+        "finalScore": 60,
+        "bestScore": 60,
+        "firstFeasibleAtMs": 14,
+        "firstImprovementAtMs": 14,
+        "bestScoreAtMs": 14,
+        "improvementCount": 1,
+        "timeCheckpoints": [
+          {
+            "elapsedMs": 5000,
+            "bestScore": 60,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          },
+          {
+            "elapsedMs": 30000,
+            "bestScore": 60,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          },
+          {
+            "elapsedMs": 120000,
+            "bestScore": 60,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          }
+        ],
+        "qualityTargets": [
+          {
+            "ratio": 0.5,
+            "targetScore": 30,
+            "reachedAtMs": 14,
+            "reachedScore": 60
+          },
+          {
+            "ratio": 0.9,
+            "targetScore": 54,
+            "reachedAtMs": 14,
+            "reachedScore": 60
+          },
+          {
+            "ratio": 1,
+            "targetScore": 60,
+            "reachedAtMs": 14,
+            "reachedScore": 60
+          }
+        ]
+      },
+      "stages": [
+        {
+          "name": "greedy",
+          "eventCount": 1,
+          "startedAtSeconds": 0.014,
+          "completedAtSeconds": 0.014,
+          "elapsedSeconds": 0,
+          "firstFeasibleSeconds": 0.014,
+          "bestScoreSeconds": 0.014,
+          "finalScore": 60,
+          "status": "improved"
+        }
+      ],
+      "cpSat": null,
+      "lns": null,
+      "greedy": null
+    },
+    {
+      "runId": "planner-footprint-pressure:greedy:budget-1:seed-7",
+      "benchmarkName": "product-workflow",
+      "caseName": "planner-footprint-pressure",
+      "caseFamily": "footprint-pressure",
+      "optimizer": "greedy",
+      "mode": "greedy",
+      "seed": 7,
+      "budget": {
+        "wallClockSeconds": 1,
+        "observedWallClockSeconds": 0.024
+      },
+      "grid": {
+        "rows": 5,
+        "cols": 5,
+        "buildableCells": 25
+      },
+      "solverParams": {
+        "optimizer": "greedy",
+        "serviceTypes": [
+          {
+            "name": "Small Park",
+            "rows": 1,
+            "cols": 1,
+            "bonus": 10,
+            "range": 1,
+            "avail": 1
+          }
+        ],
+        "residentialTypes": [
+          {
+            "name": "Slab",
+            "w": 2,
+            "h": 3,
+            "min": 60,
+            "max": 120,
+            "avail": 2
+          },
+          {
+            "name": "Block",
+            "w": 2,
+            "h": 2,
+            "min": 40,
+            "max": 80,
+            "avail": 3
+          }
+        ],
+        "availableBuildings": {
+          "services": 1,
+          "residentials": 2
+        },
+        "greedy": {
+          "restarts": 2,
+          "localSearch": true,
+          "timeLimitSeconds": 1,
+          "randomSeed": 7
+        }
+      },
+      "artifactPaths": [
+        "artifacts/telemetry-manifests/2026-05-17/product-workflow-telemetry-manifest.json",
+        "artifacts/product-workflows/2026-05-17/product-workflow-benchmark.json",
+        "artifacts/telemetry-manifests/2026-05-17/product-workflow-telemetry-manifest.json"
+      ],
+      "timings": {
+        "wallClockSeconds": 0.024,
+        "firstFeasibleSeconds": 0.024,
+        "bestScoreSeconds": 0.024
+      },
+      "final": {
+        "status": "valid",
+        "totalPopulation": 140,
+        "validation": {
+          "valid": true,
+          "errors": []
+        }
+      },
+      "progressSummary": {
+        "currentScore": 140,
+        "bestScore": 140,
+        "activeStage": "greedy",
+        "reuseSource": null,
+        "elapsedTimeSeconds": 0.024,
+        "timeSinceImprovementSeconds": null,
+        "stopReason": null,
+        "exactGap": null,
+        "portfolioWorkerSummary": null
+      },
+      "timeToQuality": {
+        "finalElapsedMs": 24,
+        "finalScore": 140,
+        "bestScore": 140,
+        "firstFeasibleAtMs": 24,
+        "firstImprovementAtMs": 24,
+        "bestScoreAtMs": 24,
+        "improvementCount": 1,
+        "timeCheckpoints": [
+          {
+            "elapsedMs": 5000,
+            "bestScore": 140,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          },
+          {
+            "elapsedMs": 30000,
+            "bestScore": 140,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          },
+          {
+            "elapsedMs": 120000,
+            "bestScore": 140,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          }
+        ],
+        "qualityTargets": [
+          {
+            "ratio": 0.5,
+            "targetScore": 70,
+            "reachedAtMs": 24,
+            "reachedScore": 140
+          },
+          {
+            "ratio": 0.9,
+            "targetScore": 126,
+            "reachedAtMs": 24,
+            "reachedScore": 140
+          },
+          {
+            "ratio": 1,
+            "targetScore": 140,
+            "reachedAtMs": 24,
+            "reachedScore": 140
+          }
+        ]
+      },
+      "stages": [
+        {
+          "name": "greedy",
+          "eventCount": 1,
+          "startedAtSeconds": 0.024,
+          "completedAtSeconds": 0.024,
+          "elapsedSeconds": 0,
+          "firstFeasibleSeconds": 0.024,
+          "bestScoreSeconds": 0.024,
+          "finalScore": 140,
+          "status": "improved"
+        }
+      ],
+      "cpSat": null,
+      "lns": null,
+      "greedy": null
+    },
+    {
+      "runId": "planner-footprint-pressure:greedy:budget-5:seed-7",
+      "benchmarkName": "product-workflow",
+      "caseName": "planner-footprint-pressure",
+      "caseFamily": "footprint-pressure",
+      "optimizer": "greedy",
+      "mode": "greedy",
+      "seed": 7,
+      "budget": {
+        "wallClockSeconds": 5,
+        "observedWallClockSeconds": 0.023
+      },
+      "grid": {
+        "rows": 5,
+        "cols": 5,
+        "buildableCells": 25
+      },
+      "solverParams": {
+        "optimizer": "greedy",
+        "serviceTypes": [
+          {
+            "name": "Small Park",
+            "rows": 1,
+            "cols": 1,
+            "bonus": 10,
+            "range": 1,
+            "avail": 1
+          }
+        ],
+        "residentialTypes": [
+          {
+            "name": "Slab",
+            "w": 2,
+            "h": 3,
+            "min": 60,
+            "max": 120,
+            "avail": 2
+          },
+          {
+            "name": "Block",
+            "w": 2,
+            "h": 2,
+            "min": 40,
+            "max": 80,
+            "avail": 3
+          }
+        ],
+        "availableBuildings": {
+          "services": 1,
+          "residentials": 2
+        },
+        "greedy": {
+          "restarts": 2,
+          "localSearch": true,
+          "timeLimitSeconds": 5,
+          "randomSeed": 7
+        }
+      },
+      "artifactPaths": [
+        "artifacts/telemetry-manifests/2026-05-17/product-workflow-telemetry-manifest.json",
+        "artifacts/product-workflows/2026-05-17/product-workflow-benchmark.json",
+        "artifacts/telemetry-manifests/2026-05-17/product-workflow-telemetry-manifest.json"
+      ],
+      "timings": {
+        "wallClockSeconds": 0.023,
+        "firstFeasibleSeconds": 0.023,
+        "bestScoreSeconds": 0.023
+      },
+      "final": {
+        "status": "valid",
+        "totalPopulation": 140,
+        "validation": {
+          "valid": true,
+          "errors": []
+        }
+      },
+      "progressSummary": {
+        "currentScore": 140,
+        "bestScore": 140,
+        "activeStage": "greedy",
+        "reuseSource": null,
+        "elapsedTimeSeconds": 0.023,
+        "timeSinceImprovementSeconds": null,
+        "stopReason": null,
+        "exactGap": null,
+        "portfolioWorkerSummary": null
+      },
+      "timeToQuality": {
+        "finalElapsedMs": 23,
+        "finalScore": 140,
+        "bestScore": 140,
+        "firstFeasibleAtMs": 23,
+        "firstImprovementAtMs": 23,
+        "bestScoreAtMs": 23,
+        "improvementCount": 1,
+        "timeCheckpoints": [
+          {
+            "elapsedMs": 5000,
+            "bestScore": 140,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          },
+          {
+            "elapsedMs": 30000,
+            "bestScore": 140,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          },
+          {
+            "elapsedMs": 120000,
+            "bestScore": 140,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          }
+        ],
+        "qualityTargets": [
+          {
+            "ratio": 0.5,
+            "targetScore": 70,
+            "reachedAtMs": 23,
+            "reachedScore": 140
+          },
+          {
+            "ratio": 0.9,
+            "targetScore": 126,
+            "reachedAtMs": 23,
+            "reachedScore": 140
+          },
+          {
+            "ratio": 1,
+            "targetScore": 140,
+            "reachedAtMs": 23,
+            "reachedScore": 140
+          }
+        ]
+      },
+      "stages": [
+        {
+          "name": "greedy",
+          "eventCount": 1,
+          "startedAtSeconds": 0.023,
+          "completedAtSeconds": 0.023,
+          "elapsedSeconds": 0,
+          "firstFeasibleSeconds": 0.023,
+          "bestScoreSeconds": 0.023,
+          "finalScore": 140,
+          "status": "improved"
+        }
+      ],
+      "cpSat": null,
+      "lns": null,
+      "greedy": null
+    },
+    {
+      "runId": "planner-footprint-pressure:greedy:budget-30:seed-7",
+      "benchmarkName": "product-workflow",
+      "caseName": "planner-footprint-pressure",
+      "caseFamily": "footprint-pressure",
+      "optimizer": "greedy",
+      "mode": "greedy",
+      "seed": 7,
+      "budget": {
+        "wallClockSeconds": 30,
+        "observedWallClockSeconds": 0.021
+      },
+      "grid": {
+        "rows": 5,
+        "cols": 5,
+        "buildableCells": 25
+      },
+      "solverParams": {
+        "optimizer": "greedy",
+        "serviceTypes": [
+          {
+            "name": "Small Park",
+            "rows": 1,
+            "cols": 1,
+            "bonus": 10,
+            "range": 1,
+            "avail": 1
+          }
+        ],
+        "residentialTypes": [
+          {
+            "name": "Slab",
+            "w": 2,
+            "h": 3,
+            "min": 60,
+            "max": 120,
+            "avail": 2
+          },
+          {
+            "name": "Block",
+            "w": 2,
+            "h": 2,
+            "min": 40,
+            "max": 80,
+            "avail": 3
+          }
+        ],
+        "availableBuildings": {
+          "services": 1,
+          "residentials": 2
+        },
+        "greedy": {
+          "restarts": 2,
+          "localSearch": true,
+          "timeLimitSeconds": 30,
+          "randomSeed": 7
+        }
+      },
+      "artifactPaths": [
+        "artifacts/telemetry-manifests/2026-05-17/product-workflow-telemetry-manifest.json",
+        "artifacts/product-workflows/2026-05-17/product-workflow-benchmark.json",
+        "artifacts/telemetry-manifests/2026-05-17/product-workflow-telemetry-manifest.json"
+      ],
+      "timings": {
+        "wallClockSeconds": 0.021,
+        "firstFeasibleSeconds": 0.021,
+        "bestScoreSeconds": 0.021
+      },
+      "final": {
+        "status": "valid",
+        "totalPopulation": 140,
+        "validation": {
+          "valid": true,
+          "errors": []
+        }
+      },
+      "progressSummary": {
+        "currentScore": 140,
+        "bestScore": 140,
+        "activeStage": "greedy",
+        "reuseSource": null,
+        "elapsedTimeSeconds": 0.021,
+        "timeSinceImprovementSeconds": null,
+        "stopReason": null,
+        "exactGap": null,
+        "portfolioWorkerSummary": null
+      },
+      "timeToQuality": {
+        "finalElapsedMs": 21,
+        "finalScore": 140,
+        "bestScore": 140,
+        "firstFeasibleAtMs": 21,
+        "firstImprovementAtMs": 21,
+        "bestScoreAtMs": 21,
+        "improvementCount": 1,
+        "timeCheckpoints": [
+          {
+            "elapsedMs": 5000,
+            "bestScore": 140,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          },
+          {
+            "elapsedMs": 30000,
+            "bestScore": 140,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          },
+          {
+            "elapsedMs": 120000,
+            "bestScore": 140,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          }
+        ],
+        "qualityTargets": [
+          {
+            "ratio": 0.5,
+            "targetScore": 70,
+            "reachedAtMs": 21,
+            "reachedScore": 140
+          },
+          {
+            "ratio": 0.9,
+            "targetScore": 126,
+            "reachedAtMs": 21,
+            "reachedScore": 140
+          },
+          {
+            "ratio": 1,
+            "targetScore": 140,
+            "reachedAtMs": 21,
+            "reachedScore": 140
+          }
+        ]
+      },
+      "stages": [
+        {
+          "name": "greedy",
+          "eventCount": 1,
+          "startedAtSeconds": 0.021,
+          "completedAtSeconds": 0.021,
+          "elapsedSeconds": 0,
+          "firstFeasibleSeconds": 0.021,
+          "bestScoreSeconds": 0.021,
+          "finalScore": 140,
+          "status": "improved"
+        }
+      ],
+      "cpSat": null,
+      "lns": null,
+      "greedy": null
+    },
+    {
+      "runId": "planner-footprint-pressure:greedy:budget-120:seed-7",
+      "benchmarkName": "product-workflow",
+      "caseName": "planner-footprint-pressure",
+      "caseFamily": "footprint-pressure",
+      "optimizer": "greedy",
+      "mode": "greedy",
+      "seed": 7,
+      "budget": {
+        "wallClockSeconds": 120,
+        "observedWallClockSeconds": 0.021
+      },
+      "grid": {
+        "rows": 5,
+        "cols": 5,
+        "buildableCells": 25
+      },
+      "solverParams": {
+        "optimizer": "greedy",
+        "serviceTypes": [
+          {
+            "name": "Small Park",
+            "rows": 1,
+            "cols": 1,
+            "bonus": 10,
+            "range": 1,
+            "avail": 1
+          }
+        ],
+        "residentialTypes": [
+          {
+            "name": "Slab",
+            "w": 2,
+            "h": 3,
+            "min": 60,
+            "max": 120,
+            "avail": 2
+          },
+          {
+            "name": "Block",
+            "w": 2,
+            "h": 2,
+            "min": 40,
+            "max": 80,
+            "avail": 3
+          }
+        ],
+        "availableBuildings": {
+          "services": 1,
+          "residentials": 2
+        },
+        "greedy": {
+          "restarts": 2,
+          "localSearch": true,
+          "timeLimitSeconds": 120,
+          "randomSeed": 7
+        }
+      },
+      "artifactPaths": [
+        "artifacts/telemetry-manifests/2026-05-17/product-workflow-telemetry-manifest.json",
+        "artifacts/product-workflows/2026-05-17/product-workflow-benchmark.json",
+        "artifacts/telemetry-manifests/2026-05-17/product-workflow-telemetry-manifest.json"
+      ],
+      "timings": {
+        "wallClockSeconds": 0.021,
+        "firstFeasibleSeconds": 0.021,
+        "bestScoreSeconds": 0.021
+      },
+      "final": {
+        "status": "valid",
+        "totalPopulation": 140,
+        "validation": {
+          "valid": true,
+          "errors": []
+        }
+      },
+      "progressSummary": {
+        "currentScore": 140,
+        "bestScore": 140,
+        "activeStage": "greedy",
+        "reuseSource": null,
+        "elapsedTimeSeconds": 0.021,
+        "timeSinceImprovementSeconds": null,
+        "stopReason": null,
+        "exactGap": null,
+        "portfolioWorkerSummary": null
+      },
+      "timeToQuality": {
+        "finalElapsedMs": 21,
+        "finalScore": 140,
+        "bestScore": 140,
+        "firstFeasibleAtMs": 21,
+        "firstImprovementAtMs": 21,
+        "bestScoreAtMs": 21,
+        "improvementCount": 1,
+        "timeCheckpoints": [
+          {
+            "elapsedMs": 5000,
+            "bestScore": 140,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          },
+          {
+            "elapsedMs": 30000,
+            "bestScore": 140,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          },
+          {
+            "elapsedMs": 120000,
+            "bestScore": 140,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          }
+        ],
+        "qualityTargets": [
+          {
+            "ratio": 0.5,
+            "targetScore": 70,
+            "reachedAtMs": 21,
+            "reachedScore": 140
+          },
+          {
+            "ratio": 0.9,
+            "targetScore": 126,
+            "reachedAtMs": 21,
+            "reachedScore": 140
+          },
+          {
+            "ratio": 1,
+            "targetScore": 140,
+            "reachedAtMs": 21,
+            "reachedScore": 140
+          }
+        ]
+      },
+      "stages": [
+        {
+          "name": "greedy",
+          "eventCount": 1,
+          "startedAtSeconds": 0.021,
+          "completedAtSeconds": 0.021,
+          "elapsedSeconds": 0,
+          "firstFeasibleSeconds": 0.021,
+          "bestScoreSeconds": 0.021,
+          "finalScore": 140,
+          "status": "improved"
+        }
+      ],
+      "cpSat": null,
+      "lns": null,
+      "greedy": null
+    },
+    {
+      "runId": "planner-service-overlap:greedy:budget-1:seed-7",
+      "benchmarkName": "product-workflow",
+      "caseName": "planner-service-overlap",
+      "caseFamily": "service-overlap",
+      "optimizer": "greedy",
+      "mode": "greedy",
+      "seed": 7,
+      "budget": {
+        "wallClockSeconds": 1,
+        "observedWallClockSeconds": 0.068
+      },
+      "grid": {
+        "rows": 6,
+        "cols": 6,
+        "buildableCells": 36
+      },
+      "solverParams": {
+        "optimizer": "greedy",
+        "serviceTypes": [
+          {
+            "name": "Clinic",
+            "rows": 1,
+            "cols": 1,
+            "bonus": 25,
+            "range": 2,
+            "avail": 1
+          },
+          {
+            "name": "Library",
+            "rows": 1,
+            "cols": 1,
+            "bonus": 20,
+            "range": 2,
+            "avail": 1
+          }
+        ],
+        "residentialTypes": [
+          {
+            "name": "Courtyard",
+            "w": 2,
+            "h": 2,
+            "min": 40,
+            "max": 80,
+            "avail": 3
+          },
+          {
+            "name": "Studio",
+            "w": 1,
+            "h": 1,
+            "min": 10,
+            "max": 20,
+            "avail": 4
+          }
+        ],
+        "availableBuildings": {
+          "services": 1,
+          "residentials": 2
+        },
+        "greedy": {
+          "restarts": 2,
+          "localSearch": true,
+          "timeLimitSeconds": 1,
+          "randomSeed": 7
+        }
+      },
+      "artifactPaths": [
+        "artifacts/telemetry-manifests/2026-05-17/product-workflow-telemetry-manifest.json",
+        "artifacts/product-workflows/2026-05-17/product-workflow-benchmark.json",
+        "artifacts/telemetry-manifests/2026-05-17/product-workflow-telemetry-manifest.json"
+      ],
+      "timings": {
+        "wallClockSeconds": 0.068,
+        "firstFeasibleSeconds": 0.068,
+        "bestScoreSeconds": 0.068
+      },
+      "final": {
+        "status": "valid",
+        "totalPopulation": 130,
+        "validation": {
+          "valid": true,
+          "errors": []
+        }
+      },
+      "progressSummary": {
+        "currentScore": 130,
+        "bestScore": 130,
+        "activeStage": "greedy",
+        "reuseSource": null,
+        "elapsedTimeSeconds": 0.068,
+        "timeSinceImprovementSeconds": null,
+        "stopReason": null,
+        "exactGap": null,
+        "portfolioWorkerSummary": null
+      },
+      "timeToQuality": {
+        "finalElapsedMs": 68,
+        "finalScore": 130,
+        "bestScore": 130,
+        "firstFeasibleAtMs": 68,
+        "firstImprovementAtMs": 68,
+        "bestScoreAtMs": 68,
+        "improvementCount": 1,
+        "timeCheckpoints": [
+          {
+            "elapsedMs": 5000,
+            "bestScore": 130,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          },
+          {
+            "elapsedMs": 30000,
+            "bestScore": 130,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          },
+          {
+            "elapsedMs": 120000,
+            "bestScore": 130,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          }
+        ],
+        "qualityTargets": [
+          {
+            "ratio": 0.5,
+            "targetScore": 65,
+            "reachedAtMs": 68,
+            "reachedScore": 130
+          },
+          {
+            "ratio": 0.9,
+            "targetScore": 117,
+            "reachedAtMs": 68,
+            "reachedScore": 130
+          },
+          {
+            "ratio": 1,
+            "targetScore": 130,
+            "reachedAtMs": 68,
+            "reachedScore": 130
+          }
+        ]
+      },
+      "stages": [
+        {
+          "name": "greedy",
+          "eventCount": 1,
+          "startedAtSeconds": 0.068,
+          "completedAtSeconds": 0.068,
+          "elapsedSeconds": 0,
+          "firstFeasibleSeconds": 0.068,
+          "bestScoreSeconds": 0.068,
+          "finalScore": 130,
+          "status": "improved"
+        }
+      ],
+      "cpSat": null,
+      "lns": null,
+      "greedy": null
+    },
+    {
+      "runId": "planner-service-overlap:greedy:budget-5:seed-7",
+      "benchmarkName": "product-workflow",
+      "caseName": "planner-service-overlap",
+      "caseFamily": "service-overlap",
+      "optimizer": "greedy",
+      "mode": "greedy",
+      "seed": 7,
+      "budget": {
+        "wallClockSeconds": 5,
+        "observedWallClockSeconds": 0.067
+      },
+      "grid": {
+        "rows": 6,
+        "cols": 6,
+        "buildableCells": 36
+      },
+      "solverParams": {
+        "optimizer": "greedy",
+        "serviceTypes": [
+          {
+            "name": "Clinic",
+            "rows": 1,
+            "cols": 1,
+            "bonus": 25,
+            "range": 2,
+            "avail": 1
+          },
+          {
+            "name": "Library",
+            "rows": 1,
+            "cols": 1,
+            "bonus": 20,
+            "range": 2,
+            "avail": 1
+          }
+        ],
+        "residentialTypes": [
+          {
+            "name": "Courtyard",
+            "w": 2,
+            "h": 2,
+            "min": 40,
+            "max": 80,
+            "avail": 3
+          },
+          {
+            "name": "Studio",
+            "w": 1,
+            "h": 1,
+            "min": 10,
+            "max": 20,
+            "avail": 4
+          }
+        ],
+        "availableBuildings": {
+          "services": 1,
+          "residentials": 2
+        },
+        "greedy": {
+          "restarts": 2,
+          "localSearch": true,
+          "timeLimitSeconds": 5,
+          "randomSeed": 7
+        }
+      },
+      "artifactPaths": [
+        "artifacts/telemetry-manifests/2026-05-17/product-workflow-telemetry-manifest.json",
+        "artifacts/product-workflows/2026-05-17/product-workflow-benchmark.json",
+        "artifacts/telemetry-manifests/2026-05-17/product-workflow-telemetry-manifest.json"
+      ],
+      "timings": {
+        "wallClockSeconds": 0.067,
+        "firstFeasibleSeconds": 0.067,
+        "bestScoreSeconds": 0.067
+      },
+      "final": {
+        "status": "valid",
+        "totalPopulation": 130,
+        "validation": {
+          "valid": true,
+          "errors": []
+        }
+      },
+      "progressSummary": {
+        "currentScore": 130,
+        "bestScore": 130,
+        "activeStage": "greedy",
+        "reuseSource": null,
+        "elapsedTimeSeconds": 0.067,
+        "timeSinceImprovementSeconds": null,
+        "stopReason": null,
+        "exactGap": null,
+        "portfolioWorkerSummary": null
+      },
+      "timeToQuality": {
+        "finalElapsedMs": 67,
+        "finalScore": 130,
+        "bestScore": 130,
+        "firstFeasibleAtMs": 67,
+        "firstImprovementAtMs": 67,
+        "bestScoreAtMs": 67,
+        "improvementCount": 1,
+        "timeCheckpoints": [
+          {
+            "elapsedMs": 5000,
+            "bestScore": 130,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          },
+          {
+            "elapsedMs": 30000,
+            "bestScore": 130,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          },
+          {
+            "elapsedMs": 120000,
+            "bestScore": 130,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          }
+        ],
+        "qualityTargets": [
+          {
+            "ratio": 0.5,
+            "targetScore": 65,
+            "reachedAtMs": 67,
+            "reachedScore": 130
+          },
+          {
+            "ratio": 0.9,
+            "targetScore": 117,
+            "reachedAtMs": 67,
+            "reachedScore": 130
+          },
+          {
+            "ratio": 1,
+            "targetScore": 130,
+            "reachedAtMs": 67,
+            "reachedScore": 130
+          }
+        ]
+      },
+      "stages": [
+        {
+          "name": "greedy",
+          "eventCount": 1,
+          "startedAtSeconds": 0.067,
+          "completedAtSeconds": 0.067,
+          "elapsedSeconds": 0,
+          "firstFeasibleSeconds": 0.067,
+          "bestScoreSeconds": 0.067,
+          "finalScore": 130,
+          "status": "improved"
+        }
+      ],
+      "cpSat": null,
+      "lns": null,
+      "greedy": null
+    },
+    {
+      "runId": "planner-service-overlap:greedy:budget-30:seed-7",
+      "benchmarkName": "product-workflow",
+      "caseName": "planner-service-overlap",
+      "caseFamily": "service-overlap",
+      "optimizer": "greedy",
+      "mode": "greedy",
+      "seed": 7,
+      "budget": {
+        "wallClockSeconds": 30,
+        "observedWallClockSeconds": 0.066
+      },
+      "grid": {
+        "rows": 6,
+        "cols": 6,
+        "buildableCells": 36
+      },
+      "solverParams": {
+        "optimizer": "greedy",
+        "serviceTypes": [
+          {
+            "name": "Clinic",
+            "rows": 1,
+            "cols": 1,
+            "bonus": 25,
+            "range": 2,
+            "avail": 1
+          },
+          {
+            "name": "Library",
+            "rows": 1,
+            "cols": 1,
+            "bonus": 20,
+            "range": 2,
+            "avail": 1
+          }
+        ],
+        "residentialTypes": [
+          {
+            "name": "Courtyard",
+            "w": 2,
+            "h": 2,
+            "min": 40,
+            "max": 80,
+            "avail": 3
+          },
+          {
+            "name": "Studio",
+            "w": 1,
+            "h": 1,
+            "min": 10,
+            "max": 20,
+            "avail": 4
+          }
+        ],
+        "availableBuildings": {
+          "services": 1,
+          "residentials": 2
+        },
+        "greedy": {
+          "restarts": 2,
+          "localSearch": true,
+          "timeLimitSeconds": 30,
+          "randomSeed": 7
+        }
+      },
+      "artifactPaths": [
+        "artifacts/telemetry-manifests/2026-05-17/product-workflow-telemetry-manifest.json",
+        "artifacts/product-workflows/2026-05-17/product-workflow-benchmark.json",
+        "artifacts/telemetry-manifests/2026-05-17/product-workflow-telemetry-manifest.json"
+      ],
+      "timings": {
+        "wallClockSeconds": 0.066,
+        "firstFeasibleSeconds": 0.066,
+        "bestScoreSeconds": 0.066
+      },
+      "final": {
+        "status": "valid",
+        "totalPopulation": 130,
+        "validation": {
+          "valid": true,
+          "errors": []
+        }
+      },
+      "progressSummary": {
+        "currentScore": 130,
+        "bestScore": 130,
+        "activeStage": "greedy",
+        "reuseSource": null,
+        "elapsedTimeSeconds": 0.066,
+        "timeSinceImprovementSeconds": null,
+        "stopReason": null,
+        "exactGap": null,
+        "portfolioWorkerSummary": null
+      },
+      "timeToQuality": {
+        "finalElapsedMs": 66,
+        "finalScore": 130,
+        "bestScore": 130,
+        "firstFeasibleAtMs": 66,
+        "firstImprovementAtMs": 66,
+        "bestScoreAtMs": 66,
+        "improvementCount": 1,
+        "timeCheckpoints": [
+          {
+            "elapsedMs": 5000,
+            "bestScore": 130,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          },
+          {
+            "elapsedMs": 30000,
+            "bestScore": 130,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          },
+          {
+            "elapsedMs": 120000,
+            "bestScore": 130,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          }
+        ],
+        "qualityTargets": [
+          {
+            "ratio": 0.5,
+            "targetScore": 65,
+            "reachedAtMs": 66,
+            "reachedScore": 130
+          },
+          {
+            "ratio": 0.9,
+            "targetScore": 117,
+            "reachedAtMs": 66,
+            "reachedScore": 130
+          },
+          {
+            "ratio": 1,
+            "targetScore": 130,
+            "reachedAtMs": 66,
+            "reachedScore": 130
+          }
+        ]
+      },
+      "stages": [
+        {
+          "name": "greedy",
+          "eventCount": 1,
+          "startedAtSeconds": 0.066,
+          "completedAtSeconds": 0.066,
+          "elapsedSeconds": 0,
+          "firstFeasibleSeconds": 0.066,
+          "bestScoreSeconds": 0.066,
+          "finalScore": 130,
+          "status": "improved"
+        }
+      ],
+      "cpSat": null,
+      "lns": null,
+      "greedy": null
+    },
+    {
+      "runId": "planner-service-overlap:greedy:budget-120:seed-7",
+      "benchmarkName": "product-workflow",
+      "caseName": "planner-service-overlap",
+      "caseFamily": "service-overlap",
+      "optimizer": "greedy",
+      "mode": "greedy",
+      "seed": 7,
+      "budget": {
+        "wallClockSeconds": 120,
+        "observedWallClockSeconds": 0.065
+      },
+      "grid": {
+        "rows": 6,
+        "cols": 6,
+        "buildableCells": 36
+      },
+      "solverParams": {
+        "optimizer": "greedy",
+        "serviceTypes": [
+          {
+            "name": "Clinic",
+            "rows": 1,
+            "cols": 1,
+            "bonus": 25,
+            "range": 2,
+            "avail": 1
+          },
+          {
+            "name": "Library",
+            "rows": 1,
+            "cols": 1,
+            "bonus": 20,
+            "range": 2,
+            "avail": 1
+          }
+        ],
+        "residentialTypes": [
+          {
+            "name": "Courtyard",
+            "w": 2,
+            "h": 2,
+            "min": 40,
+            "max": 80,
+            "avail": 3
+          },
+          {
+            "name": "Studio",
+            "w": 1,
+            "h": 1,
+            "min": 10,
+            "max": 20,
+            "avail": 4
+          }
+        ],
+        "availableBuildings": {
+          "services": 1,
+          "residentials": 2
+        },
+        "greedy": {
+          "restarts": 2,
+          "localSearch": true,
+          "timeLimitSeconds": 120,
+          "randomSeed": 7
+        }
+      },
+      "artifactPaths": [
+        "artifacts/telemetry-manifests/2026-05-17/product-workflow-telemetry-manifest.json",
+        "artifacts/product-workflows/2026-05-17/product-workflow-benchmark.json",
+        "artifacts/telemetry-manifests/2026-05-17/product-workflow-telemetry-manifest.json"
+      ],
+      "timings": {
+        "wallClockSeconds": 0.065,
+        "firstFeasibleSeconds": 0.065,
+        "bestScoreSeconds": 0.065
+      },
+      "final": {
+        "status": "valid",
+        "totalPopulation": 130,
+        "validation": {
+          "valid": true,
+          "errors": []
+        }
+      },
+      "progressSummary": {
+        "currentScore": 130,
+        "bestScore": 130,
+        "activeStage": "greedy",
+        "reuseSource": null,
+        "elapsedTimeSeconds": 0.065,
+        "timeSinceImprovementSeconds": null,
+        "stopReason": null,
+        "exactGap": null,
+        "portfolioWorkerSummary": null
+      },
+      "timeToQuality": {
+        "finalElapsedMs": 65,
+        "finalScore": 130,
+        "bestScore": 130,
+        "firstFeasibleAtMs": 65,
+        "firstImprovementAtMs": 65,
+        "bestScoreAtMs": 65,
+        "improvementCount": 1,
+        "timeCheckpoints": [
+          {
+            "elapsedMs": 5000,
+            "bestScore": 130,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          },
+          {
+            "elapsedMs": 30000,
+            "bestScore": 130,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          },
+          {
+            "elapsedMs": 120000,
+            "bestScore": 130,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          }
+        ],
+        "qualityTargets": [
+          {
+            "ratio": 0.5,
+            "targetScore": 65,
+            "reachedAtMs": 65,
+            "reachedScore": 130
+          },
+          {
+            "ratio": 0.9,
+            "targetScore": 117,
+            "reachedAtMs": 65,
+            "reachedScore": 130
+          },
+          {
+            "ratio": 1,
+            "targetScore": 130,
+            "reachedAtMs": 65,
+            "reachedScore": 130
+          }
+        ]
+      },
+      "stages": [
+        {
+          "name": "greedy",
+          "eventCount": 1,
+          "startedAtSeconds": 0.065,
+          "completedAtSeconds": 0.065,
+          "elapsedSeconds": 0,
+          "firstFeasibleSeconds": 0.065,
+          "bestScoreSeconds": 0.065,
+          "finalScore": 130,
+          "status": "improved"
+        }
+      ],
+      "cpSat": null,
+      "lns": null,
+      "greedy": null
+    },
+    {
+      "runId": "planner-anchor-service:greedy:budget-1:seed-7",
+      "benchmarkName": "product-workflow",
+      "caseName": "planner-anchor-service",
+      "caseFamily": "anchor-service",
+      "optimizer": "greedy",
+      "mode": "greedy",
+      "seed": 7,
+      "budget": {
+        "wallClockSeconds": 1,
+        "observedWallClockSeconds": 0.007
+      },
+      "grid": {
+        "rows": 4,
+        "cols": 4,
+        "buildableCells": 16
+      },
+      "solverParams": {
+        "optimizer": "greedy",
+        "serviceTypes": [
+          {
+            "name": "Anchor Clinic",
+            "rows": 1,
+            "cols": 1,
+            "bonus": 20,
+            "range": 1,
+            "avail": 1
+          }
+        ],
+        "residentialTypes": [
+          {
+            "name": "Anchor Home",
+            "w": 1,
+            "h": 1,
+            "min": 10,
+            "max": 20,
+            "avail": 4
+          },
+          {
+            "name": "Block",
+            "w": 2,
+            "h": 2,
+            "min": 40,
+            "max": 80,
+            "avail": 3
+          }
+        ],
+        "availableBuildings": {
+          "services": 1,
+          "residentials": 2
+        },
+        "greedy": {
+          "restarts": 2,
+          "localSearch": true,
+          "timeLimitSeconds": 1,
+          "randomSeed": 7
+        }
+      },
+      "artifactPaths": [
+        "artifacts/telemetry-manifests/2026-05-17/product-workflow-telemetry-manifest.json",
+        "artifacts/product-workflows/2026-05-17/product-workflow-benchmark.json",
+        "artifacts/telemetry-manifests/2026-05-17/product-workflow-telemetry-manifest.json"
+      ],
+      "timings": {
+        "wallClockSeconds": 0.007,
+        "firstFeasibleSeconds": 0.007,
+        "bestScoreSeconds": 0.007
+      },
+      "final": {
+        "status": "valid",
+        "totalPopulation": 120,
+        "validation": {
+          "valid": true,
+          "errors": []
+        }
+      },
+      "progressSummary": {
+        "currentScore": 120,
+        "bestScore": 120,
+        "activeStage": "greedy",
+        "reuseSource": null,
+        "elapsedTimeSeconds": 0.007,
+        "timeSinceImprovementSeconds": null,
+        "stopReason": null,
+        "exactGap": null,
+        "portfolioWorkerSummary": null
+      },
+      "timeToQuality": {
+        "finalElapsedMs": 7,
+        "finalScore": 120,
+        "bestScore": 120,
+        "firstFeasibleAtMs": 7,
+        "firstImprovementAtMs": 7,
+        "bestScoreAtMs": 7,
+        "improvementCount": 1,
+        "timeCheckpoints": [
+          {
+            "elapsedMs": 5000,
+            "bestScore": 120,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          },
+          {
+            "elapsedMs": 30000,
+            "bestScore": 120,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          },
+          {
+            "elapsedMs": 120000,
+            "bestScore": 120,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          }
+        ],
+        "qualityTargets": [
+          {
+            "ratio": 0.5,
+            "targetScore": 60,
+            "reachedAtMs": 7,
+            "reachedScore": 120
+          },
+          {
+            "ratio": 0.9,
+            "targetScore": 108,
+            "reachedAtMs": 7,
+            "reachedScore": 120
+          },
+          {
+            "ratio": 1,
+            "targetScore": 120,
+            "reachedAtMs": 7,
+            "reachedScore": 120
+          }
+        ]
+      },
+      "stages": [
+        {
+          "name": "greedy",
+          "eventCount": 1,
+          "startedAtSeconds": 0.007,
+          "completedAtSeconds": 0.007,
+          "elapsedSeconds": 0,
+          "firstFeasibleSeconds": 0.007,
+          "bestScoreSeconds": 0.007,
+          "finalScore": 120,
+          "status": "improved"
+        }
+      ],
+      "cpSat": null,
+      "lns": null,
+      "greedy": null
+    },
+    {
+      "runId": "planner-anchor-service:greedy:budget-5:seed-7",
+      "benchmarkName": "product-workflow",
+      "caseName": "planner-anchor-service",
+      "caseFamily": "anchor-service",
+      "optimizer": "greedy",
+      "mode": "greedy",
+      "seed": 7,
+      "budget": {
+        "wallClockSeconds": 5,
+        "observedWallClockSeconds": 0.007
+      },
+      "grid": {
+        "rows": 4,
+        "cols": 4,
+        "buildableCells": 16
+      },
+      "solverParams": {
+        "optimizer": "greedy",
+        "serviceTypes": [
+          {
+            "name": "Anchor Clinic",
+            "rows": 1,
+            "cols": 1,
+            "bonus": 20,
+            "range": 1,
+            "avail": 1
+          }
+        ],
+        "residentialTypes": [
+          {
+            "name": "Anchor Home",
+            "w": 1,
+            "h": 1,
+            "min": 10,
+            "max": 20,
+            "avail": 4
+          },
+          {
+            "name": "Block",
+            "w": 2,
+            "h": 2,
+            "min": 40,
+            "max": 80,
+            "avail": 3
+          }
+        ],
+        "availableBuildings": {
+          "services": 1,
+          "residentials": 2
+        },
+        "greedy": {
+          "restarts": 2,
+          "localSearch": true,
+          "timeLimitSeconds": 5,
+          "randomSeed": 7
+        }
+      },
+      "artifactPaths": [
+        "artifacts/telemetry-manifests/2026-05-17/product-workflow-telemetry-manifest.json",
+        "artifacts/product-workflows/2026-05-17/product-workflow-benchmark.json",
+        "artifacts/telemetry-manifests/2026-05-17/product-workflow-telemetry-manifest.json"
+      ],
+      "timings": {
+        "wallClockSeconds": 0.007,
+        "firstFeasibleSeconds": 0.007,
+        "bestScoreSeconds": 0.007
+      },
+      "final": {
+        "status": "valid",
+        "totalPopulation": 120,
+        "validation": {
+          "valid": true,
+          "errors": []
+        }
+      },
+      "progressSummary": {
+        "currentScore": 120,
+        "bestScore": 120,
+        "activeStage": "greedy",
+        "reuseSource": null,
+        "elapsedTimeSeconds": 0.007,
+        "timeSinceImprovementSeconds": null,
+        "stopReason": null,
+        "exactGap": null,
+        "portfolioWorkerSummary": null
+      },
+      "timeToQuality": {
+        "finalElapsedMs": 7,
+        "finalScore": 120,
+        "bestScore": 120,
+        "firstFeasibleAtMs": 7,
+        "firstImprovementAtMs": 7,
+        "bestScoreAtMs": 7,
+        "improvementCount": 1,
+        "timeCheckpoints": [
+          {
+            "elapsedMs": 5000,
+            "bestScore": 120,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          },
+          {
+            "elapsedMs": 30000,
+            "bestScore": 120,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          },
+          {
+            "elapsedMs": 120000,
+            "bestScore": 120,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          }
+        ],
+        "qualityTargets": [
+          {
+            "ratio": 0.5,
+            "targetScore": 60,
+            "reachedAtMs": 7,
+            "reachedScore": 120
+          },
+          {
+            "ratio": 0.9,
+            "targetScore": 108,
+            "reachedAtMs": 7,
+            "reachedScore": 120
+          },
+          {
+            "ratio": 1,
+            "targetScore": 120,
+            "reachedAtMs": 7,
+            "reachedScore": 120
+          }
+        ]
+      },
+      "stages": [
+        {
+          "name": "greedy",
+          "eventCount": 1,
+          "startedAtSeconds": 0.007,
+          "completedAtSeconds": 0.007,
+          "elapsedSeconds": 0,
+          "firstFeasibleSeconds": 0.007,
+          "bestScoreSeconds": 0.007,
+          "finalScore": 120,
+          "status": "improved"
+        }
+      ],
+      "cpSat": null,
+      "lns": null,
+      "greedy": null
+    },
+    {
+      "runId": "planner-anchor-service:greedy:budget-30:seed-7",
+      "benchmarkName": "product-workflow",
+      "caseName": "planner-anchor-service",
+      "caseFamily": "anchor-service",
+      "optimizer": "greedy",
+      "mode": "greedy",
+      "seed": 7,
+      "budget": {
+        "wallClockSeconds": 30,
+        "observedWallClockSeconds": 0.006
+      },
+      "grid": {
+        "rows": 4,
+        "cols": 4,
+        "buildableCells": 16
+      },
+      "solverParams": {
+        "optimizer": "greedy",
+        "serviceTypes": [
+          {
+            "name": "Anchor Clinic",
+            "rows": 1,
+            "cols": 1,
+            "bonus": 20,
+            "range": 1,
+            "avail": 1
+          }
+        ],
+        "residentialTypes": [
+          {
+            "name": "Anchor Home",
+            "w": 1,
+            "h": 1,
+            "min": 10,
+            "max": 20,
+            "avail": 4
+          },
+          {
+            "name": "Block",
+            "w": 2,
+            "h": 2,
+            "min": 40,
+            "max": 80,
+            "avail": 3
+          }
+        ],
+        "availableBuildings": {
+          "services": 1,
+          "residentials": 2
+        },
+        "greedy": {
+          "restarts": 2,
+          "localSearch": true,
+          "timeLimitSeconds": 30,
+          "randomSeed": 7
+        }
+      },
+      "artifactPaths": [
+        "artifacts/telemetry-manifests/2026-05-17/product-workflow-telemetry-manifest.json",
+        "artifacts/product-workflows/2026-05-17/product-workflow-benchmark.json",
+        "artifacts/telemetry-manifests/2026-05-17/product-workflow-telemetry-manifest.json"
+      ],
+      "timings": {
+        "wallClockSeconds": 0.006,
+        "firstFeasibleSeconds": 0.006,
+        "bestScoreSeconds": 0.006
+      },
+      "final": {
+        "status": "valid",
+        "totalPopulation": 120,
+        "validation": {
+          "valid": true,
+          "errors": []
+        }
+      },
+      "progressSummary": {
+        "currentScore": 120,
+        "bestScore": 120,
+        "activeStage": "greedy",
+        "reuseSource": null,
+        "elapsedTimeSeconds": 0.006,
+        "timeSinceImprovementSeconds": null,
+        "stopReason": null,
+        "exactGap": null,
+        "portfolioWorkerSummary": null
+      },
+      "timeToQuality": {
+        "finalElapsedMs": 6,
+        "finalScore": 120,
+        "bestScore": 120,
+        "firstFeasibleAtMs": 6,
+        "firstImprovementAtMs": 6,
+        "bestScoreAtMs": 6,
+        "improvementCount": 1,
+        "timeCheckpoints": [
+          {
+            "elapsedMs": 5000,
+            "bestScore": 120,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          },
+          {
+            "elapsedMs": 30000,
+            "bestScore": 120,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          },
+          {
+            "elapsedMs": 120000,
+            "bestScore": 120,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          }
+        ],
+        "qualityTargets": [
+          {
+            "ratio": 0.5,
+            "targetScore": 60,
+            "reachedAtMs": 6,
+            "reachedScore": 120
+          },
+          {
+            "ratio": 0.9,
+            "targetScore": 108,
+            "reachedAtMs": 6,
+            "reachedScore": 120
+          },
+          {
+            "ratio": 1,
+            "targetScore": 120,
+            "reachedAtMs": 6,
+            "reachedScore": 120
+          }
+        ]
+      },
+      "stages": [
+        {
+          "name": "greedy",
+          "eventCount": 1,
+          "startedAtSeconds": 0.006,
+          "completedAtSeconds": 0.006,
+          "elapsedSeconds": 0,
+          "firstFeasibleSeconds": 0.006,
+          "bestScoreSeconds": 0.006,
+          "finalScore": 120,
+          "status": "improved"
+        }
+      ],
+      "cpSat": null,
+      "lns": null,
+      "greedy": null
+    },
+    {
+      "runId": "planner-anchor-service:greedy:budget-120:seed-7",
+      "benchmarkName": "product-workflow",
+      "caseName": "planner-anchor-service",
+      "caseFamily": "anchor-service",
+      "optimizer": "greedy",
+      "mode": "greedy",
+      "seed": 7,
+      "budget": {
+        "wallClockSeconds": 120,
+        "observedWallClockSeconds": 0.007
+      },
+      "grid": {
+        "rows": 4,
+        "cols": 4,
+        "buildableCells": 16
+      },
+      "solverParams": {
+        "optimizer": "greedy",
+        "serviceTypes": [
+          {
+            "name": "Anchor Clinic",
+            "rows": 1,
+            "cols": 1,
+            "bonus": 20,
+            "range": 1,
+            "avail": 1
+          }
+        ],
+        "residentialTypes": [
+          {
+            "name": "Anchor Home",
+            "w": 1,
+            "h": 1,
+            "min": 10,
+            "max": 20,
+            "avail": 4
+          },
+          {
+            "name": "Block",
+            "w": 2,
+            "h": 2,
+            "min": 40,
+            "max": 80,
+            "avail": 3
+          }
+        ],
+        "availableBuildings": {
+          "services": 1,
+          "residentials": 2
+        },
+        "greedy": {
+          "restarts": 2,
+          "localSearch": true,
+          "timeLimitSeconds": 120,
+          "randomSeed": 7
+        }
+      },
+      "artifactPaths": [
+        "artifacts/telemetry-manifests/2026-05-17/product-workflow-telemetry-manifest.json",
+        "artifacts/product-workflows/2026-05-17/product-workflow-benchmark.json",
+        "artifacts/telemetry-manifests/2026-05-17/product-workflow-telemetry-manifest.json"
+      ],
+      "timings": {
+        "wallClockSeconds": 0.007,
+        "firstFeasibleSeconds": 0.007,
+        "bestScoreSeconds": 0.007
+      },
+      "final": {
+        "status": "valid",
+        "totalPopulation": 120,
+        "validation": {
+          "valid": true,
+          "errors": []
+        }
+      },
+      "progressSummary": {
+        "currentScore": 120,
+        "bestScore": 120,
+        "activeStage": "greedy",
+        "reuseSource": null,
+        "elapsedTimeSeconds": 0.007,
+        "timeSinceImprovementSeconds": null,
+        "stopReason": null,
+        "exactGap": null,
+        "portfolioWorkerSummary": null
+      },
+      "timeToQuality": {
+        "finalElapsedMs": 7,
+        "finalScore": 120,
+        "bestScore": 120,
+        "firstFeasibleAtMs": 7,
+        "firstImprovementAtMs": 7,
+        "bestScoreAtMs": 7,
+        "improvementCount": 1,
+        "timeCheckpoints": [
+          {
+            "elapsedMs": 5000,
+            "bestScore": 120,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          },
+          {
+            "elapsedMs": 30000,
+            "bestScore": 120,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          },
+          {
+            "elapsedMs": 120000,
+            "bestScore": 120,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          }
+        ],
+        "qualityTargets": [
+          {
+            "ratio": 0.5,
+            "targetScore": 60,
+            "reachedAtMs": 7,
+            "reachedScore": 120
+          },
+          {
+            "ratio": 0.9,
+            "targetScore": 108,
+            "reachedAtMs": 7,
+            "reachedScore": 120
+          },
+          {
+            "ratio": 1,
+            "targetScore": 120,
+            "reachedAtMs": 7,
+            "reachedScore": 120
+          }
+        ]
+      },
+      "stages": [
+        {
+          "name": "greedy",
+          "eventCount": 1,
+          "startedAtSeconds": 0.007,
+          "completedAtSeconds": 0.007,
+          "elapsedSeconds": 0,
+          "firstFeasibleSeconds": 0.007,
+          "bestScoreSeconds": 0.007,
+          "finalScore": 120,
+          "status": "improved"
+        }
+      ],
+      "cpSat": null,
+      "lns": null,
+      "greedy": null
+    },
+    {
+      "runId": "planner-multi-anchor-islands:greedy:budget-1:seed-7",
+      "benchmarkName": "product-workflow",
+      "caseName": "planner-multi-anchor-islands",
+      "caseFamily": "multi-anchor",
+      "optimizer": "greedy",
+      "mode": "greedy",
+      "seed": 7,
+      "budget": {
+        "wallClockSeconds": 1,
+        "observedWallClockSeconds": 0.001
+      },
+      "grid": {
+        "rows": 4,
+        "cols": 6,
+        "buildableCells": 12
+      },
+      "solverParams": {
+        "optimizer": "greedy",
+        "residentialTypes": [
+          {
+            "name": "Island Block",
+            "w": 2,
+            "h": 2,
+            "min": 40,
+            "max": 80,
+            "avail": 2
+          },
+          {
+            "name": "Island Studio",
+            "w": 1,
+            "h": 1,
+            "min": 10,
+            "max": 20,
+            "avail": 2
+          }
+        ],
+        "availableBuildings": {
+          "services": 0,
+          "residentials": 2
+        },
+        "greedy": {
+          "restarts": 2,
+          "localSearch": true,
+          "allowIndependentRoadAnchorComponents": true,
+          "timeLimitSeconds": 1,
+          "randomSeed": 7
+        }
+      },
+      "artifactPaths": [
+        "artifacts/telemetry-manifests/2026-05-17/product-workflow-telemetry-manifest.json",
+        "artifacts/product-workflows/2026-05-17/product-workflow-benchmark.json",
+        "artifacts/telemetry-manifests/2026-05-17/product-workflow-telemetry-manifest.json"
+      ],
+      "timings": {
+        "wallClockSeconds": 0.001,
+        "firstFeasibleSeconds": 0.001,
+        "bestScoreSeconds": 0.001
+      },
+      "final": {
+        "status": "valid",
+        "totalPopulation": 80,
+        "validation": {
+          "valid": true,
+          "errors": []
+        }
+      },
+      "progressSummary": {
+        "currentScore": 80,
+        "bestScore": 80,
+        "activeStage": "greedy",
+        "reuseSource": null,
+        "elapsedTimeSeconds": 0.001,
+        "timeSinceImprovementSeconds": null,
+        "stopReason": null,
+        "exactGap": null,
+        "portfolioWorkerSummary": null
+      },
+      "timeToQuality": {
+        "finalElapsedMs": 1,
+        "finalScore": 80,
+        "bestScore": 80,
+        "firstFeasibleAtMs": 1,
+        "firstImprovementAtMs": 1,
+        "bestScoreAtMs": 1,
+        "improvementCount": 1,
+        "timeCheckpoints": [
+          {
+            "elapsedMs": 5000,
+            "bestScore": 80,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          },
+          {
+            "elapsedMs": 30000,
+            "bestScore": 80,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          },
+          {
+            "elapsedMs": 120000,
+            "bestScore": 80,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          }
+        ],
+        "qualityTargets": [
+          {
+            "ratio": 0.5,
+            "targetScore": 40,
+            "reachedAtMs": 1,
+            "reachedScore": 80
+          },
+          {
+            "ratio": 0.9,
+            "targetScore": 72,
+            "reachedAtMs": 1,
+            "reachedScore": 80
+          },
+          {
+            "ratio": 1,
+            "targetScore": 80,
+            "reachedAtMs": 1,
+            "reachedScore": 80
+          }
+        ]
+      },
+      "stages": [
+        {
+          "name": "greedy",
+          "eventCount": 1,
+          "startedAtSeconds": 0.001,
+          "completedAtSeconds": 0.001,
+          "elapsedSeconds": 0,
+          "firstFeasibleSeconds": 0.001,
+          "bestScoreSeconds": 0.001,
+          "finalScore": 80,
+          "status": "improved"
+        }
+      ],
+      "cpSat": null,
+      "lns": null,
+      "greedy": null
+    },
+    {
+      "runId": "planner-multi-anchor-islands:greedy:budget-5:seed-7",
+      "benchmarkName": "product-workflow",
+      "caseName": "planner-multi-anchor-islands",
+      "caseFamily": "multi-anchor",
+      "optimizer": "greedy",
+      "mode": "greedy",
+      "seed": 7,
+      "budget": {
+        "wallClockSeconds": 5,
+        "observedWallClockSeconds": 0
+      },
+      "grid": {
+        "rows": 4,
+        "cols": 6,
+        "buildableCells": 12
+      },
+      "solverParams": {
+        "optimizer": "greedy",
+        "residentialTypes": [
+          {
+            "name": "Island Block",
+            "w": 2,
+            "h": 2,
+            "min": 40,
+            "max": 80,
+            "avail": 2
+          },
+          {
+            "name": "Island Studio",
+            "w": 1,
+            "h": 1,
+            "min": 10,
+            "max": 20,
+            "avail": 2
+          }
+        ],
+        "availableBuildings": {
+          "services": 0,
+          "residentials": 2
+        },
+        "greedy": {
+          "restarts": 2,
+          "localSearch": true,
+          "allowIndependentRoadAnchorComponents": true,
+          "timeLimitSeconds": 5,
+          "randomSeed": 7
+        }
+      },
+      "artifactPaths": [
+        "artifacts/telemetry-manifests/2026-05-17/product-workflow-telemetry-manifest.json",
+        "artifacts/product-workflows/2026-05-17/product-workflow-benchmark.json",
+        "artifacts/telemetry-manifests/2026-05-17/product-workflow-telemetry-manifest.json"
+      ],
+      "timings": {
+        "wallClockSeconds": 0,
+        "firstFeasibleSeconds": 0,
+        "bestScoreSeconds": 0
+      },
+      "final": {
+        "status": "valid",
+        "totalPopulation": 80,
+        "validation": {
+          "valid": true,
+          "errors": []
+        }
+      },
+      "progressSummary": {
+        "currentScore": 80,
+        "bestScore": 80,
+        "activeStage": "greedy",
+        "reuseSource": null,
+        "elapsedTimeSeconds": 0,
+        "timeSinceImprovementSeconds": null,
+        "stopReason": null,
+        "exactGap": null,
+        "portfolioWorkerSummary": null
+      },
+      "timeToQuality": {
+        "finalElapsedMs": 0,
+        "finalScore": 80,
+        "bestScore": 80,
+        "firstFeasibleAtMs": 0,
+        "firstImprovementAtMs": 0,
+        "bestScoreAtMs": 0,
+        "improvementCount": 1,
+        "timeCheckpoints": [
+          {
+            "elapsedMs": 5000,
+            "bestScore": 80,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          },
+          {
+            "elapsedMs": 30000,
+            "bestScore": 80,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          },
+          {
+            "elapsedMs": 120000,
+            "bestScore": 80,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          }
+        ],
+        "qualityTargets": [
+          {
+            "ratio": 0.5,
+            "targetScore": 40,
+            "reachedAtMs": 0,
+            "reachedScore": 80
+          },
+          {
+            "ratio": 0.9,
+            "targetScore": 72,
+            "reachedAtMs": 0,
+            "reachedScore": 80
+          },
+          {
+            "ratio": 1,
+            "targetScore": 80,
+            "reachedAtMs": 0,
+            "reachedScore": 80
+          }
+        ]
+      },
+      "stages": [
+        {
+          "name": "greedy",
+          "eventCount": 1,
+          "startedAtSeconds": 0,
+          "completedAtSeconds": 0,
+          "elapsedSeconds": 0,
+          "firstFeasibleSeconds": 0,
+          "bestScoreSeconds": 0,
+          "finalScore": 80,
+          "status": "improved"
+        }
+      ],
+      "cpSat": null,
+      "lns": null,
+      "greedy": null
+    },
+    {
+      "runId": "planner-multi-anchor-islands:greedy:budget-30:seed-7",
+      "benchmarkName": "product-workflow",
+      "caseName": "planner-multi-anchor-islands",
+      "caseFamily": "multi-anchor",
+      "optimizer": "greedy",
+      "mode": "greedy",
+      "seed": 7,
+      "budget": {
+        "wallClockSeconds": 30,
+        "observedWallClockSeconds": 0
+      },
+      "grid": {
+        "rows": 4,
+        "cols": 6,
+        "buildableCells": 12
+      },
+      "solverParams": {
+        "optimizer": "greedy",
+        "residentialTypes": [
+          {
+            "name": "Island Block",
+            "w": 2,
+            "h": 2,
+            "min": 40,
+            "max": 80,
+            "avail": 2
+          },
+          {
+            "name": "Island Studio",
+            "w": 1,
+            "h": 1,
+            "min": 10,
+            "max": 20,
+            "avail": 2
+          }
+        ],
+        "availableBuildings": {
+          "services": 0,
+          "residentials": 2
+        },
+        "greedy": {
+          "restarts": 2,
+          "localSearch": true,
+          "allowIndependentRoadAnchorComponents": true,
+          "timeLimitSeconds": 30,
+          "randomSeed": 7
+        }
+      },
+      "artifactPaths": [
+        "artifacts/telemetry-manifests/2026-05-17/product-workflow-telemetry-manifest.json",
+        "artifacts/product-workflows/2026-05-17/product-workflow-benchmark.json",
+        "artifacts/telemetry-manifests/2026-05-17/product-workflow-telemetry-manifest.json"
+      ],
+      "timings": {
+        "wallClockSeconds": 0,
+        "firstFeasibleSeconds": 0,
+        "bestScoreSeconds": 0
+      },
+      "final": {
+        "status": "valid",
+        "totalPopulation": 80,
+        "validation": {
+          "valid": true,
+          "errors": []
+        }
+      },
+      "progressSummary": {
+        "currentScore": 80,
+        "bestScore": 80,
+        "activeStage": "greedy",
+        "reuseSource": null,
+        "elapsedTimeSeconds": 0,
+        "timeSinceImprovementSeconds": null,
+        "stopReason": null,
+        "exactGap": null,
+        "portfolioWorkerSummary": null
+      },
+      "timeToQuality": {
+        "finalElapsedMs": 0,
+        "finalScore": 80,
+        "bestScore": 80,
+        "firstFeasibleAtMs": 0,
+        "firstImprovementAtMs": 0,
+        "bestScoreAtMs": 0,
+        "improvementCount": 1,
+        "timeCheckpoints": [
+          {
+            "elapsedMs": 5000,
+            "bestScore": 80,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          },
+          {
+            "elapsedMs": 30000,
+            "bestScore": 80,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          },
+          {
+            "elapsedMs": 120000,
+            "bestScore": 80,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          }
+        ],
+        "qualityTargets": [
+          {
+            "ratio": 0.5,
+            "targetScore": 40,
+            "reachedAtMs": 0,
+            "reachedScore": 80
+          },
+          {
+            "ratio": 0.9,
+            "targetScore": 72,
+            "reachedAtMs": 0,
+            "reachedScore": 80
+          },
+          {
+            "ratio": 1,
+            "targetScore": 80,
+            "reachedAtMs": 0,
+            "reachedScore": 80
+          }
+        ]
+      },
+      "stages": [
+        {
+          "name": "greedy",
+          "eventCount": 1,
+          "startedAtSeconds": 0,
+          "completedAtSeconds": 0,
+          "elapsedSeconds": 0,
+          "firstFeasibleSeconds": 0,
+          "bestScoreSeconds": 0,
+          "finalScore": 80,
+          "status": "improved"
+        }
+      ],
+      "cpSat": null,
+      "lns": null,
+      "greedy": null
+    },
+    {
+      "runId": "planner-multi-anchor-islands:greedy:budget-120:seed-7",
+      "benchmarkName": "product-workflow",
+      "caseName": "planner-multi-anchor-islands",
+      "caseFamily": "multi-anchor",
+      "optimizer": "greedy",
+      "mode": "greedy",
+      "seed": 7,
+      "budget": {
+        "wallClockSeconds": 120,
+        "observedWallClockSeconds": 0.001
+      },
+      "grid": {
+        "rows": 4,
+        "cols": 6,
+        "buildableCells": 12
+      },
+      "solverParams": {
+        "optimizer": "greedy",
+        "residentialTypes": [
+          {
+            "name": "Island Block",
+            "w": 2,
+            "h": 2,
+            "min": 40,
+            "max": 80,
+            "avail": 2
+          },
+          {
+            "name": "Island Studio",
+            "w": 1,
+            "h": 1,
+            "min": 10,
+            "max": 20,
+            "avail": 2
+          }
+        ],
+        "availableBuildings": {
+          "services": 0,
+          "residentials": 2
+        },
+        "greedy": {
+          "restarts": 2,
+          "localSearch": true,
+          "allowIndependentRoadAnchorComponents": true,
+          "timeLimitSeconds": 120,
+          "randomSeed": 7
+        }
+      },
+      "artifactPaths": [
+        "artifacts/telemetry-manifests/2026-05-17/product-workflow-telemetry-manifest.json",
+        "artifacts/product-workflows/2026-05-17/product-workflow-benchmark.json",
+        "artifacts/telemetry-manifests/2026-05-17/product-workflow-telemetry-manifest.json"
+      ],
+      "timings": {
+        "wallClockSeconds": 0.001,
+        "firstFeasibleSeconds": 0.001,
+        "bestScoreSeconds": 0.001
+      },
+      "final": {
+        "status": "valid",
+        "totalPopulation": 80,
+        "validation": {
+          "valid": true,
+          "errors": []
+        }
+      },
+      "progressSummary": {
+        "currentScore": 80,
+        "bestScore": 80,
+        "activeStage": "greedy",
+        "reuseSource": null,
+        "elapsedTimeSeconds": 0.001,
+        "timeSinceImprovementSeconds": null,
+        "stopReason": null,
+        "exactGap": null,
+        "portfolioWorkerSummary": null
+      },
+      "timeToQuality": {
+        "finalElapsedMs": 1,
+        "finalScore": 80,
+        "bestScore": 80,
+        "firstFeasibleAtMs": 1,
+        "firstImprovementAtMs": 1,
+        "bestScoreAtMs": 1,
+        "improvementCount": 1,
+        "timeCheckpoints": [
+          {
+            "elapsedMs": 5000,
+            "bestScore": 80,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          },
+          {
+            "elapsedMs": 30000,
+            "bestScore": 80,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          },
+          {
+            "elapsedMs": 120000,
+            "bestScore": 80,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          }
+        ],
+        "qualityTargets": [
+          {
+            "ratio": 0.5,
+            "targetScore": 40,
+            "reachedAtMs": 1,
+            "reachedScore": 80
+          },
+          {
+            "ratio": 0.9,
+            "targetScore": 72,
+            "reachedAtMs": 1,
+            "reachedScore": 80
+          },
+          {
+            "ratio": 1,
+            "targetScore": 80,
+            "reachedAtMs": 1,
+            "reachedScore": 80
+          }
+        ]
+      },
+      "stages": [
+        {
+          "name": "greedy",
+          "eventCount": 1,
+          "startedAtSeconds": 0.001,
+          "completedAtSeconds": 0.001,
+          "elapsedSeconds": 0,
+          "firstFeasibleSeconds": 0.001,
+          "bestScoreSeconds": 0.001,
+          "finalScore": 80,
+          "status": "improved"
+        }
+      ],
+      "cpSat": null,
+      "lns": null,
+      "greedy": null
+    },
+    {
+      "runId": "planner-rotated-rowhouse:greedy:budget-1:seed-7",
+      "benchmarkName": "product-workflow",
+      "caseName": "planner-rotated-rowhouse",
+      "caseFamily": "footprint-pressure",
+      "optimizer": "greedy",
+      "mode": "greedy",
+      "seed": 7,
+      "budget": {
+        "wallClockSeconds": 1,
+        "observedWallClockSeconds": 0.05
+      },
+      "grid": {
+        "rows": 5,
+        "cols": 7,
+        "buildableCells": 34
+      },
+      "solverParams": {
+        "optimizer": "greedy",
+        "serviceTypes": [
+          {
+            "name": "Linear Market",
+            "rows": 1,
+            "cols": 2,
+            "bonus": 25,
+            "range": 1,
+            "avail": 1
+          }
+        ],
+        "residentialTypes": [
+          {
+            "name": "Rowhouse",
+            "w": 3,
+            "h": 1,
+            "min": 35,
+            "max": 65,
+            "avail": 2
+          },
+          {
+            "name": "Pocket Courtyard",
+            "w": 2,
+            "h": 2,
+            "min": 55,
+            "max": 95,
+            "avail": 1
+          }
+        ],
+        "availableBuildings": {
+          "services": 1,
+          "residentials": 2
+        },
+        "greedy": {
+          "restarts": 2,
+          "localSearch": true,
+          "timeLimitSeconds": 1,
+          "randomSeed": 7
+        }
+      },
+      "artifactPaths": [
+        "artifacts/telemetry-manifests/2026-05-17/product-workflow-telemetry-manifest.json",
+        "artifacts/product-workflows/2026-05-17/product-workflow-benchmark.json",
+        "artifacts/telemetry-manifests/2026-05-17/product-workflow-telemetry-manifest.json"
+      ],
+      "timings": {
+        "wallClockSeconds": 0.05,
+        "firstFeasibleSeconds": 0.05,
+        "bestScoreSeconds": 0.05
+      },
+      "final": {
+        "status": "valid",
+        "totalPopulation": 140,
+        "validation": {
+          "valid": true,
+          "errors": []
+        }
+      },
+      "progressSummary": {
+        "currentScore": 140,
+        "bestScore": 140,
+        "activeStage": "greedy",
+        "reuseSource": null,
+        "elapsedTimeSeconds": 0.05,
+        "timeSinceImprovementSeconds": null,
+        "stopReason": null,
+        "exactGap": null,
+        "portfolioWorkerSummary": null
+      },
+      "timeToQuality": {
+        "finalElapsedMs": 50,
+        "finalScore": 140,
+        "bestScore": 140,
+        "firstFeasibleAtMs": 50,
+        "firstImprovementAtMs": 50,
+        "bestScoreAtMs": 50,
+        "improvementCount": 1,
+        "timeCheckpoints": [
+          {
+            "elapsedMs": 5000,
+            "bestScore": 140,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          },
+          {
+            "elapsedMs": 30000,
+            "bestScore": 140,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          },
+          {
+            "elapsedMs": 120000,
+            "bestScore": 140,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          }
+        ],
+        "qualityTargets": [
+          {
+            "ratio": 0.5,
+            "targetScore": 70,
+            "reachedAtMs": 50,
+            "reachedScore": 140
+          },
+          {
+            "ratio": 0.9,
+            "targetScore": 126,
+            "reachedAtMs": 50,
+            "reachedScore": 140
+          },
+          {
+            "ratio": 1,
+            "targetScore": 140,
+            "reachedAtMs": 50,
+            "reachedScore": 140
+          }
+        ]
+      },
+      "stages": [
+        {
+          "name": "greedy",
+          "eventCount": 1,
+          "startedAtSeconds": 0.05,
+          "completedAtSeconds": 0.05,
+          "elapsedSeconds": 0,
+          "firstFeasibleSeconds": 0.05,
+          "bestScoreSeconds": 0.05,
+          "finalScore": 140,
+          "status": "improved"
+        }
+      ],
+      "cpSat": null,
+      "lns": null,
+      "greedy": null
+    },
+    {
+      "runId": "planner-rotated-rowhouse:greedy:budget-5:seed-7",
+      "benchmarkName": "product-workflow",
+      "caseName": "planner-rotated-rowhouse",
+      "caseFamily": "footprint-pressure",
+      "optimizer": "greedy",
+      "mode": "greedy",
+      "seed": 7,
+      "budget": {
+        "wallClockSeconds": 5,
+        "observedWallClockSeconds": 0.046
+      },
+      "grid": {
+        "rows": 5,
+        "cols": 7,
+        "buildableCells": 34
+      },
+      "solverParams": {
+        "optimizer": "greedy",
+        "serviceTypes": [
+          {
+            "name": "Linear Market",
+            "rows": 1,
+            "cols": 2,
+            "bonus": 25,
+            "range": 1,
+            "avail": 1
+          }
+        ],
+        "residentialTypes": [
+          {
+            "name": "Rowhouse",
+            "w": 3,
+            "h": 1,
+            "min": 35,
+            "max": 65,
+            "avail": 2
+          },
+          {
+            "name": "Pocket Courtyard",
+            "w": 2,
+            "h": 2,
+            "min": 55,
+            "max": 95,
+            "avail": 1
+          }
+        ],
+        "availableBuildings": {
+          "services": 1,
+          "residentials": 2
+        },
+        "greedy": {
+          "restarts": 2,
+          "localSearch": true,
+          "timeLimitSeconds": 5,
+          "randomSeed": 7
+        }
+      },
+      "artifactPaths": [
+        "artifacts/telemetry-manifests/2026-05-17/product-workflow-telemetry-manifest.json",
+        "artifacts/product-workflows/2026-05-17/product-workflow-benchmark.json",
+        "artifacts/telemetry-manifests/2026-05-17/product-workflow-telemetry-manifest.json"
+      ],
+      "timings": {
+        "wallClockSeconds": 0.046,
+        "firstFeasibleSeconds": 0.046,
+        "bestScoreSeconds": 0.046
+      },
+      "final": {
+        "status": "valid",
+        "totalPopulation": 140,
+        "validation": {
+          "valid": true,
+          "errors": []
+        }
+      },
+      "progressSummary": {
+        "currentScore": 140,
+        "bestScore": 140,
+        "activeStage": "greedy",
+        "reuseSource": null,
+        "elapsedTimeSeconds": 0.046,
+        "timeSinceImprovementSeconds": null,
+        "stopReason": null,
+        "exactGap": null,
+        "portfolioWorkerSummary": null
+      },
+      "timeToQuality": {
+        "finalElapsedMs": 46,
+        "finalScore": 140,
+        "bestScore": 140,
+        "firstFeasibleAtMs": 46,
+        "firstImprovementAtMs": 46,
+        "bestScoreAtMs": 46,
+        "improvementCount": 1,
+        "timeCheckpoints": [
+          {
+            "elapsedMs": 5000,
+            "bestScore": 140,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          },
+          {
+            "elapsedMs": 30000,
+            "bestScore": 140,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          },
+          {
+            "elapsedMs": 120000,
+            "bestScore": 140,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          }
+        ],
+        "qualityTargets": [
+          {
+            "ratio": 0.5,
+            "targetScore": 70,
+            "reachedAtMs": 46,
+            "reachedScore": 140
+          },
+          {
+            "ratio": 0.9,
+            "targetScore": 126,
+            "reachedAtMs": 46,
+            "reachedScore": 140
+          },
+          {
+            "ratio": 1,
+            "targetScore": 140,
+            "reachedAtMs": 46,
+            "reachedScore": 140
+          }
+        ]
+      },
+      "stages": [
+        {
+          "name": "greedy",
+          "eventCount": 1,
+          "startedAtSeconds": 0.046,
+          "completedAtSeconds": 0.046,
+          "elapsedSeconds": 0,
+          "firstFeasibleSeconds": 0.046,
+          "bestScoreSeconds": 0.046,
+          "finalScore": 140,
+          "status": "improved"
+        }
+      ],
+      "cpSat": null,
+      "lns": null,
+      "greedy": null
+    },
+    {
+      "runId": "planner-rotated-rowhouse:greedy:budget-30:seed-7",
+      "benchmarkName": "product-workflow",
+      "caseName": "planner-rotated-rowhouse",
+      "caseFamily": "footprint-pressure",
+      "optimizer": "greedy",
+      "mode": "greedy",
+      "seed": 7,
+      "budget": {
+        "wallClockSeconds": 30,
+        "observedWallClockSeconds": 0.046
+      },
+      "grid": {
+        "rows": 5,
+        "cols": 7,
+        "buildableCells": 34
+      },
+      "solverParams": {
+        "optimizer": "greedy",
+        "serviceTypes": [
+          {
+            "name": "Linear Market",
+            "rows": 1,
+            "cols": 2,
+            "bonus": 25,
+            "range": 1,
+            "avail": 1
+          }
+        ],
+        "residentialTypes": [
+          {
+            "name": "Rowhouse",
+            "w": 3,
+            "h": 1,
+            "min": 35,
+            "max": 65,
+            "avail": 2
+          },
+          {
+            "name": "Pocket Courtyard",
+            "w": 2,
+            "h": 2,
+            "min": 55,
+            "max": 95,
+            "avail": 1
+          }
+        ],
+        "availableBuildings": {
+          "services": 1,
+          "residentials": 2
+        },
+        "greedy": {
+          "restarts": 2,
+          "localSearch": true,
+          "timeLimitSeconds": 30,
+          "randomSeed": 7
+        }
+      },
+      "artifactPaths": [
+        "artifacts/telemetry-manifests/2026-05-17/product-workflow-telemetry-manifest.json",
+        "artifacts/product-workflows/2026-05-17/product-workflow-benchmark.json",
+        "artifacts/telemetry-manifests/2026-05-17/product-workflow-telemetry-manifest.json"
+      ],
+      "timings": {
+        "wallClockSeconds": 0.046,
+        "firstFeasibleSeconds": 0.046,
+        "bestScoreSeconds": 0.046
+      },
+      "final": {
+        "status": "valid",
+        "totalPopulation": 140,
+        "validation": {
+          "valid": true,
+          "errors": []
+        }
+      },
+      "progressSummary": {
+        "currentScore": 140,
+        "bestScore": 140,
+        "activeStage": "greedy",
+        "reuseSource": null,
+        "elapsedTimeSeconds": 0.046,
+        "timeSinceImprovementSeconds": null,
+        "stopReason": null,
+        "exactGap": null,
+        "portfolioWorkerSummary": null
+      },
+      "timeToQuality": {
+        "finalElapsedMs": 46,
+        "finalScore": 140,
+        "bestScore": 140,
+        "firstFeasibleAtMs": 46,
+        "firstImprovementAtMs": 46,
+        "bestScoreAtMs": 46,
+        "improvementCount": 1,
+        "timeCheckpoints": [
+          {
+            "elapsedMs": 5000,
+            "bestScore": 140,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          },
+          {
+            "elapsedMs": 30000,
+            "bestScore": 140,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          },
+          {
+            "elapsedMs": 120000,
+            "bestScore": 140,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          }
+        ],
+        "qualityTargets": [
+          {
+            "ratio": 0.5,
+            "targetScore": 70,
+            "reachedAtMs": 46,
+            "reachedScore": 140
+          },
+          {
+            "ratio": 0.9,
+            "targetScore": 126,
+            "reachedAtMs": 46,
+            "reachedScore": 140
+          },
+          {
+            "ratio": 1,
+            "targetScore": 140,
+            "reachedAtMs": 46,
+            "reachedScore": 140
+          }
+        ]
+      },
+      "stages": [
+        {
+          "name": "greedy",
+          "eventCount": 1,
+          "startedAtSeconds": 0.046,
+          "completedAtSeconds": 0.046,
+          "elapsedSeconds": 0,
+          "firstFeasibleSeconds": 0.046,
+          "bestScoreSeconds": 0.046,
+          "finalScore": 140,
+          "status": "improved"
+        }
+      ],
+      "cpSat": null,
+      "lns": null,
+      "greedy": null
+    },
+    {
+      "runId": "planner-rotated-rowhouse:greedy:budget-120:seed-7",
+      "benchmarkName": "product-workflow",
+      "caseName": "planner-rotated-rowhouse",
+      "caseFamily": "footprint-pressure",
+      "optimizer": "greedy",
+      "mode": "greedy",
+      "seed": 7,
+      "budget": {
+        "wallClockSeconds": 120,
+        "observedWallClockSeconds": 0.047
+      },
+      "grid": {
+        "rows": 5,
+        "cols": 7,
+        "buildableCells": 34
+      },
+      "solverParams": {
+        "optimizer": "greedy",
+        "serviceTypes": [
+          {
+            "name": "Linear Market",
+            "rows": 1,
+            "cols": 2,
+            "bonus": 25,
+            "range": 1,
+            "avail": 1
+          }
+        ],
+        "residentialTypes": [
+          {
+            "name": "Rowhouse",
+            "w": 3,
+            "h": 1,
+            "min": 35,
+            "max": 65,
+            "avail": 2
+          },
+          {
+            "name": "Pocket Courtyard",
+            "w": 2,
+            "h": 2,
+            "min": 55,
+            "max": 95,
+            "avail": 1
+          }
+        ],
+        "availableBuildings": {
+          "services": 1,
+          "residentials": 2
+        },
+        "greedy": {
+          "restarts": 2,
+          "localSearch": true,
+          "timeLimitSeconds": 120,
+          "randomSeed": 7
+        }
+      },
+      "artifactPaths": [
+        "artifacts/telemetry-manifests/2026-05-17/product-workflow-telemetry-manifest.json",
+        "artifacts/product-workflows/2026-05-17/product-workflow-benchmark.json",
+        "artifacts/telemetry-manifests/2026-05-17/product-workflow-telemetry-manifest.json"
+      ],
+      "timings": {
+        "wallClockSeconds": 0.047,
+        "firstFeasibleSeconds": 0.047,
+        "bestScoreSeconds": 0.047
+      },
+      "final": {
+        "status": "valid",
+        "totalPopulation": 140,
+        "validation": {
+          "valid": true,
+          "errors": []
+        }
+      },
+      "progressSummary": {
+        "currentScore": 140,
+        "bestScore": 140,
+        "activeStage": "greedy",
+        "reuseSource": null,
+        "elapsedTimeSeconds": 0.047,
+        "timeSinceImprovementSeconds": null,
+        "stopReason": null,
+        "exactGap": null,
+        "portfolioWorkerSummary": null
+      },
+      "timeToQuality": {
+        "finalElapsedMs": 47,
+        "finalScore": 140,
+        "bestScore": 140,
+        "firstFeasibleAtMs": 47,
+        "firstImprovementAtMs": 47,
+        "bestScoreAtMs": 47,
+        "improvementCount": 1,
+        "timeCheckpoints": [
+          {
+            "elapsedMs": 5000,
+            "bestScore": 140,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          },
+          {
+            "elapsedMs": 30000,
+            "bestScore": 140,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          },
+          {
+            "elapsedMs": 120000,
+            "bestScore": 140,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          }
+        ],
+        "qualityTargets": [
+          {
+            "ratio": 0.5,
+            "targetScore": 70,
+            "reachedAtMs": 47,
+            "reachedScore": 140
+          },
+          {
+            "ratio": 0.9,
+            "targetScore": 126,
+            "reachedAtMs": 47,
+            "reachedScore": 140
+          },
+          {
+            "ratio": 1,
+            "targetScore": 140,
+            "reachedAtMs": 47,
+            "reachedScore": 140
+          }
+        ]
+      },
+      "stages": [
+        {
+          "name": "greedy",
+          "eventCount": 1,
+          "startedAtSeconds": 0.047,
+          "completedAtSeconds": 0.047,
+          "elapsedSeconds": 0,
+          "firstFeasibleSeconds": 0.047,
+          "bestScoreSeconds": 0.047,
+          "finalScore": 140,
+          "status": "improved"
+        }
+      ],
+      "cpSat": null,
+      "lns": null,
+      "greedy": null
+    },
+    {
+      "runId": "planner-gate-service-tradeoff:greedy:budget-1:seed-7",
+      "benchmarkName": "product-workflow",
+      "caseName": "planner-gate-service-tradeoff",
+      "caseFamily": "gate",
+      "optimizer": "greedy",
+      "mode": "greedy",
+      "seed": 7,
+      "budget": {
+        "wallClockSeconds": 1,
+        "observedWallClockSeconds": 0.139
+      },
+      "grid": {
+        "rows": 6,
+        "cols": 7,
+        "buildableCells": 38
+      },
+      "solverParams": {
+        "optimizer": "greedy",
+        "serviceTypes": [
+          {
+            "name": "Gate Clinic",
+            "rows": 1,
+            "cols": 1,
+            "bonus": 20,
+            "range": 1,
+            "avail": 1
+          },
+          {
+            "name": "Gate Depot",
+            "rows": 1,
+            "cols": 1,
+            "bonus": 30,
+            "range": 1,
+            "avail": 1
+          }
+        ],
+        "residentialTypes": [
+          {
+            "name": "Gate Block",
+            "w": 2,
+            "h": 2,
+            "min": 50,
+            "max": 100,
+            "avail": 2
+          },
+          {
+            "name": "Gate Studio",
+            "w": 1,
+            "h": 1,
+            "min": 15,
+            "max": 35,
+            "avail": 2
+          }
+        ],
+        "availableBuildings": {
+          "services": 2,
+          "residentials": 2
+        },
+        "greedy": {
+          "restarts": 2,
+          "localSearch": true,
+          "timeLimitSeconds": 1,
+          "randomSeed": 7
+        }
+      },
+      "artifactPaths": [
+        "artifacts/telemetry-manifests/2026-05-17/product-workflow-telemetry-manifest.json",
+        "artifacts/product-workflows/2026-05-17/product-workflow-benchmark.json",
+        "artifacts/telemetry-manifests/2026-05-17/product-workflow-telemetry-manifest.json"
+      ],
+      "timings": {
+        "wallClockSeconds": 0.139,
+        "firstFeasibleSeconds": 0.139,
+        "bestScoreSeconds": 0.139
+      },
+      "final": {
+        "status": "valid",
+        "totalPopulation": 200,
+        "validation": {
+          "valid": true,
+          "errors": []
+        }
+      },
+      "progressSummary": {
+        "currentScore": 200,
+        "bestScore": 200,
+        "activeStage": "greedy",
+        "reuseSource": null,
+        "elapsedTimeSeconds": 0.139,
+        "timeSinceImprovementSeconds": null,
+        "stopReason": null,
+        "exactGap": null,
+        "portfolioWorkerSummary": null
+      },
+      "timeToQuality": {
+        "finalElapsedMs": 139,
+        "finalScore": 200,
+        "bestScore": 200,
+        "firstFeasibleAtMs": 139,
+        "firstImprovementAtMs": 139,
+        "bestScoreAtMs": 139,
+        "improvementCount": 1,
+        "timeCheckpoints": [
+          {
+            "elapsedMs": 5000,
+            "bestScore": 200,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          },
+          {
+            "elapsedMs": 30000,
+            "bestScore": 200,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          },
+          {
+            "elapsedMs": 120000,
+            "bestScore": 200,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          }
+        ],
+        "qualityTargets": [
+          {
+            "ratio": 0.5,
+            "targetScore": 100,
+            "reachedAtMs": 139,
+            "reachedScore": 200
+          },
+          {
+            "ratio": 0.9,
+            "targetScore": 180,
+            "reachedAtMs": 139,
+            "reachedScore": 200
+          },
+          {
+            "ratio": 1,
+            "targetScore": 200,
+            "reachedAtMs": 139,
+            "reachedScore": 200
+          }
+        ]
+      },
+      "stages": [
+        {
+          "name": "greedy",
+          "eventCount": 1,
+          "startedAtSeconds": 0.139,
+          "completedAtSeconds": 0.139,
+          "elapsedSeconds": 0,
+          "firstFeasibleSeconds": 0.139,
+          "bestScoreSeconds": 0.139,
+          "finalScore": 200,
+          "status": "improved"
+        }
+      ],
+      "cpSat": null,
+      "lns": null,
+      "greedy": null
+    },
+    {
+      "runId": "planner-gate-service-tradeoff:greedy:budget-5:seed-7",
+      "benchmarkName": "product-workflow",
+      "caseName": "planner-gate-service-tradeoff",
+      "caseFamily": "gate",
+      "optimizer": "greedy",
+      "mode": "greedy",
+      "seed": 7,
+      "budget": {
+        "wallClockSeconds": 5,
+        "observedWallClockSeconds": 0.145
+      },
+      "grid": {
+        "rows": 6,
+        "cols": 7,
+        "buildableCells": 38
+      },
+      "solverParams": {
+        "optimizer": "greedy",
+        "serviceTypes": [
+          {
+            "name": "Gate Clinic",
+            "rows": 1,
+            "cols": 1,
+            "bonus": 20,
+            "range": 1,
+            "avail": 1
+          },
+          {
+            "name": "Gate Depot",
+            "rows": 1,
+            "cols": 1,
+            "bonus": 30,
+            "range": 1,
+            "avail": 1
+          }
+        ],
+        "residentialTypes": [
+          {
+            "name": "Gate Block",
+            "w": 2,
+            "h": 2,
+            "min": 50,
+            "max": 100,
+            "avail": 2
+          },
+          {
+            "name": "Gate Studio",
+            "w": 1,
+            "h": 1,
+            "min": 15,
+            "max": 35,
+            "avail": 2
+          }
+        ],
+        "availableBuildings": {
+          "services": 2,
+          "residentials": 2
+        },
+        "greedy": {
+          "restarts": 2,
+          "localSearch": true,
+          "timeLimitSeconds": 5,
+          "randomSeed": 7
+        }
+      },
+      "artifactPaths": [
+        "artifacts/telemetry-manifests/2026-05-17/product-workflow-telemetry-manifest.json",
+        "artifacts/product-workflows/2026-05-17/product-workflow-benchmark.json",
+        "artifacts/telemetry-manifests/2026-05-17/product-workflow-telemetry-manifest.json"
+      ],
+      "timings": {
+        "wallClockSeconds": 0.145,
+        "firstFeasibleSeconds": 0.145,
+        "bestScoreSeconds": 0.145
+      },
+      "final": {
+        "status": "valid",
+        "totalPopulation": 200,
+        "validation": {
+          "valid": true,
+          "errors": []
+        }
+      },
+      "progressSummary": {
+        "currentScore": 200,
+        "bestScore": 200,
+        "activeStage": "greedy",
+        "reuseSource": null,
+        "elapsedTimeSeconds": 0.145,
+        "timeSinceImprovementSeconds": null,
+        "stopReason": null,
+        "exactGap": null,
+        "portfolioWorkerSummary": null
+      },
+      "timeToQuality": {
+        "finalElapsedMs": 145,
+        "finalScore": 200,
+        "bestScore": 200,
+        "firstFeasibleAtMs": 145,
+        "firstImprovementAtMs": 145,
+        "bestScoreAtMs": 145,
+        "improvementCount": 1,
+        "timeCheckpoints": [
+          {
+            "elapsedMs": 5000,
+            "bestScore": 200,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          },
+          {
+            "elapsedMs": 30000,
+            "bestScore": 200,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          },
+          {
+            "elapsedMs": 120000,
+            "bestScore": 200,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          }
+        ],
+        "qualityTargets": [
+          {
+            "ratio": 0.5,
+            "targetScore": 100,
+            "reachedAtMs": 145,
+            "reachedScore": 200
+          },
+          {
+            "ratio": 0.9,
+            "targetScore": 180,
+            "reachedAtMs": 145,
+            "reachedScore": 200
+          },
+          {
+            "ratio": 1,
+            "targetScore": 200,
+            "reachedAtMs": 145,
+            "reachedScore": 200
+          }
+        ]
+      },
+      "stages": [
+        {
+          "name": "greedy",
+          "eventCount": 1,
+          "startedAtSeconds": 0.145,
+          "completedAtSeconds": 0.145,
+          "elapsedSeconds": 0,
+          "firstFeasibleSeconds": 0.145,
+          "bestScoreSeconds": 0.145,
+          "finalScore": 200,
+          "status": "improved"
+        }
+      ],
+      "cpSat": null,
+      "lns": null,
+      "greedy": null
+    },
+    {
+      "runId": "planner-gate-service-tradeoff:greedy:budget-30:seed-7",
+      "benchmarkName": "product-workflow",
+      "caseName": "planner-gate-service-tradeoff",
+      "caseFamily": "gate",
+      "optimizer": "greedy",
+      "mode": "greedy",
+      "seed": 7,
+      "budget": {
+        "wallClockSeconds": 30,
+        "observedWallClockSeconds": 0.138
+      },
+      "grid": {
+        "rows": 6,
+        "cols": 7,
+        "buildableCells": 38
+      },
+      "solverParams": {
+        "optimizer": "greedy",
+        "serviceTypes": [
+          {
+            "name": "Gate Clinic",
+            "rows": 1,
+            "cols": 1,
+            "bonus": 20,
+            "range": 1,
+            "avail": 1
+          },
+          {
+            "name": "Gate Depot",
+            "rows": 1,
+            "cols": 1,
+            "bonus": 30,
+            "range": 1,
+            "avail": 1
+          }
+        ],
+        "residentialTypes": [
+          {
+            "name": "Gate Block",
+            "w": 2,
+            "h": 2,
+            "min": 50,
+            "max": 100,
+            "avail": 2
+          },
+          {
+            "name": "Gate Studio",
+            "w": 1,
+            "h": 1,
+            "min": 15,
+            "max": 35,
+            "avail": 2
+          }
+        ],
+        "availableBuildings": {
+          "services": 2,
+          "residentials": 2
+        },
+        "greedy": {
+          "restarts": 2,
+          "localSearch": true,
+          "timeLimitSeconds": 30,
+          "randomSeed": 7
+        }
+      },
+      "artifactPaths": [
+        "artifacts/telemetry-manifests/2026-05-17/product-workflow-telemetry-manifest.json",
+        "artifacts/product-workflows/2026-05-17/product-workflow-benchmark.json",
+        "artifacts/telemetry-manifests/2026-05-17/product-workflow-telemetry-manifest.json"
+      ],
+      "timings": {
+        "wallClockSeconds": 0.138,
+        "firstFeasibleSeconds": 0.138,
+        "bestScoreSeconds": 0.138
+      },
+      "final": {
+        "status": "valid",
+        "totalPopulation": 200,
+        "validation": {
+          "valid": true,
+          "errors": []
+        }
+      },
+      "progressSummary": {
+        "currentScore": 200,
+        "bestScore": 200,
+        "activeStage": "greedy",
+        "reuseSource": null,
+        "elapsedTimeSeconds": 0.138,
+        "timeSinceImprovementSeconds": null,
+        "stopReason": null,
+        "exactGap": null,
+        "portfolioWorkerSummary": null
+      },
+      "timeToQuality": {
+        "finalElapsedMs": 138,
+        "finalScore": 200,
+        "bestScore": 200,
+        "firstFeasibleAtMs": 138,
+        "firstImprovementAtMs": 138,
+        "bestScoreAtMs": 138,
+        "improvementCount": 1,
+        "timeCheckpoints": [
+          {
+            "elapsedMs": 5000,
+            "bestScore": 200,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          },
+          {
+            "elapsedMs": 30000,
+            "bestScore": 200,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          },
+          {
+            "elapsedMs": 120000,
+            "bestScore": 200,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          }
+        ],
+        "qualityTargets": [
+          {
+            "ratio": 0.5,
+            "targetScore": 100,
+            "reachedAtMs": 138,
+            "reachedScore": 200
+          },
+          {
+            "ratio": 0.9,
+            "targetScore": 180,
+            "reachedAtMs": 138,
+            "reachedScore": 200
+          },
+          {
+            "ratio": 1,
+            "targetScore": 200,
+            "reachedAtMs": 138,
+            "reachedScore": 200
+          }
+        ]
+      },
+      "stages": [
+        {
+          "name": "greedy",
+          "eventCount": 1,
+          "startedAtSeconds": 0.138,
+          "completedAtSeconds": 0.138,
+          "elapsedSeconds": 0,
+          "firstFeasibleSeconds": 0.138,
+          "bestScoreSeconds": 0.138,
+          "finalScore": 200,
+          "status": "improved"
+        }
+      ],
+      "cpSat": null,
+      "lns": null,
+      "greedy": null
+    },
+    {
+      "runId": "planner-gate-service-tradeoff:greedy:budget-120:seed-7",
+      "benchmarkName": "product-workflow",
+      "caseName": "planner-gate-service-tradeoff",
+      "caseFamily": "gate",
+      "optimizer": "greedy",
+      "mode": "greedy",
+      "seed": 7,
+      "budget": {
+        "wallClockSeconds": 120,
+        "observedWallClockSeconds": 0.142
+      },
+      "grid": {
+        "rows": 6,
+        "cols": 7,
+        "buildableCells": 38
+      },
+      "solverParams": {
+        "optimizer": "greedy",
+        "serviceTypes": [
+          {
+            "name": "Gate Clinic",
+            "rows": 1,
+            "cols": 1,
+            "bonus": 20,
+            "range": 1,
+            "avail": 1
+          },
+          {
+            "name": "Gate Depot",
+            "rows": 1,
+            "cols": 1,
+            "bonus": 30,
+            "range": 1,
+            "avail": 1
+          }
+        ],
+        "residentialTypes": [
+          {
+            "name": "Gate Block",
+            "w": 2,
+            "h": 2,
+            "min": 50,
+            "max": 100,
+            "avail": 2
+          },
+          {
+            "name": "Gate Studio",
+            "w": 1,
+            "h": 1,
+            "min": 15,
+            "max": 35,
+            "avail": 2
+          }
+        ],
+        "availableBuildings": {
+          "services": 2,
+          "residentials": 2
+        },
+        "greedy": {
+          "restarts": 2,
+          "localSearch": true,
+          "timeLimitSeconds": 120,
+          "randomSeed": 7
+        }
+      },
+      "artifactPaths": [
+        "artifacts/telemetry-manifests/2026-05-17/product-workflow-telemetry-manifest.json",
+        "artifacts/product-workflows/2026-05-17/product-workflow-benchmark.json",
+        "artifacts/telemetry-manifests/2026-05-17/product-workflow-telemetry-manifest.json"
+      ],
+      "timings": {
+        "wallClockSeconds": 0.142,
+        "firstFeasibleSeconds": 0.142,
+        "bestScoreSeconds": 0.142
+      },
+      "final": {
+        "status": "valid",
+        "totalPopulation": 200,
+        "validation": {
+          "valid": true,
+          "errors": []
+        }
+      },
+      "progressSummary": {
+        "currentScore": 200,
+        "bestScore": 200,
+        "activeStage": "greedy",
+        "reuseSource": null,
+        "elapsedTimeSeconds": 0.142,
+        "timeSinceImprovementSeconds": null,
+        "stopReason": null,
+        "exactGap": null,
+        "portfolioWorkerSummary": null
+      },
+      "timeToQuality": {
+        "finalElapsedMs": 142,
+        "finalScore": 200,
+        "bestScore": 200,
+        "firstFeasibleAtMs": 142,
+        "firstImprovementAtMs": 142,
+        "bestScoreAtMs": 142,
+        "improvementCount": 1,
+        "timeCheckpoints": [
+          {
+            "elapsedMs": 5000,
+            "bestScore": 200,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          },
+          {
+            "elapsedMs": 30000,
+            "bestScore": 200,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          },
+          {
+            "elapsedMs": 120000,
+            "bestScore": 200,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          }
+        ],
+        "qualityTargets": [
+          {
+            "ratio": 0.5,
+            "targetScore": 100,
+            "reachedAtMs": 142,
+            "reachedScore": 200
+          },
+          {
+            "ratio": 0.9,
+            "targetScore": 180,
+            "reachedAtMs": 142,
+            "reachedScore": 200
+          },
+          {
+            "ratio": 1,
+            "targetScore": 200,
+            "reachedAtMs": 142,
+            "reachedScore": 200
+          }
+        ]
+      },
+      "stages": [
+        {
+          "name": "greedy",
+          "eventCount": 1,
+          "startedAtSeconds": 0.142,
+          "completedAtSeconds": 0.142,
+          "elapsedSeconds": 0,
+          "firstFeasibleSeconds": 0.142,
+          "bestScoreSeconds": 0.142,
+          "finalScore": 200,
+          "status": "improved"
+        }
+      ],
+      "cpSat": null,
+      "lns": null,
+      "greedy": null
+    }
+  ],
+  "summaryMetrics": {
+    "validRunCount": 32,
+    "invalidRunCount": 0,
+    "optimizerCounts": {
+      "greedy": 32
+    },
+    "cpSatRunCount": 0,
+    "lnsRunCount": 0,
+    "manifestRunCount": 32
+  }
+}

@@ -14,3 +14,4 @@ export * from "./learnedRankingLabels.js";
 export * from "./experimentRegistry.js";
 export * from "./roadSemanticsScorecard.js";
 export * from "./productWorkflow.js";
+export * from "./telemetryManifest.js";

@@ -3,6 +3,12 @@ import path from "node:path";
 import { performance } from "node:perf_hooks";
 
 import {
+  buildDecisionTraceFromSolution,
+  buildTimeToQualityScorecard,
+  summarizeDecisionTraceReason,
+} from "../core/decisionTrace.js";
+import { buildSolverProgressSummary } from "../core/progress.js";
+import {
   assertValidLayoutEvaluateInputs,
   assertValidSolveInputs,
 } from "../core/solverInputValidation.js";
@@ -23,6 +29,11 @@ import {
   roundBenchmarkMetric,
   selectBenchmarkCasesByName,
 } from "./benchmarkOptions.js";
+import {
+  buildSolverTelemetryManifest,
+  buildSolverTelemetryRunManifest,
+  writeSolverTelemetryManifest,
+} from "./telemetryManifest.js";
 
 import type {
   Grid,
@@ -30,8 +41,12 @@ import type {
   ResidentialTypeSetting,
   ServicePlacement,
   ServiceTypeSetting,
+  SolverDecisionTraceEvent,
   SolverParams,
+  SolverProgressSummary,
+  SolverTimeToQualityScorecard,
 } from "../core/types.js";
+import type { SolverTelemetryManifest } from "./telemetryManifest.js";
 
 export type ProductWorkflowPressureFamily =
   | "corridor"
@@ -94,6 +109,7 @@ export interface ProductWorkflowManualReplayResult {
 export interface ProductWorkflowBudgetResult {
   budgetSeconds: number;
   seed: number;
+  solverParams: SolverParams;
   totalPopulation: number;
   valid: boolean;
   errors: string[];
@@ -101,6 +117,10 @@ export interface ProductWorkflowBudgetResult {
   serviceCount: number;
   residentialCount: number;
   wallClockSeconds: number;
+  progressSummary: SolverProgressSummary;
+  decisionTrace: SolverDecisionTraceEvent[];
+  timeToQuality: SolverTimeToQualityScorecard;
+  checkpointReason: string;
 }
 
 export interface ProductWorkflowBudgetQualitySummary {
@@ -175,6 +195,12 @@ export interface ProductWorkflowBenchmarkSuiteResult {
   seeds: number[];
   results: ProductWorkflowBenchmarkCaseResult[];
   registryHints: ProductWorkflowBenchmarkRegistryHints;
+}
+
+export interface ProductWorkflowTelemetryManifestOptions extends ProductWorkflowBenchmarkRunOptions {
+  manifestId?: string;
+  commands?: readonly string[];
+  artifactPaths?: readonly string[];
 }
 
 export const DEFAULT_PRODUCT_WORKFLOW_BUDGETS_SECONDS = Object.freeze([1, 5, 30, 120] as const);
@@ -318,9 +344,15 @@ async function runBudgetSample(
   const solution = await solveAsync(cloneBenchmarkGrid(benchmarkCase.grid), params);
   const wallClockSeconds = roundBenchmarkMetric((performance.now() - startedAt) / 1000);
   const response = buildSolveResponse(benchmarkCase.grid, params, solution);
+  const decisionTrace = buildDecisionTraceFromSolution(solution, {
+    runId: `${benchmarkCase.name}:greedy:budget-${budgetSeconds}:seed-${seed}`,
+    optimizer: "greedy",
+    elapsedTimeSeconds: wallClockSeconds,
+  });
   return {
     budgetSeconds,
     seed,
+    solverParams: params,
     totalPopulation: response.stats.totalPopulation,
     valid: response.validation.valid,
     errors: response.validation.errors,
@@ -328,6 +360,17 @@ async function runBudgetSample(
     serviceCount: response.stats.serviceCount,
     residentialCount: response.stats.residentialCount,
     wallClockSeconds,
+    progressSummary: buildSolverProgressSummary(solution, {
+      elapsedTimeSeconds: wallClockSeconds,
+      fallbackOptimizer: "greedy",
+      params,
+    }),
+    decisionTrace,
+    timeToQuality: buildTimeToQualityScorecard(decisionTrace, {
+      finalElapsedMs: wallClockSeconds * 1000,
+      finalScore: response.stats.totalPopulation,
+    }),
+    checkpointReason: summarizeDecisionTraceReason(decisionTrace),
   };
 }
 
@@ -622,6 +665,65 @@ export function writeProductWorkflowBenchmarkArtifact(
   };
   fs.writeFileSync(normalizedOutputPath, `${JSON.stringify(resultWithArtifactPath, null, 2)}\n`);
   return resultWithArtifactPath;
+}
+
+export function buildProductWorkflowTelemetryManifest(
+  result: ProductWorkflowBenchmarkSuiteResult,
+  options: ProductWorkflowTelemetryManifestOptions = {}
+): SolverTelemetryManifest {
+  const runs = result.results.flatMap((caseResult) =>
+    caseResult.budgetResults.map((budgetResult) =>
+      buildSolverTelemetryRunManifest({
+        runId: `${caseResult.name}:greedy:budget-${budgetResult.budgetSeconds}:seed-${budgetResult.seed}`,
+        benchmarkName: "product-workflow",
+        caseName: caseResult.name,
+        caseFamily: caseResult.family,
+        optimizer: "greedy",
+        mode: "greedy",
+        seed: budgetResult.seed,
+        budget: {
+          wallClockSeconds: budgetResult.budgetSeconds,
+          observedWallClockSeconds: budgetResult.wallClockSeconds,
+        },
+        grid: DEFAULT_PRODUCT_WORKFLOW_BENCHMARK_CORPUS.find((entry) => entry.name === caseResult.name)?.grid ?? [],
+        solverParams: budgetResult.solverParams,
+        artifactPaths: options.artifactPaths ?? [],
+        wallClockSeconds: budgetResult.wallClockSeconds,
+        totalPopulation: budgetResult.totalPopulation,
+        finalStatus: budgetResult.valid ? "valid" : "invalid",
+        validation: {
+          valid: budgetResult.valid,
+          errors: budgetResult.errors,
+        },
+        progressSummary: budgetResult.progressSummary,
+        decisionTrace: budgetResult.decisionTrace,
+        timeToQuality: budgetResult.timeToQuality,
+      })
+    )
+  );
+
+  return buildSolverTelemetryManifest({
+    manifestId: options.manifestId ?? `product-workflow-${result.generatedAt.slice(0, 10)}`,
+    benchmarkName: "product-workflow",
+    generatedAt: result.generatedAt,
+    commands: options.commands ?? [],
+    artifactPaths: options.artifactPaths ?? [],
+    runs,
+  });
+}
+
+export function writeProductWorkflowTelemetryManifest(
+  result: ProductWorkflowBenchmarkSuiteResult,
+  outputPath: string,
+  options: ProductWorkflowTelemetryManifestOptions = {}
+): SolverTelemetryManifest {
+  return writeSolverTelemetryManifest(
+    buildProductWorkflowTelemetryManifest(result, {
+      ...options,
+      artifactPaths: [...(options.artifactPaths ?? []), outputPath],
+    }),
+    outputPath
+  );
 }
 
 function formatSigned(value: number | null): string {

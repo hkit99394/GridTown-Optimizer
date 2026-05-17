@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-17T01:36:18.261Z",
+  "generatedAt": "2026-05-17T11:28:24.215Z",
   "caseCount": 8,
   "selectedCaseNames": [
     "planner-corridor-reuse",
@@ -46,46 +46,582 @@
         {
           "budgetSeconds": 1,
           "seed": 7,
+          "solverParams": {
+            "optimizer": "greedy",
+            "serviceTypes": [
+              {
+                "name": "Clinic",
+                "rows": 1,
+                "cols": 1,
+                "bonus": 25,
+                "range": 2,
+                "avail": 1
+              }
+            ],
+            "residentialTypes": [
+              {
+                "name": "Courtyard",
+                "w": 2,
+                "h": 2,
+                "min": 40,
+                "max": 80,
+                "avail": 3
+              },
+              {
+                "name": "Studio Row",
+                "w": 1,
+                "h": 1,
+                "min": 10,
+                "max": 20,
+                "avail": 4
+              }
+            ],
+            "availableBuildings": {
+              "services": 1,
+              "residentials": 2
+            },
+            "greedy": {
+              "restarts": 2,
+              "localSearch": true,
+              "timeLimitSeconds": 1,
+              "randomSeed": 7
+            }
+          },
           "totalPopulation": 130,
           "valid": true,
           "errors": [],
           "roadCount": 2,
           "serviceCount": 1,
           "residentialCount": 2,
-          "wallClockSeconds": 0.037
+          "wallClockSeconds": 0.036,
+          "progressSummary": {
+            "currentScore": 130,
+            "bestScore": 130,
+            "activeStage": "greedy",
+            "reuseSource": null,
+            "elapsedTimeSeconds": 0.036,
+            "timeSinceImprovementSeconds": null,
+            "stopReason": null,
+            "exactGap": null,
+            "portfolioWorkerSummary": null
+          },
+          "decisionTrace": [
+            {
+              "schemaVersion": 1,
+              "runId": "planner-corridor-reuse:greedy:budget-1:seed-7",
+              "sequence": 0,
+              "eventId": "planner-corridor-reuse:greedy:budget-1:seed-7:0000:checkpoint",
+              "optimizer": "greedy",
+              "activeStage": "greedy",
+              "kind": "checkpoint",
+              "decision": "improved",
+              "reason": "greedy final incumbent population 130.",
+              "score": {
+                "before": null,
+                "after": 130,
+                "best": 130,
+                "delta": null,
+                "upperBound": null,
+                "gap": null
+              },
+              "evidence": {
+                "stoppedByUser": false,
+                "stoppedByTimeLimit": false,
+                "roadCount": 2,
+                "serviceCount": 1,
+                "residentialCount": 2
+              },
+              "elapsedMs": 36
+            }
+          ],
+          "timeToQuality": {
+            "finalElapsedMs": 36,
+            "finalScore": 130,
+            "bestScore": 130,
+            "firstFeasibleAtMs": 36,
+            "firstImprovementAtMs": 36,
+            "bestScoreAtMs": 36,
+            "improvementCount": 1,
+            "timeCheckpoints": [
+              {
+                "elapsedMs": 5000,
+                "bestScore": 130,
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "reached": true
+              },
+              {
+                "elapsedMs": 30000,
+                "bestScore": 130,
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "reached": true
+              },
+              {
+                "elapsedMs": 120000,
+                "bestScore": 130,
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "reached": true
+              }
+            ],
+            "qualityTargets": [
+              {
+                "ratio": 0.5,
+                "targetScore": 65,
+                "reachedAtMs": 36,
+                "reachedScore": 130
+              },
+              {
+                "ratio": 0.9,
+                "targetScore": 117,
+                "reachedAtMs": 36,
+                "reachedScore": 130
+              },
+              {
+                "ratio": 1,
+                "targetScore": 130,
+                "reachedAtMs": 36,
+                "reachedScore": 130
+              }
+            ]
+          },
+          "checkpointReason": "greedy final incumbent population 130."
         },
         {
           "budgetSeconds": 5,
           "seed": 7,
+          "solverParams": {
+            "optimizer": "greedy",
+            "serviceTypes": [
+              {
+                "name": "Clinic",
+                "rows": 1,
+                "cols": 1,
+                "bonus": 25,
+                "range": 2,
+                "avail": 1
+              }
+            ],
+            "residentialTypes": [
+              {
+                "name": "Courtyard",
+                "w": 2,
+                "h": 2,
+                "min": 40,
+                "max": 80,
+                "avail": 3
+              },
+              {
+                "name": "Studio Row",
+                "w": 1,
+                "h": 1,
+                "min": 10,
+                "max": 20,
+                "avail": 4
+              }
+            ],
+            "availableBuildings": {
+              "services": 1,
+              "residentials": 2
+            },
+            "greedy": {
+              "restarts": 2,
+              "localSearch": true,
+              "timeLimitSeconds": 5,
+              "randomSeed": 7
+            }
+          },
           "totalPopulation": 130,
           "valid": true,
           "errors": [],
           "roadCount": 2,
           "serviceCount": 1,
           "residentialCount": 2,
-          "wallClockSeconds": 0.014
+          "wallClockSeconds": 0.014,
+          "progressSummary": {
+            "currentScore": 130,
+            "bestScore": 130,
+            "activeStage": "greedy",
+            "reuseSource": null,
+            "elapsedTimeSeconds": 0.014,
+            "timeSinceImprovementSeconds": null,
+            "stopReason": null,
+            "exactGap": null,
+            "portfolioWorkerSummary": null
+          },
+          "decisionTrace": [
+            {
+              "schemaVersion": 1,
+              "runId": "planner-corridor-reuse:greedy:budget-5:seed-7",
+              "sequence": 0,
+              "eventId": "planner-corridor-reuse:greedy:budget-5:seed-7:0000:checkpoint",
+              "optimizer": "greedy",
+              "activeStage": "greedy",
+              "kind": "checkpoint",
+              "decision": "improved",
+              "reason": "greedy final incumbent population 130.",
+              "score": {
+                "before": null,
+                "after": 130,
+                "best": 130,
+                "delta": null,
+                "upperBound": null,
+                "gap": null
+              },
+              "evidence": {
+                "stoppedByUser": false,
+                "stoppedByTimeLimit": false,
+                "roadCount": 2,
+                "serviceCount": 1,
+                "residentialCount": 2
+              },
+              "elapsedMs": 14
+            }
+          ],
+          "timeToQuality": {
+            "finalElapsedMs": 14,
+            "finalScore": 130,
+            "bestScore": 130,
+            "firstFeasibleAtMs": 14,
+            "firstImprovementAtMs": 14,
+            "bestScoreAtMs": 14,
+            "improvementCount": 1,
+            "timeCheckpoints": [
+              {
+                "elapsedMs": 5000,
+                "bestScore": 130,
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "reached": true
+              },
+              {
+                "elapsedMs": 30000,
+                "bestScore": 130,
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "reached": true
+              },
+              {
+                "elapsedMs": 120000,
+                "bestScore": 130,
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "reached": true
+              }
+            ],
+            "qualityTargets": [
+              {
+                "ratio": 0.5,
+                "targetScore": 65,
+                "reachedAtMs": 14,
+                "reachedScore": 130
+              },
+              {
+                "ratio": 0.9,
+                "targetScore": 117,
+                "reachedAtMs": 14,
+                "reachedScore": 130
+              },
+              {
+                "ratio": 1,
+                "targetScore": 130,
+                "reachedAtMs": 14,
+                "reachedScore": 130
+              }
+            ]
+          },
+          "checkpointReason": "greedy final incumbent population 130."
         },
         {
           "budgetSeconds": 30,
           "seed": 7,
+          "solverParams": {
+            "optimizer": "greedy",
+            "serviceTypes": [
+              {
+                "name": "Clinic",
+                "rows": 1,
+                "cols": 1,
+                "bonus": 25,
+                "range": 2,
+                "avail": 1
+              }
+            ],
+            "residentialTypes": [
+              {
+                "name": "Courtyard",
+                "w": 2,
+                "h": 2,
+                "min": 40,
+                "max": 80,
+                "avail": 3
+              },
+              {
+                "name": "Studio Row",
+                "w": 1,
+                "h": 1,
+                "min": 10,
+                "max": 20,
+                "avail": 4
+              }
+            ],
+            "availableBuildings": {
+              "services": 1,
+              "residentials": 2
+            },
+            "greedy": {
+              "restarts": 2,
+              "localSearch": true,
+              "timeLimitSeconds": 30,
+              "randomSeed": 7
+            }
+          },
           "totalPopulation": 130,
           "valid": true,
           "errors": [],
           "roadCount": 2,
           "serviceCount": 1,
           "residentialCount": 2,
-          "wallClockSeconds": 0.013
+          "wallClockSeconds": 0.013,
+          "progressSummary": {
+            "currentScore": 130,
+            "bestScore": 130,
+            "activeStage": "greedy",
+            "reuseSource": null,
+            "elapsedTimeSeconds": 0.013,
+            "timeSinceImprovementSeconds": null,
+            "stopReason": null,
+            "exactGap": null,
+            "portfolioWorkerSummary": null
+          },
+          "decisionTrace": [
+            {
+              "schemaVersion": 1,
+              "runId": "planner-corridor-reuse:greedy:budget-30:seed-7",
+              "sequence": 0,
+              "eventId": "planner-corridor-reuse:greedy:budget-30:seed-7:0000:checkpoint",
+              "optimizer": "greedy",
+              "activeStage": "greedy",
+              "kind": "checkpoint",
+              "decision": "improved",
+              "reason": "greedy final incumbent population 130.",
+              "score": {
+                "before": null,
+                "after": 130,
+                "best": 130,
+                "delta": null,
+                "upperBound": null,
+                "gap": null
+              },
+              "evidence": {
+                "stoppedByUser": false,
+                "stoppedByTimeLimit": false,
+                "roadCount": 2,
+                "serviceCount": 1,
+                "residentialCount": 2
+              },
+              "elapsedMs": 13
+            }
+          ],
+          "timeToQuality": {
+            "finalElapsedMs": 13,
+            "finalScore": 130,
+            "bestScore": 130,
+            "firstFeasibleAtMs": 13,
+            "firstImprovementAtMs": 13,
+            "bestScoreAtMs": 13,
+            "improvementCount": 1,
+            "timeCheckpoints": [
+              {
+                "elapsedMs": 5000,
+                "bestScore": 130,
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "reached": true
+              },
+              {
+                "elapsedMs": 30000,
+                "bestScore": 130,
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "reached": true
+              },
+              {
+                "elapsedMs": 120000,
+                "bestScore": 130,
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "reached": true
+              }
+            ],
+            "qualityTargets": [
+              {
+                "ratio": 0.5,
+                "targetScore": 65,
+                "reachedAtMs": 13,
+                "reachedScore": 130
+              },
+              {
+                "ratio": 0.9,
+                "targetScore": 117,
+                "reachedAtMs": 13,
+                "reachedScore": 130
+              },
+              {
+                "ratio": 1,
+                "targetScore": 130,
+                "reachedAtMs": 13,
+                "reachedScore": 130
+              }
+            ]
+          },
+          "checkpointReason": "greedy final incumbent population 130."
         },
         {
           "budgetSeconds": 120,
           "seed": 7,
+          "solverParams": {
+            "optimizer": "greedy",
+            "serviceTypes": [
+              {
+                "name": "Clinic",
+                "rows": 1,
+                "cols": 1,
+                "bonus": 25,
+                "range": 2,
+                "avail": 1
+              }
+            ],
+            "residentialTypes": [
+              {
+                "name": "Courtyard",
+                "w": 2,
+                "h": 2,
+                "min": 40,
+                "max": 80,
+                "avail": 3
+              },
+              {
+                "name": "Studio Row",
+                "w": 1,
+                "h": 1,
+                "min": 10,
+                "max": 20,
+                "avail": 4
+              }
+            ],
+            "availableBuildings": {
+              "services": 1,
+              "residentials": 2
+            },
+            "greedy": {
+              "restarts": 2,
+              "localSearch": true,
+              "timeLimitSeconds": 120,
+              "randomSeed": 7
+            }
+          },
           "totalPopulation": 130,
           "valid": true,
           "errors": [],
           "roadCount": 2,
           "serviceCount": 1,
           "residentialCount": 2,
-          "wallClockSeconds": 0.011
+          "wallClockSeconds": 0.01,
+          "progressSummary": {
+            "currentScore": 130,
+            "bestScore": 130,
+            "activeStage": "greedy",
+            "reuseSource": null,
+            "elapsedTimeSeconds": 0.01,
+            "timeSinceImprovementSeconds": null,
+            "stopReason": null,
+            "exactGap": null,
+            "portfolioWorkerSummary": null
+          },
+          "decisionTrace": [
+            {
+              "schemaVersion": 1,
+              "runId": "planner-corridor-reuse:greedy:budget-120:seed-7",
+              "sequence": 0,
+              "eventId": "planner-corridor-reuse:greedy:budget-120:seed-7:0000:checkpoint",
+              "optimizer": "greedy",
+              "activeStage": "greedy",
+              "kind": "checkpoint",
+              "decision": "improved",
+              "reason": "greedy final incumbent population 130.",
+              "score": {
+                "before": null,
+                "after": 130,
+                "best": 130,
+                "delta": null,
+                "upperBound": null,
+                "gap": null
+              },
+              "evidence": {
+                "stoppedByUser": false,
+                "stoppedByTimeLimit": false,
+                "roadCount": 2,
+                "serviceCount": 1,
+                "residentialCount": 2
+              },
+              "elapsedMs": 10
+            }
+          ],
+          "timeToQuality": {
+            "finalElapsedMs": 10,
+            "finalScore": 130,
+            "bestScore": 130,
+            "firstFeasibleAtMs": 10,
+            "firstImprovementAtMs": 10,
+            "bestScoreAtMs": 10,
+            "improvementCount": 1,
+            "timeCheckpoints": [
+              {
+                "elapsedMs": 5000,
+                "bestScore": 130,
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "reached": true
+              },
+              {
+                "elapsedMs": 30000,
+                "bestScore": 130,
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "reached": true
+              },
+              {
+                "elapsedMs": 120000,
+                "bestScore": 130,
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "reached": true
+              }
+            ],
+            "qualityTargets": [
+              {
+                "ratio": 0.5,
+                "targetScore": 65,
+                "reachedAtMs": 10,
+                "reachedScore": 130
+              },
+              {
+                "ratio": 0.9,
+                "targetScore": 117,
+                "reachedAtMs": 10,
+                "reachedScore": 130
+              },
+              {
+                "ratio": 1,
+                "targetScore": 130,
+                "reachedAtMs": 10,
+                "reachedScore": 130
+              }
+            ]
+          },
+          "checkpointReason": "greedy final incumbent population 130."
         }
       ],
       "budgetQuality": {
@@ -134,46 +670,582 @@
         {
           "budgetSeconds": 1,
           "seed": 7,
+          "solverParams": {
+            "optimizer": "greedy",
+            "serviceTypes": [
+              {
+                "name": "Gate Service",
+                "rows": 1,
+                "cols": 1,
+                "bonus": 20,
+                "range": 2,
+                "avail": 1
+              }
+            ],
+            "residentialTypes": [
+              {
+                "name": "Gate Home",
+                "w": 1,
+                "h": 1,
+                "min": 10,
+                "max": 20,
+                "avail": 4
+              },
+              {
+                "name": "Gate Block",
+                "w": 2,
+                "h": 2,
+                "min": 40,
+                "max": 80,
+                "avail": 3
+              }
+            ],
+            "availableBuildings": {
+              "services": 1,
+              "residentials": 3
+            },
+            "greedy": {
+              "restarts": 2,
+              "localSearch": true,
+              "timeLimitSeconds": 1,
+              "randomSeed": 7
+            }
+          },
           "totalPopulation": 60,
           "valid": true,
           "errors": [],
           "roadCount": 0,
           "serviceCount": 1,
           "residentialCount": 3,
-          "wallClockSeconds": 0.016
+          "wallClockSeconds": 0.016,
+          "progressSummary": {
+            "currentScore": 60,
+            "bestScore": 60,
+            "activeStage": "greedy",
+            "reuseSource": null,
+            "elapsedTimeSeconds": 0.016,
+            "timeSinceImprovementSeconds": null,
+            "stopReason": null,
+            "exactGap": null,
+            "portfolioWorkerSummary": null
+          },
+          "decisionTrace": [
+            {
+              "schemaVersion": 1,
+              "runId": "planner-gate-choke:greedy:budget-1:seed-7",
+              "sequence": 0,
+              "eventId": "planner-gate-choke:greedy:budget-1:seed-7:0000:checkpoint",
+              "optimizer": "greedy",
+              "activeStage": "greedy",
+              "kind": "checkpoint",
+              "decision": "improved",
+              "reason": "greedy final incumbent population 60.",
+              "score": {
+                "before": null,
+                "after": 60,
+                "best": 60,
+                "delta": null,
+                "upperBound": null,
+                "gap": null
+              },
+              "evidence": {
+                "stoppedByUser": false,
+                "stoppedByTimeLimit": false,
+                "roadCount": 0,
+                "serviceCount": 1,
+                "residentialCount": 3
+              },
+              "elapsedMs": 16
+            }
+          ],
+          "timeToQuality": {
+            "finalElapsedMs": 16,
+            "finalScore": 60,
+            "bestScore": 60,
+            "firstFeasibleAtMs": 16,
+            "firstImprovementAtMs": 16,
+            "bestScoreAtMs": 16,
+            "improvementCount": 1,
+            "timeCheckpoints": [
+              {
+                "elapsedMs": 5000,
+                "bestScore": 60,
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "reached": true
+              },
+              {
+                "elapsedMs": 30000,
+                "bestScore": 60,
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "reached": true
+              },
+              {
+                "elapsedMs": 120000,
+                "bestScore": 60,
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "reached": true
+              }
+            ],
+            "qualityTargets": [
+              {
+                "ratio": 0.5,
+                "targetScore": 30,
+                "reachedAtMs": 16,
+                "reachedScore": 60
+              },
+              {
+                "ratio": 0.9,
+                "targetScore": 54,
+                "reachedAtMs": 16,
+                "reachedScore": 60
+              },
+              {
+                "ratio": 1,
+                "targetScore": 60,
+                "reachedAtMs": 16,
+                "reachedScore": 60
+              }
+            ]
+          },
+          "checkpointReason": "greedy final incumbent population 60."
         },
         {
           "budgetSeconds": 5,
           "seed": 7,
+          "solverParams": {
+            "optimizer": "greedy",
+            "serviceTypes": [
+              {
+                "name": "Gate Service",
+                "rows": 1,
+                "cols": 1,
+                "bonus": 20,
+                "range": 2,
+                "avail": 1
+              }
+            ],
+            "residentialTypes": [
+              {
+                "name": "Gate Home",
+                "w": 1,
+                "h": 1,
+                "min": 10,
+                "max": 20,
+                "avail": 4
+              },
+              {
+                "name": "Gate Block",
+                "w": 2,
+                "h": 2,
+                "min": 40,
+                "max": 80,
+                "avail": 3
+              }
+            ],
+            "availableBuildings": {
+              "services": 1,
+              "residentials": 3
+            },
+            "greedy": {
+              "restarts": 2,
+              "localSearch": true,
+              "timeLimitSeconds": 5,
+              "randomSeed": 7
+            }
+          },
           "totalPopulation": 60,
           "valid": true,
           "errors": [],
           "roadCount": 0,
           "serviceCount": 1,
           "residentialCount": 3,
-          "wallClockSeconds": 0.014
+          "wallClockSeconds": 0.014,
+          "progressSummary": {
+            "currentScore": 60,
+            "bestScore": 60,
+            "activeStage": "greedy",
+            "reuseSource": null,
+            "elapsedTimeSeconds": 0.014,
+            "timeSinceImprovementSeconds": null,
+            "stopReason": null,
+            "exactGap": null,
+            "portfolioWorkerSummary": null
+          },
+          "decisionTrace": [
+            {
+              "schemaVersion": 1,
+              "runId": "planner-gate-choke:greedy:budget-5:seed-7",
+              "sequence": 0,
+              "eventId": "planner-gate-choke:greedy:budget-5:seed-7:0000:checkpoint",
+              "optimizer": "greedy",
+              "activeStage": "greedy",
+              "kind": "checkpoint",
+              "decision": "improved",
+              "reason": "greedy final incumbent population 60.",
+              "score": {
+                "before": null,
+                "after": 60,
+                "best": 60,
+                "delta": null,
+                "upperBound": null,
+                "gap": null
+              },
+              "evidence": {
+                "stoppedByUser": false,
+                "stoppedByTimeLimit": false,
+                "roadCount": 0,
+                "serviceCount": 1,
+                "residentialCount": 3
+              },
+              "elapsedMs": 14
+            }
+          ],
+          "timeToQuality": {
+            "finalElapsedMs": 14,
+            "finalScore": 60,
+            "bestScore": 60,
+            "firstFeasibleAtMs": 14,
+            "firstImprovementAtMs": 14,
+            "bestScoreAtMs": 14,
+            "improvementCount": 1,
+            "timeCheckpoints": [
+              {
+                "elapsedMs": 5000,
+                "bestScore": 60,
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "reached": true
+              },
+              {
+                "elapsedMs": 30000,
+                "bestScore": 60,
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "reached": true
+              },
+              {
+                "elapsedMs": 120000,
+                "bestScore": 60,
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "reached": true
+              }
+            ],
+            "qualityTargets": [
+              {
+                "ratio": 0.5,
+                "targetScore": 30,
+                "reachedAtMs": 14,
+                "reachedScore": 60
+              },
+              {
+                "ratio": 0.9,
+                "targetScore": 54,
+                "reachedAtMs": 14,
+                "reachedScore": 60
+              },
+              {
+                "ratio": 1,
+                "targetScore": 60,
+                "reachedAtMs": 14,
+                "reachedScore": 60
+              }
+            ]
+          },
+          "checkpointReason": "greedy final incumbent population 60."
         },
         {
           "budgetSeconds": 30,
           "seed": 7,
+          "solverParams": {
+            "optimizer": "greedy",
+            "serviceTypes": [
+              {
+                "name": "Gate Service",
+                "rows": 1,
+                "cols": 1,
+                "bonus": 20,
+                "range": 2,
+                "avail": 1
+              }
+            ],
+            "residentialTypes": [
+              {
+                "name": "Gate Home",
+                "w": 1,
+                "h": 1,
+                "min": 10,
+                "max": 20,
+                "avail": 4
+              },
+              {
+                "name": "Gate Block",
+                "w": 2,
+                "h": 2,
+                "min": 40,
+                "max": 80,
+                "avail": 3
+              }
+            ],
+            "availableBuildings": {
+              "services": 1,
+              "residentials": 3
+            },
+            "greedy": {
+              "restarts": 2,
+              "localSearch": true,
+              "timeLimitSeconds": 30,
+              "randomSeed": 7
+            }
+          },
           "totalPopulation": 60,
           "valid": true,
           "errors": [],
           "roadCount": 0,
           "serviceCount": 1,
           "residentialCount": 3,
-          "wallClockSeconds": 0.014
+          "wallClockSeconds": 0.014,
+          "progressSummary": {
+            "currentScore": 60,
+            "bestScore": 60,
+            "activeStage": "greedy",
+            "reuseSource": null,
+            "elapsedTimeSeconds": 0.014,
+            "timeSinceImprovementSeconds": null,
+            "stopReason": null,
+            "exactGap": null,
+            "portfolioWorkerSummary": null
+          },
+          "decisionTrace": [
+            {
+              "schemaVersion": 1,
+              "runId": "planner-gate-choke:greedy:budget-30:seed-7",
+              "sequence": 0,
+              "eventId": "planner-gate-choke:greedy:budget-30:seed-7:0000:checkpoint",
+              "optimizer": "greedy",
+              "activeStage": "greedy",
+              "kind": "checkpoint",
+              "decision": "improved",
+              "reason": "greedy final incumbent population 60.",
+              "score": {
+                "before": null,
+                "after": 60,
+                "best": 60,
+                "delta": null,
+                "upperBound": null,
+                "gap": null
+              },
+              "evidence": {
+                "stoppedByUser": false,
+                "stoppedByTimeLimit": false,
+                "roadCount": 0,
+                "serviceCount": 1,
+                "residentialCount": 3
+              },
+              "elapsedMs": 14
+            }
+          ],
+          "timeToQuality": {
+            "finalElapsedMs": 14,
+            "finalScore": 60,
+            "bestScore": 60,
+            "firstFeasibleAtMs": 14,
+            "firstImprovementAtMs": 14,
+            "bestScoreAtMs": 14,
+            "improvementCount": 1,
+            "timeCheckpoints": [
+              {
+                "elapsedMs": 5000,
+                "bestScore": 60,
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "reached": true
+              },
+              {
+                "elapsedMs": 30000,
+                "bestScore": 60,
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "reached": true
+              },
+              {
+                "elapsedMs": 120000,
+                "bestScore": 60,
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "reached": true
+              }
+            ],
+            "qualityTargets": [
+              {
+                "ratio": 0.5,
+                "targetScore": 30,
+                "reachedAtMs": 14,
+                "reachedScore": 60
+              },
+              {
+                "ratio": 0.9,
+                "targetScore": 54,
+                "reachedAtMs": 14,
+                "reachedScore": 60
+              },
+              {
+                "ratio": 1,
+                "targetScore": 60,
+                "reachedAtMs": 14,
+                "reachedScore": 60
+              }
+            ]
+          },
+          "checkpointReason": "greedy final incumbent population 60."
         },
         {
           "budgetSeconds": 120,
           "seed": 7,
+          "solverParams": {
+            "optimizer": "greedy",
+            "serviceTypes": [
+              {
+                "name": "Gate Service",
+                "rows": 1,
+                "cols": 1,
+                "bonus": 20,
+                "range": 2,
+                "avail": 1
+              }
+            ],
+            "residentialTypes": [
+              {
+                "name": "Gate Home",
+                "w": 1,
+                "h": 1,
+                "min": 10,
+                "max": 20,
+                "avail": 4
+              },
+              {
+                "name": "Gate Block",
+                "w": 2,
+                "h": 2,
+                "min": 40,
+                "max": 80,
+                "avail": 3
+              }
+            ],
+            "availableBuildings": {
+              "services": 1,
+              "residentials": 3
+            },
+            "greedy": {
+              "restarts": 2,
+              "localSearch": true,
+              "timeLimitSeconds": 120,
+              "randomSeed": 7
+            }
+          },
           "totalPopulation": 60,
           "valid": true,
           "errors": [],
           "roadCount": 0,
           "serviceCount": 1,
           "residentialCount": 3,
-          "wallClockSeconds": 0.014
+          "wallClockSeconds": 0.014,
+          "progressSummary": {
+            "currentScore": 60,
+            "bestScore": 60,
+            "activeStage": "greedy",
+            "reuseSource": null,
+            "elapsedTimeSeconds": 0.014,
+            "timeSinceImprovementSeconds": null,
+            "stopReason": null,
+            "exactGap": null,
+            "portfolioWorkerSummary": null
+          },
+          "decisionTrace": [
+            {
+              "schemaVersion": 1,
+              "runId": "planner-gate-choke:greedy:budget-120:seed-7",
+              "sequence": 0,
+              "eventId": "planner-gate-choke:greedy:budget-120:seed-7:0000:checkpoint",
+              "optimizer": "greedy",
+              "activeStage": "greedy",
+              "kind": "checkpoint",
+              "decision": "improved",
+              "reason": "greedy final incumbent population 60.",
+              "score": {
+                "before": null,
+                "after": 60,
+                "best": 60,
+                "delta": null,
+                "upperBound": null,
+                "gap": null
+              },
+              "evidence": {
+                "stoppedByUser": false,
+                "stoppedByTimeLimit": false,
+                "roadCount": 0,
+                "serviceCount": 1,
+                "residentialCount": 3
+              },
+              "elapsedMs": 14
+            }
+          ],
+          "timeToQuality": {
+            "finalElapsedMs": 14,
+            "finalScore": 60,
+            "bestScore": 60,
+            "firstFeasibleAtMs": 14,
+            "firstImprovementAtMs": 14,
+            "bestScoreAtMs": 14,
+            "improvementCount": 1,
+            "timeCheckpoints": [
+              {
+                "elapsedMs": 5000,
+                "bestScore": 60,
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "reached": true
+              },
+              {
+                "elapsedMs": 30000,
+                "bestScore": 60,
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "reached": true
+              },
+              {
+                "elapsedMs": 120000,
+                "bestScore": 60,
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "reached": true
+              }
+            ],
+            "qualityTargets": [
+              {
+                "ratio": 0.5,
+                "targetScore": 30,
+                "reachedAtMs": 14,
+                "reachedScore": 60
+              },
+              {
+                "ratio": 0.9,
+                "targetScore": 54,
+                "reachedAtMs": 14,
+                "reachedScore": 60
+              },
+              {
+                "ratio": 1,
+                "targetScore": 60,
+                "reachedAtMs": 14,
+                "reachedScore": 60
+              }
+            ]
+          },
+          "checkpointReason": "greedy final incumbent population 60."
         }
       ],
       "budgetQuality": {
@@ -222,46 +1294,582 @@
         {
           "budgetSeconds": 1,
           "seed": 7,
+          "solverParams": {
+            "optimizer": "greedy",
+            "serviceTypes": [
+              {
+                "name": "Small Park",
+                "rows": 1,
+                "cols": 1,
+                "bonus": 10,
+                "range": 1,
+                "avail": 1
+              }
+            ],
+            "residentialTypes": [
+              {
+                "name": "Slab",
+                "w": 2,
+                "h": 3,
+                "min": 60,
+                "max": 120,
+                "avail": 2
+              },
+              {
+                "name": "Block",
+                "w": 2,
+                "h": 2,
+                "min": 40,
+                "max": 80,
+                "avail": 3
+              }
+            ],
+            "availableBuildings": {
+              "services": 1,
+              "residentials": 2
+            },
+            "greedy": {
+              "restarts": 2,
+              "localSearch": true,
+              "timeLimitSeconds": 1,
+              "randomSeed": 7
+            }
+          },
           "totalPopulation": 140,
           "valid": true,
           "errors": [],
           "roadCount": 0,
           "serviceCount": 1,
           "residentialCount": 2,
-          "wallClockSeconds": 0.024
+          "wallClockSeconds": 0.024,
+          "progressSummary": {
+            "currentScore": 140,
+            "bestScore": 140,
+            "activeStage": "greedy",
+            "reuseSource": null,
+            "elapsedTimeSeconds": 0.024,
+            "timeSinceImprovementSeconds": null,
+            "stopReason": null,
+            "exactGap": null,
+            "portfolioWorkerSummary": null
+          },
+          "decisionTrace": [
+            {
+              "schemaVersion": 1,
+              "runId": "planner-footprint-pressure:greedy:budget-1:seed-7",
+              "sequence": 0,
+              "eventId": "planner-footprint-pressure:greedy:budget-1:seed-7:0000:checkpoint",
+              "optimizer": "greedy",
+              "activeStage": "greedy",
+              "kind": "checkpoint",
+              "decision": "improved",
+              "reason": "greedy final incumbent population 140.",
+              "score": {
+                "before": null,
+                "after": 140,
+                "best": 140,
+                "delta": null,
+                "upperBound": null,
+                "gap": null
+              },
+              "evidence": {
+                "stoppedByUser": false,
+                "stoppedByTimeLimit": false,
+                "roadCount": 0,
+                "serviceCount": 1,
+                "residentialCount": 2
+              },
+              "elapsedMs": 24
+            }
+          ],
+          "timeToQuality": {
+            "finalElapsedMs": 24,
+            "finalScore": 140,
+            "bestScore": 140,
+            "firstFeasibleAtMs": 24,
+            "firstImprovementAtMs": 24,
+            "bestScoreAtMs": 24,
+            "improvementCount": 1,
+            "timeCheckpoints": [
+              {
+                "elapsedMs": 5000,
+                "bestScore": 140,
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "reached": true
+              },
+              {
+                "elapsedMs": 30000,
+                "bestScore": 140,
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "reached": true
+              },
+              {
+                "elapsedMs": 120000,
+                "bestScore": 140,
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "reached": true
+              }
+            ],
+            "qualityTargets": [
+              {
+                "ratio": 0.5,
+                "targetScore": 70,
+                "reachedAtMs": 24,
+                "reachedScore": 140
+              },
+              {
+                "ratio": 0.9,
+                "targetScore": 126,
+                "reachedAtMs": 24,
+                "reachedScore": 140
+              },
+              {
+                "ratio": 1,
+                "targetScore": 140,
+                "reachedAtMs": 24,
+                "reachedScore": 140
+              }
+            ]
+          },
+          "checkpointReason": "greedy final incumbent population 140."
         },
         {
           "budgetSeconds": 5,
           "seed": 7,
+          "solverParams": {
+            "optimizer": "greedy",
+            "serviceTypes": [
+              {
+                "name": "Small Park",
+                "rows": 1,
+                "cols": 1,
+                "bonus": 10,
+                "range": 1,
+                "avail": 1
+              }
+            ],
+            "residentialTypes": [
+              {
+                "name": "Slab",
+                "w": 2,
+                "h": 3,
+                "min": 60,
+                "max": 120,
+                "avail": 2
+              },
+              {
+                "name": "Block",
+                "w": 2,
+                "h": 2,
+                "min": 40,
+                "max": 80,
+                "avail": 3
+              }
+            ],
+            "availableBuildings": {
+              "services": 1,
+              "residentials": 2
+            },
+            "greedy": {
+              "restarts": 2,
+              "localSearch": true,
+              "timeLimitSeconds": 5,
+              "randomSeed": 7
+            }
+          },
           "totalPopulation": 140,
           "valid": true,
           "errors": [],
           "roadCount": 0,
           "serviceCount": 1,
           "residentialCount": 2,
-          "wallClockSeconds": 0.022
+          "wallClockSeconds": 0.023,
+          "progressSummary": {
+            "currentScore": 140,
+            "bestScore": 140,
+            "activeStage": "greedy",
+            "reuseSource": null,
+            "elapsedTimeSeconds": 0.023,
+            "timeSinceImprovementSeconds": null,
+            "stopReason": null,
+            "exactGap": null,
+            "portfolioWorkerSummary": null
+          },
+          "decisionTrace": [
+            {
+              "schemaVersion": 1,
+              "runId": "planner-footprint-pressure:greedy:budget-5:seed-7",
+              "sequence": 0,
+              "eventId": "planner-footprint-pressure:greedy:budget-5:seed-7:0000:checkpoint",
+              "optimizer": "greedy",
+              "activeStage": "greedy",
+              "kind": "checkpoint",
+              "decision": "improved",
+              "reason": "greedy final incumbent population 140.",
+              "score": {
+                "before": null,
+                "after": 140,
+                "best": 140,
+                "delta": null,
+                "upperBound": null,
+                "gap": null
+              },
+              "evidence": {
+                "stoppedByUser": false,
+                "stoppedByTimeLimit": false,
+                "roadCount": 0,
+                "serviceCount": 1,
+                "residentialCount": 2
+              },
+              "elapsedMs": 23
+            }
+          ],
+          "timeToQuality": {
+            "finalElapsedMs": 23,
+            "finalScore": 140,
+            "bestScore": 140,
+            "firstFeasibleAtMs": 23,
+            "firstImprovementAtMs": 23,
+            "bestScoreAtMs": 23,
+            "improvementCount": 1,
+            "timeCheckpoints": [
+              {
+                "elapsedMs": 5000,
+                "bestScore": 140,
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "reached": true
+              },
+              {
+                "elapsedMs": 30000,
+                "bestScore": 140,
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "reached": true
+              },
+              {
+                "elapsedMs": 120000,
+                "bestScore": 140,
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "reached": true
+              }
+            ],
+            "qualityTargets": [
+              {
+                "ratio": 0.5,
+                "targetScore": 70,
+                "reachedAtMs": 23,
+                "reachedScore": 140
+              },
+              {
+                "ratio": 0.9,
+                "targetScore": 126,
+                "reachedAtMs": 23,
+                "reachedScore": 140
+              },
+              {
+                "ratio": 1,
+                "targetScore": 140,
+                "reachedAtMs": 23,
+                "reachedScore": 140
+              }
+            ]
+          },
+          "checkpointReason": "greedy final incumbent population 140."
         },
         {
           "budgetSeconds": 30,
           "seed": 7,
+          "solverParams": {
+            "optimizer": "greedy",
+            "serviceTypes": [
+              {
+                "name": "Small Park",
+                "rows": 1,
+                "cols": 1,
+                "bonus": 10,
+                "range": 1,
+                "avail": 1
+              }
+            ],
+            "residentialTypes": [
+              {
+                "name": "Slab",
+                "w": 2,
+                "h": 3,
+                "min": 60,
+                "max": 120,
+                "avail": 2
+              },
+              {
+                "name": "Block",
+                "w": 2,
+                "h": 2,
+                "min": 40,
+                "max": 80,
+                "avail": 3
+              }
+            ],
+            "availableBuildings": {
+              "services": 1,
+              "residentials": 2
+            },
+            "greedy": {
+              "restarts": 2,
+              "localSearch": true,
+              "timeLimitSeconds": 30,
+              "randomSeed": 7
+            }
+          },
           "totalPopulation": 140,
           "valid": true,
           "errors": [],
           "roadCount": 0,
           "serviceCount": 1,
           "residentialCount": 2,
-          "wallClockSeconds": 0.022
+          "wallClockSeconds": 0.021,
+          "progressSummary": {
+            "currentScore": 140,
+            "bestScore": 140,
+            "activeStage": "greedy",
+            "reuseSource": null,
+            "elapsedTimeSeconds": 0.021,
+            "timeSinceImprovementSeconds": null,
+            "stopReason": null,
+            "exactGap": null,
+            "portfolioWorkerSummary": null
+          },
+          "decisionTrace": [
+            {
+              "schemaVersion": 1,
+              "runId": "planner-footprint-pressure:greedy:budget-30:seed-7",
+              "sequence": 0,
+              "eventId": "planner-footprint-pressure:greedy:budget-30:seed-7:0000:checkpoint",
+              "optimizer": "greedy",
+              "activeStage": "greedy",
+              "kind": "checkpoint",
+              "decision": "improved",
+              "reason": "greedy final incumbent population 140.",
+              "score": {
+                "before": null,
+                "after": 140,
+                "best": 140,
+                "delta": null,
+                "upperBound": null,
+                "gap": null
+              },
+              "evidence": {
+                "stoppedByUser": false,
+                "stoppedByTimeLimit": false,
+                "roadCount": 0,
+                "serviceCount": 1,
+                "residentialCount": 2
+              },
+              "elapsedMs": 21
+            }
+          ],
+          "timeToQuality": {
+            "finalElapsedMs": 21,
+            "finalScore": 140,
+            "bestScore": 140,
+            "firstFeasibleAtMs": 21,
+            "firstImprovementAtMs": 21,
+            "bestScoreAtMs": 21,
+            "improvementCount": 1,
+            "timeCheckpoints": [
+              {
+                "elapsedMs": 5000,
+                "bestScore": 140,
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "reached": true
+              },
+              {
+                "elapsedMs": 30000,
+                "bestScore": 140,
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "reached": true
+              },
+              {
+                "elapsedMs": 120000,
+                "bestScore": 140,
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "reached": true
+              }
+            ],
+            "qualityTargets": [
+              {
+                "ratio": 0.5,
+                "targetScore": 70,
+                "reachedAtMs": 21,
+                "reachedScore": 140
+              },
+              {
+                "ratio": 0.9,
+                "targetScore": 126,
+                "reachedAtMs": 21,
+                "reachedScore": 140
+              },
+              {
+                "ratio": 1,
+                "targetScore": 140,
+                "reachedAtMs": 21,
+                "reachedScore": 140
+              }
+            ]
+          },
+          "checkpointReason": "greedy final incumbent population 140."
         },
         {
           "budgetSeconds": 120,
           "seed": 7,
+          "solverParams": {
+            "optimizer": "greedy",
+            "serviceTypes": [
+              {
+                "name": "Small Park",
+                "rows": 1,
+                "cols": 1,
+                "bonus": 10,
+                "range": 1,
+                "avail": 1
+              }
+            ],
+            "residentialTypes": [
+              {
+                "name": "Slab",
+                "w": 2,
+                "h": 3,
+                "min": 60,
+                "max": 120,
+                "avail": 2
+              },
+              {
+                "name": "Block",
+                "w": 2,
+                "h": 2,
+                "min": 40,
+                "max": 80,
+                "avail": 3
+              }
+            ],
+            "availableBuildings": {
+              "services": 1,
+              "residentials": 2
+            },
+            "greedy": {
+              "restarts": 2,
+              "localSearch": true,
+              "timeLimitSeconds": 120,
+              "randomSeed": 7
+            }
+          },
           "totalPopulation": 140,
           "valid": true,
           "errors": [],
           "roadCount": 0,
           "serviceCount": 1,
           "residentialCount": 2,
-          "wallClockSeconds": 0.02
+          "wallClockSeconds": 0.021,
+          "progressSummary": {
+            "currentScore": 140,
+            "bestScore": 140,
+            "activeStage": "greedy",
+            "reuseSource": null,
+            "elapsedTimeSeconds": 0.021,
+            "timeSinceImprovementSeconds": null,
+            "stopReason": null,
+            "exactGap": null,
+            "portfolioWorkerSummary": null
+          },
+          "decisionTrace": [
+            {
+              "schemaVersion": 1,
+              "runId": "planner-footprint-pressure:greedy:budget-120:seed-7",
+              "sequence": 0,
+              "eventId": "planner-footprint-pressure:greedy:budget-120:seed-7:0000:checkpoint",
+              "optimizer": "greedy",
+              "activeStage": "greedy",
+              "kind": "checkpoint",
+              "decision": "improved",
+              "reason": "greedy final incumbent population 140.",
+              "score": {
+                "before": null,
+                "after": 140,
+                "best": 140,
+                "delta": null,
+                "upperBound": null,
+                "gap": null
+              },
+              "evidence": {
+                "stoppedByUser": false,
+                "stoppedByTimeLimit": false,
+                "roadCount": 0,
+                "serviceCount": 1,
+                "residentialCount": 2
+              },
+              "elapsedMs": 21
+            }
+          ],
+          "timeToQuality": {
+            "finalElapsedMs": 21,
+            "finalScore": 140,
+            "bestScore": 140,
+            "firstFeasibleAtMs": 21,
+            "firstImprovementAtMs": 21,
+            "bestScoreAtMs": 21,
+            "improvementCount": 1,
+            "timeCheckpoints": [
+              {
+                "elapsedMs": 5000,
+                "bestScore": 140,
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "reached": true
+              },
+              {
+                "elapsedMs": 30000,
+                "bestScore": 140,
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "reached": true
+              },
+              {
+                "elapsedMs": 120000,
+                "bestScore": 140,
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "reached": true
+              }
+            ],
+            "qualityTargets": [
+              {
+                "ratio": 0.5,
+                "targetScore": 70,
+                "reachedAtMs": 21,
+                "reachedScore": 140
+              },
+              {
+                "ratio": 0.9,
+                "targetScore": 126,
+                "reachedAtMs": 21,
+                "reachedScore": 140
+              },
+              {
+                "ratio": 1,
+                "targetScore": 140,
+                "reachedAtMs": 21,
+                "reachedScore": 140
+              }
+            ]
+          },
+          "checkpointReason": "greedy final incumbent population 140."
         }
       ],
       "budgetQuality": {
@@ -310,46 +1918,614 @@
         {
           "budgetSeconds": 1,
           "seed": 7,
+          "solverParams": {
+            "optimizer": "greedy",
+            "serviceTypes": [
+              {
+                "name": "Clinic",
+                "rows": 1,
+                "cols": 1,
+                "bonus": 25,
+                "range": 2,
+                "avail": 1
+              },
+              {
+                "name": "Library",
+                "rows": 1,
+                "cols": 1,
+                "bonus": 20,
+                "range": 2,
+                "avail": 1
+              }
+            ],
+            "residentialTypes": [
+              {
+                "name": "Courtyard",
+                "w": 2,
+                "h": 2,
+                "min": 40,
+                "max": 80,
+                "avail": 3
+              },
+              {
+                "name": "Studio",
+                "w": 1,
+                "h": 1,
+                "min": 10,
+                "max": 20,
+                "avail": 4
+              }
+            ],
+            "availableBuildings": {
+              "services": 1,
+              "residentials": 2
+            },
+            "greedy": {
+              "restarts": 2,
+              "localSearch": true,
+              "timeLimitSeconds": 1,
+              "randomSeed": 7
+            }
+          },
           "totalPopulation": 130,
           "valid": true,
           "errors": [],
           "roadCount": 1,
           "serviceCount": 1,
           "residentialCount": 2,
-          "wallClockSeconds": 0.068
+          "wallClockSeconds": 0.068,
+          "progressSummary": {
+            "currentScore": 130,
+            "bestScore": 130,
+            "activeStage": "greedy",
+            "reuseSource": null,
+            "elapsedTimeSeconds": 0.068,
+            "timeSinceImprovementSeconds": null,
+            "stopReason": null,
+            "exactGap": null,
+            "portfolioWorkerSummary": null
+          },
+          "decisionTrace": [
+            {
+              "schemaVersion": 1,
+              "runId": "planner-service-overlap:greedy:budget-1:seed-7",
+              "sequence": 0,
+              "eventId": "planner-service-overlap:greedy:budget-1:seed-7:0000:checkpoint",
+              "optimizer": "greedy",
+              "activeStage": "greedy",
+              "kind": "checkpoint",
+              "decision": "improved",
+              "reason": "greedy final incumbent population 130.",
+              "score": {
+                "before": null,
+                "after": 130,
+                "best": 130,
+                "delta": null,
+                "upperBound": null,
+                "gap": null
+              },
+              "evidence": {
+                "stoppedByUser": false,
+                "stoppedByTimeLimit": false,
+                "roadCount": 1,
+                "serviceCount": 1,
+                "residentialCount": 2
+              },
+              "elapsedMs": 68
+            }
+          ],
+          "timeToQuality": {
+            "finalElapsedMs": 68,
+            "finalScore": 130,
+            "bestScore": 130,
+            "firstFeasibleAtMs": 68,
+            "firstImprovementAtMs": 68,
+            "bestScoreAtMs": 68,
+            "improvementCount": 1,
+            "timeCheckpoints": [
+              {
+                "elapsedMs": 5000,
+                "bestScore": 130,
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "reached": true
+              },
+              {
+                "elapsedMs": 30000,
+                "bestScore": 130,
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "reached": true
+              },
+              {
+                "elapsedMs": 120000,
+                "bestScore": 130,
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "reached": true
+              }
+            ],
+            "qualityTargets": [
+              {
+                "ratio": 0.5,
+                "targetScore": 65,
+                "reachedAtMs": 68,
+                "reachedScore": 130
+              },
+              {
+                "ratio": 0.9,
+                "targetScore": 117,
+                "reachedAtMs": 68,
+                "reachedScore": 130
+              },
+              {
+                "ratio": 1,
+                "targetScore": 130,
+                "reachedAtMs": 68,
+                "reachedScore": 130
+              }
+            ]
+          },
+          "checkpointReason": "greedy final incumbent population 130."
         },
         {
           "budgetSeconds": 5,
           "seed": 7,
+          "solverParams": {
+            "optimizer": "greedy",
+            "serviceTypes": [
+              {
+                "name": "Clinic",
+                "rows": 1,
+                "cols": 1,
+                "bonus": 25,
+                "range": 2,
+                "avail": 1
+              },
+              {
+                "name": "Library",
+                "rows": 1,
+                "cols": 1,
+                "bonus": 20,
+                "range": 2,
+                "avail": 1
+              }
+            ],
+            "residentialTypes": [
+              {
+                "name": "Courtyard",
+                "w": 2,
+                "h": 2,
+                "min": 40,
+                "max": 80,
+                "avail": 3
+              },
+              {
+                "name": "Studio",
+                "w": 1,
+                "h": 1,
+                "min": 10,
+                "max": 20,
+                "avail": 4
+              }
+            ],
+            "availableBuildings": {
+              "services": 1,
+              "residentials": 2
+            },
+            "greedy": {
+              "restarts": 2,
+              "localSearch": true,
+              "timeLimitSeconds": 5,
+              "randomSeed": 7
+            }
+          },
           "totalPopulation": 130,
           "valid": true,
           "errors": [],
           "roadCount": 1,
           "serviceCount": 1,
           "residentialCount": 2,
-          "wallClockSeconds": 0.068
+          "wallClockSeconds": 0.067,
+          "progressSummary": {
+            "currentScore": 130,
+            "bestScore": 130,
+            "activeStage": "greedy",
+            "reuseSource": null,
+            "elapsedTimeSeconds": 0.067,
+            "timeSinceImprovementSeconds": null,
+            "stopReason": null,
+            "exactGap": null,
+            "portfolioWorkerSummary": null
+          },
+          "decisionTrace": [
+            {
+              "schemaVersion": 1,
+              "runId": "planner-service-overlap:greedy:budget-5:seed-7",
+              "sequence": 0,
+              "eventId": "planner-service-overlap:greedy:budget-5:seed-7:0000:checkpoint",
+              "optimizer": "greedy",
+              "activeStage": "greedy",
+              "kind": "checkpoint",
+              "decision": "improved",
+              "reason": "greedy final incumbent population 130.",
+              "score": {
+                "before": null,
+                "after": 130,
+                "best": 130,
+                "delta": null,
+                "upperBound": null,
+                "gap": null
+              },
+              "evidence": {
+                "stoppedByUser": false,
+                "stoppedByTimeLimit": false,
+                "roadCount": 1,
+                "serviceCount": 1,
+                "residentialCount": 2
+              },
+              "elapsedMs": 67
+            }
+          ],
+          "timeToQuality": {
+            "finalElapsedMs": 67,
+            "finalScore": 130,
+            "bestScore": 130,
+            "firstFeasibleAtMs": 67,
+            "firstImprovementAtMs": 67,
+            "bestScoreAtMs": 67,
+            "improvementCount": 1,
+            "timeCheckpoints": [
+              {
+                "elapsedMs": 5000,
+                "bestScore": 130,
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "reached": true
+              },
+              {
+                "elapsedMs": 30000,
+                "bestScore": 130,
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "reached": true
+              },
+              {
+                "elapsedMs": 120000,
+                "bestScore": 130,
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "reached": true
+              }
+            ],
+            "qualityTargets": [
+              {
+                "ratio": 0.5,
+                "targetScore": 65,
+                "reachedAtMs": 67,
+                "reachedScore": 130
+              },
+              {
+                "ratio": 0.9,
+                "targetScore": 117,
+                "reachedAtMs": 67,
+                "reachedScore": 130
+              },
+              {
+                "ratio": 1,
+                "targetScore": 130,
+                "reachedAtMs": 67,
+                "reachedScore": 130
+              }
+            ]
+          },
+          "checkpointReason": "greedy final incumbent population 130."
         },
         {
           "budgetSeconds": 30,
           "seed": 7,
+          "solverParams": {
+            "optimizer": "greedy",
+            "serviceTypes": [
+              {
+                "name": "Clinic",
+                "rows": 1,
+                "cols": 1,
+                "bonus": 25,
+                "range": 2,
+                "avail": 1
+              },
+              {
+                "name": "Library",
+                "rows": 1,
+                "cols": 1,
+                "bonus": 20,
+                "range": 2,
+                "avail": 1
+              }
+            ],
+            "residentialTypes": [
+              {
+                "name": "Courtyard",
+                "w": 2,
+                "h": 2,
+                "min": 40,
+                "max": 80,
+                "avail": 3
+              },
+              {
+                "name": "Studio",
+                "w": 1,
+                "h": 1,
+                "min": 10,
+                "max": 20,
+                "avail": 4
+              }
+            ],
+            "availableBuildings": {
+              "services": 1,
+              "residentials": 2
+            },
+            "greedy": {
+              "restarts": 2,
+              "localSearch": true,
+              "timeLimitSeconds": 30,
+              "randomSeed": 7
+            }
+          },
           "totalPopulation": 130,
           "valid": true,
           "errors": [],
           "roadCount": 1,
           "serviceCount": 1,
           "residentialCount": 2,
-          "wallClockSeconds": 0.066
+          "wallClockSeconds": 0.066,
+          "progressSummary": {
+            "currentScore": 130,
+            "bestScore": 130,
+            "activeStage": "greedy",
+            "reuseSource": null,
+            "elapsedTimeSeconds": 0.066,
+            "timeSinceImprovementSeconds": null,
+            "stopReason": null,
+            "exactGap": null,
+            "portfolioWorkerSummary": null
+          },
+          "decisionTrace": [
+            {
+              "schemaVersion": 1,
+              "runId": "planner-service-overlap:greedy:budget-30:seed-7",
+              "sequence": 0,
+              "eventId": "planner-service-overlap:greedy:budget-30:seed-7:0000:checkpoint",
+              "optimizer": "greedy",
+              "activeStage": "greedy",
+              "kind": "checkpoint",
+              "decision": "improved",
+              "reason": "greedy final incumbent population 130.",
+              "score": {
+                "before": null,
+                "after": 130,
+                "best": 130,
+                "delta": null,
+                "upperBound": null,
+                "gap": null
+              },
+              "evidence": {
+                "stoppedByUser": false,
+                "stoppedByTimeLimit": false,
+                "roadCount": 1,
+                "serviceCount": 1,
+                "residentialCount": 2
+              },
+              "elapsedMs": 66
+            }
+          ],
+          "timeToQuality": {
+            "finalElapsedMs": 66,
+            "finalScore": 130,
+            "bestScore": 130,
+            "firstFeasibleAtMs": 66,
+            "firstImprovementAtMs": 66,
+            "bestScoreAtMs": 66,
+            "improvementCount": 1,
+            "timeCheckpoints": [
+              {
+                "elapsedMs": 5000,
+                "bestScore": 130,
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "reached": true
+              },
+              {
+                "elapsedMs": 30000,
+                "bestScore": 130,
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "reached": true
+              },
+              {
+                "elapsedMs": 120000,
+                "bestScore": 130,
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "reached": true
+              }
+            ],
+            "qualityTargets": [
+              {
+                "ratio": 0.5,
+                "targetScore": 65,
+                "reachedAtMs": 66,
+                "reachedScore": 130
+              },
+              {
+                "ratio": 0.9,
+                "targetScore": 117,
+                "reachedAtMs": 66,
+                "reachedScore": 130
+              },
+              {
+                "ratio": 1,
+                "targetScore": 130,
+                "reachedAtMs": 66,
+                "reachedScore": 130
+              }
+            ]
+          },
+          "checkpointReason": "greedy final incumbent population 130."
         },
         {
           "budgetSeconds": 120,
           "seed": 7,
+          "solverParams": {
+            "optimizer": "greedy",
+            "serviceTypes": [
+              {
+                "name": "Clinic",
+                "rows": 1,
+                "cols": 1,
+                "bonus": 25,
+                "range": 2,
+                "avail": 1
+              },
+              {
+                "name": "Library",
+                "rows": 1,
+                "cols": 1,
+                "bonus": 20,
+                "range": 2,
+                "avail": 1
+              }
+            ],
+            "residentialTypes": [
+              {
+                "name": "Courtyard",
+                "w": 2,
+                "h": 2,
+                "min": 40,
+                "max": 80,
+                "avail": 3
+              },
+              {
+                "name": "Studio",
+                "w": 1,
+                "h": 1,
+                "min": 10,
+                "max": 20,
+                "avail": 4
+              }
+            ],
+            "availableBuildings": {
+              "services": 1,
+              "residentials": 2
+            },
+            "greedy": {
+              "restarts": 2,
+              "localSearch": true,
+              "timeLimitSeconds": 120,
+              "randomSeed": 7
+            }
+          },
           "totalPopulation": 130,
           "valid": true,
           "errors": [],
           "roadCount": 1,
           "serviceCount": 1,
           "residentialCount": 2,
-          "wallClockSeconds": 0.067
+          "wallClockSeconds": 0.065,
+          "progressSummary": {
+            "currentScore": 130,
+            "bestScore": 130,
+            "activeStage": "greedy",
+            "reuseSource": null,
+            "elapsedTimeSeconds": 0.065,
+            "timeSinceImprovementSeconds": null,
+            "stopReason": null,
+            "exactGap": null,
+            "portfolioWorkerSummary": null
+          },
+          "decisionTrace": [
+            {
+              "schemaVersion": 1,
+              "runId": "planner-service-overlap:greedy:budget-120:seed-7",
+              "sequence": 0,
+              "eventId": "planner-service-overlap:greedy:budget-120:seed-7:0000:checkpoint",
+              "optimizer": "greedy",
+              "activeStage": "greedy",
+              "kind": "checkpoint",
+              "decision": "improved",
+              "reason": "greedy final incumbent population 130.",
+              "score": {
+                "before": null,
+                "after": 130,
+                "best": 130,
+                "delta": null,
+                "upperBound": null,
+                "gap": null
+              },
+              "evidence": {
+                "stoppedByUser": false,
+                "stoppedByTimeLimit": false,
+                "roadCount": 1,
+                "serviceCount": 1,
+                "residentialCount": 2
+              },
+              "elapsedMs": 65
+            }
+          ],
+          "timeToQuality": {
+            "finalElapsedMs": 65,
+            "finalScore": 130,
+            "bestScore": 130,
+            "firstFeasibleAtMs": 65,
+            "firstImprovementAtMs": 65,
+            "bestScoreAtMs": 65,
+            "improvementCount": 1,
+            "timeCheckpoints": [
+              {
+                "elapsedMs": 5000,
+                "bestScore": 130,
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "reached": true
+              },
+              {
+                "elapsedMs": 30000,
+                "bestScore": 130,
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "reached": true
+              },
+              {
+                "elapsedMs": 120000,
+                "bestScore": 130,
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "reached": true
+              }
+            ],
+            "qualityTargets": [
+              {
+                "ratio": 0.5,
+                "targetScore": 65,
+                "reachedAtMs": 65,
+                "reachedScore": 130
+              },
+              {
+                "ratio": 0.9,
+                "targetScore": 117,
+                "reachedAtMs": 65,
+                "reachedScore": 130
+              },
+              {
+                "ratio": 1,
+                "targetScore": 130,
+                "reachedAtMs": 65,
+                "reachedScore": 130
+              }
+            ]
+          },
+          "checkpointReason": "greedy final incumbent population 130."
         }
       ],
       "budgetQuality": {
@@ -398,46 +2574,582 @@
         {
           "budgetSeconds": 1,
           "seed": 7,
+          "solverParams": {
+            "optimizer": "greedy",
+            "serviceTypes": [
+              {
+                "name": "Anchor Clinic",
+                "rows": 1,
+                "cols": 1,
+                "bonus": 20,
+                "range": 1,
+                "avail": 1
+              }
+            ],
+            "residentialTypes": [
+              {
+                "name": "Anchor Home",
+                "w": 1,
+                "h": 1,
+                "min": 10,
+                "max": 20,
+                "avail": 4
+              },
+              {
+                "name": "Block",
+                "w": 2,
+                "h": 2,
+                "min": 40,
+                "max": 80,
+                "avail": 3
+              }
+            ],
+            "availableBuildings": {
+              "services": 1,
+              "residentials": 2
+            },
+            "greedy": {
+              "restarts": 2,
+              "localSearch": true,
+              "timeLimitSeconds": 1,
+              "randomSeed": 7
+            }
+          },
           "totalPopulation": 120,
           "valid": true,
           "errors": [],
           "roadCount": 0,
           "serviceCount": 1,
           "residentialCount": 2,
-          "wallClockSeconds": 0.007
+          "wallClockSeconds": 0.007,
+          "progressSummary": {
+            "currentScore": 120,
+            "bestScore": 120,
+            "activeStage": "greedy",
+            "reuseSource": null,
+            "elapsedTimeSeconds": 0.007,
+            "timeSinceImprovementSeconds": null,
+            "stopReason": null,
+            "exactGap": null,
+            "portfolioWorkerSummary": null
+          },
+          "decisionTrace": [
+            {
+              "schemaVersion": 1,
+              "runId": "planner-anchor-service:greedy:budget-1:seed-7",
+              "sequence": 0,
+              "eventId": "planner-anchor-service:greedy:budget-1:seed-7:0000:checkpoint",
+              "optimizer": "greedy",
+              "activeStage": "greedy",
+              "kind": "checkpoint",
+              "decision": "improved",
+              "reason": "greedy final incumbent population 120.",
+              "score": {
+                "before": null,
+                "after": 120,
+                "best": 120,
+                "delta": null,
+                "upperBound": null,
+                "gap": null
+              },
+              "evidence": {
+                "stoppedByUser": false,
+                "stoppedByTimeLimit": false,
+                "roadCount": 0,
+                "serviceCount": 1,
+                "residentialCount": 2
+              },
+              "elapsedMs": 7
+            }
+          ],
+          "timeToQuality": {
+            "finalElapsedMs": 7,
+            "finalScore": 120,
+            "bestScore": 120,
+            "firstFeasibleAtMs": 7,
+            "firstImprovementAtMs": 7,
+            "bestScoreAtMs": 7,
+            "improvementCount": 1,
+            "timeCheckpoints": [
+              {
+                "elapsedMs": 5000,
+                "bestScore": 120,
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "reached": true
+              },
+              {
+                "elapsedMs": 30000,
+                "bestScore": 120,
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "reached": true
+              },
+              {
+                "elapsedMs": 120000,
+                "bestScore": 120,
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "reached": true
+              }
+            ],
+            "qualityTargets": [
+              {
+                "ratio": 0.5,
+                "targetScore": 60,
+                "reachedAtMs": 7,
+                "reachedScore": 120
+              },
+              {
+                "ratio": 0.9,
+                "targetScore": 108,
+                "reachedAtMs": 7,
+                "reachedScore": 120
+              },
+              {
+                "ratio": 1,
+                "targetScore": 120,
+                "reachedAtMs": 7,
+                "reachedScore": 120
+              }
+            ]
+          },
+          "checkpointReason": "greedy final incumbent population 120."
         },
         {
           "budgetSeconds": 5,
           "seed": 7,
+          "solverParams": {
+            "optimizer": "greedy",
+            "serviceTypes": [
+              {
+                "name": "Anchor Clinic",
+                "rows": 1,
+                "cols": 1,
+                "bonus": 20,
+                "range": 1,
+                "avail": 1
+              }
+            ],
+            "residentialTypes": [
+              {
+                "name": "Anchor Home",
+                "w": 1,
+                "h": 1,
+                "min": 10,
+                "max": 20,
+                "avail": 4
+              },
+              {
+                "name": "Block",
+                "w": 2,
+                "h": 2,
+                "min": 40,
+                "max": 80,
+                "avail": 3
+              }
+            ],
+            "availableBuildings": {
+              "services": 1,
+              "residentials": 2
+            },
+            "greedy": {
+              "restarts": 2,
+              "localSearch": true,
+              "timeLimitSeconds": 5,
+              "randomSeed": 7
+            }
+          },
           "totalPopulation": 120,
           "valid": true,
           "errors": [],
           "roadCount": 0,
           "serviceCount": 1,
           "residentialCount": 2,
-          "wallClockSeconds": 0.007
+          "wallClockSeconds": 0.007,
+          "progressSummary": {
+            "currentScore": 120,
+            "bestScore": 120,
+            "activeStage": "greedy",
+            "reuseSource": null,
+            "elapsedTimeSeconds": 0.007,
+            "timeSinceImprovementSeconds": null,
+            "stopReason": null,
+            "exactGap": null,
+            "portfolioWorkerSummary": null
+          },
+          "decisionTrace": [
+            {
+              "schemaVersion": 1,
+              "runId": "planner-anchor-service:greedy:budget-5:seed-7",
+              "sequence": 0,
+              "eventId": "planner-anchor-service:greedy:budget-5:seed-7:0000:checkpoint",
+              "optimizer": "greedy",
+              "activeStage": "greedy",
+              "kind": "checkpoint",
+              "decision": "improved",
+              "reason": "greedy final incumbent population 120.",
+              "score": {
+                "before": null,
+                "after": 120,
+                "best": 120,
+                "delta": null,
+                "upperBound": null,
+                "gap": null
+              },
+              "evidence": {
+                "stoppedByUser": false,
+                "stoppedByTimeLimit": false,
+                "roadCount": 0,
+                "serviceCount": 1,
+                "residentialCount": 2
+              },
+              "elapsedMs": 7
+            }
+          ],
+          "timeToQuality": {
+            "finalElapsedMs": 7,
+            "finalScore": 120,
+            "bestScore": 120,
+            "firstFeasibleAtMs": 7,
+            "firstImprovementAtMs": 7,
+            "bestScoreAtMs": 7,
+            "improvementCount": 1,
+            "timeCheckpoints": [
+              {
+                "elapsedMs": 5000,
+                "bestScore": 120,
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "reached": true
+              },
+              {
+                "elapsedMs": 30000,
+                "bestScore": 120,
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "reached": true
+              },
+              {
+                "elapsedMs": 120000,
+                "bestScore": 120,
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "reached": true
+              }
+            ],
+            "qualityTargets": [
+              {
+                "ratio": 0.5,
+                "targetScore": 60,
+                "reachedAtMs": 7,
+                "reachedScore": 120
+              },
+              {
+                "ratio": 0.9,
+                "targetScore": 108,
+                "reachedAtMs": 7,
+                "reachedScore": 120
+              },
+              {
+                "ratio": 1,
+                "targetScore": 120,
+                "reachedAtMs": 7,
+                "reachedScore": 120
+              }
+            ]
+          },
+          "checkpointReason": "greedy final incumbent population 120."
         },
         {
           "budgetSeconds": 30,
           "seed": 7,
+          "solverParams": {
+            "optimizer": "greedy",
+            "serviceTypes": [
+              {
+                "name": "Anchor Clinic",
+                "rows": 1,
+                "cols": 1,
+                "bonus": 20,
+                "range": 1,
+                "avail": 1
+              }
+            ],
+            "residentialTypes": [
+              {
+                "name": "Anchor Home",
+                "w": 1,
+                "h": 1,
+                "min": 10,
+                "max": 20,
+                "avail": 4
+              },
+              {
+                "name": "Block",
+                "w": 2,
+                "h": 2,
+                "min": 40,
+                "max": 80,
+                "avail": 3
+              }
+            ],
+            "availableBuildings": {
+              "services": 1,
+              "residentials": 2
+            },
+            "greedy": {
+              "restarts": 2,
+              "localSearch": true,
+              "timeLimitSeconds": 30,
+              "randomSeed": 7
+            }
+          },
           "totalPopulation": 120,
           "valid": true,
           "errors": [],
           "roadCount": 0,
           "serviceCount": 1,
           "residentialCount": 2,
-          "wallClockSeconds": 0.007
+          "wallClockSeconds": 0.006,
+          "progressSummary": {
+            "currentScore": 120,
+            "bestScore": 120,
+            "activeStage": "greedy",
+            "reuseSource": null,
+            "elapsedTimeSeconds": 0.006,
+            "timeSinceImprovementSeconds": null,
+            "stopReason": null,
+            "exactGap": null,
+            "portfolioWorkerSummary": null
+          },
+          "decisionTrace": [
+            {
+              "schemaVersion": 1,
+              "runId": "planner-anchor-service:greedy:budget-30:seed-7",
+              "sequence": 0,
+              "eventId": "planner-anchor-service:greedy:budget-30:seed-7:0000:checkpoint",
+              "optimizer": "greedy",
+              "activeStage": "greedy",
+              "kind": "checkpoint",
+              "decision": "improved",
+              "reason": "greedy final incumbent population 120.",
+              "score": {
+                "before": null,
+                "after": 120,
+                "best": 120,
+                "delta": null,
+                "upperBound": null,
+                "gap": null
+              },
+              "evidence": {
+                "stoppedByUser": false,
+                "stoppedByTimeLimit": false,
+                "roadCount": 0,
+                "serviceCount": 1,
+                "residentialCount": 2
+              },
+              "elapsedMs": 6
+            }
+          ],
+          "timeToQuality": {
+            "finalElapsedMs": 6,
+            "finalScore": 120,
+            "bestScore": 120,
+            "firstFeasibleAtMs": 6,
+            "firstImprovementAtMs": 6,
+            "bestScoreAtMs": 6,
+            "improvementCount": 1,
+            "timeCheckpoints": [
+              {
+                "elapsedMs": 5000,
+                "bestScore": 120,
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "reached": true
+              },
+              {
+                "elapsedMs": 30000,
+                "bestScore": 120,
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "reached": true
+              },
+              {
+                "elapsedMs": 120000,
+                "bestScore": 120,
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "reached": true
+              }
+            ],
+            "qualityTargets": [
+              {
+                "ratio": 0.5,
+                "targetScore": 60,
+                "reachedAtMs": 6,
+                "reachedScore": 120
+              },
+              {
+                "ratio": 0.9,
+                "targetScore": 108,
+                "reachedAtMs": 6,
+                "reachedScore": 120
+              },
+              {
+                "ratio": 1,
+                "targetScore": 120,
+                "reachedAtMs": 6,
+                "reachedScore": 120
+              }
+            ]
+          },
+          "checkpointReason": "greedy final incumbent population 120."
         },
         {
           "budgetSeconds": 120,
           "seed": 7,
+          "solverParams": {
+            "optimizer": "greedy",
+            "serviceTypes": [
+              {
+                "name": "Anchor Clinic",
+                "rows": 1,
+                "cols": 1,
+                "bonus": 20,
+                "range": 1,
+                "avail": 1
+              }
+            ],
+            "residentialTypes": [
+              {
+                "name": "Anchor Home",
+                "w": 1,
+                "h": 1,
+                "min": 10,
+                "max": 20,
+                "avail": 4
+              },
+              {
+                "name": "Block",
+                "w": 2,
+                "h": 2,
+                "min": 40,
+                "max": 80,
+                "avail": 3
+              }
+            ],
+            "availableBuildings": {
+              "services": 1,
+              "residentials": 2
+            },
+            "greedy": {
+              "restarts": 2,
+              "localSearch": true,
+              "timeLimitSeconds": 120,
+              "randomSeed": 7
+            }
+          },
           "totalPopulation": 120,
           "valid": true,
           "errors": [],
           "roadCount": 0,
           "serviceCount": 1,
           "residentialCount": 2,
-          "wallClockSeconds": 0.007
+          "wallClockSeconds": 0.007,
+          "progressSummary": {
+            "currentScore": 120,
+            "bestScore": 120,
+            "activeStage": "greedy",
+            "reuseSource": null,
+            "elapsedTimeSeconds": 0.007,
+            "timeSinceImprovementSeconds": null,
+            "stopReason": null,
+            "exactGap": null,
+            "portfolioWorkerSummary": null
+          },
+          "decisionTrace": [
+            {
+              "schemaVersion": 1,
+              "runId": "planner-anchor-service:greedy:budget-120:seed-7",
+              "sequence": 0,
+              "eventId": "planner-anchor-service:greedy:budget-120:seed-7:0000:checkpoint",
+              "optimizer": "greedy",
+              "activeStage": "greedy",
+              "kind": "checkpoint",
+              "decision": "improved",
+              "reason": "greedy final incumbent population 120.",
+              "score": {
+                "before": null,
+                "after": 120,
+                "best": 120,
+                "delta": null,
+                "upperBound": null,
+                "gap": null
+              },
+              "evidence": {
+                "stoppedByUser": false,
+                "stoppedByTimeLimit": false,
+                "roadCount": 0,
+                "serviceCount": 1,
+                "residentialCount": 2
+              },
+              "elapsedMs": 7
+            }
+          ],
+          "timeToQuality": {
+            "finalElapsedMs": 7,
+            "finalScore": 120,
+            "bestScore": 120,
+            "firstFeasibleAtMs": 7,
+            "firstImprovementAtMs": 7,
+            "bestScoreAtMs": 7,
+            "improvementCount": 1,
+            "timeCheckpoints": [
+              {
+                "elapsedMs": 5000,
+                "bestScore": 120,
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "reached": true
+              },
+              {
+                "elapsedMs": 30000,
+                "bestScore": 120,
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "reached": true
+              },
+              {
+                "elapsedMs": 120000,
+                "bestScore": 120,
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "reached": true
+              }
+            ],
+            "qualityTargets": [
+              {
+                "ratio": 0.5,
+                "targetScore": 60,
+                "reachedAtMs": 7,
+                "reachedScore": 120
+              },
+              {
+                "ratio": 0.9,
+                "targetScore": 108,
+                "reachedAtMs": 7,
+                "reachedScore": 120
+              },
+              {
+                "ratio": 1,
+                "targetScore": 120,
+                "reachedAtMs": 7,
+                "reachedScore": 120
+              }
+            ]
+          },
+          "checkpointReason": "greedy final incumbent population 120."
         }
       ],
       "budgetQuality": {
@@ -486,46 +3198,546 @@
         {
           "budgetSeconds": 1,
           "seed": 7,
+          "solverParams": {
+            "optimizer": "greedy",
+            "residentialTypes": [
+              {
+                "name": "Island Block",
+                "w": 2,
+                "h": 2,
+                "min": 40,
+                "max": 80,
+                "avail": 2
+              },
+              {
+                "name": "Island Studio",
+                "w": 1,
+                "h": 1,
+                "min": 10,
+                "max": 20,
+                "avail": 2
+              }
+            ],
+            "availableBuildings": {
+              "services": 0,
+              "residentials": 2
+            },
+            "greedy": {
+              "restarts": 2,
+              "localSearch": true,
+              "allowIndependentRoadAnchorComponents": true,
+              "timeLimitSeconds": 1,
+              "randomSeed": 7
+            }
+          },
           "totalPopulation": 80,
           "valid": true,
           "errors": [],
           "roadCount": 4,
           "serviceCount": 0,
           "residentialCount": 2,
-          "wallClockSeconds": 0.001
+          "wallClockSeconds": 0.001,
+          "progressSummary": {
+            "currentScore": 80,
+            "bestScore": 80,
+            "activeStage": "greedy",
+            "reuseSource": null,
+            "elapsedTimeSeconds": 0.001,
+            "timeSinceImprovementSeconds": null,
+            "stopReason": null,
+            "exactGap": null,
+            "portfolioWorkerSummary": null
+          },
+          "decisionTrace": [
+            {
+              "schemaVersion": 1,
+              "runId": "planner-multi-anchor-islands:greedy:budget-1:seed-7",
+              "sequence": 0,
+              "eventId": "planner-multi-anchor-islands:greedy:budget-1:seed-7:0000:checkpoint",
+              "optimizer": "greedy",
+              "activeStage": "greedy",
+              "kind": "checkpoint",
+              "decision": "improved",
+              "reason": "greedy final incumbent population 80.",
+              "score": {
+                "before": null,
+                "after": 80,
+                "best": 80,
+                "delta": null,
+                "upperBound": null,
+                "gap": null
+              },
+              "evidence": {
+                "stoppedByUser": false,
+                "stoppedByTimeLimit": false,
+                "roadCount": 4,
+                "serviceCount": 0,
+                "residentialCount": 2
+              },
+              "elapsedMs": 1
+            }
+          ],
+          "timeToQuality": {
+            "finalElapsedMs": 1,
+            "finalScore": 80,
+            "bestScore": 80,
+            "firstFeasibleAtMs": 1,
+            "firstImprovementAtMs": 1,
+            "bestScoreAtMs": 1,
+            "improvementCount": 1,
+            "timeCheckpoints": [
+              {
+                "elapsedMs": 5000,
+                "bestScore": 80,
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "reached": true
+              },
+              {
+                "elapsedMs": 30000,
+                "bestScore": 80,
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "reached": true
+              },
+              {
+                "elapsedMs": 120000,
+                "bestScore": 80,
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "reached": true
+              }
+            ],
+            "qualityTargets": [
+              {
+                "ratio": 0.5,
+                "targetScore": 40,
+                "reachedAtMs": 1,
+                "reachedScore": 80
+              },
+              {
+                "ratio": 0.9,
+                "targetScore": 72,
+                "reachedAtMs": 1,
+                "reachedScore": 80
+              },
+              {
+                "ratio": 1,
+                "targetScore": 80,
+                "reachedAtMs": 1,
+                "reachedScore": 80
+              }
+            ]
+          },
+          "checkpointReason": "greedy final incumbent population 80."
         },
         {
           "budgetSeconds": 5,
           "seed": 7,
+          "solverParams": {
+            "optimizer": "greedy",
+            "residentialTypes": [
+              {
+                "name": "Island Block",
+                "w": 2,
+                "h": 2,
+                "min": 40,
+                "max": 80,
+                "avail": 2
+              },
+              {
+                "name": "Island Studio",
+                "w": 1,
+                "h": 1,
+                "min": 10,
+                "max": 20,
+                "avail": 2
+              }
+            ],
+            "availableBuildings": {
+              "services": 0,
+              "residentials": 2
+            },
+            "greedy": {
+              "restarts": 2,
+              "localSearch": true,
+              "allowIndependentRoadAnchorComponents": true,
+              "timeLimitSeconds": 5,
+              "randomSeed": 7
+            }
+          },
           "totalPopulation": 80,
           "valid": true,
           "errors": [],
           "roadCount": 4,
           "serviceCount": 0,
           "residentialCount": 2,
-          "wallClockSeconds": 0.001
+          "wallClockSeconds": 0,
+          "progressSummary": {
+            "currentScore": 80,
+            "bestScore": 80,
+            "activeStage": "greedy",
+            "reuseSource": null,
+            "elapsedTimeSeconds": 0,
+            "timeSinceImprovementSeconds": null,
+            "stopReason": null,
+            "exactGap": null,
+            "portfolioWorkerSummary": null
+          },
+          "decisionTrace": [
+            {
+              "schemaVersion": 1,
+              "runId": "planner-multi-anchor-islands:greedy:budget-5:seed-7",
+              "sequence": 0,
+              "eventId": "planner-multi-anchor-islands:greedy:budget-5:seed-7:0000:checkpoint",
+              "optimizer": "greedy",
+              "activeStage": "greedy",
+              "kind": "checkpoint",
+              "decision": "improved",
+              "reason": "greedy final incumbent population 80.",
+              "score": {
+                "before": null,
+                "after": 80,
+                "best": 80,
+                "delta": null,
+                "upperBound": null,
+                "gap": null
+              },
+              "evidence": {
+                "stoppedByUser": false,
+                "stoppedByTimeLimit": false,
+                "roadCount": 4,
+                "serviceCount": 0,
+                "residentialCount": 2
+              },
+              "elapsedMs": 0
+            }
+          ],
+          "timeToQuality": {
+            "finalElapsedMs": 0,
+            "finalScore": 80,
+            "bestScore": 80,
+            "firstFeasibleAtMs": 0,
+            "firstImprovementAtMs": 0,
+            "bestScoreAtMs": 0,
+            "improvementCount": 1,
+            "timeCheckpoints": [
+              {
+                "elapsedMs": 5000,
+                "bestScore": 80,
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "reached": true
+              },
+              {
+                "elapsedMs": 30000,
+                "bestScore": 80,
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "reached": true
+              },
+              {
+                "elapsedMs": 120000,
+                "bestScore": 80,
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "reached": true
+              }
+            ],
+            "qualityTargets": [
+              {
+                "ratio": 0.5,
+                "targetScore": 40,
+                "reachedAtMs": 0,
+                "reachedScore": 80
+              },
+              {
+                "ratio": 0.9,
+                "targetScore": 72,
+                "reachedAtMs": 0,
+                "reachedScore": 80
+              },
+              {
+                "ratio": 1,
+                "targetScore": 80,
+                "reachedAtMs": 0,
+                "reachedScore": 80
+              }
+            ]
+          },
+          "checkpointReason": "greedy final incumbent population 80."
         },
         {
           "budgetSeconds": 30,
           "seed": 7,
+          "solverParams": {
+            "optimizer": "greedy",
+            "residentialTypes": [
+              {
+                "name": "Island Block",
+                "w": 2,
+                "h": 2,
+                "min": 40,
+                "max": 80,
+                "avail": 2
+              },
+              {
+                "name": "Island Studio",
+                "w": 1,
+                "h": 1,
+                "min": 10,
+                "max": 20,
+                "avail": 2
+              }
+            ],
+            "availableBuildings": {
+              "services": 0,
+              "residentials": 2
+            },
+            "greedy": {
+              "restarts": 2,
+              "localSearch": true,
+              "allowIndependentRoadAnchorComponents": true,
+              "timeLimitSeconds": 30,
+              "randomSeed": 7
+            }
+          },
           "totalPopulation": 80,
           "valid": true,
           "errors": [],
           "roadCount": 4,
           "serviceCount": 0,
           "residentialCount": 2,
-          "wallClockSeconds": 0
+          "wallClockSeconds": 0,
+          "progressSummary": {
+            "currentScore": 80,
+            "bestScore": 80,
+            "activeStage": "greedy",
+            "reuseSource": null,
+            "elapsedTimeSeconds": 0,
+            "timeSinceImprovementSeconds": null,
+            "stopReason": null,
+            "exactGap": null,
+            "portfolioWorkerSummary": null
+          },
+          "decisionTrace": [
+            {
+              "schemaVersion": 1,
+              "runId": "planner-multi-anchor-islands:greedy:budget-30:seed-7",
+              "sequence": 0,
+              "eventId": "planner-multi-anchor-islands:greedy:budget-30:seed-7:0000:checkpoint",
+              "optimizer": "greedy",
+              "activeStage": "greedy",
+              "kind": "checkpoint",
+              "decision": "improved",
+              "reason": "greedy final incumbent population 80.",
+              "score": {
+                "before": null,
+                "after": 80,
+                "best": 80,
+                "delta": null,
+                "upperBound": null,
+                "gap": null
+              },
+              "evidence": {
+                "stoppedByUser": false,
+                "stoppedByTimeLimit": false,
+                "roadCount": 4,
+                "serviceCount": 0,
+                "residentialCount": 2
+              },
+              "elapsedMs": 0
+            }
+          ],
+          "timeToQuality": {
+            "finalElapsedMs": 0,
+            "finalScore": 80,
+            "bestScore": 80,
+            "firstFeasibleAtMs": 0,
+            "firstImprovementAtMs": 0,
+            "bestScoreAtMs": 0,
+            "improvementCount": 1,
+            "timeCheckpoints": [
+              {
+                "elapsedMs": 5000,
+                "bestScore": 80,
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "reached": true
+              },
+              {
+                "elapsedMs": 30000,
+                "bestScore": 80,
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "reached": true
+              },
+              {
+                "elapsedMs": 120000,
+                "bestScore": 80,
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "reached": true
+              }
+            ],
+            "qualityTargets": [
+              {
+                "ratio": 0.5,
+                "targetScore": 40,
+                "reachedAtMs": 0,
+                "reachedScore": 80
+              },
+              {
+                "ratio": 0.9,
+                "targetScore": 72,
+                "reachedAtMs": 0,
+                "reachedScore": 80
+              },
+              {
+                "ratio": 1,
+                "targetScore": 80,
+                "reachedAtMs": 0,
+                "reachedScore": 80
+              }
+            ]
+          },
+          "checkpointReason": "greedy final incumbent population 80."
         },
         {
           "budgetSeconds": 120,
           "seed": 7,
+          "solverParams": {
+            "optimizer": "greedy",
+            "residentialTypes": [
+              {
+                "name": "Island Block",
+                "w": 2,
+                "h": 2,
+                "min": 40,
+                "max": 80,
+                "avail": 2
+              },
+              {
+                "name": "Island Studio",
+                "w": 1,
+                "h": 1,
+                "min": 10,
+                "max": 20,
+                "avail": 2
+              }
+            ],
+            "availableBuildings": {
+              "services": 0,
+              "residentials": 2
+            },
+            "greedy": {
+              "restarts": 2,
+              "localSearch": true,
+              "allowIndependentRoadAnchorComponents": true,
+              "timeLimitSeconds": 120,
+              "randomSeed": 7
+            }
+          },
           "totalPopulation": 80,
           "valid": true,
           "errors": [],
           "roadCount": 4,
           "serviceCount": 0,
           "residentialCount": 2,
-          "wallClockSeconds": 0
+          "wallClockSeconds": 0.001,
+          "progressSummary": {
+            "currentScore": 80,
+            "bestScore": 80,
+            "activeStage": "greedy",
+            "reuseSource": null,
+            "elapsedTimeSeconds": 0.001,
+            "timeSinceImprovementSeconds": null,
+            "stopReason": null,
+            "exactGap": null,
+            "portfolioWorkerSummary": null
+          },
+          "decisionTrace": [
+            {
+              "schemaVersion": 1,
+              "runId": "planner-multi-anchor-islands:greedy:budget-120:seed-7",
+              "sequence": 0,
+              "eventId": "planner-multi-anchor-islands:greedy:budget-120:seed-7:0000:checkpoint",
+              "optimizer": "greedy",
+              "activeStage": "greedy",
+              "kind": "checkpoint",
+              "decision": "improved",
+              "reason": "greedy final incumbent population 80.",
+              "score": {
+                "before": null,
+                "after": 80,
+                "best": 80,
+                "delta": null,
+                "upperBound": null,
+                "gap": null
+              },
+              "evidence": {
+                "stoppedByUser": false,
+                "stoppedByTimeLimit": false,
+                "roadCount": 4,
+                "serviceCount": 0,
+                "residentialCount": 2
+              },
+              "elapsedMs": 1
+            }
+          ],
+          "timeToQuality": {
+            "finalElapsedMs": 1,
+            "finalScore": 80,
+            "bestScore": 80,
+            "firstFeasibleAtMs": 1,
+            "firstImprovementAtMs": 1,
+            "bestScoreAtMs": 1,
+            "improvementCount": 1,
+            "timeCheckpoints": [
+              {
+                "elapsedMs": 5000,
+                "bestScore": 80,
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "reached": true
+              },
+              {
+                "elapsedMs": 30000,
+                "bestScore": 80,
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "reached": true
+              },
+              {
+                "elapsedMs": 120000,
+                "bestScore": 80,
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "reached": true
+              }
+            ],
+            "qualityTargets": [
+              {
+                "ratio": 0.5,
+                "targetScore": 40,
+                "reachedAtMs": 1,
+                "reachedScore": 80
+              },
+              {
+                "ratio": 0.9,
+                "targetScore": 72,
+                "reachedAtMs": 1,
+                "reachedScore": 80
+              },
+              {
+                "ratio": 1,
+                "targetScore": 80,
+                "reachedAtMs": 1,
+                "reachedScore": 80
+              }
+            ]
+          },
+          "checkpointReason": "greedy final incumbent population 80."
         }
       ],
       "budgetQuality": {
@@ -574,46 +3786,582 @@
         {
           "budgetSeconds": 1,
           "seed": 7,
+          "solverParams": {
+            "optimizer": "greedy",
+            "serviceTypes": [
+              {
+                "name": "Linear Market",
+                "rows": 1,
+                "cols": 2,
+                "bonus": 25,
+                "range": 1,
+                "avail": 1
+              }
+            ],
+            "residentialTypes": [
+              {
+                "name": "Rowhouse",
+                "w": 3,
+                "h": 1,
+                "min": 35,
+                "max": 65,
+                "avail": 2
+              },
+              {
+                "name": "Pocket Courtyard",
+                "w": 2,
+                "h": 2,
+                "min": 55,
+                "max": 95,
+                "avail": 1
+              }
+            ],
+            "availableBuildings": {
+              "services": 1,
+              "residentials": 2
+            },
+            "greedy": {
+              "restarts": 2,
+              "localSearch": true,
+              "timeLimitSeconds": 1,
+              "randomSeed": 7
+            }
+          },
           "totalPopulation": 140,
           "valid": true,
           "errors": [],
           "roadCount": 0,
           "serviceCount": 1,
           "residentialCount": 2,
-          "wallClockSeconds": 0.053
+          "wallClockSeconds": 0.05,
+          "progressSummary": {
+            "currentScore": 140,
+            "bestScore": 140,
+            "activeStage": "greedy",
+            "reuseSource": null,
+            "elapsedTimeSeconds": 0.05,
+            "timeSinceImprovementSeconds": null,
+            "stopReason": null,
+            "exactGap": null,
+            "portfolioWorkerSummary": null
+          },
+          "decisionTrace": [
+            {
+              "schemaVersion": 1,
+              "runId": "planner-rotated-rowhouse:greedy:budget-1:seed-7",
+              "sequence": 0,
+              "eventId": "planner-rotated-rowhouse:greedy:budget-1:seed-7:0000:checkpoint",
+              "optimizer": "greedy",
+              "activeStage": "greedy",
+              "kind": "checkpoint",
+              "decision": "improved",
+              "reason": "greedy final incumbent population 140.",
+              "score": {
+                "before": null,
+                "after": 140,
+                "best": 140,
+                "delta": null,
+                "upperBound": null,
+                "gap": null
+              },
+              "evidence": {
+                "stoppedByUser": false,
+                "stoppedByTimeLimit": false,
+                "roadCount": 0,
+                "serviceCount": 1,
+                "residentialCount": 2
+              },
+              "elapsedMs": 50
+            }
+          ],
+          "timeToQuality": {
+            "finalElapsedMs": 50,
+            "finalScore": 140,
+            "bestScore": 140,
+            "firstFeasibleAtMs": 50,
+            "firstImprovementAtMs": 50,
+            "bestScoreAtMs": 50,
+            "improvementCount": 1,
+            "timeCheckpoints": [
+              {
+                "elapsedMs": 5000,
+                "bestScore": 140,
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "reached": true
+              },
+              {
+                "elapsedMs": 30000,
+                "bestScore": 140,
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "reached": true
+              },
+              {
+                "elapsedMs": 120000,
+                "bestScore": 140,
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "reached": true
+              }
+            ],
+            "qualityTargets": [
+              {
+                "ratio": 0.5,
+                "targetScore": 70,
+                "reachedAtMs": 50,
+                "reachedScore": 140
+              },
+              {
+                "ratio": 0.9,
+                "targetScore": 126,
+                "reachedAtMs": 50,
+                "reachedScore": 140
+              },
+              {
+                "ratio": 1,
+                "targetScore": 140,
+                "reachedAtMs": 50,
+                "reachedScore": 140
+              }
+            ]
+          },
+          "checkpointReason": "greedy final incumbent population 140."
         },
         {
           "budgetSeconds": 5,
           "seed": 7,
+          "solverParams": {
+            "optimizer": "greedy",
+            "serviceTypes": [
+              {
+                "name": "Linear Market",
+                "rows": 1,
+                "cols": 2,
+                "bonus": 25,
+                "range": 1,
+                "avail": 1
+              }
+            ],
+            "residentialTypes": [
+              {
+                "name": "Rowhouse",
+                "w": 3,
+                "h": 1,
+                "min": 35,
+                "max": 65,
+                "avail": 2
+              },
+              {
+                "name": "Pocket Courtyard",
+                "w": 2,
+                "h": 2,
+                "min": 55,
+                "max": 95,
+                "avail": 1
+              }
+            ],
+            "availableBuildings": {
+              "services": 1,
+              "residentials": 2
+            },
+            "greedy": {
+              "restarts": 2,
+              "localSearch": true,
+              "timeLimitSeconds": 5,
+              "randomSeed": 7
+            }
+          },
           "totalPopulation": 140,
           "valid": true,
           "errors": [],
           "roadCount": 0,
           "serviceCount": 1,
           "residentialCount": 2,
-          "wallClockSeconds": 0.052
+          "wallClockSeconds": 0.046,
+          "progressSummary": {
+            "currentScore": 140,
+            "bestScore": 140,
+            "activeStage": "greedy",
+            "reuseSource": null,
+            "elapsedTimeSeconds": 0.046,
+            "timeSinceImprovementSeconds": null,
+            "stopReason": null,
+            "exactGap": null,
+            "portfolioWorkerSummary": null
+          },
+          "decisionTrace": [
+            {
+              "schemaVersion": 1,
+              "runId": "planner-rotated-rowhouse:greedy:budget-5:seed-7",
+              "sequence": 0,
+              "eventId": "planner-rotated-rowhouse:greedy:budget-5:seed-7:0000:checkpoint",
+              "optimizer": "greedy",
+              "activeStage": "greedy",
+              "kind": "checkpoint",
+              "decision": "improved",
+              "reason": "greedy final incumbent population 140.",
+              "score": {
+                "before": null,
+                "after": 140,
+                "best": 140,
+                "delta": null,
+                "upperBound": null,
+                "gap": null
+              },
+              "evidence": {
+                "stoppedByUser": false,
+                "stoppedByTimeLimit": false,
+                "roadCount": 0,
+                "serviceCount": 1,
+                "residentialCount": 2
+              },
+              "elapsedMs": 46
+            }
+          ],
+          "timeToQuality": {
+            "finalElapsedMs": 46,
+            "finalScore": 140,
+            "bestScore": 140,
+            "firstFeasibleAtMs": 46,
+            "firstImprovementAtMs": 46,
+            "bestScoreAtMs": 46,
+            "improvementCount": 1,
+            "timeCheckpoints": [
+              {
+                "elapsedMs": 5000,
+                "bestScore": 140,
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "reached": true
+              },
+              {
+                "elapsedMs": 30000,
+                "bestScore": 140,
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "reached": true
+              },
+              {
+                "elapsedMs": 120000,
+                "bestScore": 140,
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "reached": true
+              }
+            ],
+            "qualityTargets": [
+              {
+                "ratio": 0.5,
+                "targetScore": 70,
+                "reachedAtMs": 46,
+                "reachedScore": 140
+              },
+              {
+                "ratio": 0.9,
+                "targetScore": 126,
+                "reachedAtMs": 46,
+                "reachedScore": 140
+              },
+              {
+                "ratio": 1,
+                "targetScore": 140,
+                "reachedAtMs": 46,
+                "reachedScore": 140
+              }
+            ]
+          },
+          "checkpointReason": "greedy final incumbent population 140."
         },
         {
           "budgetSeconds": 30,
           "seed": 7,
+          "solverParams": {
+            "optimizer": "greedy",
+            "serviceTypes": [
+              {
+                "name": "Linear Market",
+                "rows": 1,
+                "cols": 2,
+                "bonus": 25,
+                "range": 1,
+                "avail": 1
+              }
+            ],
+            "residentialTypes": [
+              {
+                "name": "Rowhouse",
+                "w": 3,
+                "h": 1,
+                "min": 35,
+                "max": 65,
+                "avail": 2
+              },
+              {
+                "name": "Pocket Courtyard",
+                "w": 2,
+                "h": 2,
+                "min": 55,
+                "max": 95,
+                "avail": 1
+              }
+            ],
+            "availableBuildings": {
+              "services": 1,
+              "residentials": 2
+            },
+            "greedy": {
+              "restarts": 2,
+              "localSearch": true,
+              "timeLimitSeconds": 30,
+              "randomSeed": 7
+            }
+          },
           "totalPopulation": 140,
           "valid": true,
           "errors": [],
           "roadCount": 0,
           "serviceCount": 1,
           "residentialCount": 2,
-          "wallClockSeconds": 0.05
+          "wallClockSeconds": 0.046,
+          "progressSummary": {
+            "currentScore": 140,
+            "bestScore": 140,
+            "activeStage": "greedy",
+            "reuseSource": null,
+            "elapsedTimeSeconds": 0.046,
+            "timeSinceImprovementSeconds": null,
+            "stopReason": null,
+            "exactGap": null,
+            "portfolioWorkerSummary": null
+          },
+          "decisionTrace": [
+            {
+              "schemaVersion": 1,
+              "runId": "planner-rotated-rowhouse:greedy:budget-30:seed-7",
+              "sequence": 0,
+              "eventId": "planner-rotated-rowhouse:greedy:budget-30:seed-7:0000:checkpoint",
+              "optimizer": "greedy",
+              "activeStage": "greedy",
+              "kind": "checkpoint",
+              "decision": "improved",
+              "reason": "greedy final incumbent population 140.",
+              "score": {
+                "before": null,
+                "after": 140,
+                "best": 140,
+                "delta": null,
+                "upperBound": null,
+                "gap": null
+              },
+              "evidence": {
+                "stoppedByUser": false,
+                "stoppedByTimeLimit": false,
+                "roadCount": 0,
+                "serviceCount": 1,
+                "residentialCount": 2
+              },
+              "elapsedMs": 46
+            }
+          ],
+          "timeToQuality": {
+            "finalElapsedMs": 46,
+            "finalScore": 140,
+            "bestScore": 140,
+            "firstFeasibleAtMs": 46,
+            "firstImprovementAtMs": 46,
+            "bestScoreAtMs": 46,
+            "improvementCount": 1,
+            "timeCheckpoints": [
+              {
+                "elapsedMs": 5000,
+                "bestScore": 140,
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "reached": true
+              },
+              {
+                "elapsedMs": 30000,
+                "bestScore": 140,
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "reached": true
+              },
+              {
+                "elapsedMs": 120000,
+                "bestScore": 140,
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "reached": true
+              }
+            ],
+            "qualityTargets": [
+              {
+                "ratio": 0.5,
+                "targetScore": 70,
+                "reachedAtMs": 46,
+                "reachedScore": 140
+              },
+              {
+                "ratio": 0.9,
+                "targetScore": 126,
+                "reachedAtMs": 46,
+                "reachedScore": 140
+              },
+              {
+                "ratio": 1,
+                "targetScore": 140,
+                "reachedAtMs": 46,
+                "reachedScore": 140
+              }
+            ]
+          },
+          "checkpointReason": "greedy final incumbent population 140."
         },
         {
           "budgetSeconds": 120,
           "seed": 7,
+          "solverParams": {
+            "optimizer": "greedy",
+            "serviceTypes": [
+              {
+                "name": "Linear Market",
+                "rows": 1,
+                "cols": 2,
+                "bonus": 25,
+                "range": 1,
+                "avail": 1
+              }
+            ],
+            "residentialTypes": [
+              {
+                "name": "Rowhouse",
+                "w": 3,
+                "h": 1,
+                "min": 35,
+                "max": 65,
+                "avail": 2
+              },
+              {
+                "name": "Pocket Courtyard",
+                "w": 2,
+                "h": 2,
+                "min": 55,
+                "max": 95,
+                "avail": 1
+              }
+            ],
+            "availableBuildings": {
+              "services": 1,
+              "residentials": 2
+            },
+            "greedy": {
+              "restarts": 2,
+              "localSearch": true,
+              "timeLimitSeconds": 120,
+              "randomSeed": 7
+            }
+          },
           "totalPopulation": 140,
           "valid": true,
           "errors": [],
           "roadCount": 0,
           "serviceCount": 1,
           "residentialCount": 2,
-          "wallClockSeconds": 0.047
+          "wallClockSeconds": 0.047,
+          "progressSummary": {
+            "currentScore": 140,
+            "bestScore": 140,
+            "activeStage": "greedy",
+            "reuseSource": null,
+            "elapsedTimeSeconds": 0.047,
+            "timeSinceImprovementSeconds": null,
+            "stopReason": null,
+            "exactGap": null,
+            "portfolioWorkerSummary": null
+          },
+          "decisionTrace": [
+            {
+              "schemaVersion": 1,
+              "runId": "planner-rotated-rowhouse:greedy:budget-120:seed-7",
+              "sequence": 0,
+              "eventId": "planner-rotated-rowhouse:greedy:budget-120:seed-7:0000:checkpoint",
+              "optimizer": "greedy",
+              "activeStage": "greedy",
+              "kind": "checkpoint",
+              "decision": "improved",
+              "reason": "greedy final incumbent population 140.",
+              "score": {
+                "before": null,
+                "after": 140,
+                "best": 140,
+                "delta": null,
+                "upperBound": null,
+                "gap": null
+              },
+              "evidence": {
+                "stoppedByUser": false,
+                "stoppedByTimeLimit": false,
+                "roadCount": 0,
+                "serviceCount": 1,
+                "residentialCount": 2
+              },
+              "elapsedMs": 47
+            }
+          ],
+          "timeToQuality": {
+            "finalElapsedMs": 47,
+            "finalScore": 140,
+            "bestScore": 140,
+            "firstFeasibleAtMs": 47,
+            "firstImprovementAtMs": 47,
+            "bestScoreAtMs": 47,
+            "improvementCount": 1,
+            "timeCheckpoints": [
+              {
+                "elapsedMs": 5000,
+                "bestScore": 140,
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "reached": true
+              },
+              {
+                "elapsedMs": 30000,
+                "bestScore": 140,
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "reached": true
+              },
+              {
+                "elapsedMs": 120000,
+                "bestScore": 140,
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "reached": true
+              }
+            ],
+            "qualityTargets": [
+              {
+                "ratio": 0.5,
+                "targetScore": 70,
+                "reachedAtMs": 47,
+                "reachedScore": 140
+              },
+              {
+                "ratio": 0.9,
+                "targetScore": 126,
+                "reachedAtMs": 47,
+                "reachedScore": 140
+              },
+              {
+                "ratio": 1,
+                "targetScore": 140,
+                "reachedAtMs": 47,
+                "reachedScore": 140
+              }
+            ]
+          },
+          "checkpointReason": "greedy final incumbent population 140."
         }
       ],
       "budgetQuality": {
@@ -662,46 +4410,614 @@
         {
           "budgetSeconds": 1,
           "seed": 7,
+          "solverParams": {
+            "optimizer": "greedy",
+            "serviceTypes": [
+              {
+                "name": "Gate Clinic",
+                "rows": 1,
+                "cols": 1,
+                "bonus": 20,
+                "range": 1,
+                "avail": 1
+              },
+              {
+                "name": "Gate Depot",
+                "rows": 1,
+                "cols": 1,
+                "bonus": 30,
+                "range": 1,
+                "avail": 1
+              }
+            ],
+            "residentialTypes": [
+              {
+                "name": "Gate Block",
+                "w": 2,
+                "h": 2,
+                "min": 50,
+                "max": 100,
+                "avail": 2
+              },
+              {
+                "name": "Gate Studio",
+                "w": 1,
+                "h": 1,
+                "min": 15,
+                "max": 35,
+                "avail": 2
+              }
+            ],
+            "availableBuildings": {
+              "services": 2,
+              "residentials": 2
+            },
+            "greedy": {
+              "restarts": 2,
+              "localSearch": true,
+              "timeLimitSeconds": 1,
+              "randomSeed": 7
+            }
+          },
           "totalPopulation": 200,
           "valid": true,
           "errors": [],
           "roadCount": 7,
           "serviceCount": 2,
           "residentialCount": 2,
-          "wallClockSeconds": 0.139
+          "wallClockSeconds": 0.139,
+          "progressSummary": {
+            "currentScore": 200,
+            "bestScore": 200,
+            "activeStage": "greedy",
+            "reuseSource": null,
+            "elapsedTimeSeconds": 0.139,
+            "timeSinceImprovementSeconds": null,
+            "stopReason": null,
+            "exactGap": null,
+            "portfolioWorkerSummary": null
+          },
+          "decisionTrace": [
+            {
+              "schemaVersion": 1,
+              "runId": "planner-gate-service-tradeoff:greedy:budget-1:seed-7",
+              "sequence": 0,
+              "eventId": "planner-gate-service-tradeoff:greedy:budget-1:seed-7:0000:checkpoint",
+              "optimizer": "greedy",
+              "activeStage": "greedy",
+              "kind": "checkpoint",
+              "decision": "improved",
+              "reason": "greedy final incumbent population 200.",
+              "score": {
+                "before": null,
+                "after": 200,
+                "best": 200,
+                "delta": null,
+                "upperBound": null,
+                "gap": null
+              },
+              "evidence": {
+                "stoppedByUser": false,
+                "stoppedByTimeLimit": false,
+                "roadCount": 7,
+                "serviceCount": 2,
+                "residentialCount": 2
+              },
+              "elapsedMs": 139
+            }
+          ],
+          "timeToQuality": {
+            "finalElapsedMs": 139,
+            "finalScore": 200,
+            "bestScore": 200,
+            "firstFeasibleAtMs": 139,
+            "firstImprovementAtMs": 139,
+            "bestScoreAtMs": 139,
+            "improvementCount": 1,
+            "timeCheckpoints": [
+              {
+                "elapsedMs": 5000,
+                "bestScore": 200,
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "reached": true
+              },
+              {
+                "elapsedMs": 30000,
+                "bestScore": 200,
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "reached": true
+              },
+              {
+                "elapsedMs": 120000,
+                "bestScore": 200,
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "reached": true
+              }
+            ],
+            "qualityTargets": [
+              {
+                "ratio": 0.5,
+                "targetScore": 100,
+                "reachedAtMs": 139,
+                "reachedScore": 200
+              },
+              {
+                "ratio": 0.9,
+                "targetScore": 180,
+                "reachedAtMs": 139,
+                "reachedScore": 200
+              },
+              {
+                "ratio": 1,
+                "targetScore": 200,
+                "reachedAtMs": 139,
+                "reachedScore": 200
+              }
+            ]
+          },
+          "checkpointReason": "greedy final incumbent population 200."
         },
         {
           "budgetSeconds": 5,
           "seed": 7,
+          "solverParams": {
+            "optimizer": "greedy",
+            "serviceTypes": [
+              {
+                "name": "Gate Clinic",
+                "rows": 1,
+                "cols": 1,
+                "bonus": 20,
+                "range": 1,
+                "avail": 1
+              },
+              {
+                "name": "Gate Depot",
+                "rows": 1,
+                "cols": 1,
+                "bonus": 30,
+                "range": 1,
+                "avail": 1
+              }
+            ],
+            "residentialTypes": [
+              {
+                "name": "Gate Block",
+                "w": 2,
+                "h": 2,
+                "min": 50,
+                "max": 100,
+                "avail": 2
+              },
+              {
+                "name": "Gate Studio",
+                "w": 1,
+                "h": 1,
+                "min": 15,
+                "max": 35,
+                "avail": 2
+              }
+            ],
+            "availableBuildings": {
+              "services": 2,
+              "residentials": 2
+            },
+            "greedy": {
+              "restarts": 2,
+              "localSearch": true,
+              "timeLimitSeconds": 5,
+              "randomSeed": 7
+            }
+          },
           "totalPopulation": 200,
           "valid": true,
           "errors": [],
           "roadCount": 7,
           "serviceCount": 2,
           "residentialCount": 2,
-          "wallClockSeconds": 0.141
+          "wallClockSeconds": 0.145,
+          "progressSummary": {
+            "currentScore": 200,
+            "bestScore": 200,
+            "activeStage": "greedy",
+            "reuseSource": null,
+            "elapsedTimeSeconds": 0.145,
+            "timeSinceImprovementSeconds": null,
+            "stopReason": null,
+            "exactGap": null,
+            "portfolioWorkerSummary": null
+          },
+          "decisionTrace": [
+            {
+              "schemaVersion": 1,
+              "runId": "planner-gate-service-tradeoff:greedy:budget-5:seed-7",
+              "sequence": 0,
+              "eventId": "planner-gate-service-tradeoff:greedy:budget-5:seed-7:0000:checkpoint",
+              "optimizer": "greedy",
+              "activeStage": "greedy",
+              "kind": "checkpoint",
+              "decision": "improved",
+              "reason": "greedy final incumbent population 200.",
+              "score": {
+                "before": null,
+                "after": 200,
+                "best": 200,
+                "delta": null,
+                "upperBound": null,
+                "gap": null
+              },
+              "evidence": {
+                "stoppedByUser": false,
+                "stoppedByTimeLimit": false,
+                "roadCount": 7,
+                "serviceCount": 2,
+                "residentialCount": 2
+              },
+              "elapsedMs": 145
+            }
+          ],
+          "timeToQuality": {
+            "finalElapsedMs": 145,
+            "finalScore": 200,
+            "bestScore": 200,
+            "firstFeasibleAtMs": 145,
+            "firstImprovementAtMs": 145,
+            "bestScoreAtMs": 145,
+            "improvementCount": 1,
+            "timeCheckpoints": [
+              {
+                "elapsedMs": 5000,
+                "bestScore": 200,
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "reached": true
+              },
+              {
+                "elapsedMs": 30000,
+                "bestScore": 200,
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "reached": true
+              },
+              {
+                "elapsedMs": 120000,
+                "bestScore": 200,
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "reached": true
+              }
+            ],
+            "qualityTargets": [
+              {
+                "ratio": 0.5,
+                "targetScore": 100,
+                "reachedAtMs": 145,
+                "reachedScore": 200
+              },
+              {
+                "ratio": 0.9,
+                "targetScore": 180,
+                "reachedAtMs": 145,
+                "reachedScore": 200
+              },
+              {
+                "ratio": 1,
+                "targetScore": 200,
+                "reachedAtMs": 145,
+                "reachedScore": 200
+              }
+            ]
+          },
+          "checkpointReason": "greedy final incumbent population 200."
         },
         {
           "budgetSeconds": 30,
           "seed": 7,
+          "solverParams": {
+            "optimizer": "greedy",
+            "serviceTypes": [
+              {
+                "name": "Gate Clinic",
+                "rows": 1,
+                "cols": 1,
+                "bonus": 20,
+                "range": 1,
+                "avail": 1
+              },
+              {
+                "name": "Gate Depot",
+                "rows": 1,
+                "cols": 1,
+                "bonus": 30,
+                "range": 1,
+                "avail": 1
+              }
+            ],
+            "residentialTypes": [
+              {
+                "name": "Gate Block",
+                "w": 2,
+                "h": 2,
+                "min": 50,
+                "max": 100,
+                "avail": 2
+              },
+              {
+                "name": "Gate Studio",
+                "w": 1,
+                "h": 1,
+                "min": 15,
+                "max": 35,
+                "avail": 2
+              }
+            ],
+            "availableBuildings": {
+              "services": 2,
+              "residentials": 2
+            },
+            "greedy": {
+              "restarts": 2,
+              "localSearch": true,
+              "timeLimitSeconds": 30,
+              "randomSeed": 7
+            }
+          },
           "totalPopulation": 200,
           "valid": true,
           "errors": [],
           "roadCount": 7,
           "serviceCount": 2,
           "residentialCount": 2,
-          "wallClockSeconds": 0.139
+          "wallClockSeconds": 0.138,
+          "progressSummary": {
+            "currentScore": 200,
+            "bestScore": 200,
+            "activeStage": "greedy",
+            "reuseSource": null,
+            "elapsedTimeSeconds": 0.138,
+            "timeSinceImprovementSeconds": null,
+            "stopReason": null,
+            "exactGap": null,
+            "portfolioWorkerSummary": null
+          },
+          "decisionTrace": [
+            {
+              "schemaVersion": 1,
+              "runId": "planner-gate-service-tradeoff:greedy:budget-30:seed-7",
+              "sequence": 0,
+              "eventId": "planner-gate-service-tradeoff:greedy:budget-30:seed-7:0000:checkpoint",
+              "optimizer": "greedy",
+              "activeStage": "greedy",
+              "kind": "checkpoint",
+              "decision": "improved",
+              "reason": "greedy final incumbent population 200.",
+              "score": {
+                "before": null,
+                "after": 200,
+                "best": 200,
+                "delta": null,
+                "upperBound": null,
+                "gap": null
+              },
+              "evidence": {
+                "stoppedByUser": false,
+                "stoppedByTimeLimit": false,
+                "roadCount": 7,
+                "serviceCount": 2,
+                "residentialCount": 2
+              },
+              "elapsedMs": 138
+            }
+          ],
+          "timeToQuality": {
+            "finalElapsedMs": 138,
+            "finalScore": 200,
+            "bestScore": 200,
+            "firstFeasibleAtMs": 138,
+            "firstImprovementAtMs": 138,
+            "bestScoreAtMs": 138,
+            "improvementCount": 1,
+            "timeCheckpoints": [
+              {
+                "elapsedMs": 5000,
+                "bestScore": 200,
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "reached": true
+              },
+              {
+                "elapsedMs": 30000,
+                "bestScore": 200,
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "reached": true
+              },
+              {
+                "elapsedMs": 120000,
+                "bestScore": 200,
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "reached": true
+              }
+            ],
+            "qualityTargets": [
+              {
+                "ratio": 0.5,
+                "targetScore": 100,
+                "reachedAtMs": 138,
+                "reachedScore": 200
+              },
+              {
+                "ratio": 0.9,
+                "targetScore": 180,
+                "reachedAtMs": 138,
+                "reachedScore": 200
+              },
+              {
+                "ratio": 1,
+                "targetScore": 200,
+                "reachedAtMs": 138,
+                "reachedScore": 200
+              }
+            ]
+          },
+          "checkpointReason": "greedy final incumbent population 200."
         },
         {
           "budgetSeconds": 120,
           "seed": 7,
+          "solverParams": {
+            "optimizer": "greedy",
+            "serviceTypes": [
+              {
+                "name": "Gate Clinic",
+                "rows": 1,
+                "cols": 1,
+                "bonus": 20,
+                "range": 1,
+                "avail": 1
+              },
+              {
+                "name": "Gate Depot",
+                "rows": 1,
+                "cols": 1,
+                "bonus": 30,
+                "range": 1,
+                "avail": 1
+              }
+            ],
+            "residentialTypes": [
+              {
+                "name": "Gate Block",
+                "w": 2,
+                "h": 2,
+                "min": 50,
+                "max": 100,
+                "avail": 2
+              },
+              {
+                "name": "Gate Studio",
+                "w": 1,
+                "h": 1,
+                "min": 15,
+                "max": 35,
+                "avail": 2
+              }
+            ],
+            "availableBuildings": {
+              "services": 2,
+              "residentials": 2
+            },
+            "greedy": {
+              "restarts": 2,
+              "localSearch": true,
+              "timeLimitSeconds": 120,
+              "randomSeed": 7
+            }
+          },
           "totalPopulation": 200,
           "valid": true,
           "errors": [],
           "roadCount": 7,
           "serviceCount": 2,
           "residentialCount": 2,
-          "wallClockSeconds": 0.138
+          "wallClockSeconds": 0.142,
+          "progressSummary": {
+            "currentScore": 200,
+            "bestScore": 200,
+            "activeStage": "greedy",
+            "reuseSource": null,
+            "elapsedTimeSeconds": 0.142,
+            "timeSinceImprovementSeconds": null,
+            "stopReason": null,
+            "exactGap": null,
+            "portfolioWorkerSummary": null
+          },
+          "decisionTrace": [
+            {
+              "schemaVersion": 1,
+              "runId": "planner-gate-service-tradeoff:greedy:budget-120:seed-7",
+              "sequence": 0,
+              "eventId": "planner-gate-service-tradeoff:greedy:budget-120:seed-7:0000:checkpoint",
+              "optimizer": "greedy",
+              "activeStage": "greedy",
+              "kind": "checkpoint",
+              "decision": "improved",
+              "reason": "greedy final incumbent population 200.",
+              "score": {
+                "before": null,
+                "after": 200,
+                "best": 200,
+                "delta": null,
+                "upperBound": null,
+                "gap": null
+              },
+              "evidence": {
+                "stoppedByUser": false,
+                "stoppedByTimeLimit": false,
+                "roadCount": 7,
+                "serviceCount": 2,
+                "residentialCount": 2
+              },
+              "elapsedMs": 142
+            }
+          ],
+          "timeToQuality": {
+            "finalElapsedMs": 142,
+            "finalScore": 200,
+            "bestScore": 200,
+            "firstFeasibleAtMs": 142,
+            "firstImprovementAtMs": 142,
+            "bestScoreAtMs": 142,
+            "improvementCount": 1,
+            "timeCheckpoints": [
+              {
+                "elapsedMs": 5000,
+                "bestScore": 200,
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "reached": true
+              },
+              {
+                "elapsedMs": 30000,
+                "bestScore": 200,
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "reached": true
+              },
+              {
+                "elapsedMs": 120000,
+                "bestScore": 200,
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "reached": true
+              }
+            ],
+            "qualityTargets": [
+              {
+                "ratio": 0.5,
+                "targetScore": 100,
+                "reachedAtMs": 142,
+                "reachedScore": 200
+              },
+              {
+                "ratio": 0.9,
+                "targetScore": 180,
+                "reachedAtMs": 142,
+                "reachedScore": 200
+              },
+              {
+                "ratio": 1,
+                "targetScore": 200,
+                "reachedAtMs": 142,
+                "reachedScore": 200
+              }
+            ]
+          },
+          "checkpointReason": "greedy final incumbent population 200."
         }
       ],
       "budgetQuality": {

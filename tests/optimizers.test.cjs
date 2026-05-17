@@ -53,6 +53,7 @@ const {
   runLnsNeighborhoodAblation,
   runLnsWindowReplayLabels,
   runLnsBenchmarkSuite,
+  buildCrossModeTelemetryManifest,
   DEFAULT_ROAD_SEMANTICS_SCORECARD_CASES,
   DEFAULT_PRODUCT_WORKFLOW_BUDGETS_SECONDS,
   DEFAULT_PRODUCT_WORKFLOW_BENCHMARK_CORPUS,
@@ -64,6 +65,7 @@ const {
   formatProductWorkflowBenchmarkSuite,
   listRoadSemanticsScorecardCaseNames,
   listProductWorkflowBenchmarkCaseNames,
+  validateSolverTelemetryManifest,
   writeRoadSemanticsScorecardArtifact,
 } = require("../dist/benchmarks/index.js");
 
@@ -4639,6 +4641,24 @@ async function testCrossModeBenchmarkHelpers() {
   assert.equal(mockedAuto.timeToQuality.qualityTargets.find((entry) => entry.ratio === 1).reachedScore, 10);
   assert.match(mockedPortfolio.checkpointReason, /CP-SAT portfolio worker|CP-SAT FEASIBLE/);
   assert.equal(mocked.portfolioEfficiencySignals.length, 0);
+
+  const telemetryManifest = buildCrossModeTelemetryManifest(mocked, [benchmarkCase], {
+    modes: ["auto", "greedy", "lns", "cp-sat-portfolio"],
+    budgetsSeconds: [3],
+    seeds: [5, 11],
+    portfolio: { workerCount: 2 },
+    commands: ["npm run benchmark:scorecard -- --manifest-output=manifest.json"],
+    artifactPaths: ["artifacts/telemetry-manifests/test/manifest.json"],
+  });
+  assert.equal(telemetryManifest.manifestType, "solver-telemetry");
+  assert.equal(telemetryManifest.runCount, 8);
+  assert.equal(validateSolverTelemetryManifest(telemetryManifest).length, 0);
+  const telemetryLnsRun = telemetryManifest.runs.find((entry) => entry.mode === "lns");
+  assert.equal(telemetryLnsRun.lns.attempts, 1);
+  assert.deepEqual(telemetryLnsRun.lns.selectedWindows[0].window, { top: 0, left: 0, rows: 2, cols: 2 });
+  const telemetryPortfolioRun = telemetryManifest.runs.find((entry) => entry.mode === "cp-sat-portfolio");
+  assert.equal(telemetryPortfolioRun.cpSat.populationGap, 2);
+  assert.equal(telemetryPortfolioRun.cpSat.model.gridCells, 9);
 
   const telemetry = (population, userTimeSeconds = 1) => ({
     solveWallTimeSeconds: userTimeSeconds,

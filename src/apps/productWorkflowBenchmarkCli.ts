@@ -1,8 +1,10 @@
 import {
+  formatNpmScriptCommand,
   formatProductWorkflowBenchmarkSuite,
   listProductWorkflowBenchmarkCaseNames,
   runProductWorkflowBenchmarkSuite,
   writeProductWorkflowBenchmarkArtifact,
+  writeProductWorkflowTelemetryManifest,
 } from "../benchmarks/index.js";
 import { runCliMain } from "./cliEntrypoint.js";
 import { optionalCliNames, writeCliJsonOrText, writeCliList, writeCliText } from "./cliOutput.js";
@@ -17,6 +19,7 @@ interface ParsedProductWorkflowBenchmarkArgs {
   list: boolean;
   names: string[];
   outputPath?: string;
+  manifestOutputPath?: string;
   budgetsSeconds?: number[];
   seeds?: number[];
 }
@@ -26,12 +29,19 @@ function parseArgs(argv: string[]): ParsedProductWorkflowBenchmarkArgs {
   let json = false;
   let list = false;
   let outputPath: string | undefined;
+  let manifestOutputPath: string | undefined;
   let budgetsSeconds: number[] | undefined;
   let seeds: number[] | undefined;
 
   const inlineOptions: Record<string, (value: string) => void> = {
     output: (value) => {
       outputPath = value;
+    },
+    "manifest-output": (value) => {
+      manifestOutputPath = value;
+    },
+    manifest: (value) => {
+      manifestOutputPath = value;
     },
     budgets: (value) => {
       budgetsSeconds = parseNumberList(value, "benchmark budgets");
@@ -56,7 +66,7 @@ function parseArgs(argv: string[]): ParsedProductWorkflowBenchmarkArgs {
     names.push(arg);
   }
 
-  return { json, list, names, outputPath, budgetsSeconds, seeds };
+  return { json, list, names, outputPath, manifestOutputPath, budgetsSeconds, seeds };
 }
 
 export async function runProductWorkflowBenchmarkCli(): Promise<void> {
@@ -75,6 +85,18 @@ export async function runProductWorkflowBenchmarkCli(): Promise<void> {
     result = writeProductWorkflowBenchmarkArtifact(result, args.outputPath);
     if (!args.json) {
       writeCliText(`Wrote product workflow benchmark artifact to ${args.outputPath}.`);
+    }
+  }
+  if (args.manifestOutputPath) {
+    writeProductWorkflowTelemetryManifest(result, args.manifestOutputPath, {
+      names: optionalCliNames(args.names),
+      budgetsSeconds: args.budgetsSeconds,
+      seeds: args.seeds,
+      commands: [formatNpmScriptCommand("benchmark:product-workflows", process.argv.slice(2))],
+      artifactPaths: [args.manifestOutputPath, ...(args.outputPath ? [args.outputPath] : [])],
+    });
+    if (!args.json) {
+      writeCliText(`Wrote product workflow telemetry manifest to ${args.manifestOutputPath}.`);
     }
   }
 

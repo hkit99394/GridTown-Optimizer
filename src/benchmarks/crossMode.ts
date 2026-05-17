@@ -7,6 +7,7 @@ import {
   serializeDecisionTraceJsonl,
   summarizeDecisionTraceReason,
 } from "../core/decisionTrace.js";
+import { validateSolution } from "../core/evaluator.js";
 import { buildSolverProgressSummary, formatSolverProgressSummary } from "../core/progress.js";
 import { solveAsync } from "../runtime/solve.js";
 import {
@@ -31,13 +32,22 @@ import {
 import { buildCpSatBenchmarkCpuPlan, normalizeCpSatBenchmarkOptions } from "./cpSat.js";
 import { normalizeGreedyBenchmarkOptions } from "./greedy.js";
 import { normalizeLnsBenchmarkOptions } from "./lns.js";
+import {
+  buildSolverTelemetryManifest,
+  buildSolverTelemetryRunManifest,
+  writeSolverTelemetryManifest,
+} from "./telemetryManifest.js";
 
 import type {
   AutoOptions,
   CpSatOptions,
   CpSatPortfolioOptions,
+  CpSatPortfolioSummary,
+  CpSatTelemetry,
+  GreedyProfile,
   Grid,
   GreedyOptions,
+  LnsTelemetry,
   LnsOptions,
   OptimizerName,
   Solution,
@@ -46,6 +56,7 @@ import type {
   SolverProgressSummary,
   SolverTimeToQualityScorecard,
 } from "../core/types.js";
+import type { SolverTelemetryManifest } from "./telemetryManifest.js";
 
 export type CrossModeBenchmarkMode = OptimizerName | "cp-sat-portfolio";
 export type CrossModeProblemSizeBand = "tiny" | "small" | "medium";
@@ -143,7 +154,13 @@ export interface CrossModeBenchmarkModeResult {
   roadCount: number;
   serviceCount: number;
   residentialCount: number;
+  validationValid: boolean;
+  validationErrors: string[];
   cpSatStatus: string | null;
+  cpSatTelemetry: CpSatTelemetry | null;
+  cpSatPortfolio: CpSatPortfolioSummary | null;
+  greedyProfile: GreedyProfile | null;
+  lnsTelemetry: LnsTelemetry | null;
   lnsStopReason: string | null;
   lnsSeedTimeLimitSeconds: number | null;
   lnsSeedWallClockSeconds: number | null;
@@ -259,6 +276,12 @@ export interface CrossModeBenchmarkSuiteResult {
   problemSizeSummaries: CrossModeBenchmarkProblemSizeSummary[];
   budgetPolicySignals: CrossModeBenchmarkBudgetPolicySignal[];
   portfolioEfficiencySignals: CrossModePortfolioEfficiencySignal[];
+}
+
+export interface CrossModeTelemetryManifestOptions extends CrossModeBenchmarkRunOptions {
+  manifestId?: string;
+  commands?: readonly string[];
+  artifactPaths?: readonly string[];
 }
 
 export interface CrossModeBenchmarkBudgetAblationPolicy {
@@ -808,6 +831,11 @@ async function runCrossModeBenchmarkCase(
     });
     const finishedAt = performance.now();
     const wallClockSeconds = (finishedAt - startedAt) / 1000;
+    const validation = validateSolution({
+      grid: benchmarkCase.grid,
+      params,
+      solution,
+    });
     const progressSummary = buildSolverProgressSummary(solution, {
       elapsedTimeSeconds: wallClockSeconds,
       fallbackOptimizer: params.optimizer ?? modeToOptimizer(mode),
@@ -839,7 +867,13 @@ async function runCrossModeBenchmarkCase(
       roadCount: solution.roads.size,
       serviceCount: solution.services.length,
       residentialCount: solution.residentials.length,
+      validationValid: validation.valid,
+      validationErrors: validation.errors,
       cpSatStatus: solution.cpSatStatus ?? null,
+      cpSatTelemetry: solution.cpSatTelemetry ?? null,
+      cpSatPortfolio: solution.cpSatPortfolio ?? null,
+      greedyProfile: solution.greedyProfile ?? null,
+      lnsTelemetry: solution.lnsTelemetry ?? null,
       lnsStopReason: solution.lnsTelemetry?.stopReason ?? null,
       lnsSeedTimeLimitSeconds: solution.lnsTelemetry?.seedTimeLimitSeconds ?? null,
       lnsSeedWallClockSeconds: solution.lnsTelemetry?.seedWallClockSeconds ?? null,
@@ -1174,6 +1208,85 @@ export function collectCrossModeBenchmarkDecisionTraceEvents(
 
 export function formatCrossModeBenchmarkDecisionTraceJsonl(result: CrossModeBenchmarkSuiteResult): string {
   return serializeDecisionTraceJsonl(collectCrossModeBenchmarkDecisionTraceEvents(result));
+}
+
+function crossModeCaseLookup(corpus: readonly CrossModeBenchmarkCase[]): Map<string, CrossModeBenchmarkCase> {
+  return new Map(corpus.map((benchmarkCase) => [benchmarkCase.name, benchmarkCase]));
+}
+
+export function buildCrossModeTelemetryManifest(
+  result: CrossModeBenchmarkSuiteResult,
+  corpus: readonly CrossModeBenchmarkCase[] = DEFAULT_CROSS_MODE_BENCHMARK_CORPUS,
+  options: CrossModeTelemetryManifestOptions = {}
+): SolverTelemetryManifest {
+  const caseByName = crossModeCaseLookup(corpus);
+  const runs = result.cases.flatMap((scorecard) => {
+    const benchmarkCase = caseByName.get(scorecard.name);
+    if (!benchmarkCase) return [];
+    return scorecard.results.map((benchmark) => {
+      const params = buildCrossModeBenchmarkParams(benchmarkCase, benchmark.mode, {
+        ...options,
+        budgetSeconds: scorecard.budgetSeconds,
+        seeds: [scorecard.seed],
+      });
+      return buildSolverTelemetryRunManifest({
+        runId: `${scorecard.name}:${benchmark.mode}:budget-${scorecard.budgetSeconds}:seed-${scorecard.seed}`,
+        benchmarkName: "cross-mode-scorecard",
+        caseName: scorecard.name,
+        caseFamily: scorecard.problemSizeBand,
+        optimizer: benchmark.optimizer,
+        mode: benchmark.mode,
+        seed: scorecard.seed,
+        budget: {
+          wallClockSeconds: scorecard.budgetSeconds,
+          workerCpuBudgetSeconds: benchmark.workerCpuBudgetSeconds,
+          observedWorkerCpuSeconds: benchmark.observedWorkerCpuSeconds,
+        },
+        grid: benchmarkCase.grid,
+        solverParams: params,
+        artifactPaths: options.artifactPaths ?? [],
+        wallClockSeconds: benchmark.wallClockSeconds,
+        totalPopulation: benchmark.totalPopulation,
+        finalStatus: benchmark.cpSatStatus ?? benchmark.lnsStopReason ?? benchmark.autoStopReason ?? null,
+        validation: {
+          valid: benchmark.validationValid,
+          errors: benchmark.validationErrors,
+        },
+        progressSummary: benchmark.progressSummary,
+        decisionTrace: benchmark.decisionTrace,
+        timeToQuality: benchmark.timeToQuality,
+        cpSatStatus: benchmark.cpSatStatus,
+        cpSatTelemetry: benchmark.cpSatTelemetry,
+        cpSatPortfolio: benchmark.cpSatPortfolio,
+        lnsTelemetry: benchmark.lnsTelemetry,
+        greedyProfile: benchmark.greedyProfile,
+      });
+    });
+  });
+
+  return buildSolverTelemetryManifest({
+    manifestId: options.manifestId ?? `cross-mode-scorecard-${result.generatedAt.slice(0, 10)}`,
+    benchmarkName: "cross-mode-scorecard",
+    generatedAt: result.generatedAt,
+    commands: options.commands ?? [],
+    artifactPaths: options.artifactPaths ?? [],
+    runs,
+  });
+}
+
+export function writeCrossModeTelemetryManifest(
+  result: CrossModeBenchmarkSuiteResult,
+  outputPath: string,
+  corpus: readonly CrossModeBenchmarkCase[] = DEFAULT_CROSS_MODE_BENCHMARK_CORPUS,
+  options: CrossModeTelemetryManifestOptions = {}
+): SolverTelemetryManifest {
+  return writeSolverTelemetryManifest(
+    buildCrossModeTelemetryManifest(result, corpus, {
+      ...options,
+      artifactPaths: [...(options.artifactPaths ?? []), outputPath],
+    }),
+    outputPath
+  );
 }
 
 function formatScoreDelta(value: number | null): string {

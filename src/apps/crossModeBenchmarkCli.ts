@@ -5,9 +5,11 @@ import {
   formatCrossModeBenchmarkBudgetAblations,
   formatCrossModeBenchmarkDecisionTraceJsonl,
   formatCrossModeBenchmarkSuite,
+  formatNpmScriptCommand,
   listCrossModeBenchmarkCaseNames,
   runCrossModeBenchmarkBudgetAblations,
   runCrossModeBenchmarkSuite,
+  writeCrossModeTelemetryManifest,
 } from "../benchmarks/index.js";
 import {
   applyInlineOptionHandlers,
@@ -40,6 +42,7 @@ interface ParsedBenchmarkArgs {
   budgetSeconds?: number;
   budgetsSeconds?: number[];
   seeds?: number[];
+  manifestOutputPath?: string;
 }
 
 function parseModes(value: string): CrossModeBenchmarkMode[] {
@@ -66,6 +69,7 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
   let budgetSeconds: number | undefined;
   let budgetsSeconds: number[] | undefined;
   let seeds: number[] | undefined;
+  let manifestOutputPath: string | undefined;
   const inlineOptions: Record<string, (value: string) => void> = {
     modes: (value) => {
       modes = parseModes(value);
@@ -85,6 +89,12 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
     },
     seeds: (value) => {
       seeds = parseNumberList(value, "cross-mode benchmark --seeds");
+    },
+    "manifest-output": (value) => {
+      manifestOutputPath = value;
+    },
+    manifest: (value) => {
+      manifestOutputPath = value;
     },
   };
 
@@ -127,6 +137,7 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
     budgetSeconds,
     budgetsSeconds,
     seeds,
+    manifestOutputPath,
   };
 }
 
@@ -169,6 +180,21 @@ export async function runCrossModeBenchmarkCli(): Promise<void> {
     budgetsSeconds: args.budgetsSeconds,
     seeds: args.seeds,
   });
+
+  if (args.manifestOutputPath) {
+    writeCrossModeTelemetryManifest(result, args.manifestOutputPath, corpus, {
+      names: optionalCliNames(args.names),
+      modes: args.modes,
+      budgetSeconds: args.budgetSeconds,
+      budgetsSeconds: args.budgetsSeconds,
+      seeds: args.seeds,
+      commands: [formatNpmScriptCommand("benchmark:scorecard", process.argv.slice(2))],
+      artifactPaths: [args.manifestOutputPath],
+    });
+    if (!args.json && !args.traceJsonl) {
+      writeCliText(`Wrote solver telemetry manifest to ${args.manifestOutputPath}.`);
+    }
+  }
 
   if (args.traceJsonl) {
     writeCliRaw(formatCrossModeBenchmarkDecisionTraceJsonl(result));

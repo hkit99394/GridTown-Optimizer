@@ -1,0 +1,3653 @@
+{
+  "schemaVersion": 1,
+  "manifestType": "solver-telemetry",
+  "manifestId": "cross-mode-scorecard-2026-05-17",
+  "benchmarkName": "cross-mode-scorecard",
+  "generatedAt": "2026-05-17T11:28:13.553Z",
+  "commands": [
+    "npm run benchmark:scorecard -- --modes=auto,greedy,lns,cp-sat --budget=5 --seeds=7 --manifest-output=artifacts/telemetry-manifests/2026-05-17/solver-telemetry-manifest.json"
+  ],
+  "git": {
+    "commit": "7972a5adad2f063737a9e7976f1982ea5ac135de",
+    "branch": "features/solver-road-semantics-evidence-gate",
+    "dirtyState": "dirty",
+    "dirtyFileCount": 9
+  },
+  "hardware": {
+    "captured": true,
+    "platform": "darwin",
+    "arch": "arm64",
+    "cpuModel": "Apple M1 Pro",
+    "logicalCpuCount": 10,
+    "memoryBytes": 17179869184,
+    "totalMemoryBytes": 17179869184,
+    "gpuUsed": false
+  },
+  "artifactPaths": [
+    "artifacts/telemetry-manifests/2026-05-17/solver-telemetry-manifest.json"
+  ],
+  "runCount": 16,
+  "runs": [
+    {
+      "runId": "typed-housing-single:auto:budget-5:seed-7",
+      "benchmarkName": "cross-mode-scorecard",
+      "caseName": "typed-housing-single",
+      "caseFamily": "tiny",
+      "optimizer": "auto",
+      "mode": "auto",
+      "seed": 7,
+      "budget": {
+        "wallClockSeconds": 5,
+        "workerCpuBudgetSeconds": 5,
+        "observedWorkerCpuSeconds": 0.009
+      },
+      "grid": {
+        "rows": 4,
+        "cols": 4,
+        "buildableCells": 16
+      },
+      "solverParams": {
+        "residentialTypes": [
+          {
+            "w": 2,
+            "h": 2,
+            "min": 10,
+            "max": 10,
+            "avail": 1
+          },
+          {
+            "w": 2,
+            "h": 2,
+            "min": 100,
+            "max": 100,
+            "avail": 1
+          }
+        ],
+        "availableBuildings": {
+          "residentials": 2,
+          "services": 0
+        },
+        "greedy": {
+          "localSearch": false,
+          "restarts": 1,
+          "serviceRefineIterations": 0,
+          "serviceRefineCandidateLimit": 4,
+          "exhaustiveServiceSearch": false,
+          "serviceExactPoolLimit": 4,
+          "serviceExactMaxCombinations": 16,
+          "localSearchServiceMoves": true,
+          "localSearchServiceCandidateLimit": 6,
+          "deferRoadCommitment": false,
+          "profile": true,
+          "randomSeed": 7,
+          "timeLimitSeconds": 5
+        },
+        "lns": {
+          "iterations": 4,
+          "maxNoImprovementIterations": 4,
+          "neighborhoodRows": 3,
+          "neighborhoodCols": 3,
+          "repairTimeLimitSeconds": 1,
+          "wallClockLimitSeconds": 5,
+          "timeLimitSeconds": 5,
+          "seedTimeLimitSeconds": 1,
+          "focusedRepairTimeLimitSeconds": 1,
+          "escalatedRepairTimeLimitSeconds": 1
+        },
+        "localSearch": false,
+        "restarts": 1,
+        "serviceRefineIterations": 0,
+        "serviceRefineCandidateLimit": 4,
+        "exhaustiveServiceSearch": false,
+        "serviceExactPoolLimit": 4,
+        "serviceExactMaxCombinations": 16,
+        "optimizer": "auto",
+        "auto": {
+          "wallClockLimitSeconds": 5,
+          "randomSeed": 7,
+          "cpSatStageTimeLimitSeconds": 5
+        },
+        "cpSat": {
+          "timeLimitSeconds": 5,
+          "maxDeterministicTime": 5,
+          "randomSeed": 7,
+          "numWorkers": 1,
+          "randomizeSearch": false,
+          "progressIntervalSeconds": 0.5,
+          "logSearchProgress": false
+        }
+      },
+      "artifactPaths": [
+        "artifacts/telemetry-manifests/2026-05-17/solver-telemetry-manifest.json",
+        "artifacts/telemetry-manifests/2026-05-17/solver-telemetry-manifest.json"
+      ],
+      "timings": {
+        "wallClockSeconds": 2.585,
+        "firstFeasibleSeconds": 0.017,
+        "bestScoreSeconds": 0.017
+      },
+      "final": {
+        "status": "OPTIMAL",
+        "totalPopulation": 110,
+        "validation": {
+          "valid": true,
+          "errors": []
+        }
+      },
+      "progressSummary": {
+        "currentScore": 110,
+        "bestScore": 110,
+        "activeStage": "cp-sat",
+        "reuseSource": null,
+        "elapsedTimeSeconds": 2.585,
+        "timeSinceImprovementSeconds": 0.001,
+        "stopReason": "optimal",
+        "exactGap": 0,
+        "portfolioWorkerSummary": null
+      },
+      "timeToQuality": {
+        "finalElapsedMs": 2585,
+        "finalScore": 110,
+        "bestScore": 110,
+        "firstFeasibleAtMs": 17,
+        "firstImprovementAtMs": 17,
+        "bestScoreAtMs": 17,
+        "improvementCount": 3,
+        "timeCheckpoints": [
+          {
+            "elapsedMs": 5000,
+            "bestScore": 110,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          },
+          {
+            "elapsedMs": 30000,
+            "bestScore": 110,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          },
+          {
+            "elapsedMs": 120000,
+            "bestScore": 110,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          }
+        ],
+        "qualityTargets": [
+          {
+            "ratio": 0.5,
+            "targetScore": 55,
+            "reachedAtMs": 17,
+            "reachedScore": 110
+          },
+          {
+            "ratio": 0.9,
+            "targetScore": 99,
+            "reachedAtMs": 17,
+            "reachedScore": 110
+          },
+          {
+            "ratio": 1,
+            "targetScore": 110,
+            "reachedAtMs": 17,
+            "reachedScore": 110
+          }
+        ]
+      },
+      "stages": [
+        {
+          "name": "greedy",
+          "eventCount": 9,
+          "startedAtSeconds": 0,
+          "completedAtSeconds": 0.1,
+          "elapsedSeconds": 0.1,
+          "firstFeasibleSeconds": 0.017,
+          "bestScoreSeconds": 0.017,
+          "finalScore": 110,
+          "status": "improved"
+        },
+        {
+          "name": "lns",
+          "eventCount": 2,
+          "startedAtSeconds": 0.1,
+          "completedAtSeconds": 2.126,
+          "elapsedSeconds": 2.026,
+          "firstFeasibleSeconds": 2.126,
+          "bestScoreSeconds": 2.126,
+          "finalScore": 110,
+          "status": "stalled"
+        },
+        {
+          "name": "cp-sat",
+          "eventCount": 6,
+          "startedAtSeconds": 2.126,
+          "completedAtSeconds": 2.585,
+          "elapsedSeconds": 0.459,
+          "firstFeasibleSeconds": 2.134,
+          "bestScoreSeconds": 2.134,
+          "finalScore": 110,
+          "status": "stalled"
+        }
+      ],
+      "cpSat": {
+        "status": "OPTIMAL",
+        "upperBound": 110,
+        "populationGap": 0,
+        "objectiveGap": 0,
+        "solutionCount": 1,
+        "branches": 137,
+        "conflicts": 0,
+        "userTimeSeconds": 0.008695000000000001,
+        "solveWallTimeSeconds": 0.008695000000000001,
+        "portfolioWorkerCount": null,
+        "portfolioFeasibleWorkers": null,
+        "model": {
+          "gridRows": 4,
+          "gridCols": 4,
+          "gridCells": 16,
+          "buildableCells": 16,
+          "roadCandidateCells": 16,
+          "serviceTypeCount": 0,
+          "residentialTypeCount": 2,
+          "serviceCandidateUpperBound": 0,
+          "residentialCandidateUpperBound": 32,
+          "candidateUpperBound": 48
+        }
+      },
+      "lns": null,
+      "greedy": null
+    },
+    {
+      "runId": "typed-housing-single:greedy:budget-5:seed-7",
+      "benchmarkName": "cross-mode-scorecard",
+      "caseName": "typed-housing-single",
+      "caseFamily": "tiny",
+      "optimizer": "greedy",
+      "mode": "greedy",
+      "seed": 7,
+      "budget": {
+        "wallClockSeconds": 5,
+        "workerCpuBudgetSeconds": 5,
+        "observedWorkerCpuSeconds": null
+      },
+      "grid": {
+        "rows": 4,
+        "cols": 4,
+        "buildableCells": 16
+      },
+      "solverParams": {
+        "residentialTypes": [
+          {
+            "w": 2,
+            "h": 2,
+            "min": 10,
+            "max": 10,
+            "avail": 1
+          },
+          {
+            "w": 2,
+            "h": 2,
+            "min": 100,
+            "max": 100,
+            "avail": 1
+          }
+        ],
+        "availableBuildings": {
+          "residentials": 2,
+          "services": 0
+        },
+        "greedy": {
+          "localSearch": false,
+          "restarts": 1,
+          "serviceRefineIterations": 0,
+          "serviceRefineCandidateLimit": 4,
+          "exhaustiveServiceSearch": false,
+          "serviceExactPoolLimit": 4,
+          "serviceExactMaxCombinations": 16,
+          "localSearchServiceMoves": true,
+          "localSearchServiceCandidateLimit": 6,
+          "deferRoadCommitment": false,
+          "profile": true,
+          "randomSeed": 7,
+          "timeLimitSeconds": 5
+        },
+        "lns": {
+          "iterations": 1,
+          "maxNoImprovementIterations": 1,
+          "neighborhoodRows": 3,
+          "neighborhoodCols": 3,
+          "repairTimeLimitSeconds": 1
+        },
+        "localSearch": false,
+        "restarts": 1,
+        "serviceRefineIterations": 0,
+        "serviceRefineCandidateLimit": 4,
+        "exhaustiveServiceSearch": false,
+        "serviceExactPoolLimit": 4,
+        "serviceExactMaxCombinations": 16,
+        "optimizer": "greedy"
+      },
+      "artifactPaths": [
+        "artifacts/telemetry-manifests/2026-05-17/solver-telemetry-manifest.json",
+        "artifacts/telemetry-manifests/2026-05-17/solver-telemetry-manifest.json"
+      ],
+      "timings": {
+        "wallClockSeconds": 0.017,
+        "firstFeasibleSeconds": 0.016,
+        "bestScoreSeconds": 0.016
+      },
+      "final": {
+        "status": "valid",
+        "totalPopulation": 110,
+        "validation": {
+          "valid": true,
+          "errors": []
+        }
+      },
+      "progressSummary": {
+        "currentScore": 110,
+        "bestScore": 110,
+        "activeStage": "greedy",
+        "reuseSource": null,
+        "elapsedTimeSeconds": 0.017,
+        "timeSinceImprovementSeconds": null,
+        "stopReason": null,
+        "exactGap": null,
+        "portfolioWorkerSummary": null
+      },
+      "timeToQuality": {
+        "finalElapsedMs": 17,
+        "finalScore": 110,
+        "bestScore": 110,
+        "firstFeasibleAtMs": 16,
+        "firstImprovementAtMs": 16,
+        "bestScoreAtMs": 16,
+        "improvementCount": 1,
+        "timeCheckpoints": [
+          {
+            "elapsedMs": 5000,
+            "bestScore": 110,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          },
+          {
+            "elapsedMs": 30000,
+            "bestScore": 110,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          },
+          {
+            "elapsedMs": 120000,
+            "bestScore": 110,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          }
+        ],
+        "qualityTargets": [
+          {
+            "ratio": 0.5,
+            "targetScore": 55,
+            "reachedAtMs": 16,
+            "reachedScore": 110
+          },
+          {
+            "ratio": 0.9,
+            "targetScore": 99,
+            "reachedAtMs": 16,
+            "reachedScore": 110
+          },
+          {
+            "ratio": 1,
+            "targetScore": 110,
+            "reachedAtMs": 16,
+            "reachedScore": 110
+          }
+        ]
+      },
+      "stages": [
+        {
+          "name": "greedy",
+          "eventCount": 8,
+          "startedAtSeconds": 0.001,
+          "completedAtSeconds": 0.017,
+          "elapsedSeconds": 0.016,
+          "firstFeasibleSeconds": 0.016,
+          "bestScoreSeconds": 0.016,
+          "finalScore": 110,
+          "status": "stalled"
+        }
+      ],
+      "cpSat": null,
+      "lns": null,
+      "greedy": {
+        "profilePhaseCount": 7,
+        "candidateScans": {
+          "service": 0,
+          "residential": 115,
+          "localSearch": 0
+        },
+        "placements": {
+          "service": 0,
+          "residential": 12,
+          "localSearch": 0
+        }
+      }
+    },
+    {
+      "runId": "typed-housing-single:lns:budget-5:seed-7",
+      "benchmarkName": "cross-mode-scorecard",
+      "caseName": "typed-housing-single",
+      "caseFamily": "tiny",
+      "optimizer": "lns",
+      "mode": "lns",
+      "seed": 7,
+      "budget": {
+        "wallClockSeconds": 5,
+        "workerCpuBudgetSeconds": 5,
+        "observedWorkerCpuSeconds": null
+      },
+      "grid": {
+        "rows": 4,
+        "cols": 4,
+        "buildableCells": 16
+      },
+      "solverParams": {
+        "residentialTypes": [
+          {
+            "w": 2,
+            "h": 2,
+            "min": 10,
+            "max": 10,
+            "avail": 1
+          },
+          {
+            "w": 2,
+            "h": 2,
+            "min": 100,
+            "max": 100,
+            "avail": 1
+          }
+        ],
+        "availableBuildings": {
+          "residentials": 2,
+          "services": 0
+        },
+        "greedy": {
+          "localSearch": false,
+          "restarts": 1,
+          "serviceRefineIterations": 0,
+          "serviceRefineCandidateLimit": 4,
+          "exhaustiveServiceSearch": false,
+          "serviceExactPoolLimit": 4,
+          "serviceExactMaxCombinations": 16,
+          "localSearchServiceMoves": true,
+          "localSearchServiceCandidateLimit": 6,
+          "deferRoadCommitment": false,
+          "profile": true,
+          "randomSeed": 7,
+          "timeLimitSeconds": 5
+        },
+        "lns": {
+          "iterations": 4,
+          "maxNoImprovementIterations": 4,
+          "neighborhoodRows": 3,
+          "neighborhoodCols": 3,
+          "repairTimeLimitSeconds": 1,
+          "wallClockLimitSeconds": 5,
+          "timeLimitSeconds": 5,
+          "seedTimeLimitSeconds": 1,
+          "focusedRepairTimeLimitSeconds": 1,
+          "escalatedRepairTimeLimitSeconds": 1
+        },
+        "localSearch": false,
+        "restarts": 1,
+        "serviceRefineIterations": 0,
+        "serviceRefineCandidateLimit": 4,
+        "exhaustiveServiceSearch": false,
+        "serviceExactPoolLimit": 4,
+        "serviceExactMaxCombinations": 16,
+        "optimizer": "lns",
+        "cpSat": {
+          "timeLimitSeconds": 5,
+          "maxDeterministicTime": 5,
+          "randomSeed": 7,
+          "numWorkers": 1,
+          "randomizeSearch": false,
+          "progressIntervalSeconds": 0.5,
+          "logSearchProgress": false
+        }
+      },
+      "artifactPaths": [
+        "artifacts/telemetry-manifests/2026-05-17/solver-telemetry-manifest.json",
+        "artifacts/telemetry-manifests/2026-05-17/solver-telemetry-manifest.json"
+      ],
+      "timings": {
+        "wallClockSeconds": 1.815,
+        "firstFeasibleSeconds": 0.002,
+        "bestScoreSeconds": 0.002
+      },
+      "final": {
+        "status": "stale-iteration-limit",
+        "totalPopulation": 110,
+        "validation": {
+          "valid": true,
+          "errors": []
+        }
+      },
+      "progressSummary": {
+        "currentScore": 110,
+        "bestScore": 110,
+        "activeStage": "lns",
+        "reuseSource": "greedy-seed",
+        "elapsedTimeSeconds": 1.815,
+        "timeSinceImprovementSeconds": null,
+        "stopReason": "stale-iteration-limit",
+        "exactGap": null,
+        "portfolioWorkerSummary": null
+      },
+      "timeToQuality": {
+        "finalElapsedMs": 1815,
+        "finalScore": 110,
+        "bestScore": 110,
+        "firstFeasibleAtMs": 2,
+        "firstImprovementAtMs": 2,
+        "bestScoreAtMs": 2,
+        "improvementCount": 1,
+        "timeCheckpoints": [
+          {
+            "elapsedMs": 5000,
+            "bestScore": 110,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          },
+          {
+            "elapsedMs": 30000,
+            "bestScore": 110,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          },
+          {
+            "elapsedMs": 120000,
+            "bestScore": 110,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          }
+        ],
+        "qualityTargets": [
+          {
+            "ratio": 0.5,
+            "targetScore": 55,
+            "reachedAtMs": 2,
+            "reachedScore": 110
+          },
+          {
+            "ratio": 0.9,
+            "targetScore": 99,
+            "reachedAtMs": 2,
+            "reachedScore": 110
+          },
+          {
+            "ratio": 1,
+            "targetScore": 110,
+            "reachedAtMs": 2,
+            "reachedScore": 110
+          }
+        ]
+      },
+      "stages": [
+        {
+          "name": "lns",
+          "eventCount": 13,
+          "startedAtSeconds": 0,
+          "completedAtSeconds": 1.815,
+          "elapsedSeconds": 1.815,
+          "firstFeasibleSeconds": 0.002,
+          "bestScoreSeconds": 0.002,
+          "finalScore": 110,
+          "status": "stalled"
+        }
+      ],
+      "cpSat": null,
+      "lns": {
+        "stopReason": "stale-iteration-limit",
+        "seedSource": "greedy",
+        "attempts": 4,
+        "feasibleRepairs": 4,
+        "improvements": 0,
+        "neutralRepairs": 4,
+        "recoverableFailures": 0,
+        "skippedIterations": 0,
+        "elapsedTimeSeconds": 1.815,
+        "selectedWindows": [
+          {
+            "iteration": 0,
+            "phase": "focused",
+            "window": {
+              "top": 1,
+              "left": 1,
+              "rows": 3,
+              "cols": 3
+            },
+            "status": "neutral",
+            "improvement": 0,
+            "repairTimeLimitSeconds": 1,
+            "wallClockSeconds": 0.448
+          },
+          {
+            "iteration": 1,
+            "phase": "escalated",
+            "window": {
+              "top": 1,
+              "left": 0,
+              "rows": 3,
+              "cols": 4
+            },
+            "status": "neutral",
+            "improvement": 0,
+            "repairTimeLimitSeconds": 1,
+            "wallClockSeconds": 0.452
+          },
+          {
+            "iteration": 2,
+            "phase": "escalated",
+            "window": {
+              "top": 0,
+              "left": 0,
+              "rows": 4,
+              "cols": 4
+            },
+            "status": "neutral",
+            "improvement": 0,
+            "repairTimeLimitSeconds": 1,
+            "wallClockSeconds": 0.452
+          },
+          {
+            "iteration": 3,
+            "phase": "escalated",
+            "window": {
+              "top": 0,
+              "left": 0,
+              "rows": 4,
+              "cols": 4
+            },
+            "status": "neutral",
+            "improvement": 0,
+            "repairTimeLimitSeconds": 1,
+            "wallClockSeconds": 0.46
+          }
+        ]
+      },
+      "greedy": {
+        "profilePhaseCount": 7,
+        "candidateScans": {
+          "service": 0,
+          "residential": 115,
+          "localSearch": 0
+        },
+        "placements": {
+          "service": 0,
+          "residential": 12,
+          "localSearch": 0
+        }
+      }
+    },
+    {
+      "runId": "typed-housing-single:cp-sat:budget-5:seed-7",
+      "benchmarkName": "cross-mode-scorecard",
+      "caseName": "typed-housing-single",
+      "caseFamily": "tiny",
+      "optimizer": "cp-sat",
+      "mode": "cp-sat",
+      "seed": 7,
+      "budget": {
+        "wallClockSeconds": 5,
+        "workerCpuBudgetSeconds": 5,
+        "observedWorkerCpuSeconds": 0.008
+      },
+      "grid": {
+        "rows": 4,
+        "cols": 4,
+        "buildableCells": 16
+      },
+      "solverParams": {
+        "residentialTypes": [
+          {
+            "w": 2,
+            "h": 2,
+            "min": 10,
+            "max": 10,
+            "avail": 1
+          },
+          {
+            "w": 2,
+            "h": 2,
+            "min": 100,
+            "max": 100,
+            "avail": 1
+          }
+        ],
+        "availableBuildings": {
+          "residentials": 2,
+          "services": 0
+        },
+        "greedy": {
+          "localSearch": false,
+          "restarts": 1,
+          "serviceRefineIterations": 0,
+          "serviceRefineCandidateLimit": 4,
+          "exhaustiveServiceSearch": false,
+          "serviceExactPoolLimit": 4,
+          "serviceExactMaxCombinations": 16,
+          "localSearchServiceMoves": true,
+          "localSearchServiceCandidateLimit": 6,
+          "deferRoadCommitment": false,
+          "profile": true,
+          "randomSeed": 7,
+          "timeLimitSeconds": 5
+        },
+        "lns": {
+          "iterations": 1,
+          "maxNoImprovementIterations": 1,
+          "neighborhoodRows": 3,
+          "neighborhoodCols": 3,
+          "repairTimeLimitSeconds": 1
+        },
+        "localSearch": false,
+        "restarts": 1,
+        "serviceRefineIterations": 0,
+        "serviceRefineCandidateLimit": 4,
+        "exhaustiveServiceSearch": false,
+        "serviceExactPoolLimit": 4,
+        "serviceExactMaxCombinations": 16,
+        "optimizer": "cp-sat",
+        "cpSat": {
+          "timeLimitSeconds": 5,
+          "maxDeterministicTime": 5,
+          "randomSeed": 7,
+          "numWorkers": 1,
+          "randomizeSearch": false,
+          "progressIntervalSeconds": 0.5,
+          "logSearchProgress": false
+        }
+      },
+      "artifactPaths": [
+        "artifacts/telemetry-manifests/2026-05-17/solver-telemetry-manifest.json",
+        "artifacts/telemetry-manifests/2026-05-17/solver-telemetry-manifest.json"
+      ],
+      "timings": {
+        "wallClockSeconds": 0.457,
+        "firstFeasibleSeconds": 0.008,
+        "bestScoreSeconds": 0.008
+      },
+      "final": {
+        "status": "OPTIMAL",
+        "totalPopulation": 110,
+        "validation": {
+          "valid": true,
+          "errors": []
+        }
+      },
+      "progressSummary": {
+        "currentScore": 110,
+        "bestScore": 110,
+        "activeStage": "cp-sat",
+        "reuseSource": null,
+        "elapsedTimeSeconds": 0.457,
+        "timeSinceImprovementSeconds": 0,
+        "stopReason": null,
+        "exactGap": 0,
+        "portfolioWorkerSummary": null
+      },
+      "timeToQuality": {
+        "finalElapsedMs": 457,
+        "finalScore": 110,
+        "bestScore": 110,
+        "firstFeasibleAtMs": 8,
+        "firstImprovementAtMs": 8,
+        "bestScoreAtMs": 8,
+        "improvementCount": 1,
+        "timeCheckpoints": [
+          {
+            "elapsedMs": 5000,
+            "bestScore": 110,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          },
+          {
+            "elapsedMs": 30000,
+            "bestScore": 110,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          },
+          {
+            "elapsedMs": 120000,
+            "bestScore": 110,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          }
+        ],
+        "qualityTargets": [
+          {
+            "ratio": 0.5,
+            "targetScore": 55,
+            "reachedAtMs": 8,
+            "reachedScore": 110
+          },
+          {
+            "ratio": 0.9,
+            "targetScore": 99,
+            "reachedAtMs": 8,
+            "reachedScore": 110
+          },
+          {
+            "ratio": 1,
+            "targetScore": 110,
+            "reachedAtMs": 8,
+            "reachedScore": 110
+          }
+        ]
+      },
+      "stages": [
+        {
+          "name": "cp-sat",
+          "eventCount": 3,
+          "startedAtSeconds": 0.008,
+          "completedAtSeconds": 0.457,
+          "elapsedSeconds": 0.449,
+          "firstFeasibleSeconds": 0.008,
+          "bestScoreSeconds": 0.008,
+          "finalScore": 110,
+          "status": "stalled"
+        }
+      ],
+      "cpSat": {
+        "status": "OPTIMAL",
+        "upperBound": 110,
+        "populationGap": 0,
+        "objectiveGap": 0,
+        "solutionCount": 1,
+        "branches": 162,
+        "conflicts": 0,
+        "userTimeSeconds": 0.008053000000000001,
+        "solveWallTimeSeconds": 0.008053000000000001,
+        "portfolioWorkerCount": null,
+        "portfolioFeasibleWorkers": null,
+        "model": {
+          "gridRows": 4,
+          "gridCols": 4,
+          "gridCells": 16,
+          "buildableCells": 16,
+          "roadCandidateCells": 16,
+          "serviceTypeCount": 0,
+          "residentialTypeCount": 2,
+          "serviceCandidateUpperBound": 0,
+          "residentialCandidateUpperBound": 32,
+          "candidateUpperBound": 48
+        }
+      },
+      "lns": null,
+      "greedy": null
+    },
+    {
+      "runId": "compact-service-single:auto:budget-5:seed-7",
+      "benchmarkName": "cross-mode-scorecard",
+      "caseName": "compact-service-single",
+      "caseFamily": "small",
+      "optimizer": "auto",
+      "mode": "auto",
+      "seed": 7,
+      "budget": {
+        "wallClockSeconds": 5,
+        "workerCpuBudgetSeconds": 5,
+        "observedWorkerCpuSeconds": 0.008
+      },
+      "grid": {
+        "rows": 4,
+        "cols": 4,
+        "buildableCells": 16
+      },
+      "solverParams": {
+        "serviceTypes": [
+          {
+            "rows": 1,
+            "cols": 1,
+            "bonus": 30,
+            "range": 1,
+            "avail": 1
+          }
+        ],
+        "residentialTypes": [
+          {
+            "w": 2,
+            "h": 2,
+            "min": 10,
+            "max": 40,
+            "avail": 1
+          }
+        ],
+        "availableBuildings": {
+          "services": 1,
+          "residentials": 1
+        },
+        "greedy": {
+          "localSearch": true,
+          "restarts": 2,
+          "serviceRefineIterations": 1,
+          "serviceRefineCandidateLimit": 8,
+          "exhaustiveServiceSearch": false,
+          "serviceExactPoolLimit": 8,
+          "serviceExactMaxCombinations": 32,
+          "localSearchServiceMoves": true,
+          "localSearchServiceCandidateLimit": 6,
+          "deferRoadCommitment": false,
+          "profile": true,
+          "randomSeed": 7,
+          "timeLimitSeconds": 5
+        },
+        "lns": {
+          "iterations": 4,
+          "maxNoImprovementIterations": 4,
+          "neighborhoodRows": 3,
+          "neighborhoodCols": 3,
+          "repairTimeLimitSeconds": 1,
+          "wallClockLimitSeconds": 5,
+          "timeLimitSeconds": 5,
+          "seedTimeLimitSeconds": 1,
+          "focusedRepairTimeLimitSeconds": 1,
+          "escalatedRepairTimeLimitSeconds": 1
+        },
+        "localSearch": true,
+        "restarts": 2,
+        "serviceRefineIterations": 1,
+        "serviceRefineCandidateLimit": 8,
+        "exhaustiveServiceSearch": false,
+        "serviceExactPoolLimit": 8,
+        "serviceExactMaxCombinations": 32,
+        "optimizer": "auto",
+        "auto": {
+          "wallClockLimitSeconds": 5,
+          "randomSeed": 7,
+          "cpSatStageTimeLimitSeconds": 5
+        },
+        "cpSat": {
+          "timeLimitSeconds": 5,
+          "maxDeterministicTime": 5,
+          "randomSeed": 7,
+          "numWorkers": 1,
+          "randomizeSearch": false,
+          "progressIntervalSeconds": 0.5,
+          "logSearchProgress": false
+        }
+      },
+      "artifactPaths": [
+        "artifacts/telemetry-manifests/2026-05-17/solver-telemetry-manifest.json",
+        "artifacts/telemetry-manifests/2026-05-17/solver-telemetry-manifest.json"
+      ],
+      "timings": {
+        "wallClockSeconds": 2.559,
+        "firstFeasibleSeconds": 0.021,
+        "bestScoreSeconds": 0.021
+      },
+      "final": {
+        "status": "OPTIMAL",
+        "totalPopulation": 40,
+        "validation": {
+          "valid": true,
+          "errors": []
+        }
+      },
+      "progressSummary": {
+        "currentScore": 40,
+        "bestScore": 40,
+        "activeStage": "cp-sat",
+        "reuseSource": null,
+        "elapsedTimeSeconds": 2.559,
+        "timeSinceImprovementSeconds": 0.001,
+        "stopReason": "optimal",
+        "exactGap": 0,
+        "portfolioWorkerSummary": null
+      },
+      "timeToQuality": {
+        "finalElapsedMs": 2559,
+        "finalScore": 40,
+        "bestScore": 40,
+        "firstFeasibleAtMs": 21,
+        "firstImprovementAtMs": 21,
+        "bestScoreAtMs": 21,
+        "improvementCount": 3,
+        "timeCheckpoints": [
+          {
+            "elapsedMs": 5000,
+            "bestScore": 40,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          },
+          {
+            "elapsedMs": 30000,
+            "bestScore": 40,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          },
+          {
+            "elapsedMs": 120000,
+            "bestScore": 40,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          }
+        ],
+        "qualityTargets": [
+          {
+            "ratio": 0.5,
+            "targetScore": 20,
+            "reachedAtMs": 21,
+            "reachedScore": 40
+          },
+          {
+            "ratio": 0.9,
+            "targetScore": 36,
+            "reachedAtMs": 21,
+            "reachedScore": 40
+          },
+          {
+            "ratio": 1,
+            "targetScore": 40,
+            "reachedAtMs": 21,
+            "reachedScore": 40
+          }
+        ]
+      },
+      "stages": [
+        {
+          "name": "greedy",
+          "eventCount": 9,
+          "startedAtSeconds": 0,
+          "completedAtSeconds": 0.114,
+          "elapsedSeconds": 0.114,
+          "firstFeasibleSeconds": 0.021,
+          "bestScoreSeconds": 0.021,
+          "finalScore": 40,
+          "status": "improved"
+        },
+        {
+          "name": "lns",
+          "eventCount": 2,
+          "startedAtSeconds": 0.114,
+          "completedAtSeconds": 2.095,
+          "elapsedSeconds": 1.981,
+          "firstFeasibleSeconds": 2.095,
+          "bestScoreSeconds": 2.095,
+          "finalScore": 40,
+          "status": "stalled"
+        },
+        {
+          "name": "cp-sat",
+          "eventCount": 6,
+          "startedAtSeconds": 2.095,
+          "completedAtSeconds": 2.559,
+          "elapsedSeconds": 0.464,
+          "firstFeasibleSeconds": 2.103,
+          "bestScoreSeconds": 2.103,
+          "finalScore": 40,
+          "status": "stalled"
+        }
+      ],
+      "cpSat": {
+        "status": "OPTIMAL",
+        "upperBound": 40,
+        "populationGap": 0,
+        "objectiveGap": 0,
+        "solutionCount": 1,
+        "branches": 183,
+        "conflicts": 0,
+        "userTimeSeconds": 0.008384,
+        "solveWallTimeSeconds": 0.008384,
+        "portfolioWorkerCount": null,
+        "portfolioFeasibleWorkers": null,
+        "model": {
+          "gridRows": 4,
+          "gridCols": 4,
+          "gridCells": 16,
+          "buildableCells": 16,
+          "roadCandidateCells": 16,
+          "serviceTypeCount": 1,
+          "residentialTypeCount": 1,
+          "serviceCandidateUpperBound": 16,
+          "residentialCandidateUpperBound": 16,
+          "candidateUpperBound": 48
+        }
+      },
+      "lns": null,
+      "greedy": null
+    },
+    {
+      "runId": "compact-service-single:greedy:budget-5:seed-7",
+      "benchmarkName": "cross-mode-scorecard",
+      "caseName": "compact-service-single",
+      "caseFamily": "small",
+      "optimizer": "greedy",
+      "mode": "greedy",
+      "seed": 7,
+      "budget": {
+        "wallClockSeconds": 5,
+        "workerCpuBudgetSeconds": 5,
+        "observedWorkerCpuSeconds": null
+      },
+      "grid": {
+        "rows": 4,
+        "cols": 4,
+        "buildableCells": 16
+      },
+      "solverParams": {
+        "serviceTypes": [
+          {
+            "rows": 1,
+            "cols": 1,
+            "bonus": 30,
+            "range": 1,
+            "avail": 1
+          }
+        ],
+        "residentialTypes": [
+          {
+            "w": 2,
+            "h": 2,
+            "min": 10,
+            "max": 40,
+            "avail": 1
+          }
+        ],
+        "availableBuildings": {
+          "services": 1,
+          "residentials": 1
+        },
+        "greedy": {
+          "localSearch": true,
+          "restarts": 2,
+          "serviceRefineIterations": 1,
+          "serviceRefineCandidateLimit": 8,
+          "exhaustiveServiceSearch": false,
+          "serviceExactPoolLimit": 8,
+          "serviceExactMaxCombinations": 32,
+          "localSearchServiceMoves": true,
+          "localSearchServiceCandidateLimit": 6,
+          "deferRoadCommitment": false,
+          "profile": true,
+          "randomSeed": 7,
+          "timeLimitSeconds": 5
+        },
+        "lns": {
+          "iterations": 1,
+          "maxNoImprovementIterations": 1,
+          "neighborhoodRows": 3,
+          "neighborhoodCols": 3,
+          "repairTimeLimitSeconds": 1
+        },
+        "localSearch": true,
+        "restarts": 2,
+        "serviceRefineIterations": 1,
+        "serviceRefineCandidateLimit": 8,
+        "exhaustiveServiceSearch": false,
+        "serviceExactPoolLimit": 8,
+        "serviceExactMaxCombinations": 32,
+        "optimizer": "greedy"
+      },
+      "artifactPaths": [
+        "artifacts/telemetry-manifests/2026-05-17/solver-telemetry-manifest.json",
+        "artifacts/telemetry-manifests/2026-05-17/solver-telemetry-manifest.json"
+      ],
+      "timings": {
+        "wallClockSeconds": 0.014,
+        "firstFeasibleSeconds": 0.007,
+        "bestScoreSeconds": 0.007
+      },
+      "final": {
+        "status": "valid",
+        "totalPopulation": 40,
+        "validation": {
+          "valid": true,
+          "errors": []
+        }
+      },
+      "progressSummary": {
+        "currentScore": 40,
+        "bestScore": 40,
+        "activeStage": "greedy",
+        "reuseSource": null,
+        "elapsedTimeSeconds": 0.014,
+        "timeSinceImprovementSeconds": null,
+        "stopReason": null,
+        "exactGap": null,
+        "portfolioWorkerSummary": null
+      },
+      "timeToQuality": {
+        "finalElapsedMs": 14,
+        "finalScore": 40,
+        "bestScore": 40,
+        "firstFeasibleAtMs": 7,
+        "firstImprovementAtMs": 7,
+        "bestScoreAtMs": 7,
+        "improvementCount": 1,
+        "timeCheckpoints": [
+          {
+            "elapsedMs": 5000,
+            "bestScore": 40,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          },
+          {
+            "elapsedMs": 30000,
+            "bestScore": 40,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          },
+          {
+            "elapsedMs": 120000,
+            "bestScore": 40,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          }
+        ],
+        "qualityTargets": [
+          {
+            "ratio": 0.5,
+            "targetScore": 20,
+            "reachedAtMs": 7,
+            "reachedScore": 40
+          },
+          {
+            "ratio": 0.9,
+            "targetScore": 36,
+            "reachedAtMs": 7,
+            "reachedScore": 40
+          },
+          {
+            "ratio": 1,
+            "targetScore": 40,
+            "reachedAtMs": 7,
+            "reachedScore": 40
+          }
+        ]
+      },
+      "stages": [
+        {
+          "name": "greedy",
+          "eventCount": 8,
+          "startedAtSeconds": 0.001,
+          "completedAtSeconds": 0.021,
+          "elapsedSeconds": 0.02,
+          "firstFeasibleSeconds": 0.007,
+          "bestScoreSeconds": 0.007,
+          "finalScore": 40,
+          "status": "stalled"
+        }
+      ],
+      "cpSat": null,
+      "lns": null,
+      "greedy": {
+        "profilePhaseCount": 7,
+        "candidateScans": {
+          "service": 77,
+          "residential": 299,
+          "localSearch": 423
+        },
+        "placements": {
+          "service": 40,
+          "residential": 47,
+          "localSearch": 0
+        }
+      }
+    },
+    {
+      "runId": "compact-service-single:lns:budget-5:seed-7",
+      "benchmarkName": "cross-mode-scorecard",
+      "caseName": "compact-service-single",
+      "caseFamily": "small",
+      "optimizer": "lns",
+      "mode": "lns",
+      "seed": 7,
+      "budget": {
+        "wallClockSeconds": 5,
+        "workerCpuBudgetSeconds": 5,
+        "observedWorkerCpuSeconds": null
+      },
+      "grid": {
+        "rows": 4,
+        "cols": 4,
+        "buildableCells": 16
+      },
+      "solverParams": {
+        "serviceTypes": [
+          {
+            "rows": 1,
+            "cols": 1,
+            "bonus": 30,
+            "range": 1,
+            "avail": 1
+          }
+        ],
+        "residentialTypes": [
+          {
+            "w": 2,
+            "h": 2,
+            "min": 10,
+            "max": 40,
+            "avail": 1
+          }
+        ],
+        "availableBuildings": {
+          "services": 1,
+          "residentials": 1
+        },
+        "greedy": {
+          "localSearch": true,
+          "restarts": 2,
+          "serviceRefineIterations": 1,
+          "serviceRefineCandidateLimit": 8,
+          "exhaustiveServiceSearch": false,
+          "serviceExactPoolLimit": 8,
+          "serviceExactMaxCombinations": 32,
+          "localSearchServiceMoves": true,
+          "localSearchServiceCandidateLimit": 6,
+          "deferRoadCommitment": false,
+          "profile": true,
+          "randomSeed": 7,
+          "timeLimitSeconds": 5
+        },
+        "lns": {
+          "iterations": 4,
+          "maxNoImprovementIterations": 4,
+          "neighborhoodRows": 3,
+          "neighborhoodCols": 3,
+          "repairTimeLimitSeconds": 1,
+          "wallClockLimitSeconds": 5,
+          "timeLimitSeconds": 5,
+          "seedTimeLimitSeconds": 1,
+          "focusedRepairTimeLimitSeconds": 1,
+          "escalatedRepairTimeLimitSeconds": 1
+        },
+        "localSearch": true,
+        "restarts": 2,
+        "serviceRefineIterations": 1,
+        "serviceRefineCandidateLimit": 8,
+        "exhaustiveServiceSearch": false,
+        "serviceExactPoolLimit": 8,
+        "serviceExactMaxCombinations": 32,
+        "optimizer": "lns",
+        "cpSat": {
+          "timeLimitSeconds": 5,
+          "maxDeterministicTime": 5,
+          "randomSeed": 7,
+          "numWorkers": 1,
+          "randomizeSearch": false,
+          "progressIntervalSeconds": 0.5,
+          "logSearchProgress": false
+        }
+      },
+      "artifactPaths": [
+        "artifacts/telemetry-manifests/2026-05-17/solver-telemetry-manifest.json",
+        "artifacts/telemetry-manifests/2026-05-17/solver-telemetry-manifest.json"
+      ],
+      "timings": {
+        "wallClockSeconds": 1.872,
+        "firstFeasibleSeconds": 0.003,
+        "bestScoreSeconds": 0.003
+      },
+      "final": {
+        "status": "stale-iteration-limit",
+        "totalPopulation": 40,
+        "validation": {
+          "valid": true,
+          "errors": []
+        }
+      },
+      "progressSummary": {
+        "currentScore": 40,
+        "bestScore": 40,
+        "activeStage": "lns",
+        "reuseSource": "greedy-seed",
+        "elapsedTimeSeconds": 1.872,
+        "timeSinceImprovementSeconds": null,
+        "stopReason": "stale-iteration-limit",
+        "exactGap": null,
+        "portfolioWorkerSummary": null
+      },
+      "timeToQuality": {
+        "finalElapsedMs": 1872,
+        "finalScore": 40,
+        "bestScore": 40,
+        "firstFeasibleAtMs": 3,
+        "firstImprovementAtMs": 3,
+        "bestScoreAtMs": 3,
+        "improvementCount": 1,
+        "timeCheckpoints": [
+          {
+            "elapsedMs": 5000,
+            "bestScore": 40,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          },
+          {
+            "elapsedMs": 30000,
+            "bestScore": 40,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          },
+          {
+            "elapsedMs": 120000,
+            "bestScore": 40,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          }
+        ],
+        "qualityTargets": [
+          {
+            "ratio": 0.5,
+            "targetScore": 20,
+            "reachedAtMs": 3,
+            "reachedScore": 40
+          },
+          {
+            "ratio": 0.9,
+            "targetScore": 36,
+            "reachedAtMs": 3,
+            "reachedScore": 40
+          },
+          {
+            "ratio": 1,
+            "targetScore": 40,
+            "reachedAtMs": 3,
+            "reachedScore": 40
+          }
+        ]
+      },
+      "stages": [
+        {
+          "name": "lns",
+          "eventCount": 13,
+          "startedAtSeconds": 0,
+          "completedAtSeconds": 1.872,
+          "elapsedSeconds": 1.872,
+          "firstFeasibleSeconds": 0.003,
+          "bestScoreSeconds": 0.003,
+          "finalScore": 40,
+          "status": "stalled"
+        }
+      ],
+      "cpSat": null,
+      "lns": {
+        "stopReason": "stale-iteration-limit",
+        "seedSource": "greedy",
+        "attempts": 4,
+        "feasibleRepairs": 4,
+        "improvements": 0,
+        "neutralRepairs": 4,
+        "recoverableFailures": 0,
+        "skippedIterations": 0,
+        "elapsedTimeSeconds": 1.872,
+        "selectedWindows": [
+          {
+            "iteration": 0,
+            "phase": "focused",
+            "window": {
+              "top": 1,
+              "left": 0,
+              "rows": 3,
+              "cols": 3
+            },
+            "status": "neutral",
+            "improvement": 0,
+            "repairTimeLimitSeconds": 1,
+            "wallClockSeconds": 0.479
+          },
+          {
+            "iteration": 1,
+            "phase": "escalated",
+            "window": {
+              "top": 1,
+              "left": 0,
+              "rows": 3,
+              "cols": 4
+            },
+            "status": "neutral",
+            "improvement": 0,
+            "repairTimeLimitSeconds": 1,
+            "wallClockSeconds": 0.461
+          },
+          {
+            "iteration": 2,
+            "phase": "escalated",
+            "window": {
+              "top": 0,
+              "left": 0,
+              "rows": 4,
+              "cols": 4
+            },
+            "status": "neutral",
+            "improvement": 0,
+            "repairTimeLimitSeconds": 1,
+            "wallClockSeconds": 0.463
+          },
+          {
+            "iteration": 3,
+            "phase": "escalated",
+            "window": {
+              "top": 0,
+              "left": 0,
+              "rows": 4,
+              "cols": 4
+            },
+            "status": "neutral",
+            "improvement": 0,
+            "repairTimeLimitSeconds": 1,
+            "wallClockSeconds": 0.459
+          }
+        ]
+      },
+      "greedy": {
+        "profilePhaseCount": 7,
+        "candidateScans": {
+          "service": 77,
+          "residential": 299,
+          "localSearch": 423
+        },
+        "placements": {
+          "service": 40,
+          "residential": 47,
+          "localSearch": 0
+        }
+      }
+    },
+    {
+      "runId": "compact-service-single:cp-sat:budget-5:seed-7",
+      "benchmarkName": "cross-mode-scorecard",
+      "caseName": "compact-service-single",
+      "caseFamily": "small",
+      "optimizer": "cp-sat",
+      "mode": "cp-sat",
+      "seed": 7,
+      "budget": {
+        "wallClockSeconds": 5,
+        "workerCpuBudgetSeconds": 5,
+        "observedWorkerCpuSeconds": 0.009
+      },
+      "grid": {
+        "rows": 4,
+        "cols": 4,
+        "buildableCells": 16
+      },
+      "solverParams": {
+        "serviceTypes": [
+          {
+            "rows": 1,
+            "cols": 1,
+            "bonus": 30,
+            "range": 1,
+            "avail": 1
+          }
+        ],
+        "residentialTypes": [
+          {
+            "w": 2,
+            "h": 2,
+            "min": 10,
+            "max": 40,
+            "avail": 1
+          }
+        ],
+        "availableBuildings": {
+          "services": 1,
+          "residentials": 1
+        },
+        "greedy": {
+          "localSearch": true,
+          "restarts": 2,
+          "serviceRefineIterations": 1,
+          "serviceRefineCandidateLimit": 8,
+          "exhaustiveServiceSearch": false,
+          "serviceExactPoolLimit": 8,
+          "serviceExactMaxCombinations": 32,
+          "localSearchServiceMoves": true,
+          "localSearchServiceCandidateLimit": 6,
+          "deferRoadCommitment": false,
+          "profile": true,
+          "randomSeed": 7,
+          "timeLimitSeconds": 5
+        },
+        "lns": {
+          "iterations": 1,
+          "maxNoImprovementIterations": 1,
+          "neighborhoodRows": 3,
+          "neighborhoodCols": 3,
+          "repairTimeLimitSeconds": 1
+        },
+        "localSearch": true,
+        "restarts": 2,
+        "serviceRefineIterations": 1,
+        "serviceRefineCandidateLimit": 8,
+        "exhaustiveServiceSearch": false,
+        "serviceExactPoolLimit": 8,
+        "serviceExactMaxCombinations": 32,
+        "optimizer": "cp-sat",
+        "cpSat": {
+          "timeLimitSeconds": 5,
+          "maxDeterministicTime": 5,
+          "randomSeed": 7,
+          "numWorkers": 1,
+          "randomizeSearch": false,
+          "progressIntervalSeconds": 0.5,
+          "logSearchProgress": false
+        }
+      },
+      "artifactPaths": [
+        "artifacts/telemetry-manifests/2026-05-17/solver-telemetry-manifest.json",
+        "artifacts/telemetry-manifests/2026-05-17/solver-telemetry-manifest.json"
+      ],
+      "timings": {
+        "wallClockSeconds": 0.459,
+        "firstFeasibleSeconds": 0.009,
+        "bestScoreSeconds": 0.009
+      },
+      "final": {
+        "status": "OPTIMAL",
+        "totalPopulation": 40,
+        "validation": {
+          "valid": true,
+          "errors": []
+        }
+      },
+      "progressSummary": {
+        "currentScore": 40,
+        "bestScore": 40,
+        "activeStage": "cp-sat",
+        "reuseSource": null,
+        "elapsedTimeSeconds": 0.459,
+        "timeSinceImprovementSeconds": 0,
+        "stopReason": null,
+        "exactGap": 0,
+        "portfolioWorkerSummary": null
+      },
+      "timeToQuality": {
+        "finalElapsedMs": 459,
+        "finalScore": 40,
+        "bestScore": 40,
+        "firstFeasibleAtMs": 9,
+        "firstImprovementAtMs": 9,
+        "bestScoreAtMs": 9,
+        "improvementCount": 1,
+        "timeCheckpoints": [
+          {
+            "elapsedMs": 5000,
+            "bestScore": 40,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          },
+          {
+            "elapsedMs": 30000,
+            "bestScore": 40,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          },
+          {
+            "elapsedMs": 120000,
+            "bestScore": 40,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          }
+        ],
+        "qualityTargets": [
+          {
+            "ratio": 0.5,
+            "targetScore": 20,
+            "reachedAtMs": 9,
+            "reachedScore": 40
+          },
+          {
+            "ratio": 0.9,
+            "targetScore": 36,
+            "reachedAtMs": 9,
+            "reachedScore": 40
+          },
+          {
+            "ratio": 1,
+            "targetScore": 40,
+            "reachedAtMs": 9,
+            "reachedScore": 40
+          }
+        ]
+      },
+      "stages": [
+        {
+          "name": "cp-sat",
+          "eventCount": 3,
+          "startedAtSeconds": 0.009,
+          "completedAtSeconds": 0.459,
+          "elapsedSeconds": 0.45,
+          "firstFeasibleSeconds": 0.009,
+          "bestScoreSeconds": 0.009,
+          "finalScore": 40,
+          "status": "stalled"
+        }
+      ],
+      "cpSat": {
+        "status": "OPTIMAL",
+        "upperBound": 40,
+        "populationGap": 0,
+        "objectiveGap": 0,
+        "solutionCount": 3,
+        "branches": 345,
+        "conflicts": 29,
+        "userTimeSeconds": 0.009443,
+        "solveWallTimeSeconds": 0.009443,
+        "portfolioWorkerCount": null,
+        "portfolioFeasibleWorkers": null,
+        "model": {
+          "gridRows": 4,
+          "gridCols": 4,
+          "gridCells": 16,
+          "buildableCells": 16,
+          "roadCandidateCells": 16,
+          "serviceTypeCount": 1,
+          "residentialTypeCount": 1,
+          "serviceCandidateUpperBound": 16,
+          "residentialCandidateUpperBound": 16,
+          "candidateUpperBound": 48
+        }
+      },
+      "lns": null,
+      "greedy": null
+    },
+    {
+      "runId": "compact-service-repair:auto:budget-5:seed-7",
+      "benchmarkName": "cross-mode-scorecard",
+      "caseName": "compact-service-repair",
+      "caseFamily": "small",
+      "optimizer": "auto",
+      "mode": "auto",
+      "seed": 7,
+      "budget": {
+        "wallClockSeconds": 5,
+        "workerCpuBudgetSeconds": 5,
+        "observedWorkerCpuSeconds": 0.049
+      },
+      "grid": {
+        "rows": 6,
+        "cols": 6,
+        "buildableCells": 36
+      },
+      "solverParams": {
+        "serviceTypes": [
+          {
+            "rows": 2,
+            "cols": 2,
+            "bonus": 80,
+            "range": 2,
+            "avail": 1
+          }
+        ],
+        "residentialTypes": [
+          {
+            "w": 2,
+            "h": 2,
+            "min": 100,
+            "max": 180,
+            "avail": 2
+          },
+          {
+            "w": 2,
+            "h": 3,
+            "min": 130,
+            "max": 260,
+            "avail": 1
+          }
+        ],
+        "availableBuildings": {
+          "services": 1,
+          "residentials": 3
+        },
+        "greedy": {
+          "localSearch": true,
+          "restarts": 2,
+          "serviceRefineIterations": 1,
+          "serviceRefineCandidateLimit": 10,
+          "exhaustiveServiceSearch": false,
+          "serviceExactPoolLimit": 8,
+          "serviceExactMaxCombinations": 64,
+          "localSearchServiceMoves": true,
+          "localSearchServiceCandidateLimit": 6,
+          "deferRoadCommitment": false,
+          "profile": true,
+          "randomSeed": 7,
+          "timeLimitSeconds": 5
+        },
+        "lns": {
+          "iterations": 4,
+          "maxNoImprovementIterations": 4,
+          "neighborhoodRows": 3,
+          "neighborhoodCols": 3,
+          "repairTimeLimitSeconds": 1,
+          "wallClockLimitSeconds": 5,
+          "timeLimitSeconds": 5,
+          "seedTimeLimitSeconds": 1,
+          "focusedRepairTimeLimitSeconds": 1,
+          "escalatedRepairTimeLimitSeconds": 1
+        },
+        "localSearch": true,
+        "restarts": 2,
+        "serviceRefineIterations": 1,
+        "serviceRefineCandidateLimit": 10,
+        "exhaustiveServiceSearch": false,
+        "serviceExactPoolLimit": 8,
+        "serviceExactMaxCombinations": 64,
+        "optimizer": "auto",
+        "auto": {
+          "wallClockLimitSeconds": 5,
+          "randomSeed": 7,
+          "cpSatStageTimeLimitSeconds": 5
+        },
+        "cpSat": {
+          "timeLimitSeconds": 5,
+          "maxDeterministicTime": 5,
+          "randomSeed": 7,
+          "numWorkers": 1,
+          "randomizeSearch": false,
+          "progressIntervalSeconds": 0.5,
+          "logSearchProgress": false
+        }
+      },
+      "artifactPaths": [
+        "artifacts/telemetry-manifests/2026-05-17/solver-telemetry-manifest.json",
+        "artifacts/telemetry-manifests/2026-05-17/solver-telemetry-manifest.json"
+      ],
+      "timings": {
+        "wallClockSeconds": 2.834,
+        "firstFeasibleSeconds": 0.063,
+        "bestScoreSeconds": 0.063
+      },
+      "final": {
+        "status": "OPTIMAL",
+        "totalPopulation": 570,
+        "validation": {
+          "valid": true,
+          "errors": []
+        }
+      },
+      "progressSummary": {
+        "currentScore": 570,
+        "bestScore": 570,
+        "activeStage": "cp-sat",
+        "reuseSource": null,
+        "elapsedTimeSeconds": 2.834,
+        "timeSinceImprovementSeconds": 0.013,
+        "stopReason": "optimal",
+        "exactGap": 0,
+        "portfolioWorkerSummary": null
+      },
+      "timeToQuality": {
+        "finalElapsedMs": 2834,
+        "finalScore": 570,
+        "bestScore": 570,
+        "firstFeasibleAtMs": 63,
+        "firstImprovementAtMs": 63,
+        "bestScoreAtMs": 63,
+        "improvementCount": 3,
+        "timeCheckpoints": [
+          {
+            "elapsedMs": 5000,
+            "bestScore": 570,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          },
+          {
+            "elapsedMs": 30000,
+            "bestScore": 570,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          },
+          {
+            "elapsedMs": 120000,
+            "bestScore": 570,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          }
+        ],
+        "qualityTargets": [
+          {
+            "ratio": 0.5,
+            "targetScore": 285,
+            "reachedAtMs": 63,
+            "reachedScore": 570
+          },
+          {
+            "ratio": 0.9,
+            "targetScore": 513,
+            "reachedAtMs": 63,
+            "reachedScore": 570
+          },
+          {
+            "ratio": 1,
+            "targetScore": 570,
+            "reachedAtMs": 63,
+            "reachedScore": 570
+          }
+        ]
+      },
+      "stages": [
+        {
+          "name": "greedy",
+          "eventCount": 9,
+          "startedAtSeconds": 0,
+          "completedAtSeconds": 0.167,
+          "elapsedSeconds": 0.167,
+          "firstFeasibleSeconds": 0.063,
+          "bestScoreSeconds": 0.063,
+          "finalScore": 570,
+          "status": "improved"
+        },
+        {
+          "name": "lns",
+          "eventCount": 2,
+          "startedAtSeconds": 0.167,
+          "completedAtSeconds": 2.325,
+          "elapsedSeconds": 2.158,
+          "firstFeasibleSeconds": 2.325,
+          "bestScoreSeconds": 2.325,
+          "finalScore": 570,
+          "status": "stalled"
+        },
+        {
+          "name": "cp-sat",
+          "eventCount": 6,
+          "startedAtSeconds": 2.325,
+          "completedAtSeconds": 2.834,
+          "elapsedSeconds": 0.509,
+          "firstFeasibleSeconds": 2.361,
+          "bestScoreSeconds": 2.361,
+          "finalScore": 570,
+          "status": "stalled"
+        }
+      ],
+      "cpSat": {
+        "status": "OPTIMAL",
+        "upperBound": 570,
+        "populationGap": 0,
+        "objectiveGap": 0,
+        "solutionCount": 1,
+        "branches": 2713,
+        "conflicts": 62,
+        "userTimeSeconds": 0.049297,
+        "solveWallTimeSeconds": 0.049297,
+        "portfolioWorkerCount": null,
+        "portfolioFeasibleWorkers": null,
+        "model": {
+          "gridRows": 6,
+          "gridCols": 6,
+          "gridCells": 36,
+          "buildableCells": 36,
+          "roadCandidateCells": 36,
+          "serviceTypeCount": 1,
+          "residentialTypeCount": 2,
+          "serviceCandidateUpperBound": 36,
+          "residentialCandidateUpperBound": 108,
+          "candidateUpperBound": 180
+        }
+      },
+      "lns": null,
+      "greedy": null
+    },
+    {
+      "runId": "compact-service-repair:greedy:budget-5:seed-7",
+      "benchmarkName": "cross-mode-scorecard",
+      "caseName": "compact-service-repair",
+      "caseFamily": "small",
+      "optimizer": "greedy",
+      "mode": "greedy",
+      "seed": 7,
+      "budget": {
+        "wallClockSeconds": 5,
+        "workerCpuBudgetSeconds": 5,
+        "observedWorkerCpuSeconds": null
+      },
+      "grid": {
+        "rows": 6,
+        "cols": 6,
+        "buildableCells": 36
+      },
+      "solverParams": {
+        "serviceTypes": [
+          {
+            "rows": 2,
+            "cols": 2,
+            "bonus": 80,
+            "range": 2,
+            "avail": 1
+          }
+        ],
+        "residentialTypes": [
+          {
+            "w": 2,
+            "h": 2,
+            "min": 100,
+            "max": 180,
+            "avail": 2
+          },
+          {
+            "w": 2,
+            "h": 3,
+            "min": 130,
+            "max": 260,
+            "avail": 1
+          }
+        ],
+        "availableBuildings": {
+          "services": 1,
+          "residentials": 3
+        },
+        "greedy": {
+          "localSearch": true,
+          "restarts": 2,
+          "serviceRefineIterations": 1,
+          "serviceRefineCandidateLimit": 10,
+          "exhaustiveServiceSearch": false,
+          "serviceExactPoolLimit": 8,
+          "serviceExactMaxCombinations": 64,
+          "localSearchServiceMoves": true,
+          "localSearchServiceCandidateLimit": 6,
+          "deferRoadCommitment": false,
+          "profile": true,
+          "randomSeed": 7,
+          "timeLimitSeconds": 5
+        },
+        "lns": {
+          "iterations": 2,
+          "maxNoImprovementIterations": 2,
+          "neighborhoodRows": 3,
+          "neighborhoodCols": 3,
+          "repairTimeLimitSeconds": 1
+        },
+        "localSearch": true,
+        "restarts": 2,
+        "serviceRefineIterations": 1,
+        "serviceRefineCandidateLimit": 10,
+        "exhaustiveServiceSearch": false,
+        "serviceExactPoolLimit": 8,
+        "serviceExactMaxCombinations": 64,
+        "optimizer": "greedy"
+      },
+      "artifactPaths": [
+        "artifacts/telemetry-manifests/2026-05-17/solver-telemetry-manifest.json",
+        "artifacts/telemetry-manifests/2026-05-17/solver-telemetry-manifest.json"
+      ],
+      "timings": {
+        "wallClockSeconds": 0.057,
+        "firstFeasibleSeconds": 0.038,
+        "bestScoreSeconds": 0.038
+      },
+      "final": {
+        "status": "valid",
+        "totalPopulation": 570,
+        "validation": {
+          "valid": true,
+          "errors": []
+        }
+      },
+      "progressSummary": {
+        "currentScore": 570,
+        "bestScore": 570,
+        "activeStage": "greedy",
+        "reuseSource": null,
+        "elapsedTimeSeconds": 0.057,
+        "timeSinceImprovementSeconds": null,
+        "stopReason": null,
+        "exactGap": null,
+        "portfolioWorkerSummary": null
+      },
+      "timeToQuality": {
+        "finalElapsedMs": 57,
+        "finalScore": 570,
+        "bestScore": 570,
+        "firstFeasibleAtMs": 38,
+        "firstImprovementAtMs": 38,
+        "bestScoreAtMs": 38,
+        "improvementCount": 1,
+        "timeCheckpoints": [
+          {
+            "elapsedMs": 5000,
+            "bestScore": 570,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          },
+          {
+            "elapsedMs": 30000,
+            "bestScore": 570,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          },
+          {
+            "elapsedMs": 120000,
+            "bestScore": 570,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          }
+        ],
+        "qualityTargets": [
+          {
+            "ratio": 0.5,
+            "targetScore": 285,
+            "reachedAtMs": 38,
+            "reachedScore": 570
+          },
+          {
+            "ratio": 0.9,
+            "targetScore": 513,
+            "reachedAtMs": 38,
+            "reachedScore": 570
+          },
+          {
+            "ratio": 1,
+            "targetScore": 570,
+            "reachedAtMs": 38,
+            "reachedScore": 570
+          }
+        ]
+      },
+      "stages": [
+        {
+          "name": "greedy",
+          "eventCount": 8,
+          "startedAtSeconds": 0.001,
+          "completedAtSeconds": 0.084,
+          "elapsedSeconds": 0.083,
+          "firstFeasibleSeconds": 0.038,
+          "bestScoreSeconds": 0.038,
+          "finalScore": 570,
+          "status": "stalled"
+        }
+      ],
+      "cpSat": null,
+      "lns": null,
+      "greedy": {
+        "profilePhaseCount": 7,
+        "candidateScans": {
+          "service": 399,
+          "residential": 4703,
+          "localSearch": 14040
+        },
+        "placements": {
+          "service": 61,
+          "residential": 209,
+          "localSearch": 0
+        }
+      }
+    },
+    {
+      "runId": "compact-service-repair:lns:budget-5:seed-7",
+      "benchmarkName": "cross-mode-scorecard",
+      "caseName": "compact-service-repair",
+      "caseFamily": "small",
+      "optimizer": "lns",
+      "mode": "lns",
+      "seed": 7,
+      "budget": {
+        "wallClockSeconds": 5,
+        "workerCpuBudgetSeconds": 5,
+        "observedWorkerCpuSeconds": null
+      },
+      "grid": {
+        "rows": 6,
+        "cols": 6,
+        "buildableCells": 36
+      },
+      "solverParams": {
+        "serviceTypes": [
+          {
+            "rows": 2,
+            "cols": 2,
+            "bonus": 80,
+            "range": 2,
+            "avail": 1
+          }
+        ],
+        "residentialTypes": [
+          {
+            "w": 2,
+            "h": 2,
+            "min": 100,
+            "max": 180,
+            "avail": 2
+          },
+          {
+            "w": 2,
+            "h": 3,
+            "min": 130,
+            "max": 260,
+            "avail": 1
+          }
+        ],
+        "availableBuildings": {
+          "services": 1,
+          "residentials": 3
+        },
+        "greedy": {
+          "localSearch": true,
+          "restarts": 2,
+          "serviceRefineIterations": 1,
+          "serviceRefineCandidateLimit": 10,
+          "exhaustiveServiceSearch": false,
+          "serviceExactPoolLimit": 8,
+          "serviceExactMaxCombinations": 64,
+          "localSearchServiceMoves": true,
+          "localSearchServiceCandidateLimit": 6,
+          "deferRoadCommitment": false,
+          "profile": true,
+          "randomSeed": 7,
+          "timeLimitSeconds": 5
+        },
+        "lns": {
+          "iterations": 4,
+          "maxNoImprovementIterations": 4,
+          "neighborhoodRows": 3,
+          "neighborhoodCols": 3,
+          "repairTimeLimitSeconds": 1,
+          "wallClockLimitSeconds": 5,
+          "timeLimitSeconds": 5,
+          "seedTimeLimitSeconds": 1,
+          "focusedRepairTimeLimitSeconds": 1,
+          "escalatedRepairTimeLimitSeconds": 1
+        },
+        "localSearch": true,
+        "restarts": 2,
+        "serviceRefineIterations": 1,
+        "serviceRefineCandidateLimit": 10,
+        "exhaustiveServiceSearch": false,
+        "serviceExactPoolLimit": 8,
+        "serviceExactMaxCombinations": 64,
+        "optimizer": "lns",
+        "cpSat": {
+          "timeLimitSeconds": 5,
+          "maxDeterministicTime": 5,
+          "randomSeed": 7,
+          "numWorkers": 1,
+          "randomizeSearch": false,
+          "progressIntervalSeconds": 0.5,
+          "logSearchProgress": false
+        }
+      },
+      "artifactPaths": [
+        "artifacts/telemetry-manifests/2026-05-17/solver-telemetry-manifest.json",
+        "artifacts/telemetry-manifests/2026-05-17/solver-telemetry-manifest.json"
+      ],
+      "timings": {
+        "wallClockSeconds": 2.03,
+        "firstFeasibleSeconds": 0.029,
+        "bestScoreSeconds": 0.029
+      },
+      "final": {
+        "status": "stale-iteration-limit",
+        "totalPopulation": 570,
+        "validation": {
+          "valid": true,
+          "errors": []
+        }
+      },
+      "progressSummary": {
+        "currentScore": 570,
+        "bestScore": 570,
+        "activeStage": "lns",
+        "reuseSource": "greedy-seed",
+        "elapsedTimeSeconds": 2.03,
+        "timeSinceImprovementSeconds": null,
+        "stopReason": "stale-iteration-limit",
+        "exactGap": null,
+        "portfolioWorkerSummary": null
+      },
+      "timeToQuality": {
+        "finalElapsedMs": 2030,
+        "finalScore": 570,
+        "bestScore": 570,
+        "firstFeasibleAtMs": 29,
+        "firstImprovementAtMs": 29,
+        "bestScoreAtMs": 29,
+        "improvementCount": 1,
+        "timeCheckpoints": [
+          {
+            "elapsedMs": 5000,
+            "bestScore": 570,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          },
+          {
+            "elapsedMs": 30000,
+            "bestScore": 570,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          },
+          {
+            "elapsedMs": 120000,
+            "bestScore": 570,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          }
+        ],
+        "qualityTargets": [
+          {
+            "ratio": 0.5,
+            "targetScore": 285,
+            "reachedAtMs": 29,
+            "reachedScore": 570
+          },
+          {
+            "ratio": 0.9,
+            "targetScore": 513,
+            "reachedAtMs": 29,
+            "reachedScore": 570
+          },
+          {
+            "ratio": 1,
+            "targetScore": 570,
+            "reachedAtMs": 29,
+            "reachedScore": 570
+          }
+        ]
+      },
+      "stages": [
+        {
+          "name": "lns",
+          "eventCount": 13,
+          "startedAtSeconds": 0.001,
+          "completedAtSeconds": 2.03,
+          "elapsedSeconds": 2.029,
+          "firstFeasibleSeconds": 0.029,
+          "bestScoreSeconds": 0.029,
+          "finalScore": 570,
+          "status": "stalled"
+        }
+      ],
+      "cpSat": null,
+      "lns": {
+        "stopReason": "stale-iteration-limit",
+        "seedSource": "greedy",
+        "attempts": 4,
+        "feasibleRepairs": 4,
+        "improvements": 0,
+        "neutralRepairs": 4,
+        "recoverableFailures": 0,
+        "skippedIterations": 0,
+        "elapsedTimeSeconds": 2.03,
+        "selectedWindows": [
+          {
+            "iteration": 0,
+            "phase": "focused",
+            "window": {
+              "top": 2,
+              "left": 0,
+              "rows": 3,
+              "cols": 3
+            },
+            "status": "neutral",
+            "improvement": 0,
+            "repairTimeLimitSeconds": 1,
+            "wallClockSeconds": 0.467
+          },
+          {
+            "iteration": 1,
+            "phase": "escalated",
+            "window": {
+              "top": 1,
+              "left": 0,
+              "rows": 5,
+              "cols": 6
+            },
+            "status": "neutral",
+            "improvement": 0,
+            "repairTimeLimitSeconds": 1,
+            "wallClockSeconds": 0.501
+          },
+          {
+            "iteration": 2,
+            "phase": "escalated",
+            "window": {
+              "top": 0,
+              "left": 0,
+              "rows": 6,
+              "cols": 6
+            },
+            "status": "neutral",
+            "improvement": 0,
+            "repairTimeLimitSeconds": 1,
+            "wallClockSeconds": 0.509
+          },
+          {
+            "iteration": 3,
+            "phase": "escalated",
+            "window": {
+              "top": 0,
+              "left": 0,
+              "rows": 6,
+              "cols": 6
+            },
+            "status": "neutral",
+            "improvement": 0,
+            "repairTimeLimitSeconds": 1,
+            "wallClockSeconds": 0.508
+          }
+        ]
+      },
+      "greedy": {
+        "profilePhaseCount": 7,
+        "candidateScans": {
+          "service": 399,
+          "residential": 4703,
+          "localSearch": 14040
+        },
+        "placements": {
+          "service": 61,
+          "residential": 209,
+          "localSearch": 0
+        }
+      }
+    },
+    {
+      "runId": "compact-service-repair:cp-sat:budget-5:seed-7",
+      "benchmarkName": "cross-mode-scorecard",
+      "caseName": "compact-service-repair",
+      "caseFamily": "small",
+      "optimizer": "cp-sat",
+      "mode": "cp-sat",
+      "seed": 7,
+      "budget": {
+        "wallClockSeconds": 5,
+        "workerCpuBudgetSeconds": 5,
+        "observedWorkerCpuSeconds": 0.043
+      },
+      "grid": {
+        "rows": 6,
+        "cols": 6,
+        "buildableCells": 36
+      },
+      "solverParams": {
+        "serviceTypes": [
+          {
+            "rows": 2,
+            "cols": 2,
+            "bonus": 80,
+            "range": 2,
+            "avail": 1
+          }
+        ],
+        "residentialTypes": [
+          {
+            "w": 2,
+            "h": 2,
+            "min": 100,
+            "max": 180,
+            "avail": 2
+          },
+          {
+            "w": 2,
+            "h": 3,
+            "min": 130,
+            "max": 260,
+            "avail": 1
+          }
+        ],
+        "availableBuildings": {
+          "services": 1,
+          "residentials": 3
+        },
+        "greedy": {
+          "localSearch": true,
+          "restarts": 2,
+          "serviceRefineIterations": 1,
+          "serviceRefineCandidateLimit": 10,
+          "exhaustiveServiceSearch": false,
+          "serviceExactPoolLimit": 8,
+          "serviceExactMaxCombinations": 64,
+          "localSearchServiceMoves": true,
+          "localSearchServiceCandidateLimit": 6,
+          "deferRoadCommitment": false,
+          "profile": true,
+          "randomSeed": 7,
+          "timeLimitSeconds": 5
+        },
+        "lns": {
+          "iterations": 2,
+          "maxNoImprovementIterations": 2,
+          "neighborhoodRows": 3,
+          "neighborhoodCols": 3,
+          "repairTimeLimitSeconds": 1
+        },
+        "localSearch": true,
+        "restarts": 2,
+        "serviceRefineIterations": 1,
+        "serviceRefineCandidateLimit": 10,
+        "exhaustiveServiceSearch": false,
+        "serviceExactPoolLimit": 8,
+        "serviceExactMaxCombinations": 64,
+        "optimizer": "cp-sat",
+        "cpSat": {
+          "timeLimitSeconds": 5,
+          "maxDeterministicTime": 5,
+          "randomSeed": 7,
+          "numWorkers": 1,
+          "randomizeSearch": false,
+          "progressIntervalSeconds": 0.5,
+          "logSearchProgress": false
+        }
+      },
+      "artifactPaths": [
+        "artifacts/telemetry-manifests/2026-05-17/solver-telemetry-manifest.json",
+        "artifacts/telemetry-manifests/2026-05-17/solver-telemetry-manifest.json"
+      ],
+      "timings": {
+        "wallClockSeconds": 0.496,
+        "firstFeasibleSeconds": 0.043,
+        "bestScoreSeconds": 0.043
+      },
+      "final": {
+        "status": "OPTIMAL",
+        "totalPopulation": 570,
+        "validation": {
+          "valid": true,
+          "errors": []
+        }
+      },
+      "progressSummary": {
+        "currentScore": 570,
+        "bestScore": 570,
+        "activeStage": "cp-sat",
+        "reuseSource": null,
+        "elapsedTimeSeconds": 0.496,
+        "timeSinceImprovementSeconds": 0,
+        "stopReason": null,
+        "exactGap": 0,
+        "portfolioWorkerSummary": null
+      },
+      "timeToQuality": {
+        "finalElapsedMs": 496,
+        "finalScore": 570,
+        "bestScore": 570,
+        "firstFeasibleAtMs": 43,
+        "firstImprovementAtMs": 43,
+        "bestScoreAtMs": 43,
+        "improvementCount": 1,
+        "timeCheckpoints": [
+          {
+            "elapsedMs": 5000,
+            "bestScore": 570,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          },
+          {
+            "elapsedMs": 30000,
+            "bestScore": 570,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          },
+          {
+            "elapsedMs": 120000,
+            "bestScore": 570,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          }
+        ],
+        "qualityTargets": [
+          {
+            "ratio": 0.5,
+            "targetScore": 285,
+            "reachedAtMs": 43,
+            "reachedScore": 570
+          },
+          {
+            "ratio": 0.9,
+            "targetScore": 513,
+            "reachedAtMs": 43,
+            "reachedScore": 570
+          },
+          {
+            "ratio": 1,
+            "targetScore": 570,
+            "reachedAtMs": 43,
+            "reachedScore": 570
+          }
+        ]
+      },
+      "stages": [
+        {
+          "name": "cp-sat",
+          "eventCount": 3,
+          "startedAtSeconds": 0.043,
+          "completedAtSeconds": 0.496,
+          "elapsedSeconds": 0.453,
+          "firstFeasibleSeconds": 0.043,
+          "bestScoreSeconds": 0.043,
+          "finalScore": 570,
+          "status": "stalled"
+        }
+      ],
+      "cpSat": {
+        "status": "OPTIMAL",
+        "upperBound": 570,
+        "populationGap": 0,
+        "objectiveGap": 0,
+        "solutionCount": 2,
+        "branches": 2553,
+        "conflicts": 41,
+        "userTimeSeconds": 0.043457,
+        "solveWallTimeSeconds": 0.043457,
+        "portfolioWorkerCount": null,
+        "portfolioFeasibleWorkers": null,
+        "model": {
+          "gridRows": 6,
+          "gridCols": 6,
+          "gridCells": 36,
+          "buildableCells": 36,
+          "roadCandidateCells": 36,
+          "serviceTypeCount": 1,
+          "residentialTypeCount": 2,
+          "serviceCandidateUpperBound": 36,
+          "residentialCandidateUpperBound": 108,
+          "candidateUpperBound": 180
+        }
+      },
+      "lns": null,
+      "greedy": null
+    },
+    {
+      "runId": "row0-corridor-repair-pressure:auto:budget-5:seed-7",
+      "benchmarkName": "cross-mode-scorecard",
+      "caseName": "row0-corridor-repair-pressure",
+      "caseFamily": "small",
+      "optimizer": "auto",
+      "mode": "auto",
+      "seed": 7,
+      "budget": {
+        "wallClockSeconds": 5,
+        "workerCpuBudgetSeconds": 5,
+        "observedWorkerCpuSeconds": 0.008
+      },
+      "grid": {
+        "rows": 6,
+        "cols": 6,
+        "buildableCells": 28
+      },
+      "solverParams": {
+        "serviceTypes": [
+          {
+            "rows": 1,
+            "cols": 2,
+            "bonus": 55,
+            "range": 1,
+            "avail": 1
+          },
+          {
+            "rows": 2,
+            "cols": 2,
+            "bonus": 120,
+            "range": 2,
+            "avail": 1
+          }
+        ],
+        "residentialTypes": [
+          {
+            "w": 2,
+            "h": 2,
+            "min": 80,
+            "max": 220,
+            "avail": 2
+          },
+          {
+            "w": 2,
+            "h": 3,
+            "min": 140,
+            "max": 360,
+            "avail": 1
+          }
+        ],
+        "availableBuildings": {
+          "services": 2,
+          "residentials": 3
+        },
+        "greedy": {
+          "localSearch": true,
+          "restarts": 3,
+          "serviceRefineIterations": 1,
+          "serviceRefineCandidateLimit": 12,
+          "exhaustiveServiceSearch": false,
+          "serviceExactPoolLimit": 8,
+          "serviceExactMaxCombinations": 80,
+          "localSearchServiceMoves": true,
+          "localSearchServiceCandidateLimit": 6,
+          "deferRoadCommitment": false,
+          "profile": true,
+          "randomSeed": 7,
+          "timeLimitSeconds": 5
+        },
+        "lns": {
+          "iterations": 4,
+          "maxNoImprovementIterations": 4,
+          "neighborhoodRows": 3,
+          "neighborhoodCols": 4,
+          "repairTimeLimitSeconds": 1,
+          "wallClockLimitSeconds": 5,
+          "timeLimitSeconds": 5,
+          "seedTimeLimitSeconds": 1,
+          "focusedRepairTimeLimitSeconds": 1,
+          "escalatedRepairTimeLimitSeconds": 1
+        },
+        "localSearch": true,
+        "restarts": 3,
+        "serviceRefineIterations": 1,
+        "serviceRefineCandidateLimit": 12,
+        "exhaustiveServiceSearch": false,
+        "serviceExactPoolLimit": 8,
+        "serviceExactMaxCombinations": 80,
+        "optimizer": "auto",
+        "auto": {
+          "wallClockLimitSeconds": 5,
+          "randomSeed": 7,
+          "cpSatStageTimeLimitSeconds": 5
+        },
+        "cpSat": {
+          "timeLimitSeconds": 5,
+          "maxDeterministicTime": 5,
+          "randomSeed": 7,
+          "numWorkers": 1,
+          "randomizeSearch": false,
+          "progressIntervalSeconds": 0.5,
+          "logSearchProgress": false
+        }
+      },
+      "artifactPaths": [
+        "artifacts/telemetry-manifests/2026-05-17/solver-telemetry-manifest.json",
+        "artifacts/telemetry-manifests/2026-05-17/solver-telemetry-manifest.json"
+      ],
+      "timings": {
+        "wallClockSeconds": 2.542,
+        "firstFeasibleSeconds": 0.028,
+        "bestScoreSeconds": 2.083
+      },
+      "final": {
+        "status": "OPTIMAL",
+        "totalPopulation": 330,
+        "validation": {
+          "valid": true,
+          "errors": []
+        }
+      },
+      "progressSummary": {
+        "currentScore": 330,
+        "bestScore": 330,
+        "activeStage": "cp-sat",
+        "reuseSource": null,
+        "elapsedTimeSeconds": 2.542,
+        "timeSinceImprovementSeconds": 0.001,
+        "stopReason": "optimal",
+        "exactGap": 0,
+        "portfolioWorkerSummary": null
+      },
+      "timeToQuality": {
+        "finalElapsedMs": 2542,
+        "finalScore": 330,
+        "bestScore": 330,
+        "firstFeasibleAtMs": 28,
+        "firstImprovementAtMs": 28,
+        "bestScoreAtMs": 2083,
+        "improvementCount": 4,
+        "timeCheckpoints": [
+          {
+            "elapsedMs": 5000,
+            "bestScore": 330,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          },
+          {
+            "elapsedMs": 30000,
+            "bestScore": 330,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          },
+          {
+            "elapsedMs": 120000,
+            "bestScore": 330,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          }
+        ],
+        "qualityTargets": [
+          {
+            "ratio": 0.5,
+            "targetScore": 165,
+            "reachedAtMs": 28,
+            "reachedScore": 260
+          },
+          {
+            "ratio": 0.9,
+            "targetScore": 297,
+            "reachedAtMs": 2083,
+            "reachedScore": 330
+          },
+          {
+            "ratio": 1,
+            "targetScore": 330,
+            "reachedAtMs": 2083,
+            "reachedScore": 330
+          }
+        ]
+      },
+      "stages": [
+        {
+          "name": "greedy",
+          "eventCount": 9,
+          "startedAtSeconds": 0,
+          "completedAtSeconds": 0.128,
+          "elapsedSeconds": 0.128,
+          "firstFeasibleSeconds": 0.028,
+          "bestScoreSeconds": 0.028,
+          "finalScore": 260,
+          "status": "improved"
+        },
+        {
+          "name": "lns",
+          "eventCount": 2,
+          "startedAtSeconds": 0.128,
+          "completedAtSeconds": 2.083,
+          "elapsedSeconds": 1.955,
+          "firstFeasibleSeconds": 2.083,
+          "bestScoreSeconds": 2.083,
+          "finalScore": 330,
+          "status": "improved"
+        },
+        {
+          "name": "cp-sat",
+          "eventCount": 6,
+          "startedAtSeconds": 2.083,
+          "completedAtSeconds": 2.542,
+          "elapsedSeconds": 0.459,
+          "firstFeasibleSeconds": 2.09,
+          "bestScoreSeconds": 2.09,
+          "finalScore": 330,
+          "status": "stalled"
+        }
+      ],
+      "cpSat": {
+        "status": "OPTIMAL",
+        "upperBound": 330,
+        "populationGap": 0,
+        "objectiveGap": 0,
+        "solutionCount": 1,
+        "branches": 33,
+        "conflicts": 0,
+        "userTimeSeconds": 0.008103,
+        "solveWallTimeSeconds": 0.008103,
+        "portfolioWorkerCount": null,
+        "portfolioFeasibleWorkers": null,
+        "model": {
+          "gridRows": 6,
+          "gridCols": 6,
+          "gridCells": 36,
+          "buildableCells": 28,
+          "roadCandidateCells": 28,
+          "serviceTypeCount": 2,
+          "residentialTypeCount": 2,
+          "serviceCandidateUpperBound": 84,
+          "residentialCandidateUpperBound": 84,
+          "candidateUpperBound": 196
+        }
+      },
+      "lns": null,
+      "greedy": null
+    },
+    {
+      "runId": "row0-corridor-repair-pressure:greedy:budget-5:seed-7",
+      "benchmarkName": "cross-mode-scorecard",
+      "caseName": "row0-corridor-repair-pressure",
+      "caseFamily": "small",
+      "optimizer": "greedy",
+      "mode": "greedy",
+      "seed": 7,
+      "budget": {
+        "wallClockSeconds": 5,
+        "workerCpuBudgetSeconds": 5,
+        "observedWorkerCpuSeconds": null
+      },
+      "grid": {
+        "rows": 6,
+        "cols": 6,
+        "buildableCells": 28
+      },
+      "solverParams": {
+        "serviceTypes": [
+          {
+            "rows": 1,
+            "cols": 2,
+            "bonus": 55,
+            "range": 1,
+            "avail": 1
+          },
+          {
+            "rows": 2,
+            "cols": 2,
+            "bonus": 120,
+            "range": 2,
+            "avail": 1
+          }
+        ],
+        "residentialTypes": [
+          {
+            "w": 2,
+            "h": 2,
+            "min": 80,
+            "max": 220,
+            "avail": 2
+          },
+          {
+            "w": 2,
+            "h": 3,
+            "min": 140,
+            "max": 360,
+            "avail": 1
+          }
+        ],
+        "availableBuildings": {
+          "services": 2,
+          "residentials": 3
+        },
+        "greedy": {
+          "localSearch": true,
+          "restarts": 3,
+          "serviceRefineIterations": 1,
+          "serviceRefineCandidateLimit": 12,
+          "exhaustiveServiceSearch": false,
+          "serviceExactPoolLimit": 8,
+          "serviceExactMaxCombinations": 80,
+          "localSearchServiceMoves": true,
+          "localSearchServiceCandidateLimit": 6,
+          "deferRoadCommitment": false,
+          "profile": true,
+          "randomSeed": 7,
+          "timeLimitSeconds": 5
+        },
+        "lns": {
+          "iterations": 2,
+          "maxNoImprovementIterations": 2,
+          "neighborhoodRows": 3,
+          "neighborhoodCols": 4,
+          "repairTimeLimitSeconds": 1
+        },
+        "localSearch": true,
+        "restarts": 3,
+        "serviceRefineIterations": 1,
+        "serviceRefineCandidateLimit": 12,
+        "exhaustiveServiceSearch": false,
+        "serviceExactPoolLimit": 8,
+        "serviceExactMaxCombinations": 80,
+        "optimizer": "greedy"
+      },
+      "artifactPaths": [
+        "artifacts/telemetry-manifests/2026-05-17/solver-telemetry-manifest.json",
+        "artifacts/telemetry-manifests/2026-05-17/solver-telemetry-manifest.json"
+      ],
+      "timings": {
+        "wallClockSeconds": 0.018,
+        "firstFeasibleSeconds": 0.006,
+        "bestScoreSeconds": 0.006
+      },
+      "final": {
+        "status": "valid",
+        "totalPopulation": 260,
+        "validation": {
+          "valid": true,
+          "errors": []
+        }
+      },
+      "progressSummary": {
+        "currentScore": 260,
+        "bestScore": 260,
+        "activeStage": "greedy",
+        "reuseSource": null,
+        "elapsedTimeSeconds": 0.018,
+        "timeSinceImprovementSeconds": null,
+        "stopReason": null,
+        "exactGap": null,
+        "portfolioWorkerSummary": null
+      },
+      "timeToQuality": {
+        "finalElapsedMs": 18,
+        "finalScore": 260,
+        "bestScore": 260,
+        "firstFeasibleAtMs": 6,
+        "firstImprovementAtMs": 6,
+        "bestScoreAtMs": 6,
+        "improvementCount": 1,
+        "timeCheckpoints": [
+          {
+            "elapsedMs": 5000,
+            "bestScore": 260,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          },
+          {
+            "elapsedMs": 30000,
+            "bestScore": 260,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          },
+          {
+            "elapsedMs": 120000,
+            "bestScore": 260,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          }
+        ],
+        "qualityTargets": [
+          {
+            "ratio": 0.5,
+            "targetScore": 130,
+            "reachedAtMs": 6,
+            "reachedScore": 260
+          },
+          {
+            "ratio": 0.9,
+            "targetScore": 234,
+            "reachedAtMs": 6,
+            "reachedScore": 260
+          },
+          {
+            "ratio": 1,
+            "targetScore": 260,
+            "reachedAtMs": 6,
+            "reachedScore": 260
+          }
+        ]
+      },
+      "stages": [
+        {
+          "name": "greedy",
+          "eventCount": 8,
+          "startedAtSeconds": 0,
+          "completedAtSeconds": 0.028,
+          "elapsedSeconds": 0.028,
+          "firstFeasibleSeconds": 0.006,
+          "bestScoreSeconds": 0.006,
+          "finalScore": 260,
+          "status": "stalled"
+        }
+      ],
+      "cpSat": null,
+      "lns": null,
+      "greedy": {
+        "profilePhaseCount": 7,
+        "candidateScans": {
+          "service": 383,
+          "residential": 299,
+          "localSearch": 852
+        },
+        "placements": {
+          "service": 94,
+          "residential": 61,
+          "localSearch": 0
+        }
+      }
+    },
+    {
+      "runId": "row0-corridor-repair-pressure:lns:budget-5:seed-7",
+      "benchmarkName": "cross-mode-scorecard",
+      "caseName": "row0-corridor-repair-pressure",
+      "caseFamily": "small",
+      "optimizer": "lns",
+      "mode": "lns",
+      "seed": 7,
+      "budget": {
+        "wallClockSeconds": 5,
+        "workerCpuBudgetSeconds": 5,
+        "observedWorkerCpuSeconds": 0.023
+      },
+      "grid": {
+        "rows": 6,
+        "cols": 6,
+        "buildableCells": 28
+      },
+      "solverParams": {
+        "serviceTypes": [
+          {
+            "rows": 1,
+            "cols": 2,
+            "bonus": 55,
+            "range": 1,
+            "avail": 1
+          },
+          {
+            "rows": 2,
+            "cols": 2,
+            "bonus": 120,
+            "range": 2,
+            "avail": 1
+          }
+        ],
+        "residentialTypes": [
+          {
+            "w": 2,
+            "h": 2,
+            "min": 80,
+            "max": 220,
+            "avail": 2
+          },
+          {
+            "w": 2,
+            "h": 3,
+            "min": 140,
+            "max": 360,
+            "avail": 1
+          }
+        ],
+        "availableBuildings": {
+          "services": 2,
+          "residentials": 3
+        },
+        "greedy": {
+          "localSearch": true,
+          "restarts": 3,
+          "serviceRefineIterations": 1,
+          "serviceRefineCandidateLimit": 12,
+          "exhaustiveServiceSearch": false,
+          "serviceExactPoolLimit": 8,
+          "serviceExactMaxCombinations": 80,
+          "localSearchServiceMoves": true,
+          "localSearchServiceCandidateLimit": 6,
+          "deferRoadCommitment": false,
+          "profile": true,
+          "randomSeed": 7,
+          "timeLimitSeconds": 5
+        },
+        "lns": {
+          "iterations": 4,
+          "maxNoImprovementIterations": 4,
+          "neighborhoodRows": 3,
+          "neighborhoodCols": 4,
+          "repairTimeLimitSeconds": 1,
+          "wallClockLimitSeconds": 5,
+          "timeLimitSeconds": 5,
+          "seedTimeLimitSeconds": 1,
+          "focusedRepairTimeLimitSeconds": 1,
+          "escalatedRepairTimeLimitSeconds": 1
+        },
+        "localSearch": true,
+        "restarts": 3,
+        "serviceRefineIterations": 1,
+        "serviceRefineCandidateLimit": 12,
+        "exhaustiveServiceSearch": false,
+        "serviceExactPoolLimit": 8,
+        "serviceExactMaxCombinations": 80,
+        "optimizer": "lns",
+        "cpSat": {
+          "timeLimitSeconds": 5,
+          "maxDeterministicTime": 5,
+          "randomSeed": 7,
+          "numWorkers": 1,
+          "randomizeSearch": false,
+          "progressIntervalSeconds": 0.5,
+          "logSearchProgress": false
+        }
+      },
+      "artifactPaths": [
+        "artifacts/telemetry-manifests/2026-05-17/solver-telemetry-manifest.json",
+        "artifacts/telemetry-manifests/2026-05-17/solver-telemetry-manifest.json"
+      ],
+      "timings": {
+        "wallClockSeconds": 1.888,
+        "firstFeasibleSeconds": 0.014,
+        "bestScoreSeconds": 0.023
+      },
+      "final": {
+        "status": "OPTIMAL",
+        "totalPopulation": 330,
+        "validation": {
+          "valid": true,
+          "errors": []
+        }
+      },
+      "progressSummary": {
+        "currentScore": 330,
+        "bestScore": 330,
+        "activeStage": "lns",
+        "reuseSource": "greedy-seed",
+        "elapsedTimeSeconds": 1.888,
+        "timeSinceImprovementSeconds": 0,
+        "stopReason": "iteration-limit",
+        "exactGap": 0,
+        "portfolioWorkerSummary": null
+      },
+      "timeToQuality": {
+        "finalElapsedMs": 1888,
+        "finalScore": 330,
+        "bestScore": 330,
+        "firstFeasibleAtMs": 14,
+        "firstImprovementAtMs": 14,
+        "bestScoreAtMs": 23,
+        "improvementCount": 3,
+        "timeCheckpoints": [
+          {
+            "elapsedMs": 5000,
+            "bestScore": 330,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          },
+          {
+            "elapsedMs": 30000,
+            "bestScore": 330,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          },
+          {
+            "elapsedMs": 120000,
+            "bestScore": 330,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          }
+        ],
+        "qualityTargets": [
+          {
+            "ratio": 0.5,
+            "targetScore": 165,
+            "reachedAtMs": 14,
+            "reachedScore": 260
+          },
+          {
+            "ratio": 0.9,
+            "targetScore": 297,
+            "reachedAtMs": 23,
+            "reachedScore": 330
+          },
+          {
+            "ratio": 1,
+            "targetScore": 330,
+            "reachedAtMs": 23,
+            "reachedScore": 330
+          }
+        ]
+      },
+      "stages": [
+        {
+          "name": "lns",
+          "eventCount": 8,
+          "startedAtSeconds": 0.014,
+          "completedAtSeconds": 1.888,
+          "elapsedSeconds": 1.874,
+          "firstFeasibleSeconds": 0.014,
+          "bestScoreSeconds": 0.023,
+          "finalScore": 330,
+          "status": "stalled"
+        }
+      ],
+      "cpSat": {
+        "status": "OPTIMAL",
+        "upperBound": 330,
+        "populationGap": 0,
+        "objectiveGap": 0,
+        "solutionCount": 5,
+        "branches": 723,
+        "conflicts": 41,
+        "userTimeSeconds": 0.022737,
+        "solveWallTimeSeconds": 0.022737,
+        "portfolioWorkerCount": null,
+        "portfolioFeasibleWorkers": null,
+        "model": {
+          "gridRows": 6,
+          "gridCols": 6,
+          "gridCells": 36,
+          "buildableCells": 28,
+          "roadCandidateCells": 28,
+          "serviceTypeCount": 2,
+          "residentialTypeCount": 2,
+          "serviceCandidateUpperBound": 84,
+          "residentialCandidateUpperBound": 84,
+          "candidateUpperBound": 196
+        }
+      },
+      "lns": {
+        "stopReason": "iteration-limit",
+        "seedSource": "greedy",
+        "attempts": 4,
+        "feasibleRepairs": 4,
+        "improvements": 2,
+        "neutralRepairs": 2,
+        "recoverableFailures": 0,
+        "skippedIterations": 0,
+        "elapsedTimeSeconds": 1.888,
+        "selectedWindows": [
+          {
+            "iteration": 0,
+            "phase": "focused",
+            "window": {
+              "top": 3,
+              "left": 0,
+              "rows": 3,
+              "cols": 4
+            },
+            "status": "improved",
+            "improvement": 15,
+            "repairTimeLimitSeconds": 1,
+            "wallClockSeconds": 0.462
+          },
+          {
+            "iteration": 1,
+            "phase": "focused",
+            "window": {
+              "top": 3,
+              "left": 2,
+              "rows": 3,
+              "cols": 4
+            },
+            "status": "neutral",
+            "improvement": 0,
+            "repairTimeLimitSeconds": 1,
+            "wallClockSeconds": 0.469
+          },
+          {
+            "iteration": 2,
+            "phase": "escalated",
+            "window": {
+              "top": 1,
+              "left": 0,
+              "rows": 5,
+              "cols": 6
+            },
+            "status": "neutral",
+            "improvement": 0,
+            "repairTimeLimitSeconds": 1,
+            "wallClockSeconds": 0.474
+          },
+          {
+            "iteration": 3,
+            "phase": "escalated",
+            "window": {
+              "top": 0,
+              "left": 0,
+              "rows": 6,
+              "cols": 6
+            },
+            "status": "improved",
+            "improvement": 55,
+            "repairTimeLimitSeconds": 1,
+            "wallClockSeconds": 0.468
+          }
+        ]
+      },
+      "greedy": null
+    },
+    {
+      "runId": "row0-corridor-repair-pressure:cp-sat:budget-5:seed-7",
+      "benchmarkName": "cross-mode-scorecard",
+      "caseName": "row0-corridor-repair-pressure",
+      "caseFamily": "small",
+      "optimizer": "cp-sat",
+      "mode": "cp-sat",
+      "seed": 7,
+      "budget": {
+        "wallClockSeconds": 5,
+        "workerCpuBudgetSeconds": 5,
+        "observedWorkerCpuSeconds": 0.023
+      },
+      "grid": {
+        "rows": 6,
+        "cols": 6,
+        "buildableCells": 28
+      },
+      "solverParams": {
+        "serviceTypes": [
+          {
+            "rows": 1,
+            "cols": 2,
+            "bonus": 55,
+            "range": 1,
+            "avail": 1
+          },
+          {
+            "rows": 2,
+            "cols": 2,
+            "bonus": 120,
+            "range": 2,
+            "avail": 1
+          }
+        ],
+        "residentialTypes": [
+          {
+            "w": 2,
+            "h": 2,
+            "min": 80,
+            "max": 220,
+            "avail": 2
+          },
+          {
+            "w": 2,
+            "h": 3,
+            "min": 140,
+            "max": 360,
+            "avail": 1
+          }
+        ],
+        "availableBuildings": {
+          "services": 2,
+          "residentials": 3
+        },
+        "greedy": {
+          "localSearch": true,
+          "restarts": 3,
+          "serviceRefineIterations": 1,
+          "serviceRefineCandidateLimit": 12,
+          "exhaustiveServiceSearch": false,
+          "serviceExactPoolLimit": 8,
+          "serviceExactMaxCombinations": 80,
+          "localSearchServiceMoves": true,
+          "localSearchServiceCandidateLimit": 6,
+          "deferRoadCommitment": false,
+          "profile": true,
+          "randomSeed": 7,
+          "timeLimitSeconds": 5
+        },
+        "lns": {
+          "iterations": 2,
+          "maxNoImprovementIterations": 2,
+          "neighborhoodRows": 3,
+          "neighborhoodCols": 4,
+          "repairTimeLimitSeconds": 1
+        },
+        "localSearch": true,
+        "restarts": 3,
+        "serviceRefineIterations": 1,
+        "serviceRefineCandidateLimit": 12,
+        "exhaustiveServiceSearch": false,
+        "serviceExactPoolLimit": 8,
+        "serviceExactMaxCombinations": 80,
+        "optimizer": "cp-sat",
+        "cpSat": {
+          "timeLimitSeconds": 5,
+          "maxDeterministicTime": 5,
+          "randomSeed": 7,
+          "numWorkers": 1,
+          "randomizeSearch": false,
+          "progressIntervalSeconds": 0.5,
+          "logSearchProgress": false
+        }
+      },
+      "artifactPaths": [
+        "artifacts/telemetry-manifests/2026-05-17/solver-telemetry-manifest.json",
+        "artifacts/telemetry-manifests/2026-05-17/solver-telemetry-manifest.json"
+      ],
+      "timings": {
+        "wallClockSeconds": 0.46,
+        "firstFeasibleSeconds": 0.021,
+        "bestScoreSeconds": 0.021
+      },
+      "final": {
+        "status": "OPTIMAL",
+        "totalPopulation": 330,
+        "validation": {
+          "valid": true,
+          "errors": []
+        }
+      },
+      "progressSummary": {
+        "currentScore": 330,
+        "bestScore": 330,
+        "activeStage": "cp-sat",
+        "reuseSource": null,
+        "elapsedTimeSeconds": 0.46,
+        "timeSinceImprovementSeconds": 0.001,
+        "stopReason": null,
+        "exactGap": 0,
+        "portfolioWorkerSummary": null
+      },
+      "timeToQuality": {
+        "finalElapsedMs": 460,
+        "finalScore": 330,
+        "bestScore": 330,
+        "firstFeasibleAtMs": 21,
+        "firstImprovementAtMs": 21,
+        "bestScoreAtMs": 21,
+        "improvementCount": 1,
+        "timeCheckpoints": [
+          {
+            "elapsedMs": 5000,
+            "bestScore": 330,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          },
+          {
+            "elapsedMs": 30000,
+            "bestScore": 330,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          },
+          {
+            "elapsedMs": 120000,
+            "bestScore": 330,
+            "scoreDeltaToBest": 0,
+            "scoreRatioToBest": 1,
+            "reached": true
+          }
+        ],
+        "qualityTargets": [
+          {
+            "ratio": 0.5,
+            "targetScore": 165,
+            "reachedAtMs": 21,
+            "reachedScore": 330
+          },
+          {
+            "ratio": 0.9,
+            "targetScore": 297,
+            "reachedAtMs": 21,
+            "reachedScore": 330
+          },
+          {
+            "ratio": 1,
+            "targetScore": 330,
+            "reachedAtMs": 21,
+            "reachedScore": 330
+          }
+        ]
+      },
+      "stages": [
+        {
+          "name": "cp-sat",
+          "eventCount": 3,
+          "startedAtSeconds": 0.021,
+          "completedAtSeconds": 0.46,
+          "elapsedSeconds": 0.439,
+          "firstFeasibleSeconds": 0.021,
+          "bestScoreSeconds": 0.021,
+          "finalScore": 330,
+          "status": "stalled"
+        }
+      ],
+      "cpSat": {
+        "status": "OPTIMAL",
+        "upperBound": 330,
+        "populationGap": 0,
+        "objectiveGap": 0,
+        "solutionCount": 4,
+        "branches": 762,
+        "conflicts": 62,
+        "userTimeSeconds": 0.022733,
+        "solveWallTimeSeconds": 0.022733,
+        "portfolioWorkerCount": null,
+        "portfolioFeasibleWorkers": null,
+        "model": {
+          "gridRows": 6,
+          "gridCols": 6,
+          "gridCells": 36,
+          "buildableCells": 28,
+          "roadCandidateCells": 28,
+          "serviceTypeCount": 2,
+          "residentialTypeCount": 2,
+          "serviceCandidateUpperBound": 84,
+          "residentialCandidateUpperBound": 84,
+          "candidateUpperBound": 196
+        }
+      },
+      "lns": null,
+      "greedy": null
+    }
+  ],
+  "summaryMetrics": {
+    "validRunCount": 16,
+    "invalidRunCount": 0,
+    "optimizerCounts": {
+      "auto": 4,
+      "greedy": 4,
+      "lns": 4,
+      "cp-sat": 4
+    },
+    "cpSatRunCount": 9,
+    "lnsRunCount": 4,
+    "manifestRunCount": 16
+  }
+}

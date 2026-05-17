@@ -1,0 +1,969 @@
+{
+  "generatedAt": "2026-05-17T14:48:31.210Z",
+  "schemaVersion": 1,
+  "seeds": [
+    7,
+    19,
+    37
+  ],
+  "splitCount": 2,
+  "audit": {
+    "cpuOnly": true,
+    "runtimeIntegration": false,
+    "solverDefaultsChanged": false,
+    "trainingTarget": "greedy-pairwise-placement-ordering"
+  },
+  "labels": {
+    "labelCount": 4620,
+    "sourceCounts": {
+      "connectivity-shadow-decision": 1170,
+      "road-opportunity-counterfactual": 3450
+    },
+    "splits": [
+      {
+        "split": "development",
+        "selectedCaseNames": [
+          "cap-sweep-mixed",
+          "service-local-neighborhood",
+          "step14-service-lookahead-reranker",
+          "row0-corridor-repair-pressure"
+        ],
+        "seeds": [
+          7,
+          19,
+          37
+        ],
+        "labelCount": 1896,
+        "sourceCounts": {
+          "connectivity-shadow-decision": 450,
+          "road-opportunity-counterfactual": 1446
+        }
+      },
+      {
+        "split": "holdout",
+        "selectedCaseNames": [
+          "fixed-service-realization-complete",
+          "geometry-occupancy-hot-path",
+          "typed-footprint-pressure",
+          "typed-availability-pressure"
+        ],
+        "seeds": [
+          7,
+          19,
+          37
+        ],
+        "labelCount": 2724,
+        "sourceCounts": {
+          "connectivity-shadow-decision": 720,
+          "road-opportunity-counterfactual": 2004
+        }
+      }
+    ],
+    "labelFingerprint": "05ff02f06c15dd93f4af9f1c78cf96bef4de4e61dfc9d04750de5fb237eb934c"
+  },
+  "leakage": {
+    "developmentGreedyCases": [
+      "cap-sweep-mixed",
+      "service-local-neighborhood",
+      "step14-service-lookahead-reranker",
+      "row0-corridor-repair-pressure"
+    ],
+    "holdoutGreedyCases": [
+      "fixed-service-realization-complete",
+      "geometry-occupancy-hot-path",
+      "typed-footprint-pressure",
+      "typed-availability-pressure"
+    ],
+    "developmentLnsCases": [
+      "compact-service-repair",
+      "lns-service-split-pressure",
+      "seeded-service-anchor-pressure",
+      "lns-corridor-squeeze-pressure",
+      "lns-gate-split-pressure",
+      "lns-footprint-mix-pressure"
+    ],
+    "holdoutLnsCases": [
+      "row0-anchor-repair",
+      "lns-corridor-split-pressure",
+      "lns-gate-choke-pressure",
+      "lns-anchor-split-pressure",
+      "lns-footprint-split-pressure",
+      "lns-service-overlap-pressure"
+    ],
+    "greedyOverlap": [],
+    "lnsOverlap": [],
+    "protectedHoldout": true
+  },
+  "model": {
+    "kind": "pairwise-linear",
+    "trainedOnSplit": "development",
+    "cpuOnly": true,
+    "featureNames": [
+      "all:r",
+      "all:c",
+      "all:rows",
+      "all:cols",
+      "all:area",
+      "all:roadCost",
+      "all:score",
+      "all:shadowPenalty",
+      "all:reachableBefore",
+      "all:reachableAfter",
+      "all:reachableDelta",
+      "all:lostCells",
+      "all:footprintCells",
+      "all:disconnectedCells",
+      "all:lostPerFootprint",
+      "all:disconnectedPerFootprint",
+      "all:typeIndex",
+      "all:bonus",
+      "all:range",
+      "source:connectivity-shadow-decision:r",
+      "source:connectivity-shadow-decision:c",
+      "source:connectivity-shadow-decision:rows",
+      "source:connectivity-shadow-decision:cols",
+      "source:connectivity-shadow-decision:area",
+      "source:connectivity-shadow-decision:roadCost",
+      "source:connectivity-shadow-decision:score",
+      "source:connectivity-shadow-decision:shadowPenalty",
+      "source:connectivity-shadow-decision:reachableBefore",
+      "source:connectivity-shadow-decision:reachableAfter",
+      "source:connectivity-shadow-decision:reachableDelta",
+      "source:connectivity-shadow-decision:lostCells",
+      "source:connectivity-shadow-decision:footprintCells",
+      "source:connectivity-shadow-decision:disconnectedCells",
+      "source:connectivity-shadow-decision:lostPerFootprint",
+      "source:connectivity-shadow-decision:disconnectedPerFootprint",
+      "source:connectivity-shadow-decision:typeIndex",
+      "source:connectivity-shadow-decision:bonus",
+      "source:connectivity-shadow-decision:range",
+      "source:road-opportunity-counterfactual:r",
+      "source:road-opportunity-counterfactual:c",
+      "source:road-opportunity-counterfactual:rows",
+      "source:road-opportunity-counterfactual:cols",
+      "source:road-opportunity-counterfactual:area",
+      "source:road-opportunity-counterfactual:roadCost",
+      "source:road-opportunity-counterfactual:score",
+      "source:road-opportunity-counterfactual:shadowPenalty",
+      "source:road-opportunity-counterfactual:reachableBefore",
+      "source:road-opportunity-counterfactual:reachableAfter",
+      "source:road-opportunity-counterfactual:reachableDelta",
+      "source:road-opportunity-counterfactual:lostCells",
+      "source:road-opportunity-counterfactual:footprintCells",
+      "source:road-opportunity-counterfactual:disconnectedCells",
+      "source:road-opportunity-counterfactual:lostPerFootprint",
+      "source:road-opportunity-counterfactual:disconnectedPerFootprint",
+      "source:road-opportunity-counterfactual:typeIndex",
+      "source:road-opportunity-counterfactual:bonus",
+      "source:road-opportunity-counterfactual:range",
+      "target:lower-connectivity-shadow:r",
+      "target:lower-connectivity-shadow:c",
+      "target:lower-connectivity-shadow:rows",
+      "target:lower-connectivity-shadow:cols",
+      "target:lower-connectivity-shadow:area",
+      "target:lower-connectivity-shadow:roadCost",
+      "target:lower-connectivity-shadow:score",
+      "target:lower-connectivity-shadow:shadowPenalty",
+      "target:lower-connectivity-shadow:reachableBefore",
+      "target:lower-connectivity-shadow:reachableAfter",
+      "target:lower-connectivity-shadow:reachableDelta",
+      "target:lower-connectivity-shadow:lostCells",
+      "target:lower-connectivity-shadow:footprintCells",
+      "target:lower-connectivity-shadow:disconnectedCells",
+      "target:lower-connectivity-shadow:lostPerFootprint",
+      "target:lower-connectivity-shadow:disconnectedPerFootprint",
+      "target:lower-connectivity-shadow:typeIndex",
+      "target:lower-connectivity-shadow:bonus",
+      "target:lower-connectivity-shadow:range",
+      "target:accepted-near-miss:r",
+      "target:accepted-near-miss:c",
+      "target:accepted-near-miss:rows",
+      "target:accepted-near-miss:cols",
+      "target:accepted-near-miss:area",
+      "target:accepted-near-miss:roadCost",
+      "target:accepted-near-miss:score",
+      "target:accepted-near-miss:shadowPenalty",
+      "target:accepted-near-miss:reachableBefore",
+      "target:accepted-near-miss:reachableAfter",
+      "target:accepted-near-miss:reachableDelta",
+      "target:accepted-near-miss:lostCells",
+      "target:accepted-near-miss:footprintCells",
+      "target:accepted-near-miss:disconnectedCells",
+      "target:accepted-near-miss:lostPerFootprint",
+      "target:accepted-near-miss:disconnectedPerFootprint",
+      "target:accepted-near-miss:typeIndex",
+      "target:accepted-near-miss:bonus",
+      "target:accepted-near-miss:range"
+    ],
+    "featureScale": [
+      {
+        "featureName": "all:r",
+        "rms": 1.3944964156155286
+      },
+      {
+        "featureName": "all:c",
+        "rms": 1.7556418999934633
+      },
+      {
+        "featureName": "all:rows",
+        "rms": 0.5483000195079378
+      },
+      {
+        "featureName": "all:cols",
+        "rms": 0.5216817983543006
+      },
+      {
+        "featureName": "all:area",
+        "rms": 0.7388410356425577
+      },
+      {
+        "featureName": "all:roadCost",
+        "rms": 2.165611557440881
+      },
+      {
+        "featureName": "all:score",
+        "rms": 64.85255916600167
+      },
+      {
+        "featureName": "all:shadowPenalty",
+        "rms": 3.6266126105359993
+      },
+      {
+        "featureName": "all:reachableBefore",
+        "rms": 1
+      },
+      {
+        "featureName": "all:reachableAfter",
+        "rms": 2.177996989455208
+      },
+      {
+        "featureName": "all:reachableDelta",
+        "rms": 2.177996989455208
+      },
+      {
+        "featureName": "all:lostCells",
+        "rms": 2.177996989455208
+      },
+      {
+        "featureName": "all:footprintCells",
+        "rms": 0.6463137929731515
+      },
+      {
+        "featureName": "all:disconnectedCells",
+        "rms": 2.2039952215712404
+      },
+      {
+        "featureName": "all:lostPerFootprint",
+        "rms": 0.5941673989970689
+      },
+      {
+        "featureName": "all:disconnectedPerFootprint",
+        "rms": 0.5941673989970689
+      },
+      {
+        "featureName": "all:typeIndex",
+        "rms": 0.344486409130969
+      },
+      {
+        "featureName": "all:bonus",
+        "rms": 12.987335603423412
+      },
+      {
+        "featureName": "all:range",
+        "rms": 0.19487094073848926
+      },
+      {
+        "featureName": "source:connectivity-shadow-decision:r",
+        "rms": 0.8122869730472589
+      },
+      {
+        "featureName": "source:connectivity-shadow-decision:c",
+        "rms": 0.8343875188697214
+      },
+      {
+        "featureName": "source:connectivity-shadow-decision:rows",
+        "rms": 0.19076793510255108
+      },
+      {
+        "featureName": "source:connectivity-shadow-decision:cols",
+        "rms": 0.19076793510255108
+      },
+      {
+        "featureName": "source:connectivity-shadow-decision:area",
+        "rms": 0.3580007778790785
+      },
+      {
+        "featureName": "source:connectivity-shadow-decision:roadCost",
+        "rms": 1.1390646840414198
+      },
+      {
+        "featureName": "source:connectivity-shadow-decision:score",
+        "rms": 1
+      },
+      {
+        "featureName": "source:connectivity-shadow-decision:shadowPenalty",
+        "rms": 3.6266126105359993
+      },
+      {
+        "featureName": "source:connectivity-shadow-decision:reachableBefore",
+        "rms": 1
+      },
+      {
+        "featureName": "source:connectivity-shadow-decision:reachableAfter",
+        "rms": 1
+      },
+      {
+        "featureName": "source:connectivity-shadow-decision:reachableDelta",
+        "rms": 1
+      },
+      {
+        "featureName": "source:connectivity-shadow-decision:lostCells",
+        "rms": 1
+      },
+      {
+        "featureName": "source:connectivity-shadow-decision:footprintCells",
+        "rms": 1
+      },
+      {
+        "featureName": "source:connectivity-shadow-decision:disconnectedCells",
+        "rms": 1
+      },
+      {
+        "featureName": "source:connectivity-shadow-decision:lostPerFootprint",
+        "rms": 1
+      },
+      {
+        "featureName": "source:connectivity-shadow-decision:disconnectedPerFootprint",
+        "rms": 1
+      },
+      {
+        "featureName": "source:connectivity-shadow-decision:typeIndex",
+        "rms": 0.11933359262635951
+      },
+      {
+        "featureName": "source:connectivity-shadow-decision:bonus",
+        "rms": 2.3866718525271904
+      },
+      {
+        "featureName": "source:connectivity-shadow-decision:range",
+        "rms": 1
+      },
+      {
+        "featureName": "source:road-opportunity-counterfactual:r",
+        "rms": 1.1334946522071812
+      },
+      {
+        "featureName": "source:road-opportunity-counterfactual:c",
+        "rms": 1.544692833338424
+      },
+      {
+        "featureName": "source:road-opportunity-counterfactual:rows",
+        "rms": 0.5140432922712969
+      },
+      {
+        "featureName": "source:road-opportunity-counterfactual:cols",
+        "rms": 0.4855507117396556
+      },
+      {
+        "featureName": "source:road-opportunity-counterfactual:area",
+        "rms": 0.6463137929731515
+      },
+      {
+        "featureName": "source:road-opportunity-counterfactual:roadCost",
+        "rms": 1.8418482736889972
+      },
+      {
+        "featureName": "source:road-opportunity-counterfactual:score",
+        "rms": 64.85255916600167
+      },
+      {
+        "featureName": "source:road-opportunity-counterfactual:shadowPenalty",
+        "rms": 1
+      },
+      {
+        "featureName": "source:road-opportunity-counterfactual:reachableBefore",
+        "rms": 1
+      },
+      {
+        "featureName": "source:road-opportunity-counterfactual:reachableAfter",
+        "rms": 2.177996989455208
+      },
+      {
+        "featureName": "source:road-opportunity-counterfactual:reachableDelta",
+        "rms": 2.177996989455208
+      },
+      {
+        "featureName": "source:road-opportunity-counterfactual:lostCells",
+        "rms": 2.177996989455208
+      },
+      {
+        "featureName": "source:road-opportunity-counterfactual:footprintCells",
+        "rms": 0.6463137929731515
+      },
+      {
+        "featureName": "source:road-opportunity-counterfactual:disconnectedCells",
+        "rms": 2.2039952215712404
+      },
+      {
+        "featureName": "source:road-opportunity-counterfactual:lostPerFootprint",
+        "rms": 0.5941673989970689
+      },
+      {
+        "featureName": "source:road-opportunity-counterfactual:disconnectedPerFootprint",
+        "rms": 0.5941673989970689
+      },
+      {
+        "featureName": "source:road-opportunity-counterfactual:typeIndex",
+        "rms": 0.32315689648657575
+      },
+      {
+        "featureName": "source:road-opportunity-counterfactual:bonus",
+        "rms": 12.76615382737901
+      },
+      {
+        "featureName": "source:road-opportunity-counterfactual:range",
+        "rms": 0.19487094073848926
+      },
+      {
+        "featureName": "target:lower-connectivity-shadow:r",
+        "rms": 0.8122869730472589
+      },
+      {
+        "featureName": "target:lower-connectivity-shadow:c",
+        "rms": 0.8343875188697214
+      },
+      {
+        "featureName": "target:lower-connectivity-shadow:rows",
+        "rms": 0.19076793510255108
+      },
+      {
+        "featureName": "target:lower-connectivity-shadow:cols",
+        "rms": 0.19076793510255108
+      },
+      {
+        "featureName": "target:lower-connectivity-shadow:area",
+        "rms": 0.3580007778790785
+      },
+      {
+        "featureName": "target:lower-connectivity-shadow:roadCost",
+        "rms": 1.1390646840414198
+      },
+      {
+        "featureName": "target:lower-connectivity-shadow:score",
+        "rms": 1
+      },
+      {
+        "featureName": "target:lower-connectivity-shadow:shadowPenalty",
+        "rms": 3.6266126105359993
+      },
+      {
+        "featureName": "target:lower-connectivity-shadow:reachableBefore",
+        "rms": 1
+      },
+      {
+        "featureName": "target:lower-connectivity-shadow:reachableAfter",
+        "rms": 1
+      },
+      {
+        "featureName": "target:lower-connectivity-shadow:reachableDelta",
+        "rms": 1
+      },
+      {
+        "featureName": "target:lower-connectivity-shadow:lostCells",
+        "rms": 1
+      },
+      {
+        "featureName": "target:lower-connectivity-shadow:footprintCells",
+        "rms": 1
+      },
+      {
+        "featureName": "target:lower-connectivity-shadow:disconnectedCells",
+        "rms": 1
+      },
+      {
+        "featureName": "target:lower-connectivity-shadow:lostPerFootprint",
+        "rms": 1
+      },
+      {
+        "featureName": "target:lower-connectivity-shadow:disconnectedPerFootprint",
+        "rms": 1
+      },
+      {
+        "featureName": "target:lower-connectivity-shadow:typeIndex",
+        "rms": 0.11933359262635951
+      },
+      {
+        "featureName": "target:lower-connectivity-shadow:bonus",
+        "rms": 2.3866718525271904
+      },
+      {
+        "featureName": "target:lower-connectivity-shadow:range",
+        "rms": 1
+      },
+      {
+        "featureName": "target:accepted-near-miss:r",
+        "rms": 1.1334946522071812
+      },
+      {
+        "featureName": "target:accepted-near-miss:c",
+        "rms": 1.544692833338424
+      },
+      {
+        "featureName": "target:accepted-near-miss:rows",
+        "rms": 0.5140432922712969
+      },
+      {
+        "featureName": "target:accepted-near-miss:cols",
+        "rms": 0.4855507117396556
+      },
+      {
+        "featureName": "target:accepted-near-miss:area",
+        "rms": 0.6463137929731515
+      },
+      {
+        "featureName": "target:accepted-near-miss:roadCost",
+        "rms": 1.8418482736889972
+      },
+      {
+        "featureName": "target:accepted-near-miss:score",
+        "rms": 64.85255916600167
+      },
+      {
+        "featureName": "target:accepted-near-miss:shadowPenalty",
+        "rms": 1
+      },
+      {
+        "featureName": "target:accepted-near-miss:reachableBefore",
+        "rms": 1
+      },
+      {
+        "featureName": "target:accepted-near-miss:reachableAfter",
+        "rms": 2.177996989455208
+      },
+      {
+        "featureName": "target:accepted-near-miss:reachableDelta",
+        "rms": 2.177996989455208
+      },
+      {
+        "featureName": "target:accepted-near-miss:lostCells",
+        "rms": 2.177996989455208
+      },
+      {
+        "featureName": "target:accepted-near-miss:footprintCells",
+        "rms": 0.6463137929731515
+      },
+      {
+        "featureName": "target:accepted-near-miss:disconnectedCells",
+        "rms": 2.2039952215712404
+      },
+      {
+        "featureName": "target:accepted-near-miss:lostPerFootprint",
+        "rms": 0.5941673989970689
+      },
+      {
+        "featureName": "target:accepted-near-miss:disconnectedPerFootprint",
+        "rms": 0.5941673989970689
+      },
+      {
+        "featureName": "target:accepted-near-miss:typeIndex",
+        "rms": 0.32315689648657575
+      },
+      {
+        "featureName": "target:accepted-near-miss:bonus",
+        "rms": 12.76615382737901
+      },
+      {
+        "featureName": "target:accepted-near-miss:range",
+        "rms": 0.19487094073848926
+      }
+    ],
+    "weights": [
+      -0.791497465928723,
+      -0.22682423147006026,
+      0.011852879852943454,
+      0.01980270619993293,
+      0.06580514440988472,
+      -0.7295274146001575,
+      5.712747589694176,
+      -2.3051484530759474,
+      0,
+      0.24887793362710903,
+      0.24887793362710903,
+      -0.24887793362710903,
+      0.14466701991917777,
+      -0.2883652715411406,
+      0.06319614602618115,
+      0.06319614602618229,
+      0.18376239406657394,
+      0.02327761761867272,
+      0.05992826162506909,
+      -0.010708064294314739,
+      -0.2870232084425821,
+      0.1726753359043068,
+      -0.3295177294003652,
+      -0.12536494915336852,
+      0.9200750949355967,
+      0,
+      -2.3051484530759474,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      -0.12536494915336852,
+      -0.12536494915336852,
+      0,
+      -0.9660763338770577,
+      -0.10276058678227061,
+      -0.05143921419959309,
+      0.15074044055627753,
+      0.14466701991917777,
+      -1.4267722729255847,
+      5.712747589694176,
+      0,
+      0,
+      0.24887793362710903,
+      0.24887793362710903,
+      -0.24887793362710903,
+      0.14466701991917777,
+      -0.2883652715411406,
+      0.06319614602618115,
+      0.06319614602618229,
+      0.2421854457945873,
+      0.04711828132680729,
+      0.05992826162506909,
+      -0.010708064294314739,
+      -0.2870232084425821,
+      0.1726753359043068,
+      -0.3295177294003652,
+      -0.12536494915336852,
+      0.9200750949355967,
+      0,
+      -2.3051484530759474,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      -0.12536494915336852,
+      -0.12536494915336852,
+      0,
+      -0.9660763338770577,
+      -0.10276058678227061,
+      -0.05143921419959309,
+      0.15074044055627753,
+      0.14466701991917777,
+      -1.4267722729255847,
+      5.712747589694176,
+      0,
+      0,
+      0.24887793362710903,
+      0.24887793362710903,
+      -0.24887793362710903,
+      0.14466701991917777,
+      -0.2883652715411406,
+      0.06319614602618115,
+      0.06319614602618229,
+      0.2421854457945873,
+      0.04711828132680729,
+      0.05992826162506909
+    ],
+    "epochs": 200,
+    "learningRate": 0.05,
+    "l2": 0.0001,
+    "trainingPairCount": 1896,
+    "modelFingerprint": "e11544d1f3001db6c25ad15cfd87315147402e01b3fdaba4e1926b2dbf618d88"
+  },
+  "modelMetrics": {
+    "development": {
+      "split": "development",
+      "labelCount": 1896,
+      "accuracy": 0.9667721518987342,
+      "wins": 1833,
+      "losses": 63,
+      "ties": 0,
+      "winRate": 0.9667721518987342,
+      "lossRate": 0.03322784810126582,
+      "tieRate": 0,
+      "meanSignedScoreMargin": 11.109139938990767,
+      "sourceMetrics": {
+        "connectivity-shadow-decision": {
+          "labelCount": 450,
+          "accuracy": 1,
+          "wins": 450,
+          "losses": 0,
+          "ties": 0
+        },
+        "road-opportunity-counterfactual": {
+          "labelCount": 1446,
+          "accuracy": 0.9564315352697096,
+          "wins": 1383,
+          "losses": 63,
+          "ties": 0
+        }
+      }
+    },
+    "holdout": {
+      "split": "holdout",
+      "labelCount": 2724,
+      "accuracy": 0.9008810572687225,
+      "wins": 2454,
+      "losses": 270,
+      "ties": 0,
+      "winRate": 0.9008810572687225,
+      "lossRate": 0.09911894273127753,
+      "tieRate": 0,
+      "meanSignedScoreMargin": 6.471309257867007,
+      "sourceMetrics": {
+        "connectivity-shadow-decision": {
+          "labelCount": 720,
+          "accuracy": 0.9208333333333333,
+          "wins": 663,
+          "losses": 57,
+          "ties": 0
+        },
+        "road-opportunity-counterfactual": {
+          "labelCount": 2004,
+          "accuracy": 0.8937125748502994,
+          "wins": 1791,
+          "losses": 213,
+          "ties": 0
+        }
+      }
+    }
+  },
+  "baselines": [
+    {
+      "name": "deterministic-feature-proxy",
+      "description": "Fixed CPU heuristic over score, reachability, road cost, connectivity shadow, and lost cells.",
+      "development": {
+        "split": "development",
+        "labelCount": 1896,
+        "accuracy": 0.8061708860759493,
+        "wins": 1248,
+        "losses": 87,
+        "ties": 561,
+        "winRate": 0.6582278481012658,
+        "lossRate": 0.04588607594936709,
+        "tieRate": 0.2958860759493671,
+        "meanSignedScoreMargin": 21.8119857594937,
+        "sourceMetrics": {
+          "connectivity-shadow-decision": {
+            "labelCount": 450,
+            "accuracy": 0.98,
+            "wins": 441,
+            "losses": 9,
+            "ties": 0
+          },
+          "road-opportunity-counterfactual": {
+            "labelCount": 1446,
+            "accuracy": 0.7520746887966805,
+            "wins": 807,
+            "losses": 78,
+            "ties": 561
+          }
+        }
+      },
+      "holdout": {
+        "split": "holdout",
+        "labelCount": 2724,
+        "accuracy": 0.7665198237885462,
+        "wins": 1491,
+        "losses": 39,
+        "ties": 1194,
+        "winRate": 0.5473568281938326,
+        "lossRate": 0.014317180616740088,
+        "tieRate": 0.43832599118942733,
+        "meanSignedScoreMargin": 3.4589757709251123,
+        "sourceMetrics": {
+          "connectivity-shadow-decision": {
+            "labelCount": 720,
+            "accuracy": 0.9916666666666667,
+            "wins": 714,
+            "losses": 6,
+            "ties": 0
+          },
+          "road-opportunity-counterfactual": {
+            "labelCount": 2004,
+            "accuracy": 0.6856287425149701,
+            "wins": 777,
+            "losses": 33,
+            "ties": 1194
+          }
+        }
+      }
+    },
+    {
+      "name": "random-hash",
+      "description": "Deterministic hash baseline that picks selected or rejected with equal probability.",
+      "development": {
+        "split": "development",
+        "labelCount": 1896,
+        "accuracy": 0.4994725738396624,
+        "wins": 947,
+        "losses": 949,
+        "ties": 0,
+        "winRate": 0.4994725738396624,
+        "lossRate": 0.5005274261603375,
+        "tieRate": 0,
+        "meanSignedScoreMargin": -0.0010548523206751054,
+        "sourceMetrics": {
+          "connectivity-shadow-decision": {
+            "labelCount": 450,
+            "accuracy": 0.5022222222222222,
+            "wins": 226,
+            "losses": 224,
+            "ties": 0
+          },
+          "road-opportunity-counterfactual": {
+            "labelCount": 1446,
+            "accuracy": 0.49861687413554634,
+            "wins": 721,
+            "losses": 725,
+            "ties": 0
+          }
+        }
+      },
+      "holdout": {
+        "split": "holdout",
+        "labelCount": 2724,
+        "accuracy": 0.5,
+        "wins": 1362,
+        "losses": 1362,
+        "ties": 0,
+        "winRate": 0.5,
+        "lossRate": 0.5,
+        "tieRate": 0,
+        "meanSignedScoreMargin": 0,
+        "sourceMetrics": {
+          "connectivity-shadow-decision": {
+            "labelCount": 720,
+            "accuracy": 0.5,
+            "wins": 360,
+            "losses": 360,
+            "ties": 0
+          },
+          "road-opportunity-counterfactual": {
+            "labelCount": 2004,
+            "accuracy": 0.5,
+            "wins": 1002,
+            "losses": 1002,
+            "ties": 0
+          }
+        }
+      }
+    },
+    {
+      "name": "best-single-feature",
+      "description": "Best single raw feature and direction selected on development labels only.",
+      "development": {
+        "split": "development",
+        "labelCount": 1896,
+        "accuracy": 0.7128164556962026,
+        "wins": 1083,
+        "losses": 276,
+        "ties": 537,
+        "winRate": 0.5712025316455697,
+        "lossRate": 0.14556962025316456,
+        "tieRate": 0.28322784810126583,
+        "meanSignedScoreMargin": 0.6376582278481012,
+        "sourceMetrics": {
+          "connectivity-shadow-decision": {
+            "labelCount": 450,
+            "accuracy": 0.7033333333333334,
+            "wins": 264,
+            "losses": 81,
+            "ties": 105
+          },
+          "road-opportunity-counterfactual": {
+            "labelCount": 1446,
+            "accuracy": 0.7157676348547718,
+            "wins": 819,
+            "losses": 195,
+            "ties": 432
+          }
+        }
+      },
+      "holdout": {
+        "split": "holdout",
+        "labelCount": 2724,
+        "accuracy": 0.7026431718061674,
+        "wins": 1341,
+        "losses": 237,
+        "ties": 1146,
+        "winRate": 0.4922907488986784,
+        "lossRate": 0.08700440528634361,
+        "tieRate": 0.42070484581497797,
+        "meanSignedScoreMargin": 0.7973568281938326,
+        "sourceMetrics": {
+          "connectivity-shadow-decision": {
+            "labelCount": 720,
+            "accuracy": 0.6895833333333333,
+            "wins": 339,
+            "losses": 66,
+            "ties": 315
+          },
+          "road-opportunity-counterfactual": {
+            "labelCount": 2004,
+            "accuracy": 0.7073353293413174,
+            "wins": 1002,
+            "losses": 171,
+            "ties": 831
+          }
+        }
+      },
+      "selectedFeatureName": "r",
+      "selectedFeatureDirection": "lower"
+    }
+  ],
+  "gate": {
+    "passed": true,
+    "failedReasons": [],
+    "protectedHoldout": true,
+    "requiredBaselines": [
+      "deterministic-feature-proxy",
+      "random-hash",
+      "best-single-feature"
+    ],
+    "comparisons": [
+      {
+        "baselineName": "deterministic-feature-proxy",
+        "holdoutAccuracyDelta": 0.13436123348017626
+      },
+      {
+        "baselineName": "random-hash",
+        "holdoutAccuracyDelta": 0.4008810572687225
+      },
+      {
+        "baselineName": "best-single-feature",
+        "holdoutAccuracyDelta": 0.19823788546255505
+      }
+    ]
+  },
+  "inference": {
+    "holdoutPairCount": 2724,
+    "repeatCount": 100,
+    "totalPairScores": 272400,
+    "elapsedMs": 1222.514083,
+    "microsecondsPerPair": 4.487937162261381,
+    "checksum": 1762784.641842097
+  },
+  "hardware": {
+    "captured": true,
+    "platform": "darwin",
+    "arch": "arm64",
+    "cpuModel": "Apple M1 Pro",
+    "logicalCpuCount": 10,
+    "memoryBytes": 17179869184,
+    "totalMemoryBytes": 17179869184,
+    "gpuUsed": false
+  },
+  "decision": "offline-diagnostics-only",
+  "summary": "CPU linear Greedy ranker passed offline diagnostics on protected holdout: model 90.1% vs deterministic-feature-proxy 76.7%, random-hash 50.0%, best-single-feature 70.3%; inference 4.488us/pair. No runtime scorer or solver default changed."
+}

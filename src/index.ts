@@ -139,6 +139,7 @@ export {
   formatExperimentRegistryIssues,
   validateExperimentRegistryEntry,
 } from "./benchmarks/index.js";
+export * from "./benchmarks/greedyOfflineRanker.js";
 export * from "./benchmarks/experimentRegistry.js";
 export * from "./benchmarks/telemetryManifest.js";
 export {

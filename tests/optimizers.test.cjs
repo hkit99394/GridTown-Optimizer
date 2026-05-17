@@ -11,6 +11,7 @@ const {
   buildCpSatBenchmarkCpuPlan,
   buildLnsReplayLabelScaleReadiness,
   collectGreedyOrderingLabelsFromBenchmarkSuite,
+  createGreedyOfflineRankerSnapshot,
   createLearnedRankingLabelSnapshot,
   DEFAULT_DETERMINISTIC_ABLATION_GATE_SEEDS,
   DEFAULT_LEARNED_RANKING_LABEL_SPLITS,
@@ -36,6 +37,7 @@ const {
   formatDeterministicAblationGateReport,
   formatCrossModeBenchmarkSuite,
   formatGreedyConnectivityShadowOrderingLabels,
+  formatGreedyOfflineRankerExperiment,
   formatLearnedRankingLabelSuite,
   formatLnsNeighborhoodAblation,
   formatLnsBenchmarkSuite,
@@ -50,6 +52,7 @@ const {
   runCrossModeBenchmarkBudgetAblations,
   runCrossModeBenchmarkSuite,
   runGreedyConnectivityShadowOrderingLabels,
+  runGreedyOfflineRankerExperiment,
   runLearnedRankingLabelSuite,
   runLnsNeighborhoodAblation,
   runLnsWindowReplayLabels,
@@ -1807,6 +1810,77 @@ function testLearnedRankingLabelSuite() {
     }),
     /development\/holdout split overlap is not allowed/
   );
+}
+
+function syntheticGreedyOfflineRankerLabels(split, casePrefix, count) {
+  const labels = [];
+  for (let index = 0; index < count; index += 1) {
+    const rowSignal = index % 2 === 0;
+    const selected = rowSignal
+      ? { r: 0, c: 1, rows: 1, cols: 1, roadCost: 0, score: 0, lostCells: 0, footprintCells: 1, disconnectedCells: 0 }
+      : { r: 1, c: 0, rows: 1, cols: 1, roadCost: 0, score: 0, lostCells: 0, footprintCells: 1, disconnectedCells: 0 };
+    const rejected = rowSignal
+      ? { r: 2, c: 1, rows: 1, cols: 1, roadCost: 0, score: 0, lostCells: 0, footprintCells: 1, disconnectedCells: 0 }
+      : { r: 1, c: 2, rows: 1, cols: 1, roadCost: 0, score: 0, lostCells: 0, footprintCells: 1, disconnectedCells: 0 };
+    labels.push({
+      id: `${split}:${casePrefix}-${index % 3}:7:synthetic:${index}`,
+      split,
+      caseName: `${casePrefix}-${index % 3}`,
+      seed: 7,
+      source: "road-opportunity-counterfactual",
+      phase: "service",
+      target: "accepted-near-miss",
+      selected,
+      rejected,
+      margin: 1,
+      reason: "same-score-tie",
+    });
+  }
+  return labels;
+}
+
+function testGreedyOfflineRankerExperiment() {
+  const labels = [
+    ...syntheticGreedyOfflineRankerLabels("development", "ranker-dev", 80),
+    ...syntheticGreedyOfflineRankerLabels("holdout", "ranker-holdout", 40),
+  ];
+  const result = runGreedyOfflineRankerExperiment({
+    labels,
+    epochs: 60,
+    inferenceRepeats: 2,
+  });
+  const snapshot = createGreedyOfflineRankerSnapshot(result);
+  const formatted = formatGreedyOfflineRankerExperiment(result);
+  const deterministic = result.baselines.find((baseline) => baseline.name === "deterministic-feature-proxy");
+  const random = result.baselines.find((baseline) => baseline.name === "random-hash");
+  const singleFeature = result.baselines.find((baseline) => baseline.name === "best-single-feature");
+
+  assert.equal(result.schemaVersion, 1);
+  assert.equal(result.audit.cpuOnly, true);
+  assert.equal(result.audit.runtimeIntegration, false);
+  assert.equal(result.audit.solverDefaultsChanged, false);
+  assert.equal(result.leakage.protectedHoldout, true);
+  assert.deepEqual(result.leakage.greedyOverlap, []);
+  assert.equal(result.labels.labelCount, labels.length);
+  assert.equal(result.labels.splits.length, 2);
+  assert.equal(result.model.kind, "pairwise-linear");
+  assert.equal(result.model.cpuOnly, true);
+  assert.equal(result.model.trainingPairCount, 80);
+  assert.equal(result.model.featureNames.length, result.model.weights.length);
+  assert.equal(result.modelMetrics.holdout.accuracy, 1);
+  assert.equal(result.gate.passed, true);
+  assert.equal(result.gate.failedReasons.length, 0);
+  assert(result.inference.microsecondsPerPair >= 0);
+  assert(deterministic);
+  assert(random);
+  assert(singleFeature);
+  assert(result.modelMetrics.holdout.accuracy > deterministic.holdout.accuracy);
+  assert(result.modelMetrics.holdout.accuracy > random.holdout.accuracy);
+  assert(result.modelMetrics.holdout.accuracy > singleFeature.holdout.accuracy);
+  assert(["r", "c"].includes(singleFeature.selectedFeatureName));
+  assert.equal(Object.hasOwn(snapshot, "generatedAt"), false);
+  assert.match(formatted, /CPU-First Greedy Offline Ranker/);
+  assert.match(formatted, /Gate: passed=true/);
 }
 
 function testGreedyRoadOpportunityCounterfactualsAreBoundedAndObservational() {
@@ -8863,6 +8937,7 @@ async function main() {
   testGreedyConnectivityShadowScoringIsOptInTieBreaker();
   testGreedyConnectivityShadowOrderingLabelRunner();
   testLearnedRankingLabelSuite();
+  testGreedyOfflineRankerExperiment();
   testGreedyRoadOpportunityCounterfactualsAreBoundedAndObservational();
   testRoadOpportunityLocalSearchMeasurementUsesPostRemoveOccupancy();
   testGreedyStopFileCancelsBeforePrecompute();

@@ -65,9 +65,9 @@ Some early roadmap items are now delivered as measurement gates, but none of the
 | Development / holdout splits | Delivered for low-risk label bundles | The first learned-ranking label artifact has split protection and no case overlap. Future generated cases need split by case family and seed, not only by case name. |
 | Deterministic feature foundation | Partial | Connectivity-shadow, road-opportunity traces, and planner explainability maps exist. Broader reusable feature payloads for all model candidates still need scale and schema hardening. |
 | Baseline ablations | Delivered as an evidence gate | Deterministic Greedy and LNS ablation gates closed with no default promotion. Connectivity-shadow and LNS window movement became learning targets. |
-| Greedy labels | Needs offline diagnostics | The first bundle contains 4,593 Greedy labels, including connectivity-shadow and road-opportunity near-miss labels. These are useful for diagnostics but include proxy labels, so they require single-feature and online A/B gates before runtime use. |
-| LNS replay labels | Needs scale | The first bundle contains 84 usable LNS replay labels. Holdout replay labels are currently neutral, so this is schema evidence rather than model evidence. |
-| Model training | Not started | No learned model has been trained, versioned, integrated, or benchmarked online. |
+| Greedy labels | Offline diagnostic gate passed | Phase 9 trains a CPU-only pairwise linear ranker on 1,896 development Greedy labels and evaluates 2,724 protected holdout labels. It beats deterministic, random, and development-selected single-feature baselines, but remains offline until online A/B passes. |
+| LNS replay labels | Pairwise scale delivered | Phase 8 contains split-protected pairwise LNS replay labels across five pressure families per split. This is now ranker-ready data, but no LNS model has been trained. |
+| Model training | Partial / offline only | The Phase 9 Greedy ranker is versioned in an offline artifact. No runtime model loading, feature-flagged scorer, LNS ranker, or solver default change exists. |
 | GPU acceleration | Not started / gated | GPU should remain optional research infrastructure until a CPU-first model or label workflow is a measured bottleneck. |
 
 Next-stage execution details live in [NEXT_STAGE_REVIEW.md](./NEXT_STAGE_REVIEW.md).
@@ -295,7 +295,7 @@ Exit criteria:
 
 ### Phase 4: Learned Greedy Service Re-Ranking
 
-Status: First ML milestone; diagnostics only until offline holdout wins
+Status: Offline diagnostic gate delivered; runtime integration still gated
 
 Why:
 - this is cheaper than `LNS`-guided learning
@@ -313,6 +313,19 @@ Concrete work:
 - start with supervised ranking, not RL
 - integrate the scorer behind a feature flag such as `greedy.learnedServiceRanking`
 
+Delivered:
+- Phase 9 artifact `artifacts/greedy-offline-ranker/2026-05-17/greedy-offline-ranker.json`
+- registry run `greedy-offline-ranker-2026-05-17`
+- CPU-only pairwise linear model trained on development Greedy labels only
+- protected holdout baseline comparison: model `90.1%`, deterministic proxy `76.7%`, random `50.0%`, best single-feature `70.3%`
+- inference timing of `4.488us` per held-out pair
+- no runtime scorer, model loader, feature flag, or solver default change
+
+Remaining:
+- map the offline pairwise scorer onto a feature-flagged Greedy service-candidate adapter
+- run paired seeded online A/B at equal wall-clock against current Greedy ordering
+- report median, worst-decile, time-to-best, validation, and inference overhead before any default promotion
+
 Deliverables:
 - a baseline learned service scorer
 - offline ranking metrics
@@ -327,7 +340,7 @@ Exit criteria:
 
 ### Phase 5: Learned LNS Window Re-Ranking
 
-Status: Second ML milestone; blocked until Phase 3 scale gates pass
+Status: Label-scale gate delivered; offline `LNS` model not started
 
 Why:
 - `LNS` is already the closest analogue to policy-guided search

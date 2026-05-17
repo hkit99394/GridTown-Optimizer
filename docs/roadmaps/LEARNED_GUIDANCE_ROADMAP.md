@@ -256,7 +256,7 @@ Exit criteria:
 
 ### Phase 3: Counterfactual Label Collection For LNS
 
-Status: Needs scale before learned `LNS` window re-ranking
+Status: Pairwise label-scale gate delivered; still no learned `LNS` window re-ranker trained
 
 Why:
 - logging only the chosen window produces selection-biased data
@@ -274,25 +274,24 @@ Delivered:
 
 - small schema-valid replay label bundle with 84 usable labels
 - development / holdout split protection for the initial bundle
+- Phase 8 pairwise replay label artifact `artifacts/lns-replay-label-scale/2026-05-17/lns-replay-label-scale.json`
+- five pressure families in both development and holdout splits with no case-name leakage
+- tail-exploration replay windows beyond baseline top-k
+- pairwise window-ranking labels derived from equal-budget CP-SAT replay outcomes
+- passing pairwise scale gates: development `336` usable / `276` non-neutral; holdout `224` usable / `144` non-neutral
 
 Remaining deliverables:
 
-- larger replay corpus across corridor, gate, footprint-pressure, and service-pressure families
-- exploration windows beyond baseline top-k
 - initial, post-first-improvement, and post-stagnation incumbent states
 - multiple repair budgets when budget allocation is part of the target decision
 - model / CP-SAT formulation fingerprint and per-label timing metadata
 - train / validation / holdout splits that prevent benchmark leakage by family and seed
 - parallel replay runner only if CPU-budget accounting remains explicit
+- offline ranking-quality report on held-out states
 
 Exit criteria:
-- at least 5 pressure families
-- at least 3 seeds per family
-- at least 200 usable labels in each of development and holdout
-- at least 50 non-neutral labels in each of development and holdout
-- no family with fewer than 20 usable labels
-- neutral-label ratio below 85% in both development and holdout
-- offline ranking quality is stable on held-out states
+- label-scale exit criteria are met by the Phase 8 pairwise artifact: at least 5 pressure families, at least 3 seeds per family, at least 200 usable labels in each split, at least 50 non-neutral labels in each split, no family below 20 usable labels, and neutral-label ratio below 85%
+- offline ranking quality is stable on held-out states before Phase 5 starts
 
 ### Phase 4: Learned Greedy Service Re-Ranking
 

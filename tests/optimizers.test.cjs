@@ -1766,9 +1766,13 @@ function testLearnedRankingLabelSuite() {
   assert.equal(result.lns.splits[0].replay.cases[0].labels[0].usable, true);
   assert.equal(result.lns.splits[0].replay.cases[0].labels[0].pressureFamily, "anchor-service");
   assert.equal(result.lns.splits[0].replay.cases[0].labels[0].selectionSource, "baseline-top-k");
+  assert.equal(result.lns.rawReplayScaleReadiness.passed, false);
   assert.equal(result.lns.scaleReadiness.passed, false);
   assert.equal(result.lns.scaleReadiness.thresholds.minPressureFamilies, DEFAULT_LNS_REPLAY_LABEL_SCALE_THRESHOLDS.minPressureFamilies);
   assert.equal(result.lns.scaleReadiness.splitReadiness[0].failedReasons.length > 0, true);
+  assert.equal(result.lns.pairwiseSplits.length, 2);
+  assert.equal(result.lns.pairwiseSplits[0].split, "development");
+  assert.equal(result.lns.pairwiseSplits[0].labels.every((label) => label.target === "higher-window-improvement"), true);
   assert.equal(buildLnsReplayLabelScaleReadiness(result.lns.splits, {
     minPressureFamilies: 1,
     minSeedsPerFamily: 1,

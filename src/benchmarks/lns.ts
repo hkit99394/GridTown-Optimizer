@@ -397,6 +397,11 @@ export const DEFAULT_LNS_REPLAY_LABEL_CASE_NAMES = Object.freeze([
   "lns-gate-choke-pressure",
   "lns-footprint-mix-pressure",
   "lns-service-overlap-pressure",
+  "lns-gate-split-pressure",
+  "lns-anchor-split-pressure",
+  "lns-footprint-split-pressure",
+  "lns-service-split-pressure",
+  "lns-corridor-split-pressure",
 ] satisfies string[]);
 
 function selectReplayLabelCases(corpus: readonly LnsBenchmarkCase[]): LnsBenchmarkCase[] {

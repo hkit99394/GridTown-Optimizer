@@ -1,3 +1,6 @@
+import fs from "node:fs";
+import path from "node:path";
+
 import {
   createLearnedRankingLabelSnapshot,
   formatLearnedRankingLabelSuite,
@@ -20,6 +23,7 @@ interface ParsedLabelArgs {
   maxWindows?: number;
   explorationWindowCount?: number;
   repairTimeLimitSeconds?: number;
+  outputPath?: string;
 }
 
 function parseArgs(argv: string[]): ParsedLabelArgs {
@@ -28,7 +32,11 @@ function parseArgs(argv: string[]): ParsedLabelArgs {
   let maxWindows: number | undefined;
   let explorationWindowCount: number | undefined;
   let repairTimeLimitSeconds: number | undefined;
+  let outputPath: string | undefined;
   const inlineOptions: Record<string, (value: string) => void> = {
+    output: (value) => {
+      outputPath = value;
+    },
     seeds: (value) => {
       seeds = parseNumberList(value, "seeds");
     },
@@ -57,7 +65,13 @@ function parseArgs(argv: string[]): ParsedLabelArgs {
     throw new Error(`Unknown learned-ranking label argument: ${arg}`);
   }
 
-  return { json, seeds, maxWindows, explorationWindowCount, repairTimeLimitSeconds };
+  return { json, seeds, maxWindows, explorationWindowCount, repairTimeLimitSeconds, outputPath };
+}
+
+function writeJsonArtifact(outputPath: string, value: unknown): void {
+  const normalizedPath = path.resolve(process.cwd(), outputPath);
+  fs.mkdirSync(path.dirname(normalizedPath), { recursive: true });
+  fs.writeFileSync(normalizedPath, `${JSON.stringify(value, null, 2)}\n`);
 }
 
 export function runLearnedRankingLabelCli(): void {
@@ -68,8 +82,16 @@ export function runLearnedRankingLabelCli(): void {
     explorationWindowCount: args.explorationWindowCount,
     repairTimeLimitSeconds: args.repairTimeLimitSeconds,
   });
+  const snapshot = createLearnedRankingLabelSnapshot(result);
 
-  writeCliJsonOrText(args.json, () => createLearnedRankingLabelSnapshot(result), () =>
+  if (args.outputPath) {
+    writeJsonArtifact(args.outputPath, snapshot);
+    if (!args.json) {
+      process.stdout.write(`Wrote learned-ranking label artifact to ${args.outputPath}.\n`);
+    }
+  }
+
+  writeCliJsonOrText(args.json, snapshot, () =>
     formatLearnedRankingLabelSuite(result)
   );
 }

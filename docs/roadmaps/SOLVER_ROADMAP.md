@@ -260,7 +260,7 @@ Status vocabulary:
 | 5 | Auto budget policy retuning | delivered | 3.5 | Phase 5 now has fast-exact Auto budget defaults, protected product-holdout budget ablations, CPU-normalized scorecard metrics, and strict registry entry `auto-budget-retuning-2026-05-17`. | `phase5-fast-exact` tied baseline population with equal configured CPU budget while improving mean Auto time-to-best by `0.139s` and mean wall time by `0.811s`. |
 | 6 | Exact small-window DP repair | delivered | 3.0 | Phase 6 now has a bounded LNS DP repair backend behind `smallWindowDpRepair`, evaluator validation, CP-SAT fallback, telemetry, scorecard artifact, and strict registry entry `small-window-dp-repair-2026-05-17`. | DP handled 4 eligible tiny repairs at `0.0039s` mean wall time, tied baseline population, and produced zero regressions across the 8-case scorecard. |
 | 7 | Service-master decomposition experiment | delivered | 3.5 | Phase 7 now has a service-layout master, fixed-service CP-SAT subproblems, no-good layout dedupe, service-swap telemetry, a targeted service/coverage scorecard, and strict registry entry `service-master-decomposition-2026-05-17`. | The experimental scorecard produced one facility-coverage win (`+100`), four ties, zero losses, and zero invalid layouts; it remains explicit-only because mean wall time is higher than Auto. |
-| 8 | LNS replay label scale-up | needs-scale | 3.0 | Use adaptive operator outcomes and replay windows to grow split-protected LNS labels. | Development and holdout splits satisfy usable, non-neutral, and family-balanced label gates before any LNS ranker is trained. |
+| 8 | LNS replay label scale-up | delivered | 3.0 | Phase 8 now has five-family split-protected LNS replay coverage, tail-exploration windows, replay-derived pairwise window-ranking labels, CLI artifact output, readiness gates, and strict registry entry `lns-replay-label-scale-2026-05-17`. | Pairwise label-scale gates pass before model training: development has `336` usable labels with `276` non-neutral, holdout has `224` usable labels with `144` non-neutral, and both splits cover five pressure families. |
 | 9 | CPU-first Greedy offline ranker | gated | 2.5 | Use the healthier Greedy label bundle for offline diagnostics only. | A small CPU model beats deterministic, random, and single-feature baselines on protected holdout without leaked case names. |
 
 ## Status Snapshot
@@ -270,7 +270,7 @@ Status vocabulary:
 | Cross-mode scorecards, traces, and budget-policy signals | delivered | [SOLVER_ROADMAP_DELIVERED.md](SOLVER_ROADMAP_DELIVERED.md), items 11 and 14-17 | Supports promotion gates; no default change by itself. |
 | Deterministic Greedy/LNS ablation gates | delivered | [SOLVER_ABLATION_DECISIONS.md](../decisions/SOLVER_ABLATION_DECISIONS.md), `artifacts/deterministic-ablations/2026-04-27/` | No deterministic variant promoted; regressions remain blocked. |
 | Low-risk learned-ranking label bundle | delivered | `artifacts/learned-ranking-labels/2026-04-27/` | Offline diagnostics only; no model trained and no defaults changed. |
-| LNS replay label coverage | needs-scale | 84 usable replay labels in the 2026-04-27 bundle | Blocks learned LNS window ranking until scale and non-neutral holdout signal improve. |
+| LNS replay label coverage | delivered | `artifacts/lns-replay-label-scale/2026-05-17/lns-replay-label-scale.json`; registry run `lns-replay-label-scale-2026-05-17` | Pairwise window-ranking labels now pass the split-protected scale gate; no learned model has been trained yet. |
 | Generated pressure-case coverage | partial | [SOLVER_ROADMAP_DELIVERED.md](SOLVER_ROADMAP_DELIVERED.md), item 30 | Useful starting point, but promotion needs broader workflow and adversarial coverage. |
 | CP-SAT portfolio telemetry and CPU-normalized scorecards | delivered | `artifacts/cp-sat-portfolio/2026-04-28/` | Portfolio remains explicit-only; Auto does not route through it. |
 | Experiment registry hardening | delivered | `artifacts/experiments/index.jsonl`; `npm run experiment-registry:check` | Future artifacts can be checked and appended with strict metadata. |
@@ -281,6 +281,7 @@ Status vocabulary:
 | Auto budget retuning | delivered | `artifacts/auto-budget-retuning/2026-05-17/auto-budget-retuning-fast-exact-scorecard.json`; registry run `auto-budget-retuning-2026-05-17` | Auto now defaults to the promoted fast-exact budget slice after protected coverage evidence showed equal population, equal configured CPU budget, and faster time-to-best. |
 | Exact small-window DP repair | delivered | `artifacts/small-window-dp/2026-05-17/small-window-dp-scorecard.json`; registry run `small-window-dp-repair-2026-05-17`; targeted LNS tests | Feature-gated tiny-window repairs can bypass CP-SAT overhead when eligible and fall back safely otherwise. |
 | Service-master decomposition | delivered | `artifacts/service-master/2026-05-17/service-master-scorecard.json`; registry run `service-master-decomposition-2026-05-17`; targeted service-master tests | Experimental fixed-service subproblems can expose facility-coverage wins, but the mode stays explicit-only until wall time improves. |
+| LNS replay label scale | delivered | `artifacts/lns-replay-label-scale/2026-05-17/lns-replay-label-scale.json`; registry run `lns-replay-label-scale-2026-05-17`; targeted label-scale tests | Five-family development and holdout pairwise labels are ready for offline LNS window-ranking research. |
 | Model training path | gated | No `python/ml/` scaffold, offline metric report, trained model, or feature-flagged scorer is promoted | No learned default path. |
 | GPU, distributed solving, alternative solvers | gated | No CPU-first bottleneck evidence requiring them | Research-only until equal-budget wins exist. |
 
@@ -291,7 +292,7 @@ These are not next actions. Move them into the active table only after the trigg
 | Trigger | Priority | Impact | Summary | Success Signal |
 | --- | --- | ---: | --- | --- |
 | CP-SAT semantics scorecard and product corpus are stable | Geometry-native CP-SAT / `NoOverlap2D` experiment | 3.0 | Compare current cell-indexed set packing with optional-interval rectangle constraints. | Controlled scorecard shows propagation or time-to-best improvement without model-size blowup. |
-| LNS label-scale gates pass | Learned LNS window ranking | 3.0 | Train and evaluate a ranker over adaptive LNS candidate windows. | Offline holdout beats deterministic, random, and single-feature baselines; online A/B improves fixed-budget quality without worst-decile regression. |
+| LNS pairwise label artifact is ready | Learned LNS window ranking | 3.0 | Train and evaluate a ranker over adaptive LNS candidate windows. | Offline holdout beats deterministic, random, and single-feature baselines; online A/B improves fixed-budget quality without worst-decile regression. |
 | Greedy offline ranker beats deterministic order on protected holdout | Feature-flagged learned Greedy re-ranking | 2.5 | Add scorer adapter, model-load fallback, and equal-budget online A/B. | Online paired seeded benchmarks improve population or time-to-best with bounded inference overhead. |
 | Portfolio scorecards show CPU-normalized wins | CP-SAT portfolio in Auto | 2.0 | Let Auto route a controlled budget slice to portfolio only when CPU cost is justified. | Portfolio improves wall-clock quality and CPU-normalized efficiency versus single CP-SAT. |
 | CPU-first workflow has a measured bottleneck | GPU acceleration | 2.0 | Use GPU for training, batched feature extraction, or inference only after CPU baseline is useful. | GPU reduces time-to-label, time-to-train, or inference overhead while preserving solver quality gates. |
@@ -304,7 +305,7 @@ These are not next actions. Move them into the active table only after the trigg
 2. Use the Phase 5 fast-exact Auto budget defaults as the new baseline for future solver promotion decisions.
 3. Keep small-window DP repair feature-gated to eligible tiny windows and use its telemetry to decide whether Auto should enable it by default later.
 4. Keep service-master decomposition explicit-only while using its fixed-service subproblem telemetry to decide whether a cheaper master shortlist is worth pursuing.
-5. Scale LNS replay labels from adaptive operator outcomes.
+5. Use the Phase 8 pairwise replay labels as the input to offline LNS window-ranking research; do not train or enable a model until holdout metrics pass.
 6. Revisit learned rankers only after offline holdout and equal-budget online gates pass.
 7. Revisit portfolio, GPU, distributed workers, or alternative solvers only after they have a measured bottleneck and CPU-normalized win path.
 

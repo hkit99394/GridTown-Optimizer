@@ -1663,6 +1663,7 @@ def solve_single_cp_sat(grid, params, cp_sat_options, progress_emitter=None):
     warm_start_hint = cp_sat_options.get("warmStartHint")
     apply_warm_start_hints(model, built, warm_start_hint)
     apply_local_neighborhood_fixing(model, built, warm_start_hint)
+    apply_fixed_service_candidates(model, built, cp_sat_options)
     apply_objective_lower_bound(model, built, cp_sat_options.get("objectiveLowerBound"))
     solver = cp_model.CpSolver()
     configure_solver_parameters(solver, cp_sat_options)
@@ -1977,6 +1978,23 @@ def apply_local_neighborhood_fixing(model, built: BuiltCpSatModel, warm_start_hi
         if rectangle_intersects_window(candidate, neighborhood_window):
             continue
         model.Add(variable == (1 if candidate_index in warm_start_selection.selected_residential_ids else 0))
+
+
+def apply_fixed_service_candidates(model, built: BuiltCpSatModel, cp_sat_options):
+    if "fixedServiceCandidateKeys" not in cp_sat_options:
+        return
+
+    fixed_keys = {str(key) for key in (cp_sat_options.get("fixedServiceCandidateKeys") or [])}
+    service_keys = [service_candidate_key(candidate) for candidate in built.service_candidates]
+    service_key_set = set(service_keys)
+    missing_keys = sorted(fixed_keys - service_key_set)
+    if missing_keys:
+        shown = ", ".join(missing_keys[:5])
+        suffix = "" if len(missing_keys) <= 5 else f", and {len(missing_keys) - 5} more"
+        fail(f"CP-SAT fixed service candidate key(s) not found: {shown}{suffix}.")
+
+    for candidate_index, variable in enumerate(built.service_vars):
+        model.Add(variable == (1 if service_keys[candidate_index] in fixed_keys else 0))
 
 
 def solve():

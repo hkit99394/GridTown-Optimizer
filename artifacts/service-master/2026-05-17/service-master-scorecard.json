@@ -1,0 +1,1104 @@
+{
+  "generatedAt": "2026-05-17T13:41:05.642Z",
+  "budgetSeconds": 1,
+  "budgetsSeconds": [
+    1
+  ],
+  "seeds": [
+    7
+  ],
+  "caseCount": 5,
+  "selectedCaseNames": [
+    "planner-service-overlap",
+    "planner-anchor-service",
+    "lns-service-overlap-pressure",
+    "seeded-service-anchor-pressure",
+    "service-master-facility-coverage-pressure"
+  ],
+  "runs": [
+    {
+      "name": "planner-service-overlap",
+      "description": "Service-overlap case where expansion can trade another service against another home.",
+      "family": "service-overlap",
+      "split": "holdout",
+      "budgetSeconds": 1,
+      "seed": 7,
+      "auto": {
+        "totalPopulation": 130,
+        "wallClockSeconds": 1.444,
+        "valid": true,
+        "validationErrors": [],
+        "cpSatStatus": null
+      },
+      "serviceMaster": {
+        "totalPopulation": 130,
+        "wallClockSeconds": 5.568,
+        "valid": true,
+        "validationErrors": [],
+        "cpSatStatus": "OPTIMAL",
+        "telemetry": {
+          "candidateCount": 72,
+          "prunedCandidateCount": 36,
+          "candidatePoolSize": 36,
+          "layoutCount": 12,
+          "layoutsSolved": 12,
+          "layoutsFailed": 0,
+          "noGoodCutsApplied": 12,
+          "serviceSwapNeighborhoods": 11,
+          "bestLayoutKeys": [
+            "service:0:3:1:1:1"
+          ],
+          "bestLayoutIndex": 8,
+          "elapsedSeconds": 5.567,
+          "layoutRuns": [
+            {
+              "layoutIndex": 0,
+              "serviceCandidateKeys": [
+                "service:0:2:2:1:1"
+              ],
+              "heuristicScore": 130.855,
+              "residentialPackingUpperBound": 130,
+              "wallClockSeconds": 0.47,
+              "totalPopulation": 130,
+              "cpSatStatus": "OPTIMAL",
+              "valid": true,
+              "validationErrors": [],
+              "error": null
+            },
+            {
+              "layoutIndex": 1,
+              "serviceCandidateKeys": [
+                "service:0:2:3:1:1"
+              ],
+              "heuristicScore": 130.855,
+              "residentialPackingUpperBound": 130,
+              "wallClockSeconds": 0.461,
+              "totalPopulation": 130,
+              "cpSatStatus": "OPTIMAL",
+              "valid": true,
+              "validationErrors": [],
+              "error": null
+            },
+            {
+              "layoutIndex": 2,
+              "serviceCandidateKeys": [
+                "service:0:3:2:1:1"
+              ],
+              "heuristicScore": 130.855,
+              "residentialPackingUpperBound": 130,
+              "wallClockSeconds": 0.457,
+              "totalPopulation": 130,
+              "cpSatStatus": "OPTIMAL",
+              "valid": true,
+              "validationErrors": [],
+              "error": null
+            },
+            {
+              "layoutIndex": 3,
+              "serviceCandidateKeys": [
+                "service:0:3:3:1:1"
+              ],
+              "heuristicScore": 130.855,
+              "residentialPackingUpperBound": 130,
+              "wallClockSeconds": 0.477,
+              "totalPopulation": 130,
+              "cpSatStatus": "OPTIMAL",
+              "valid": true,
+              "validationErrors": [],
+              "error": null
+            },
+            {
+              "layoutIndex": 4,
+              "serviceCandidateKeys": [
+                "service:0:1:2:1:1"
+              ],
+              "heuristicScore": 130.68,
+              "residentialPackingUpperBound": 130,
+              "wallClockSeconds": 0.453,
+              "totalPopulation": 130,
+              "cpSatStatus": "OPTIMAL",
+              "valid": true,
+              "validationErrors": [],
+              "error": null
+            },
+            {
+              "layoutIndex": 5,
+              "serviceCandidateKeys": [
+                "service:0:1:3:1:1"
+              ],
+              "heuristicScore": 130.68,
+              "residentialPackingUpperBound": 130,
+              "wallClockSeconds": 0.455,
+              "totalPopulation": 130,
+              "cpSatStatus": "OPTIMAL",
+              "valid": true,
+              "validationErrors": [],
+              "error": null
+            },
+            {
+              "layoutIndex": 6,
+              "serviceCandidateKeys": [
+                "service:0:2:1:1:1"
+              ],
+              "heuristicScore": 130.68,
+              "residentialPackingUpperBound": 130,
+              "wallClockSeconds": 0.45,
+              "totalPopulation": 130,
+              "cpSatStatus": "OPTIMAL",
+              "valid": true,
+              "validationErrors": [],
+              "error": null
+            },
+            {
+              "layoutIndex": 7,
+              "serviceCandidateKeys": [
+                "service:0:2:4:1:1"
+              ],
+              "heuristicScore": 130.68,
+              "residentialPackingUpperBound": 130,
+              "wallClockSeconds": 0.454,
+              "totalPopulation": 130,
+              "cpSatStatus": "OPTIMAL",
+              "valid": true,
+              "validationErrors": [],
+              "error": null
+            },
+            {
+              "layoutIndex": 8,
+              "serviceCandidateKeys": [
+                "service:0:3:1:1:1"
+              ],
+              "heuristicScore": 130.68,
+              "residentialPackingUpperBound": 130,
+              "wallClockSeconds": 0.45,
+              "totalPopulation": 130,
+              "cpSatStatus": "OPTIMAL",
+              "valid": true,
+              "validationErrors": [],
+              "error": null
+            },
+            {
+              "layoutIndex": 9,
+              "serviceCandidateKeys": [
+                "service:0:3:4:1:1"
+              ],
+              "heuristicScore": 130.68,
+              "residentialPackingUpperBound": 130,
+              "wallClockSeconds": 0.462,
+              "totalPopulation": 130,
+              "cpSatStatus": "OPTIMAL",
+              "valid": true,
+              "validationErrors": [],
+              "error": null
+            },
+            {
+              "layoutIndex": 10,
+              "serviceCandidateKeys": [
+                "service:0:4:2:1:1"
+              ],
+              "heuristicScore": 130.68,
+              "residentialPackingUpperBound": 130,
+              "wallClockSeconds": 0.483,
+              "totalPopulation": 130,
+              "cpSatStatus": "OPTIMAL",
+              "valid": true,
+              "validationErrors": [],
+              "error": null
+            },
+            {
+              "layoutIndex": 11,
+              "serviceCandidateKeys": [
+                "service:0:4:3:1:1"
+              ],
+              "heuristicScore": 130.68,
+              "residentialPackingUpperBound": 130,
+              "wallClockSeconds": 0.477,
+              "totalPopulation": 130,
+              "cpSatStatus": "OPTIMAL",
+              "valid": true,
+              "validationErrors": [],
+              "error": null
+            }
+          ]
+        }
+      },
+      "scoreDeltaVsAuto": 0,
+      "winVsAuto": "tie"
+    },
+    {
+      "name": "planner-anchor-service",
+      "description": "Boundary-touching service and housing payload that should stay road-light.",
+      "family": "anchor-service",
+      "split": "holdout",
+      "budgetSeconds": 1,
+      "seed": 7,
+      "auto": {
+        "totalPopulation": 120,
+        "wallClockSeconds": 1.089,
+        "valid": true,
+        "validationErrors": [],
+        "cpSatStatus": "OPTIMAL"
+      },
+      "serviceMaster": {
+        "totalPopulation": 120,
+        "wallClockSeconds": 5.324,
+        "valid": true,
+        "validationErrors": [],
+        "cpSatStatus": "OPTIMAL",
+        "telemetry": {
+          "candidateCount": 16,
+          "prunedCandidateCount": 16,
+          "candidatePoolSize": 16,
+          "layoutCount": 12,
+          "layoutsSolved": 12,
+          "layoutsFailed": 0,
+          "noGoodCutsApplied": 12,
+          "serviceSwapNeighborhoods": 11,
+          "bestLayoutKeys": [
+            "service:0:1:2:1:1"
+          ],
+          "bestLayoutIndex": 1,
+          "elapsedSeconds": 5.324,
+          "layoutRuns": [
+            {
+              "layoutIndex": 0,
+              "serviceCandidateKeys": [
+                "service:0:1:1:1:1"
+              ],
+              "heuristicScore": 120.25,
+              "residentialPackingUpperBound": 120,
+              "wallClockSeconds": 0.438,
+              "totalPopulation": 120,
+              "cpSatStatus": "OPTIMAL",
+              "valid": true,
+              "validationErrors": [],
+              "error": null
+            },
+            {
+              "layoutIndex": 1,
+              "serviceCandidateKeys": [
+                "service:0:1:2:1:1"
+              ],
+              "heuristicScore": 120.25,
+              "residentialPackingUpperBound": 120,
+              "wallClockSeconds": 0.428,
+              "totalPopulation": 120,
+              "cpSatStatus": "OPTIMAL",
+              "valid": true,
+              "validationErrors": [],
+              "error": null
+            },
+            {
+              "layoutIndex": 2,
+              "serviceCandidateKeys": [
+                "service:0:2:1:1:1"
+              ],
+              "heuristicScore": 120.25,
+              "residentialPackingUpperBound": 120,
+              "wallClockSeconds": 0.431,
+              "totalPopulation": 120,
+              "cpSatStatus": "OPTIMAL",
+              "valid": true,
+              "validationErrors": [],
+              "error": null
+            },
+            {
+              "layoutIndex": 3,
+              "serviceCandidateKeys": [
+                "service:0:2:2:1:1"
+              ],
+              "heuristicScore": 120.25,
+              "residentialPackingUpperBound": 120,
+              "wallClockSeconds": 0.457,
+              "totalPopulation": 120,
+              "cpSatStatus": "OPTIMAL",
+              "valid": true,
+              "validationErrors": [],
+              "error": null
+            },
+            {
+              "layoutIndex": 4,
+              "serviceCandidateKeys": [
+                "service:0:0:1:1:1"
+              ],
+              "heuristicScore": 120.16,
+              "residentialPackingUpperBound": 120,
+              "wallClockSeconds": 0.445,
+              "totalPopulation": 120,
+              "cpSatStatus": "OPTIMAL",
+              "valid": true,
+              "validationErrors": [],
+              "error": null
+            },
+            {
+              "layoutIndex": 5,
+              "serviceCandidateKeys": [
+                "service:0:0:2:1:1"
+              ],
+              "heuristicScore": 120.16,
+              "residentialPackingUpperBound": 120,
+              "wallClockSeconds": 0.442,
+              "totalPopulation": 120,
+              "cpSatStatus": "OPTIMAL",
+              "valid": true,
+              "validationErrors": [],
+              "error": null
+            },
+            {
+              "layoutIndex": 6,
+              "serviceCandidateKeys": [
+                "service:0:1:0:1:1"
+              ],
+              "heuristicScore": 120.16,
+              "residentialPackingUpperBound": 120,
+              "wallClockSeconds": 0.448,
+              "totalPopulation": 120,
+              "cpSatStatus": "OPTIMAL",
+              "valid": true,
+              "validationErrors": [],
+              "error": null
+            },
+            {
+              "layoutIndex": 7,
+              "serviceCandidateKeys": [
+                "service:0:1:3:1:1"
+              ],
+              "heuristicScore": 120.16,
+              "residentialPackingUpperBound": 120,
+              "wallClockSeconds": 0.445,
+              "totalPopulation": 120,
+              "cpSatStatus": "OPTIMAL",
+              "valid": true,
+              "validationErrors": [],
+              "error": null
+            },
+            {
+              "layoutIndex": 8,
+              "serviceCandidateKeys": [
+                "service:0:2:0:1:1"
+              ],
+              "heuristicScore": 120.16,
+              "residentialPackingUpperBound": 120,
+              "wallClockSeconds": 0.447,
+              "totalPopulation": 120,
+              "cpSatStatus": "OPTIMAL",
+              "valid": true,
+              "validationErrors": [],
+              "error": null
+            },
+            {
+              "layoutIndex": 9,
+              "serviceCandidateKeys": [
+                "service:0:2:3:1:1"
+              ],
+              "heuristicScore": 120.16,
+              "residentialPackingUpperBound": 120,
+              "wallClockSeconds": 0.449,
+              "totalPopulation": 120,
+              "cpSatStatus": "OPTIMAL",
+              "valid": true,
+              "validationErrors": [],
+              "error": null
+            },
+            {
+              "layoutIndex": 10,
+              "serviceCandidateKeys": [
+                "service:0:3:1:1:1"
+              ],
+              "heuristicScore": 120.16,
+              "residentialPackingUpperBound": 120,
+              "wallClockSeconds": 0.44,
+              "totalPopulation": 120,
+              "cpSatStatus": "OPTIMAL",
+              "valid": true,
+              "validationErrors": [],
+              "error": null
+            },
+            {
+              "layoutIndex": 11,
+              "serviceCandidateKeys": [
+                "service:0:3:2:1:1"
+              ],
+              "heuristicScore": 120.16,
+              "residentialPackingUpperBound": 120,
+              "wallClockSeconds": 0.451,
+              "totalPopulation": 120,
+              "cpSatStatus": "OPTIMAL",
+              "valid": true,
+              "validationErrors": [],
+              "error": null
+            }
+          ]
+        }
+      },
+      "scoreDeltaVsAuto": 0,
+      "winVsAuto": "tie"
+    },
+    {
+      "name": "lns-service-overlap-pressure",
+      "description": "Generated service-pressure case with overlapping service ranges and scarce premium housing.",
+      "family": "service-pressure",
+      "split": "generated-pressure",
+      "budgetSeconds": 1,
+      "seed": 7,
+      "auto": {
+        "totalPopulation": 740,
+        "wallClockSeconds": 1.55,
+        "valid": true,
+        "validationErrors": [],
+        "cpSatStatus": null
+      },
+      "serviceMaster": {
+        "totalPopulation": 740,
+        "wallClockSeconds": 5.795,
+        "valid": true,
+        "validationErrors": [],
+        "cpSatStatus": "OPTIMAL",
+        "telemetry": {
+          "candidateCount": 96,
+          "prunedCandidateCount": 96,
+          "candidatePoolSize": 64,
+          "layoutCount": 12,
+          "layoutsSolved": 12,
+          "layoutsFailed": 0,
+          "noGoodCutsApplied": 12,
+          "serviceSwapNeighborhoods": 11,
+          "bestLayoutKeys": [
+            "service:0:2:2:1:1",
+            "service:1:2:3:1:2"
+          ],
+          "bestLayoutIndex": 1,
+          "elapsedSeconds": 5.795,
+          "layoutRuns": [
+            {
+              "layoutIndex": 0,
+              "serviceCandidateKeys": [
+                "service:0:2:2:1:1",
+                "service:1:1:3:2:1"
+              ],
+              "heuristicScore": 748.23,
+              "residentialPackingUpperBound": 740,
+              "wallClockSeconds": 0.487,
+              "totalPopulation": 740,
+              "cpSatStatus": "OPTIMAL",
+              "valid": true,
+              "validationErrors": [],
+              "error": null
+            },
+            {
+              "layoutIndex": 1,
+              "serviceCandidateKeys": [
+                "service:0:2:2:1:1",
+                "service:1:2:3:1:2"
+              ],
+              "heuristicScore": 748.23,
+              "residentialPackingUpperBound": 740,
+              "wallClockSeconds": 0.462,
+              "totalPopulation": 740,
+              "cpSatStatus": "OPTIMAL",
+              "valid": true,
+              "validationErrors": [],
+              "error": null
+            },
+            {
+              "layoutIndex": 2,
+              "serviceCandidateKeys": [
+                "service:0:2:2:1:1",
+                "service:1:2:3:2:1"
+              ],
+              "heuristicScore": 748.23,
+              "residentialPackingUpperBound": 740,
+              "wallClockSeconds": 0.484,
+              "totalPopulation": 740,
+              "cpSatStatus": "OPTIMAL",
+              "valid": true,
+              "validationErrors": [],
+              "error": null
+            },
+            {
+              "layoutIndex": 3,
+              "serviceCandidateKeys": [
+                "service:0:2:2:1:1",
+                "service:1:3:1:1:2"
+              ],
+              "heuristicScore": 748.23,
+              "residentialPackingUpperBound": 740,
+              "wallClockSeconds": 0.47,
+              "totalPopulation": 740,
+              "cpSatStatus": "OPTIMAL",
+              "valid": true,
+              "validationErrors": [],
+              "error": null
+            },
+            {
+              "layoutIndex": 4,
+              "serviceCandidateKeys": [
+                "service:0:2:2:1:1",
+                "service:1:3:2:1:2"
+              ],
+              "heuristicScore": 748.23,
+              "residentialPackingUpperBound": 740,
+              "wallClockSeconds": 0.481,
+              "totalPopulation": 740,
+              "cpSatStatus": "OPTIMAL",
+              "valid": true,
+              "validationErrors": [],
+              "error": null
+            },
+            {
+              "layoutIndex": 5,
+              "serviceCandidateKeys": [
+                "service:0:2:2:1:1",
+                "service:1:3:2:2:1"
+              ],
+              "heuristicScore": 748.23,
+              "residentialPackingUpperBound": 740,
+              "wallClockSeconds": 0.48,
+              "totalPopulation": 740,
+              "cpSatStatus": "OPTIMAL",
+              "valid": true,
+              "validationErrors": [],
+              "error": null
+            },
+            {
+              "layoutIndex": 6,
+              "serviceCandidateKeys": [
+                "service:0:2:2:1:1",
+                "service:1:3:3:1:2"
+              ],
+              "heuristicScore": 748.23,
+              "residentialPackingUpperBound": 740,
+              "wallClockSeconds": 0.468,
+              "totalPopulation": 740,
+              "cpSatStatus": "OPTIMAL",
+              "valid": true,
+              "validationErrors": [],
+              "error": null
+            },
+            {
+              "layoutIndex": 7,
+              "serviceCandidateKeys": [
+                "service:0:2:2:1:1",
+                "service:1:3:3:2:1"
+              ],
+              "heuristicScore": 748.23,
+              "residentialPackingUpperBound": 740,
+              "wallClockSeconds": 0.479,
+              "totalPopulation": 740,
+              "cpSatStatus": "OPTIMAL",
+              "valid": true,
+              "validationErrors": [],
+              "error": null
+            },
+            {
+              "layoutIndex": 8,
+              "serviceCandidateKeys": [
+                "service:0:2:3:1:1",
+                "service:1:1:2:2:1"
+              ],
+              "heuristicScore": 748.23,
+              "residentialPackingUpperBound": 740,
+              "wallClockSeconds": 0.481,
+              "totalPopulation": 740,
+              "cpSatStatus": "OPTIMAL",
+              "valid": true,
+              "validationErrors": [],
+              "error": null
+            },
+            {
+              "layoutIndex": 9,
+              "serviceCandidateKeys": [
+                "service:0:2:3:1:1",
+                "service:1:2:1:1:2"
+              ],
+              "heuristicScore": 748.23,
+              "residentialPackingUpperBound": 740,
+              "wallClockSeconds": 0.479,
+              "totalPopulation": 740,
+              "cpSatStatus": "OPTIMAL",
+              "valid": true,
+              "validationErrors": [],
+              "error": null
+            },
+            {
+              "layoutIndex": 10,
+              "serviceCandidateKeys": [
+                "service:0:2:3:1:1",
+                "service:1:2:2:2:1"
+              ],
+              "heuristicScore": 748.23,
+              "residentialPackingUpperBound": 740,
+              "wallClockSeconds": 0.482,
+              "totalPopulation": 740,
+              "cpSatStatus": "OPTIMAL",
+              "valid": true,
+              "validationErrors": [],
+              "error": null
+            },
+            {
+              "layoutIndex": 11,
+              "serviceCandidateKeys": [
+                "service:0:2:3:1:1",
+                "service:1:3:1:1:2"
+              ],
+              "heuristicScore": 748.23,
+              "residentialPackingUpperBound": 740,
+              "wallClockSeconds": 0.501,
+              "totalPopulation": 740,
+              "cpSatStatus": "OPTIMAL",
+              "valid": true,
+              "validationErrors": [],
+              "error": null
+            }
+          ]
+        }
+      },
+      "scoreDeltaVsAuto": 0,
+      "winVsAuto": "tie"
+    },
+    {
+      "name": "seeded-service-anchor-pressure",
+      "description": "Seeded LNS case where ranked service anchors find a service move that sliding windows miss.",
+      "family": "anchor-service",
+      "split": "development",
+      "budgetSeconds": 1,
+      "seed": 7,
+      "auto": {
+        "totalPopulation": 200,
+        "wallClockSeconds": 1.165,
+        "valid": true,
+        "validationErrors": [],
+        "cpSatStatus": "OPTIMAL"
+      },
+      "serviceMaster": {
+        "totalPopulation": 200,
+        "wallClockSeconds": 5.424,
+        "valid": true,
+        "validationErrors": [],
+        "cpSatStatus": "OPTIMAL",
+        "telemetry": {
+          "candidateCount": 25,
+          "prunedCandidateCount": 25,
+          "candidatePoolSize": 25,
+          "layoutCount": 12,
+          "layoutsSolved": 12,
+          "layoutsFailed": 0,
+          "noGoodCutsApplied": 12,
+          "serviceSwapNeighborhoods": 11,
+          "bestLayoutKeys": [
+            "service:0:2:0:2:2"
+          ],
+          "bestLayoutIndex": 10,
+          "elapsedSeconds": 5.424,
+          "layoutRuns": [
+            {
+              "layoutIndex": 0,
+              "serviceCandidateKeys": [
+                "service:0:2:2:2:2"
+              ],
+              "heuristicScore": 202.39,
+              "residentialPackingUpperBound": 200,
+              "wallClockSeconds": 0.46,
+              "totalPopulation": 200,
+              "cpSatStatus": "OPTIMAL",
+              "valid": true,
+              "validationErrors": [],
+              "error": null
+            },
+            {
+              "layoutIndex": 1,
+              "serviceCandidateKeys": [
+                "service:0:1:2:2:2"
+              ],
+              "heuristicScore": 201.89,
+              "residentialPackingUpperBound": 200,
+              "wallClockSeconds": 0.451,
+              "totalPopulation": 200,
+              "cpSatStatus": "OPTIMAL",
+              "valid": true,
+              "validationErrors": [],
+              "error": null
+            },
+            {
+              "layoutIndex": 2,
+              "serviceCandidateKeys": [
+                "service:0:2:1:2:2"
+              ],
+              "heuristicScore": 201.89,
+              "residentialPackingUpperBound": 200,
+              "wallClockSeconds": 0.453,
+              "totalPopulation": 200,
+              "cpSatStatus": "OPTIMAL",
+              "valid": true,
+              "validationErrors": [],
+              "error": null
+            },
+            {
+              "layoutIndex": 3,
+              "serviceCandidateKeys": [
+                "service:0:2:3:2:2"
+              ],
+              "heuristicScore": 201.89,
+              "residentialPackingUpperBound": 200,
+              "wallClockSeconds": 0.452,
+              "totalPopulation": 200,
+              "cpSatStatus": "OPTIMAL",
+              "valid": true,
+              "validationErrors": [],
+              "error": null
+            },
+            {
+              "layoutIndex": 4,
+              "serviceCandidateKeys": [
+                "service:0:3:2:2:2"
+              ],
+              "heuristicScore": 201.89,
+              "residentialPackingUpperBound": 200,
+              "wallClockSeconds": 0.459,
+              "totalPopulation": 200,
+              "cpSatStatus": "OPTIMAL",
+              "valid": true,
+              "validationErrors": [],
+              "error": null
+            },
+            {
+              "layoutIndex": 5,
+              "serviceCandidateKeys": [
+                "service:0:1:1:2:2"
+              ],
+              "heuristicScore": 201.49,
+              "residentialPackingUpperBound": 200,
+              "wallClockSeconds": 0.459,
+              "totalPopulation": 200,
+              "cpSatStatus": "OPTIMAL",
+              "valid": true,
+              "validationErrors": [],
+              "error": null
+            },
+            {
+              "layoutIndex": 6,
+              "serviceCandidateKeys": [
+                "service:0:1:3:2:2"
+              ],
+              "heuristicScore": 201.49,
+              "residentialPackingUpperBound": 200,
+              "wallClockSeconds": 0.451,
+              "totalPopulation": 200,
+              "cpSatStatus": "OPTIMAL",
+              "valid": true,
+              "validationErrors": [],
+              "error": null
+            },
+            {
+              "layoutIndex": 7,
+              "serviceCandidateKeys": [
+                "service:0:3:1:2:2"
+              ],
+              "heuristicScore": 201.49,
+              "residentialPackingUpperBound": 200,
+              "wallClockSeconds": 0.456,
+              "totalPopulation": 200,
+              "cpSatStatus": "OPTIMAL",
+              "valid": true,
+              "validationErrors": [],
+              "error": null
+            },
+            {
+              "layoutIndex": 8,
+              "serviceCandidateKeys": [
+                "service:0:3:3:2:2"
+              ],
+              "heuristicScore": 201.49,
+              "residentialPackingUpperBound": 200,
+              "wallClockSeconds": 0.446,
+              "totalPopulation": 200,
+              "cpSatStatus": "OPTIMAL",
+              "valid": true,
+              "validationErrors": [],
+              "error": null
+            },
+            {
+              "layoutIndex": 9,
+              "serviceCandidateKeys": [
+                "service:0:0:2:2:2"
+              ],
+              "heuristicScore": 201.39,
+              "residentialPackingUpperBound": 200,
+              "wallClockSeconds": 0.444,
+              "totalPopulation": 200,
+              "cpSatStatus": "OPTIMAL",
+              "valid": true,
+              "validationErrors": [],
+              "error": null
+            },
+            {
+              "layoutIndex": 10,
+              "serviceCandidateKeys": [
+                "service:0:2:0:2:2"
+              ],
+              "heuristicScore": 201.39,
+              "residentialPackingUpperBound": 200,
+              "wallClockSeconds": 0.439,
+              "totalPopulation": 200,
+              "cpSatStatus": "OPTIMAL",
+              "valid": true,
+              "validationErrors": [],
+              "error": null
+            },
+            {
+              "layoutIndex": 11,
+              "serviceCandidateKeys": [
+                "service:0:2:4:2:2"
+              ],
+              "heuristicScore": 201.39,
+              "residentialPackingUpperBound": 200,
+              "wallClockSeconds": 0.452,
+              "totalPopulation": 200,
+              "cpSatStatus": "OPTIMAL",
+              "valid": true,
+              "validationErrors": [],
+              "error": null
+            }
+          ]
+        }
+      },
+      "scoreDeltaVsAuto": 0,
+      "winVsAuto": "tie"
+    },
+    {
+      "name": "service-master-facility-coverage-pressure",
+      "description": "Generated facility-coverage pressure case where fixing service anchors simplifies residential packing.",
+      "family": "facility-coverage-pressure",
+      "split": "generated-pressure",
+      "budgetSeconds": 1,
+      "seed": 7,
+      "auto": {
+        "totalPopulation": 1570,
+        "wallClockSeconds": 1.058,
+        "valid": true,
+        "validationErrors": [],
+        "cpSatStatus": null
+      },
+      "serviceMaster": {
+        "totalPopulation": 1670,
+        "wallClockSeconds": 10.128,
+        "valid": true,
+        "validationErrors": [],
+        "cpSatStatus": "OPTIMAL",
+        "telemetry": {
+          "candidateCount": 288,
+          "prunedCandidateCount": 288,
+          "candidatePoolSize": 64,
+          "layoutCount": 12,
+          "layoutsSolved": 12,
+          "layoutsFailed": 0,
+          "noGoodCutsApplied": 12,
+          "serviceSwapNeighborhoods": 11,
+          "bestLayoutKeys": [
+            "service:1:3:3:1:2",
+            "service:2:4:2:1:2"
+          ],
+          "bestLayoutIndex": 4,
+          "elapsedSeconds": 10.128,
+          "layoutRuns": [
+            {
+              "layoutIndex": 0,
+              "serviceCandidateKeys": [
+                "service:1:3:3:1:2",
+                "service:2:4:3:1:2"
+              ],
+              "heuristicScore": 1702.74,
+              "residentialPackingUpperBound": 1670,
+              "wallClockSeconds": 0.634,
+              "totalPopulation": 1670,
+              "cpSatStatus": "OPTIMAL",
+              "valid": true,
+              "validationErrors": [],
+              "error": null
+            },
+            {
+              "layoutIndex": 1,
+              "serviceCandidateKeys": [
+                "service:1:3:3:2:1",
+                "service:2:3:4:2:1"
+              ],
+              "heuristicScore": 1702.74,
+              "residentialPackingUpperBound": 1670,
+              "wallClockSeconds": 0.657,
+              "totalPopulation": 1670,
+              "cpSatStatus": "OPTIMAL",
+              "valid": true,
+              "validationErrors": [],
+              "error": null
+            },
+            {
+              "layoutIndex": 2,
+              "serviceCandidateKeys": [
+                "service:1:3:4:2:1",
+                "service:2:3:3:2:1"
+              ],
+              "heuristicScore": 1702.74,
+              "residentialPackingUpperBound": 1670,
+              "wallClockSeconds": 0.665,
+              "totalPopulation": 1670,
+              "cpSatStatus": "OPTIMAL",
+              "valid": true,
+              "validationErrors": [],
+              "error": null
+            },
+            {
+              "layoutIndex": 3,
+              "serviceCandidateKeys": [
+                "service:1:4:3:1:2",
+                "service:2:3:3:1:2"
+              ],
+              "heuristicScore": 1702.74,
+              "residentialPackingUpperBound": 1670,
+              "wallClockSeconds": 0.682,
+              "totalPopulation": 1670,
+              "cpSatStatus": "OPTIMAL",
+              "valid": true,
+              "validationErrors": [],
+              "error": null
+            },
+            {
+              "layoutIndex": 4,
+              "serviceCandidateKeys": [
+                "service:1:3:3:1:2",
+                "service:2:4:2:1:2"
+              ],
+              "heuristicScore": 1701.54,
+              "residentialPackingUpperBound": 1670,
+              "wallClockSeconds": 0.63,
+              "totalPopulation": 1670,
+              "cpSatStatus": "OPTIMAL",
+              "valid": true,
+              "validationErrors": [],
+              "error": null
+            },
+            {
+              "layoutIndex": 5,
+              "serviceCandidateKeys": [
+                "service:1:3:3:1:2",
+                "service:2:4:3:2:1"
+              ],
+              "heuristicScore": 1701.54,
+              "residentialPackingUpperBound": 1670,
+              "wallClockSeconds": 0.94,
+              "totalPopulation": 1670,
+              "cpSatStatus": "OPTIMAL",
+              "valid": true,
+              "validationErrors": [],
+              "error": null
+            },
+            {
+              "layoutIndex": 6,
+              "serviceCandidateKeys": [
+                "service:1:3:3:1:2",
+                "service:2:4:4:1:2"
+              ],
+              "heuristicScore": 1701.54,
+              "residentialPackingUpperBound": 1670,
+              "wallClockSeconds": 0.642,
+              "totalPopulation": 1670,
+              "cpSatStatus": "OPTIMAL",
+              "valid": true,
+              "validationErrors": [],
+              "error": null
+            },
+            {
+              "layoutIndex": 7,
+              "serviceCandidateKeys": [
+                "service:1:3:3:1:2",
+                "service:2:4:4:2:1"
+              ],
+              "heuristicScore": 1701.54,
+              "residentialPackingUpperBound": 1670,
+              "wallClockSeconds": 1.189,
+              "totalPopulation": 1670,
+              "cpSatStatus": "OPTIMAL",
+              "valid": true,
+              "validationErrors": [],
+              "error": null
+            },
+            {
+              "layoutIndex": 8,
+              "serviceCandidateKeys": [
+                "service:1:3:3:2:1",
+                "service:2:2:4:2:1"
+              ],
+              "heuristicScore": 1701.54,
+              "residentialPackingUpperBound": 1670,
+              "wallClockSeconds": 0.962,
+              "totalPopulation": 1670,
+              "cpSatStatus": "OPTIMAL",
+              "valid": true,
+              "validationErrors": [],
+              "error": null
+            },
+            {
+              "layoutIndex": 9,
+              "serviceCandidateKeys": [
+                "service:1:3:3:2:1",
+                "service:2:3:4:1:2"
+              ],
+              "heuristicScore": 1701.54,
+              "residentialPackingUpperBound": 1670,
+              "wallClockSeconds": 0.899,
+              "totalPopulation": 1670,
+              "cpSatStatus": "OPTIMAL",
+              "valid": true,
+              "validationErrors": [],
+              "error": null
+            },
+            {
+              "layoutIndex": 10,
+              "serviceCandidateKeys": [
+                "service:1:3:3:2:1",
+                "service:2:4:4:1:2"
+              ],
+              "heuristicScore": 1701.54,
+              "residentialPackingUpperBound": 1670,
+              "wallClockSeconds": 1.207,
+              "totalPopulation": 1670,
+              "cpSatStatus": "OPTIMAL",
+              "valid": true,
+              "validationErrors": [],
+              "error": null
+            },
+            {
+              "layoutIndex": 11,
+              "serviceCandidateKeys": [
+                "service:1:3:3:2:1",
+                "service:2:4:4:2:1"
+              ],
+              "heuristicScore": 1701.54,
+              "residentialPackingUpperBound": 1670,
+              "wallClockSeconds": 0.721,
+              "totalPopulation": 1670,
+              "cpSatStatus": "OPTIMAL",
+              "valid": true,
+              "validationErrors": [],
+              "error": null
+            }
+          ]
+        }
+      },
+      "scoreDeltaVsAuto": 100,
+      "winVsAuto": "win"
+    }
+  ],
+  "summary": {
+    "runCount": 5,
+    "winCount": 1,
+    "tieCount": 4,
+    "lossCount": 0,
+    "invalidRunCount": 0,
+    "meanAutoPopulation": 552,
+    "meanServiceMasterPopulation": 572,
+    "meanScoreDeltaVsAuto": 20,
+    "meanServiceMasterWallClockSeconds": 6.447799999999999,
+    "meanAutoWallClockSeconds": 1.2612,
+    "meanLayoutsSolved": 12
+  }
+}

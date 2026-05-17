@@ -7,6 +7,7 @@ const path = require("node:path");
 const {
   buildDeterministicAblationGateReport,
   buildCrossModeBenchmarkParams,
+  buildServiceMasterLayouts,
   buildCpSatBenchmarkCpuPlan,
   buildLnsReplayLabelScaleReadiness,
   collectGreedyOrderingLabelsFromBenchmarkSuite,
@@ -55,16 +56,21 @@ const {
   runLnsBenchmarkSuite,
   buildCrossModeTelemetryManifest,
   DEFAULT_ROAD_SEMANTICS_SCORECARD_CASES,
+  DEFAULT_SERVICE_MASTER_BENCHMARK_CORPUS,
   DEFAULT_PRODUCT_WORKFLOW_BUDGETS_SECONDS,
   DEFAULT_PRODUCT_WORKFLOW_BENCHMARK_CORPUS,
   PRODUCT_WORKFLOW_LAYOUT_EVALUATE_ENDPOINT,
   evaluateRoadSemanticsScorecardFixtures,
   evaluateProductWorkflowManualReplays,
   formatRoadSemanticsScorecardCommand,
+  formatServiceMasterBenchmarkSuite,
   formatRoadSemanticsScorecard,
   formatProductWorkflowBenchmarkSuite,
+  listServiceMasterBenchmarkCaseNames,
   listRoadSemanticsScorecardCaseNames,
   listProductWorkflowBenchmarkCaseNames,
+  runServiceMasterBenchmarkSuite,
+  solveServiceMasterDecomposition,
   validateSolverTelemetryManifest,
   writeRoadSemanticsScorecardArtifact,
 } = require("../dist/benchmarks/index.js");
@@ -5035,6 +5041,73 @@ async function testCrossModeBenchmarkHelpers() {
   );
 }
 
+async function testServiceMasterBenchmarkHelpers() {
+  const names = listServiceMasterBenchmarkCaseNames();
+  assert.equal(new Set(names).size, names.length);
+  assert(names.includes("planner-service-overlap"));
+  assert(names.includes("lns-service-overlap-pressure"));
+  assert(names.includes("service-master-facility-coverage-pressure"));
+
+  const pressureCase = DEFAULT_SERVICE_MASTER_BENCHMARK_CORPUS.find(
+    (entry) => entry.name === "service-master-facility-coverage-pressure"
+  );
+  assert(pressureCase);
+  assert.equal(pressureCase.family, "facility-coverage-pressure");
+  assert.equal(pressureCase.problemSizeBand, "medium");
+
+  const layouts = buildServiceMasterLayouts(pressureCase.grid, pressureCase.params, {
+    maxServiceLayouts: 4,
+    serviceCandidatePoolSize: 12,
+    maxLayoutServiceCount: 2,
+  });
+  assert.equal(layouts.length, 4);
+  assert.equal(new Set(layouts.map((layout) => layout.serviceCandidateKeys.join("|"))).size, layouts.length);
+  assert(layouts.some((layout) => layout.serviceCandidateKeys.length > 0));
+  assert(layouts.flatMap((layout) => layout.serviceCandidateKeys).every((key) => /^service:\d+:\d+:\d+:\d+:\d+$/.test(key)));
+
+  const observedFixedServiceKeys = [];
+  const decomposition = await solveServiceMasterDecomposition(pressureCase.grid, pressureCase.params, {
+    seed: 3,
+    maxServiceLayouts: 2,
+    serviceCandidatePoolSize: 8,
+    maxLayoutServiceCount: 1,
+    solveSubproblem: (_grid, params) => {
+      observedFixedServiceKeys.push(params.cpSat.fixedServiceCandidateKeys);
+      return buildMockSolution({ optimizer: "cp-sat", cpSatStatus: "OPTIMAL" });
+    },
+  });
+  assert.equal(decomposition.solution.optimizer, "cp-sat");
+  assert.equal(decomposition.telemetry.layoutCount, 2);
+  assert.equal(decomposition.telemetry.noGoodCutsApplied, 2);
+  assert.equal(decomposition.telemetry.serviceSwapNeighborhoods, 1);
+  assert.equal(observedFixedServiceKeys.length, 2);
+  assert(observedFixedServiceKeys.some((keys) => keys.length > 0));
+
+  const suite = await runServiceMasterBenchmarkSuite({
+    names: ["planner-service-overlap"],
+    budgetSeconds: 1,
+    seeds: [7],
+    maxServiceLayouts: 1,
+    serviceCandidatePoolSize: 4,
+    maxLayoutServiceCount: 1,
+    solveAuto: async () => buildMockSolution({ optimizer: "auto" }),
+    solveSubproblem: async () => buildMockSolution({ optimizer: "cp-sat", cpSatStatus: "OPTIMAL" }),
+  });
+  assert.equal(suite.caseCount, 1);
+  assert.equal(suite.runs.length, 1);
+  assert.equal(suite.summary.invalidRunCount, 0);
+  assert.match(formatServiceMasterBenchmarkSuite(suite), /Service-master decomposition scorecard/);
+
+  assert.throws(
+    () => solve([[1]], {
+      optimizer: "cp-sat",
+      cpSat: { fixedServiceCandidateKeys: ["not-a-service-candidate-key"] },
+      availableBuildings: { services: 0, residentials: 0 },
+    }),
+    /fixedServiceCandidateKeys/
+  );
+}
+
 const STEP14_GREEDY_BENCHMARK_NAME = "step14-service-lookahead-reranker";
 const STEP14_DETERMINISTIC_TIES_BENCHMARK_NAME = "step14-deterministic-lookahead-ties";
 const STEP14_ROW0_PATH_NULL_BENCHMARK_NAME = "step14-row0-path-null-reservation";
@@ -8888,6 +8961,7 @@ async function main() {
   testLnsSeededServiceAnchorPressureBenchmarkCase();
   testLnsWindowReplayLabelRunner();
   await testCrossModeBenchmarkHelpers();
+  await testServiceMasterBenchmarkHelpers();
   await maybeTestCpSatBenchmarkSuite();
   await maybeTestCpSatWarmStartContinuation();
   await maybeTestCpSatPortfolioSolve();

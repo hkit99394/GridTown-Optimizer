@@ -948,6 +948,12 @@ function assertValidCpSatOptions(params: SolverParams, optimizer: OptimizerName)
   if (cpSat.warmStartHint !== undefined) {
     assertValidCpSatWarmStartHint(cpSat.warmStartHint, "CP-SAT warm-start hint cpSat.warmStartHint");
   }
+  requireCandidateKeys(
+    cpSat,
+    "fixedServiceCandidateKeys",
+    "CP-SAT runtime option cpSat.fixedServiceCandidateKeys",
+    "service"
+  );
   if (cpSat.portfolio !== undefined) {
     if (optimizer !== "cp-sat") {
       throw new SolverInputError('CP-SAT portfolio option cpSat.portfolio is only supported when optimizer is "cp-sat".');

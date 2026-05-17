@@ -434,6 +434,8 @@ export interface CpSatOptions {
   noImprovementTimeoutSeconds?: number;
   /** Soft warm-start incumbent. Accepts either a serializable hint or an existing Solution. */
   warmStartHint?: CpSatWarmStartHint | Solution;
+  /** Experimental: force CP-SAT to use exactly these service candidates while solving the remaining layout. */
+  fixedServiceCandidateKeys?: PersistedServiceCandidateKey[];
   /** Hard lower bound on total population for continuation runs from a known incumbent. */
   objectiveLowerBound?: number;
   /** Single-machine portfolio search across multiple CP-SAT workers. */

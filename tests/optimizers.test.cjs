@@ -14,6 +14,7 @@ const {
   createGreedyLearnedOnlineAbSnapshot,
   createGreedyOfflineRankerSnapshot,
   createLnsLearnedOnlineAbSnapshot,
+  createLnsLearnedPromotionReviewSnapshot,
   createLnsOfflineRankerSnapshot,
   createLearnedRankingLabelSnapshot,
   DEFAULT_DETERMINISTIC_ABLATION_GATE_SEEDS,
@@ -44,6 +45,7 @@ const {
   formatGreedyOfflineRankerExperiment,
   formatLearnedRankingLabelSuite,
   formatLnsLearnedOnlineAb,
+  formatLnsLearnedPromotionReview,
   formatLnsOfflineRankerExperiment,
   formatLnsNeighborhoodAblation,
   formatLnsBenchmarkSuite,
@@ -60,6 +62,7 @@ const {
   runGreedyConnectivityShadowOrderingLabels,
   runGreedyLearnedOnlineAb,
   runLnsLearnedOnlineAb,
+  runLnsLearnedPromotionReview,
   runGreedyOfflineRankerExperiment,
   runLearnedRankingLabelSuite,
   runLnsOfflineRankerExperiment,
@@ -2169,6 +2172,90 @@ function testLnsLearnedWindowRankingOnlineAb() {
   } finally {
     lnsModule.solveLns = originalSolveLns;
   }
+}
+
+function testLnsLearnedPromotionReviewKeepsDefaultOptInWithoutQualityLift() {
+  const observedRuns = [];
+  const result = runLnsLearnedPromotionReview({
+    productNames: ["planner-service-overlap"],
+    crossModeNames: ["typed-housing-single"],
+    seeds: [7],
+    solve: (_grid, params, context) => {
+      const learned = params.lns.learnedWindowRanking === true;
+      observedRuns.push({
+        caseName: context.benchmarkCase.name,
+        source: context.benchmarkCase.source,
+        variantName: context.variantName,
+        learned,
+        candidateLimit: params.lns.learnedWindowRankingCandidateLimit ?? null,
+      });
+      return {
+        ...buildMockSolution({
+          optimizer: "lns",
+          totalPopulation: 0,
+          cpSatStatus: "FEASIBLE",
+        }),
+        roads: new Set(),
+        lnsTelemetry: {
+          stopReason: "iteration-limit",
+          seedSource: "greedy",
+          seedWallClockSeconds: 0,
+          seedTimeLimitSeconds: null,
+          wallClockLimitSeconds: null,
+          noImprovementTimeoutSeconds: null,
+          focusedRepairTimeLimitSeconds: 1,
+          escalatedRepairTimeLimitSeconds: 1,
+          iterationsStarted: 1,
+          iterationsCompleted: 1,
+          improvingIterations: 0,
+          neutralIterations: 1,
+          recoverableFailures: 0,
+          skippedIterations: 0,
+          finalStagnantIterations: 1,
+          elapsedSeconds: 0,
+          operatorSelectionPolicy: "adaptive",
+          learnedWindowRankingEnabled: learned,
+          learnedWindowRankingModelVersion: learned ? "lns-ranker-feature-enrichment-2026-05-17" : null,
+          learnedWindowRankingModelFingerprint: learned
+            ? "12ba51f1f0a0c51b0e084caa5e524926aedcd66ccfc28c253e98e8daa618ff70"
+            : null,
+          learnedWindowRankingCandidateLimit: params.lns.learnedWindowRankingCandidateLimit ?? 12,
+          learnedWindowRankingMinScoreRatio: params.lns.learnedWindowRankingMinScoreRatio ?? 1,
+          learnedWindowRankingEvaluations: learned ? 4 : 0,
+          learnedWindowRankingWins: 0,
+          operatorScores: [],
+          outcomes: [],
+        },
+      };
+    },
+  });
+  const snapshot = createLnsLearnedPromotionReviewSnapshot(result);
+  const formatted = formatLnsLearnedPromotionReview(result);
+  const productHoldout = result.summaries.find((summary) =>
+    summary.source === "product-workflow" && summary.split === "holdout"
+  );
+  const all = result.summaries.find((summary) => summary.source === "all" && summary.split === "all");
+
+  assert.equal(result.schemaVersion, 1);
+  assert.deepEqual(result.variants, ["baseline", "learned-guarded"]);
+  assert.deepEqual(result.selectedProductCaseNames, ["planner-service-overlap"]);
+  assert.deepEqual(result.selectedCrossModeCaseNames, ["typed-housing-single"]);
+  assert.equal(result.model.featureFlag, "lns.learnedWindowRanking");
+  assert.equal(result.cases.length, 2);
+  assert(productHoldout);
+  assert(all);
+  assert.equal(productHoldout.comparisonCount, 1);
+  assert.equal(productHoldout.lossCount, 0);
+  assert.equal(productHoldout.validationFailureCount, 0);
+  assert.equal(all.learnedWindowRankingEvaluations, 8);
+  assert.equal(result.gate.passed, false);
+  assert(result.gate.failedReasons.includes("no product-holdout quality lift"));
+  assert.equal(result.decision, "keep-lns-learned-window-ranking-opt-in");
+  assert.equal(Object.hasOwn(snapshot, "generatedAt"), false);
+  assert.equal(observedRuns.length, 4);
+  assert.equal(observedRuns.filter((run) => run.learned).length, 2);
+  assert.match(formatted, /LNS Learned Default Promotion Review/);
+  assert.match(formatted, /no product-holdout quality lift/);
 }
 
 function testGreedyRoadOpportunityCounterfactualsAreBoundedAndObservational() {
@@ -9238,6 +9325,7 @@ async function main() {
   testLnsOfflineRankerExperiment();
   testGreedyLearnedServiceRankingOnlineAb();
   testLnsLearnedWindowRankingOnlineAb();
+  testLnsLearnedPromotionReviewKeepsDefaultOptInWithoutQualityLift();
   testGreedyRoadOpportunityCounterfactualsAreBoundedAndObservational();
   testRoadOpportunityLocalSearchMeasurementUsesPostRemoveOccupancy();
   testGreedyStopFileCancelsBeforePrecompute();

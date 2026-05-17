@@ -143,6 +143,7 @@ export * from "./benchmarks/greedyOfflineRanker.js";
 export * from "./benchmarks/lnsOfflineRanker.js";
 export * from "./benchmarks/greedyLearnedOnlineAb.js";
 export * from "./benchmarks/lnsLearnedOnlineAb.js";
+export * from "./benchmarks/lnsLearnedPromotionReview.js";
 export * from "./benchmarks/experimentRegistry.js";
 export * from "./benchmarks/telemetryManifest.js";
 export {

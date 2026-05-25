@@ -35,7 +35,9 @@ Delivered summary:
 
 Detailed delivered notes live in [CP_SAT_ROADMAP_DELIVERED.md](./CP_SAT_ROADMAP_DELIVERED.md).
 
-## Remaining Work By Product Priority
+## Product Priority Lanes
+
+These are maintenance or gated extension lanes. The current solver roadmap remains the source of truth for default-path promotion decisions.
 
 Ordering note: this CP-SAT-specific list follows the consolidated [SOLVER_ROADMAP.md](./SOLVER_ROADMAP.md). Road-semantics, telemetry, async/portfolio failure-mode closeouts, and the local exact backend needed by label/replay workflows are delivered. There is no current active CP-SAT default-path change; future CP-SAT work should start only from a solver-roadmap trigger, and distributed CP-SAT remains gated.
 

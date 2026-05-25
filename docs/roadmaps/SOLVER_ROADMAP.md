@@ -1,6 +1,6 @@
 # Solver Roadmap
 
-## Goal
+## Purpose
 
 Maximize feasible city population under fixed wall-clock and CPU budgets, while preserving exact validation for every reported final layout.
 
@@ -14,7 +14,7 @@ The current strategy is intentionally conservative:
 
 Primary metrics are time to first feasible, population at 1s/5s/30s/120s, time to best, improvement per CPU-second, CP-SAT status/gap, repeatability across fixed seeds and planner workflows, and exact validation.
 
-## Runtime Posture
+## Current Runtime Posture
 
 The default solver path is incumbent-first:
 

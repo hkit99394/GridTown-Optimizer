@@ -218,8 +218,15 @@ Available scripts from [package.json](./package.json):
 - `npm run benchmark:greedy`
 - `npm run benchmark:lns`
 - `npm run benchmark:cp-sat`
+- `npm run benchmark:labels`
+- `npm run benchmark:greedy-ranker`
+- `npm run benchmark:lns-ranker`
+- `npm run benchmark:lns-window-ranker`
 - `npm run benchmark:scorecard`
+- `npm run experiment-registry`
+- `npm run experiment-registry:check`
 - `npm run setup:cp-sat`
+- `npm run test:acceptance`
 - `npm test`
 
 `npm run solve` currently runs the built-in example with the default `auto` backend in the example CLI.
@@ -678,7 +685,7 @@ console.log(validation.valid);
 console.log(validation.mapText);
 ```
 
-## Main Exports
+## Selected Public Exports
 
 The default public API is exposed from [src/index.ts](./src/index.ts). Benchmark,
 label, and experiment-registry tooling is exposed separately from
@@ -695,6 +702,7 @@ Benchmark-only functions and types such as `runCpSatBenchmarkSuite`,
 - `describeAutoStopReason`
 - `solveGreedy`
 - `solveCpSatAsync`
+- `startCpSatSolve`
 - `solveLns`
 - `solveCpSat`
 - `evaluateLayout`
@@ -863,6 +871,7 @@ A `Solution` contains:
 - `totalPopulation`
 
 Road cells are encoded as `"r,c"` strings inside the `Set`.
+Every explicit road component must contain at least one row-0-or-column-0 road cell.
 
 ## Project Layout
 

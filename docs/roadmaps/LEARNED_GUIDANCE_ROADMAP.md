@@ -106,7 +106,7 @@ Remaining gates before any RL work:
 
 ## Roadmap
 
-### Ordering By Priority
+### Historical Execution Order And Current Gates
 
 When a track-specific solver-roadmap trigger reopens learned-guidance work, reuse this historical gated sequence. For Greedy, that means online equal-budget wins with inference-overhead accounting; for learned `LNS`, it means new protected/fresh value coverage or a materially different model class.
 
@@ -364,6 +364,7 @@ Greedy-specific exit criteria:
 - final solutions still validate exactly
 - deterministic-order, random, and single-feature baselines are beaten on protected holdout before online use
 - model inference overhead is counted against wall-clock
+- the Phase 10 no-promotion baseline is beaten by a later feature-flagged run before defaults change
 
 ### Phase 5: Learned LNS Window Re-Ranking
 
@@ -406,6 +407,7 @@ Historical diagnostic criteria:
 - deterministic fallback remains unchanged and existing baseline tests remain valid
 - holdout data includes enough non-neutral replay signal to evaluate ranking skill
 - online A/B uses paired seeds, exact validation, and bounded inference overhead
+- offline holdout gate is met by Phase 12 and online A/B is met by Phase 13, but Phases 14-16 reject default promotion because neither strict guards, looser guards, nor wider shortlists create product-holdout quality lift
 
 These criteria are necessary but not sufficient for learned-`LNS` promotion. Current gates also require protected/fresh active value, no regressions, no final-neutral override blockers, and no product-axis loss.
 

@@ -25,6 +25,22 @@ Feature: City builder core feasibility and scoring
       Then the solution is rejected
       And the validation explains that road components must touch the anchor boundary
 
+    @CB-BDD-008
+    Scenario: Two independent road components both touch the anchor boundary
+      Given two road components that are not connected to each other
+      And each road component contains at least one cell in row 0 or column 0
+      And each non-boundary building is adjacent to one of those components
+      When the solution is validated
+      Then the solution is accepted
+
+    @CB-BDD-009
+    Scenario: Boundary-touching buildings do not require adjacency to explicit roads
+      Given every building footprint touches row 0 or column 0
+      And the solution contains an anchored explicit road component
+      And the building footprints are not adjacent to that road component
+      When the solution is validated
+      Then the solution is accepted
+
   Rule: Building footprints are disjoint
 
     @CB-BDD-003

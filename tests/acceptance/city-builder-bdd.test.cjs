@@ -378,6 +378,70 @@ scenario(
 );
 
 scenario(
+  "[CB-BDD-008] Given two independent road components both touch the anchor boundary, when the solution is validated, then it is accepted",
+  () => {
+    const grid = allowedGrid(4, 4);
+    const params = {
+      residentialTypes: [{ w: 1, h: 1, min: 10, max: 10, avail: 2 }],
+      availableBuildings: { services: 0, residentials: 2 }
+    };
+
+    const validation = validateSolution({
+      grid,
+      params,
+      solution: {
+        optimizer: "greedy",
+        roads: new Set(["0,1", "3,0"]),
+        services: [],
+        serviceTypeIndices: [],
+        servicePopulationIncreases: [],
+        residentials: [
+          { r: 1, c: 1, rows: 1, cols: 1 },
+          { r: 3, c: 1, rows: 1, cols: 1 }
+        ],
+        residentialTypeIndices: [0, 0],
+        populations: [10, 10],
+        totalPopulation: 20
+      }
+    });
+
+    assertValid(validation);
+  }
+);
+
+scenario(
+  "[CB-BDD-009] Given every building footprint touches the anchor boundary, when an anchored explicit road is not adjacent, then the solution is accepted",
+  () => {
+    const grid = allowedGrid(4, 4);
+    const params = {
+      residentialTypes: [{ w: 1, h: 1, min: 10, max: 10, avail: 2 }],
+      availableBuildings: { services: 0, residentials: 2 }
+    };
+
+    const validation = validateSolution({
+      grid,
+      params,
+      solution: {
+        optimizer: "greedy",
+        roads: new Set(["3,0"]),
+        services: [],
+        serviceTypeIndices: [],
+        servicePopulationIncreases: [],
+        residentials: [
+          { r: 0, c: 2, rows: 1, cols: 1 },
+          { r: 1, c: 0, rows: 1, cols: 1 }
+        ],
+        residentialTypeIndices: [0, 0],
+        populations: [10, 10],
+        totalPopulation: 20
+      }
+    });
+
+    assertValid(validation);
+  }
+);
+
+scenario(
   "[CB-BDD-007] Given the solve API returns a layout, when the response is built, then validation and stats match the solved layout",
   async () => {
     const solvePayload = buildTinySolvePayload();

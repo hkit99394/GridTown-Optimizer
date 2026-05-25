@@ -1,0 +1,3561 @@
+{
+  "generatedAt": "2026-05-17T17:09:39.365Z",
+  "schemaVersion": 1,
+  "seeds": [
+    7
+  ],
+  "selectedProductCaseNames": [
+    "planner-corridor-reuse",
+    "planner-gate-choke",
+    "planner-footprint-pressure",
+    "planner-service-overlap",
+    "planner-anchor-service",
+    "planner-multi-anchor-islands",
+    "planner-rotated-rowhouse",
+    "planner-gate-service-tradeoff"
+  ],
+  "selectedCrossModeCaseNames": [
+    "typed-housing-single",
+    "compact-service-single",
+    "compact-service-repair",
+    "row0-corridor-repair-pressure"
+  ],
+  "candidateLimit": 12,
+  "minScoreRatios": [
+    1,
+    0.95,
+    0.9,
+    0.75,
+    0
+  ],
+  "model": {
+    "version": "lns-ranker-feature-enrichment-2026-05-17",
+    "fingerprint": "12ba51f1f0a0c51b0e084caa5e524926aedcd66ccfc28c253e98e8daa618ff70",
+    "cpuOnly": true,
+    "featureFlag": "lns.learnedWindowRanking"
+  },
+  "ratios": [
+    {
+      "minScoreRatio": 1,
+      "review": {
+        "generatedAt": "2026-05-17T17:07:54.093Z",
+        "schemaVersion": 1,
+        "seeds": [
+          7
+        ],
+        "selectedProductCaseNames": [
+          "planner-corridor-reuse",
+          "planner-gate-choke",
+          "planner-footprint-pressure",
+          "planner-service-overlap",
+          "planner-anchor-service",
+          "planner-multi-anchor-islands",
+          "planner-rotated-rowhouse",
+          "planner-gate-service-tradeoff"
+        ],
+        "selectedCrossModeCaseNames": [
+          "typed-housing-single",
+          "compact-service-single",
+          "compact-service-repair",
+          "row0-corridor-repair-pressure"
+        ],
+        "variants": [
+          "baseline",
+          "learned-guarded"
+        ],
+        "candidateLimit": 12,
+        "guardedMinScoreRatio": 1,
+        "model": {
+          "version": "lns-ranker-feature-enrichment-2026-05-17",
+          "fingerprint": "12ba51f1f0a0c51b0e084caa5e524926aedcd66ccfc28c253e98e8daa618ff70",
+          "cpuOnly": true,
+          "featureFlag": "lns.learnedWindowRanking"
+        },
+        "cases": [
+          {
+            "source": "product-workflow",
+            "split": "development",
+            "family": "corridor",
+            "caseName": "planner-corridor-reuse",
+            "description": "Saved corridor payload with manual road cleanup and expansion replay.",
+            "seed": 7,
+            "variants": [
+              {
+                "variantName": "baseline",
+                "totalPopulation": 130,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 1.028,
+                "wallClockDeltaVsBaselineSeconds": 0,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 2,
+                "serviceCount": 1,
+                "residentialCount": 2,
+                "stopReason": "stale-iteration-limit",
+                "improvingIterations": 0,
+                "learnedWindowRankingEvaluations": 0,
+                "learnedWindowRankingWins": 0
+              },
+              {
+                "variantName": "learned-guarded",
+                "totalPopulation": 130,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 1.492,
+                "wallClockDeltaVsBaselineSeconds": 0.46399999999999997,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 2,
+                "serviceCount": 1,
+                "residentialCount": 2,
+                "stopReason": "stale-iteration-limit",
+                "improvingIterations": 0,
+                "learnedWindowRankingEvaluations": 22,
+                "learnedWindowRankingWins": 0
+              }
+            ]
+          },
+          {
+            "source": "product-workflow",
+            "split": "development",
+            "family": "gate",
+            "caseName": "planner-gate-choke",
+            "description": "Gate-shaped map with an explicit central access check.",
+            "seed": 7,
+            "variants": [
+              {
+                "variantName": "baseline",
+                "totalPopulation": 60,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 1.989,
+                "wallClockDeltaVsBaselineSeconds": 0,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 0,
+                "serviceCount": 1,
+                "residentialCount": 3,
+                "stopReason": "stale-iteration-limit",
+                "improvingIterations": 0,
+                "learnedWindowRankingEvaluations": 0,
+                "learnedWindowRankingWins": 0
+              },
+              {
+                "variantName": "learned-guarded",
+                "totalPopulation": 60,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 2.247,
+                "wallClockDeltaVsBaselineSeconds": 0.2579999999999998,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 0,
+                "serviceCount": 1,
+                "residentialCount": 3,
+                "stopReason": "stale-iteration-limit",
+                "improvingIterations": 0,
+                "learnedWindowRankingEvaluations": 23,
+                "learnedWindowRankingWins": 0
+              }
+            ]
+          },
+          {
+            "source": "product-workflow",
+            "split": "development",
+            "family": "footprint-pressure",
+            "caseName": "planner-footprint-pressure",
+            "description": "Dense footprint pressure payload with large residential slabs.",
+            "seed": 7,
+            "variants": [
+              {
+                "variantName": "baseline",
+                "totalPopulation": 140,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 2.132,
+                "wallClockDeltaVsBaselineSeconds": 0,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 0,
+                "serviceCount": 1,
+                "residentialCount": 2,
+                "stopReason": "stale-iteration-limit",
+                "improvingIterations": 0,
+                "learnedWindowRankingEvaluations": 0,
+                "learnedWindowRankingWins": 0
+              },
+              {
+                "variantName": "learned-guarded",
+                "totalPopulation": 140,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 2.112,
+                "wallClockDeltaVsBaselineSeconds": -0.020000000000000018,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 0,
+                "serviceCount": 1,
+                "residentialCount": 2,
+                "stopReason": "stale-iteration-limit",
+                "improvingIterations": 0,
+                "learnedWindowRankingEvaluations": 23,
+                "learnedWindowRankingWins": 0
+              }
+            ]
+          },
+          {
+            "source": "product-workflow",
+            "split": "holdout",
+            "family": "service-overlap",
+            "caseName": "planner-service-overlap",
+            "description": "Service-overlap case where expansion can trade another service against another home.",
+            "seed": 7,
+            "variants": [
+              {
+                "variantName": "baseline",
+                "totalPopulation": 130,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 2.196,
+                "wallClockDeltaVsBaselineSeconds": 0,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 1,
+                "serviceCount": 1,
+                "residentialCount": 2,
+                "stopReason": "stale-iteration-limit",
+                "improvingIterations": 0,
+                "learnedWindowRankingEvaluations": 0,
+                "learnedWindowRankingWins": 0
+              },
+              {
+                "variantName": "learned-guarded",
+                "totalPopulation": 130,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 1.946,
+                "wallClockDeltaVsBaselineSeconds": -0.2500000000000002,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 1,
+                "serviceCount": 1,
+                "residentialCount": 2,
+                "stopReason": "stale-iteration-limit",
+                "improvingIterations": 0,
+                "learnedWindowRankingEvaluations": 24,
+                "learnedWindowRankingWins": 0
+              }
+            ]
+          },
+          {
+            "source": "product-workflow",
+            "split": "holdout",
+            "family": "anchor-service",
+            "caseName": "planner-anchor-service",
+            "description": "Boundary-touching service and housing payload that should stay road-light.",
+            "seed": 7,
+            "variants": [
+              {
+                "variantName": "baseline",
+                "totalPopulation": 120,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 1.888,
+                "wallClockDeltaVsBaselineSeconds": 0,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 0,
+                "serviceCount": 1,
+                "residentialCount": 2,
+                "stopReason": "stale-iteration-limit",
+                "improvingIterations": 0,
+                "learnedWindowRankingEvaluations": 0,
+                "learnedWindowRankingWins": 0
+              },
+              {
+                "variantName": "learned-guarded",
+                "totalPopulation": 120,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 3.14,
+                "wallClockDeltaVsBaselineSeconds": 1.2520000000000002,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 0,
+                "serviceCount": 1,
+                "residentialCount": 2,
+                "stopReason": "stale-iteration-limit",
+                "improvingIterations": 0,
+                "learnedWindowRankingEvaluations": 12,
+                "learnedWindowRankingWins": 0
+              }
+            ]
+          },
+          {
+            "source": "product-workflow",
+            "split": "holdout",
+            "family": "multi-anchor",
+            "caseName": "planner-multi-anchor-islands",
+            "description": "Planner-shaped multi-anchor payload with two independent islands.",
+            "seed": 7,
+            "variants": [
+              {
+                "variantName": "baseline",
+                "totalPopulation": 80,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 1.947,
+                "wallClockDeltaVsBaselineSeconds": 0,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 4,
+                "serviceCount": 0,
+                "residentialCount": 2,
+                "stopReason": "stale-iteration-limit",
+                "improvingIterations": 0,
+                "learnedWindowRankingEvaluations": 0,
+                "learnedWindowRankingWins": 0
+              },
+              {
+                "variantName": "learned-guarded",
+                "totalPopulation": 80,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 2.485,
+                "wallClockDeltaVsBaselineSeconds": 0.5379999999999998,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 4,
+                "serviceCount": 0,
+                "residentialCount": 2,
+                "stopReason": "stale-iteration-limit",
+                "improvingIterations": 0,
+                "learnedWindowRankingEvaluations": 22,
+                "learnedWindowRankingWins": 0
+              }
+            ]
+          },
+          {
+            "source": "product-workflow",
+            "split": "development",
+            "family": "footprint-pressure",
+            "caseName": "planner-rotated-rowhouse",
+            "description": "Rotated rowhouse payload with a saved service-and-road reuse pattern.",
+            "seed": 7,
+            "variants": [
+              {
+                "variantName": "baseline",
+                "totalPopulation": 140,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 2.699,
+                "wallClockDeltaVsBaselineSeconds": 0,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 0,
+                "serviceCount": 1,
+                "residentialCount": 2,
+                "stopReason": "stale-iteration-limit",
+                "improvingIterations": 0,
+                "learnedWindowRankingEvaluations": 0,
+                "learnedWindowRankingWins": 0
+              },
+              {
+                "variantName": "learned-guarded",
+                "totalPopulation": 140,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 2.844,
+                "wallClockDeltaVsBaselineSeconds": 0.14500000000000002,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 0,
+                "serviceCount": 1,
+                "residentialCount": 2,
+                "stopReason": "stale-iteration-limit",
+                "improvingIterations": 0,
+                "learnedWindowRankingEvaluations": 24,
+                "learnedWindowRankingWins": 0
+              }
+            ]
+          },
+          {
+            "source": "product-workflow",
+            "split": "holdout",
+            "family": "gate",
+            "caseName": "planner-gate-service-tradeoff",
+            "description": "Gate-shaped service tradeoff payload with two saved service anchors.",
+            "seed": 7,
+            "variants": [
+              {
+                "variantName": "baseline",
+                "totalPopulation": 200,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 2.961,
+                "wallClockDeltaVsBaselineSeconds": 0,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 5,
+                "serviceCount": 2,
+                "residentialCount": 2,
+                "stopReason": "iteration-limit",
+                "improvingIterations": 1,
+                "learnedWindowRankingEvaluations": 0,
+                "learnedWindowRankingWins": 0
+              },
+              {
+                "variantName": "learned-guarded",
+                "totalPopulation": 200,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 3.49,
+                "wallClockDeltaVsBaselineSeconds": 0.5290000000000004,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 5,
+                "serviceCount": 2,
+                "residentialCount": 2,
+                "stopReason": "iteration-limit",
+                "improvingIterations": 1,
+                "learnedWindowRankingEvaluations": 24,
+                "learnedWindowRankingWins": 0
+              }
+            ]
+          },
+          {
+            "source": "cross-mode",
+            "split": "cross-mode",
+            "family": "tiny",
+            "caseName": "typed-housing-single",
+            "description": "Tiny typed-housing case shared by all solver modes.",
+            "seed": 7,
+            "variants": [
+              {
+                "variantName": "baseline",
+                "totalPopulation": 110,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 1.35,
+                "wallClockDeltaVsBaselineSeconds": 0,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 0,
+                "serviceCount": 0,
+                "residentialCount": 2,
+                "stopReason": "stale-iteration-limit",
+                "improvingIterations": 0,
+                "learnedWindowRankingEvaluations": 0,
+                "learnedWindowRankingWins": 0
+              },
+              {
+                "variantName": "learned-guarded",
+                "totalPopulation": 110,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 1.337,
+                "wallClockDeltaVsBaselineSeconds": -0.013000000000000123,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 0,
+                "serviceCount": 0,
+                "residentialCount": 2,
+                "stopReason": "stale-iteration-limit",
+                "improvingIterations": 0,
+                "learnedWindowRankingEvaluations": 6,
+                "learnedWindowRankingWins": 0
+              }
+            ]
+          },
+          {
+            "source": "cross-mode",
+            "split": "cross-mode",
+            "family": "small",
+            "caseName": "compact-service-single",
+            "description": "Small service-and-housing case for equal-budget mode comparisons.",
+            "seed": 7,
+            "variants": [
+              {
+                "variantName": "baseline",
+                "totalPopulation": 40,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 1.246,
+                "wallClockDeltaVsBaselineSeconds": 0,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 0,
+                "serviceCount": 1,
+                "residentialCount": 1,
+                "stopReason": "stale-iteration-limit",
+                "improvingIterations": 0,
+                "learnedWindowRankingEvaluations": 0,
+                "learnedWindowRankingWins": 0
+              },
+              {
+                "variantName": "learned-guarded",
+                "totalPopulation": 40,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 1.348,
+                "wallClockDeltaVsBaselineSeconds": 0.10200000000000009,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 0,
+                "serviceCount": 1,
+                "residentialCount": 1,
+                "stopReason": "stale-iteration-limit",
+                "improvingIterations": 0,
+                "learnedWindowRankingEvaluations": 6,
+                "learnedWindowRankingWins": 0
+              }
+            ]
+          },
+          {
+            "source": "cross-mode",
+            "split": "cross-mode",
+            "family": "small",
+            "caseName": "compact-service-repair",
+            "description": "Small 6x6 mixed case for LNS and Auto repair scorecards.",
+            "seed": 7,
+            "variants": [
+              {
+                "variantName": "baseline",
+                "totalPopulation": 570,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 2.239,
+                "wallClockDeltaVsBaselineSeconds": 0,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 0,
+                "serviceCount": 1,
+                "residentialCount": 3,
+                "stopReason": "stale-iteration-limit",
+                "improvingIterations": 0,
+                "learnedWindowRankingEvaluations": 0,
+                "learnedWindowRankingWins": 0
+              },
+              {
+                "variantName": "learned-guarded",
+                "totalPopulation": 570,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 2.791,
+                "wallClockDeltaVsBaselineSeconds": 0.552,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 0,
+                "serviceCount": 1,
+                "residentialCount": 3,
+                "stopReason": "stale-iteration-limit",
+                "improvingIterations": 0,
+                "learnedWindowRankingEvaluations": 24,
+                "learnedWindowRankingWins": 0
+              }
+            ]
+          },
+          {
+            "source": "cross-mode",
+            "split": "cross-mode",
+            "family": "small",
+            "caseName": "row0-corridor-repair-pressure",
+            "description": "Sparse road-anchor access case with competing service footprints for Auto/LNS budget ablations.",
+            "seed": 7,
+            "variants": [
+              {
+                "variantName": "baseline",
+                "totalPopulation": 330,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 2.879,
+                "wallClockDeltaVsBaselineSeconds": 0,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 5,
+                "serviceCount": 1,
+                "residentialCount": 2,
+                "stopReason": "iteration-limit",
+                "improvingIterations": 2,
+                "learnedWindowRankingEvaluations": 0,
+                "learnedWindowRankingWins": 0
+              },
+              {
+                "variantName": "learned-guarded",
+                "totalPopulation": 330,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 2.417,
+                "wallClockDeltaVsBaselineSeconds": -0.4620000000000002,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 5,
+                "serviceCount": 1,
+                "residentialCount": 2,
+                "stopReason": "iteration-limit",
+                "improvingIterations": 2,
+                "learnedWindowRankingEvaluations": 24,
+                "learnedWindowRankingWins": 0
+              }
+            ]
+          }
+        ],
+        "summaries": [
+          {
+            "source": "product-workflow",
+            "split": "development",
+            "comparisonCount": 4,
+            "winCount": 0,
+            "tieCount": 4,
+            "lossCount": 0,
+            "winRate": 0,
+            "lossRate": 0,
+            "meanPopulationDeltaVsBaseline": 0,
+            "medianPopulationDeltaVsBaseline": 0,
+            "worstDecilePopulationDeltaVsBaseline": 0,
+            "bestPopulationDeltaVsBaseline": 0,
+            "meanWallClockDeltaVsBaselineSeconds": 0.21174999999999994,
+            "validationFailureCount": 0,
+            "learnedWindowRankingEvaluations": 92,
+            "learnedWindowRankingWins": 0
+          },
+          {
+            "source": "product-workflow",
+            "split": "holdout",
+            "comparisonCount": 4,
+            "winCount": 0,
+            "tieCount": 4,
+            "lossCount": 0,
+            "winRate": 0,
+            "lossRate": 0,
+            "meanPopulationDeltaVsBaseline": 0,
+            "medianPopulationDeltaVsBaseline": 0,
+            "worstDecilePopulationDeltaVsBaseline": 0,
+            "bestPopulationDeltaVsBaseline": 0,
+            "meanWallClockDeltaVsBaselineSeconds": 0.51725,
+            "validationFailureCount": 0,
+            "learnedWindowRankingEvaluations": 82,
+            "learnedWindowRankingWins": 0
+          },
+          {
+            "source": "product-workflow",
+            "split": "all",
+            "comparisonCount": 8,
+            "winCount": 0,
+            "tieCount": 8,
+            "lossCount": 0,
+            "winRate": 0,
+            "lossRate": 0,
+            "meanPopulationDeltaVsBaseline": 0,
+            "medianPopulationDeltaVsBaseline": 0,
+            "worstDecilePopulationDeltaVsBaseline": 0,
+            "bestPopulationDeltaVsBaseline": 0,
+            "meanWallClockDeltaVsBaselineSeconds": 0.3645,
+            "validationFailureCount": 0,
+            "learnedWindowRankingEvaluations": 174,
+            "learnedWindowRankingWins": 0
+          },
+          {
+            "source": "cross-mode",
+            "split": "cross-mode",
+            "comparisonCount": 4,
+            "winCount": 0,
+            "tieCount": 4,
+            "lossCount": 0,
+            "winRate": 0,
+            "lossRate": 0,
+            "meanPopulationDeltaVsBaseline": 0,
+            "medianPopulationDeltaVsBaseline": 0,
+            "worstDecilePopulationDeltaVsBaseline": 0,
+            "bestPopulationDeltaVsBaseline": 0,
+            "meanWallClockDeltaVsBaselineSeconds": 0.044749999999999956,
+            "validationFailureCount": 0,
+            "learnedWindowRankingEvaluations": 60,
+            "learnedWindowRankingWins": 0
+          },
+          {
+            "source": "all",
+            "split": "all",
+            "comparisonCount": 12,
+            "winCount": 0,
+            "tieCount": 12,
+            "lossCount": 0,
+            "winRate": 0,
+            "lossRate": 0,
+            "meanPopulationDeltaVsBaseline": 0,
+            "medianPopulationDeltaVsBaseline": 0,
+            "worstDecilePopulationDeltaVsBaseline": 0,
+            "bestPopulationDeltaVsBaseline": 0,
+            "meanWallClockDeltaVsBaselineSeconds": 0.2579166666666666,
+            "validationFailureCount": 0,
+            "learnedWindowRankingEvaluations": 234,
+            "learnedWindowRankingWins": 0
+          }
+        ],
+        "gate": {
+          "passed": false,
+          "failedReasons": [
+            "no product-holdout quality lift"
+          ],
+          "protectedProductHoldout": true,
+          "requiresQualityLift": true,
+          "productHoldout": {
+            "source": "product-workflow",
+            "split": "holdout",
+            "comparisonCount": 4,
+            "winCount": 0,
+            "tieCount": 4,
+            "lossCount": 0,
+            "winRate": 0,
+            "lossRate": 0,
+            "meanPopulationDeltaVsBaseline": 0,
+            "medianPopulationDeltaVsBaseline": 0,
+            "worstDecilePopulationDeltaVsBaseline": 0,
+            "bestPopulationDeltaVsBaseline": 0,
+            "meanWallClockDeltaVsBaselineSeconds": 0.51725,
+            "validationFailureCount": 0,
+            "learnedWindowRankingEvaluations": 82,
+            "learnedWindowRankingWins": 0
+          },
+          "all": {
+            "source": "all",
+            "split": "all",
+            "comparisonCount": 12,
+            "winCount": 0,
+            "tieCount": 12,
+            "lossCount": 0,
+            "winRate": 0,
+            "lossRate": 0,
+            "meanPopulationDeltaVsBaseline": 0,
+            "medianPopulationDeltaVsBaseline": 0,
+            "worstDecilePopulationDeltaVsBaseline": 0,
+            "bestPopulationDeltaVsBaseline": 0,
+            "meanWallClockDeltaVsBaselineSeconds": 0.2579166666666666,
+            "validationFailureCount": 0,
+            "learnedWindowRankingEvaluations": 234,
+            "learnedWindowRankingWins": 0
+          }
+        },
+        "hardware": {
+          "captured": true,
+          "platform": "darwin",
+          "arch": "arm64",
+          "cpuModel": "Apple M1 Pro",
+          "logicalCpuCount": 10,
+          "memoryBytes": 17179869184,
+          "totalMemoryBytes": 17179869184,
+          "gpuUsed": false
+        },
+        "decision": "keep-lns-learned-window-ranking-opt-in",
+        "summary": "LNS learned default promotion review did not pass: product holdout median delta 0, mean delta 0, losses 0; overall losses 0, validation failures 0. Defaults stay unchanged."
+      },
+      "gate": {
+        "safeNoRegression": true,
+        "qualityLift": false,
+        "eligibleForPromotionReview": false,
+        "failedReasons": [
+          "no product-holdout quality lift"
+        ]
+      }
+    },
+    {
+      "minScoreRatio": 0.95,
+      "review": {
+        "generatedAt": "2026-05-17T17:08:29.090Z",
+        "schemaVersion": 1,
+        "seeds": [
+          7
+        ],
+        "selectedProductCaseNames": [
+          "planner-corridor-reuse",
+          "planner-gate-choke",
+          "planner-footprint-pressure",
+          "planner-service-overlap",
+          "planner-anchor-service",
+          "planner-multi-anchor-islands",
+          "planner-rotated-rowhouse",
+          "planner-gate-service-tradeoff"
+        ],
+        "selectedCrossModeCaseNames": [
+          "typed-housing-single",
+          "compact-service-single",
+          "compact-service-repair",
+          "row0-corridor-repair-pressure"
+        ],
+        "variants": [
+          "baseline",
+          "learned-guarded"
+        ],
+        "candidateLimit": 12,
+        "guardedMinScoreRatio": 0.95,
+        "model": {
+          "version": "lns-ranker-feature-enrichment-2026-05-17",
+          "fingerprint": "12ba51f1f0a0c51b0e084caa5e524926aedcd66ccfc28c253e98e8daa618ff70",
+          "cpuOnly": true,
+          "featureFlag": "lns.learnedWindowRanking"
+        },
+        "cases": [
+          {
+            "source": "product-workflow",
+            "split": "development",
+            "family": "corridor",
+            "caseName": "planner-corridor-reuse",
+            "description": "Saved corridor payload with manual road cleanup and expansion replay.",
+            "seed": 7,
+            "variants": [
+              {
+                "variantName": "baseline",
+                "totalPopulation": 130,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 2.254,
+                "wallClockDeltaVsBaselineSeconds": 0,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 2,
+                "serviceCount": 1,
+                "residentialCount": 2,
+                "stopReason": "stale-iteration-limit",
+                "improvingIterations": 0,
+                "learnedWindowRankingEvaluations": 0,
+                "learnedWindowRankingWins": 0
+              },
+              {
+                "variantName": "learned-guarded",
+                "totalPopulation": 130,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 2.459,
+                "wallClockDeltaVsBaselineSeconds": 0.20500000000000007,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 2,
+                "serviceCount": 1,
+                "residentialCount": 2,
+                "stopReason": "stale-iteration-limit",
+                "improvingIterations": 0,
+                "learnedWindowRankingEvaluations": 22,
+                "learnedWindowRankingWins": 1
+              }
+            ]
+          },
+          {
+            "source": "product-workflow",
+            "split": "development",
+            "family": "gate",
+            "caseName": "planner-gate-choke",
+            "description": "Gate-shaped map with an explicit central access check.",
+            "seed": 7,
+            "variants": [
+              {
+                "variantName": "baseline",
+                "totalPopulation": 60,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 2.769,
+                "wallClockDeltaVsBaselineSeconds": 0,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 0,
+                "serviceCount": 1,
+                "residentialCount": 3,
+                "stopReason": "stale-iteration-limit",
+                "improvingIterations": 0,
+                "learnedWindowRankingEvaluations": 0,
+                "learnedWindowRankingWins": 0
+              },
+              {
+                "variantName": "learned-guarded",
+                "totalPopulation": 60,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 2.756,
+                "wallClockDeltaVsBaselineSeconds": -0.013000000000000345,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 0,
+                "serviceCount": 1,
+                "residentialCount": 3,
+                "stopReason": "stale-iteration-limit",
+                "improvingIterations": 0,
+                "learnedWindowRankingEvaluations": 23,
+                "learnedWindowRankingWins": 1
+              }
+            ]
+          },
+          {
+            "source": "product-workflow",
+            "split": "development",
+            "family": "footprint-pressure",
+            "caseName": "planner-footprint-pressure",
+            "description": "Dense footprint pressure payload with large residential slabs.",
+            "seed": 7,
+            "variants": [
+              {
+                "variantName": "baseline",
+                "totalPopulation": 140,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 3.287,
+                "wallClockDeltaVsBaselineSeconds": 0,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 0,
+                "serviceCount": 1,
+                "residentialCount": 2,
+                "stopReason": "stale-iteration-limit",
+                "improvingIterations": 0,
+                "learnedWindowRankingEvaluations": 0,
+                "learnedWindowRankingWins": 0
+              },
+              {
+                "variantName": "learned-guarded",
+                "totalPopulation": 140,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 3.298,
+                "wallClockDeltaVsBaselineSeconds": 0.01100000000000012,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 0,
+                "serviceCount": 1,
+                "residentialCount": 2,
+                "stopReason": "stale-iteration-limit",
+                "improvingIterations": 0,
+                "learnedWindowRankingEvaluations": 23,
+                "learnedWindowRankingWins": 1
+              }
+            ]
+          },
+          {
+            "source": "product-workflow",
+            "split": "holdout",
+            "family": "service-overlap",
+            "caseName": "planner-service-overlap",
+            "description": "Service-overlap case where expansion can trade another service against another home.",
+            "seed": 7,
+            "variants": [
+              {
+                "variantName": "baseline",
+                "totalPopulation": 130,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 1.186,
+                "wallClockDeltaVsBaselineSeconds": 0,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 1,
+                "serviceCount": 1,
+                "residentialCount": 2,
+                "stopReason": "stale-iteration-limit",
+                "improvingIterations": 0,
+                "learnedWindowRankingEvaluations": 0,
+                "learnedWindowRankingWins": 0
+              },
+              {
+                "variantName": "learned-guarded",
+                "totalPopulation": 130,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 1.083,
+                "wallClockDeltaVsBaselineSeconds": -0.10299999999999998,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 1,
+                "serviceCount": 1,
+                "residentialCount": 2,
+                "stopReason": "stale-iteration-limit",
+                "improvingIterations": 0,
+                "learnedWindowRankingEvaluations": 25,
+                "learnedWindowRankingWins": 1
+              }
+            ]
+          },
+          {
+            "source": "product-workflow",
+            "split": "holdout",
+            "family": "anchor-service",
+            "caseName": "planner-anchor-service",
+            "description": "Boundary-touching service and housing payload that should stay road-light.",
+            "seed": 7,
+            "variants": [
+              {
+                "variantName": "baseline",
+                "totalPopulation": 120,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 0.933,
+                "wallClockDeltaVsBaselineSeconds": 0,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 0,
+                "serviceCount": 1,
+                "residentialCount": 2,
+                "stopReason": "stale-iteration-limit",
+                "improvingIterations": 0,
+                "learnedWindowRankingEvaluations": 0,
+                "learnedWindowRankingWins": 0
+              },
+              {
+                "variantName": "learned-guarded",
+                "totalPopulation": 120,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 0.952,
+                "wallClockDeltaVsBaselineSeconds": 0.018999999999999906,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 0,
+                "serviceCount": 1,
+                "residentialCount": 2,
+                "stopReason": "stale-iteration-limit",
+                "improvingIterations": 0,
+                "learnedWindowRankingEvaluations": 12,
+                "learnedWindowRankingWins": 1
+              }
+            ]
+          },
+          {
+            "source": "product-workflow",
+            "split": "holdout",
+            "family": "multi-anchor",
+            "caseName": "planner-multi-anchor-islands",
+            "description": "Planner-shaped multi-anchor payload with two independent islands.",
+            "seed": 7,
+            "variants": [
+              {
+                "variantName": "baseline",
+                "totalPopulation": 80,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 0.938,
+                "wallClockDeltaVsBaselineSeconds": 0,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 4,
+                "serviceCount": 0,
+                "residentialCount": 2,
+                "stopReason": "stale-iteration-limit",
+                "improvingIterations": 0,
+                "learnedWindowRankingEvaluations": 0,
+                "learnedWindowRankingWins": 0
+              },
+              {
+                "variantName": "learned-guarded",
+                "totalPopulation": 80,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 0.946,
+                "wallClockDeltaVsBaselineSeconds": 0.008000000000000007,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 4,
+                "serviceCount": 0,
+                "residentialCount": 2,
+                "stopReason": "stale-iteration-limit",
+                "improvingIterations": 0,
+                "learnedWindowRankingEvaluations": 22,
+                "learnedWindowRankingWins": 1
+              }
+            ]
+          },
+          {
+            "source": "product-workflow",
+            "split": "development",
+            "family": "footprint-pressure",
+            "caseName": "planner-rotated-rowhouse",
+            "description": "Rotated rowhouse payload with a saved service-and-road reuse pattern.",
+            "seed": 7,
+            "variants": [
+              {
+                "variantName": "baseline",
+                "totalPopulation": 140,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 1.071,
+                "wallClockDeltaVsBaselineSeconds": 0,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 0,
+                "serviceCount": 1,
+                "residentialCount": 2,
+                "stopReason": "stale-iteration-limit",
+                "improvingIterations": 0,
+                "learnedWindowRankingEvaluations": 0,
+                "learnedWindowRankingWins": 0
+              },
+              {
+                "variantName": "learned-guarded",
+                "totalPopulation": 140,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 1.125,
+                "wallClockDeltaVsBaselineSeconds": 0.05400000000000005,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 0,
+                "serviceCount": 1,
+                "residentialCount": 2,
+                "stopReason": "stale-iteration-limit",
+                "improvingIterations": 0,
+                "learnedWindowRankingEvaluations": 24,
+                "learnedWindowRankingWins": 1
+              }
+            ]
+          },
+          {
+            "source": "product-workflow",
+            "split": "holdout",
+            "family": "gate",
+            "caseName": "planner-gate-service-tradeoff",
+            "description": "Gate-shaped service tradeoff payload with two saved service anchors.",
+            "seed": 7,
+            "variants": [
+              {
+                "variantName": "baseline",
+                "totalPopulation": 200,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 1.633,
+                "wallClockDeltaVsBaselineSeconds": 0,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 5,
+                "serviceCount": 2,
+                "residentialCount": 2,
+                "stopReason": "iteration-limit",
+                "improvingIterations": 1,
+                "learnedWindowRankingEvaluations": 0,
+                "learnedWindowRankingWins": 0
+              },
+              {
+                "variantName": "learned-guarded",
+                "totalPopulation": 200,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 1.854,
+                "wallClockDeltaVsBaselineSeconds": 0.22100000000000009,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 5,
+                "serviceCount": 2,
+                "residentialCount": 2,
+                "stopReason": "iteration-limit",
+                "improvingIterations": 1,
+                "learnedWindowRankingEvaluations": 24,
+                "learnedWindowRankingWins": 2
+              }
+            ]
+          },
+          {
+            "source": "cross-mode",
+            "split": "cross-mode",
+            "family": "tiny",
+            "caseName": "typed-housing-single",
+            "description": "Tiny typed-housing case shared by all solver modes.",
+            "seed": 7,
+            "variants": [
+              {
+                "variantName": "baseline",
+                "totalPopulation": 110,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 0.473,
+                "wallClockDeltaVsBaselineSeconds": 0,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 0,
+                "serviceCount": 0,
+                "residentialCount": 2,
+                "stopReason": "stale-iteration-limit",
+                "improvingIterations": 0,
+                "learnedWindowRankingEvaluations": 0,
+                "learnedWindowRankingWins": 0
+              },
+              {
+                "variantName": "learned-guarded",
+                "totalPopulation": 110,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 0.467,
+                "wallClockDeltaVsBaselineSeconds": -0.00599999999999995,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 0,
+                "serviceCount": 0,
+                "residentialCount": 2,
+                "stopReason": "stale-iteration-limit",
+                "improvingIterations": 0,
+                "learnedWindowRankingEvaluations": 6,
+                "learnedWindowRankingWins": 0
+              }
+            ]
+          },
+          {
+            "source": "cross-mode",
+            "split": "cross-mode",
+            "family": "small",
+            "caseName": "compact-service-single",
+            "description": "Small service-and-housing case for equal-budget mode comparisons.",
+            "seed": 7,
+            "variants": [
+              {
+                "variantName": "baseline",
+                "totalPopulation": 40,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 0.506,
+                "wallClockDeltaVsBaselineSeconds": 0,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 0,
+                "serviceCount": 1,
+                "residentialCount": 1,
+                "stopReason": "stale-iteration-limit",
+                "improvingIterations": 0,
+                "learnedWindowRankingEvaluations": 0,
+                "learnedWindowRankingWins": 0
+              },
+              {
+                "variantName": "learned-guarded",
+                "totalPopulation": 40,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 0.549,
+                "wallClockDeltaVsBaselineSeconds": 0.04300000000000004,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 0,
+                "serviceCount": 1,
+                "residentialCount": 1,
+                "stopReason": "stale-iteration-limit",
+                "improvingIterations": 0,
+                "learnedWindowRankingEvaluations": 6,
+                "learnedWindowRankingWins": 0
+              }
+            ]
+          },
+          {
+            "source": "cross-mode",
+            "split": "cross-mode",
+            "family": "small",
+            "caseName": "compact-service-repair",
+            "description": "Small 6x6 mixed case for LNS and Auto repair scorecards.",
+            "seed": 7,
+            "variants": [
+              {
+                "variantName": "baseline",
+                "totalPopulation": 570,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 1.099,
+                "wallClockDeltaVsBaselineSeconds": 0,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 0,
+                "serviceCount": 1,
+                "residentialCount": 3,
+                "stopReason": "stale-iteration-limit",
+                "improvingIterations": 0,
+                "learnedWindowRankingEvaluations": 0,
+                "learnedWindowRankingWins": 0
+              },
+              {
+                "variantName": "learned-guarded",
+                "totalPopulation": 570,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 1.103,
+                "wallClockDeltaVsBaselineSeconds": 0.0040000000000000036,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 0,
+                "serviceCount": 1,
+                "residentialCount": 3,
+                "stopReason": "stale-iteration-limit",
+                "improvingIterations": 0,
+                "learnedWindowRankingEvaluations": 25,
+                "learnedWindowRankingWins": 1
+              }
+            ]
+          },
+          {
+            "source": "cross-mode",
+            "split": "cross-mode",
+            "family": "small",
+            "caseName": "row0-corridor-repair-pressure",
+            "description": "Sparse road-anchor access case with competing service footprints for Auto/LNS budget ablations.",
+            "seed": 7,
+            "variants": [
+              {
+                "variantName": "baseline",
+                "totalPopulation": 330,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 1.002,
+                "wallClockDeltaVsBaselineSeconds": 0,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 5,
+                "serviceCount": 1,
+                "residentialCount": 2,
+                "stopReason": "iteration-limit",
+                "improvingIterations": 2,
+                "learnedWindowRankingEvaluations": 0,
+                "learnedWindowRankingWins": 0
+              },
+              {
+                "variantName": "learned-guarded",
+                "totalPopulation": 330,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 1.03,
+                "wallClockDeltaVsBaselineSeconds": 0.028000000000000025,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 5,
+                "serviceCount": 1,
+                "residentialCount": 2,
+                "stopReason": "iteration-limit",
+                "improvingIterations": 1,
+                "learnedWindowRankingEvaluations": 24,
+                "learnedWindowRankingWins": 1
+              }
+            ]
+          }
+        ],
+        "summaries": [
+          {
+            "source": "product-workflow",
+            "split": "development",
+            "comparisonCount": 4,
+            "winCount": 0,
+            "tieCount": 4,
+            "lossCount": 0,
+            "winRate": 0,
+            "lossRate": 0,
+            "meanPopulationDeltaVsBaseline": 0,
+            "medianPopulationDeltaVsBaseline": 0,
+            "worstDecilePopulationDeltaVsBaseline": 0,
+            "bestPopulationDeltaVsBaseline": 0,
+            "meanWallClockDeltaVsBaselineSeconds": 0.06424999999999997,
+            "validationFailureCount": 0,
+            "learnedWindowRankingEvaluations": 92,
+            "learnedWindowRankingWins": 4
+          },
+          {
+            "source": "product-workflow",
+            "split": "holdout",
+            "comparisonCount": 4,
+            "winCount": 0,
+            "tieCount": 4,
+            "lossCount": 0,
+            "winRate": 0,
+            "lossRate": 0,
+            "meanPopulationDeltaVsBaseline": 0,
+            "medianPopulationDeltaVsBaseline": 0,
+            "worstDecilePopulationDeltaVsBaseline": 0,
+            "bestPopulationDeltaVsBaseline": 0,
+            "meanWallClockDeltaVsBaselineSeconds": 0.036250000000000004,
+            "validationFailureCount": 0,
+            "learnedWindowRankingEvaluations": 83,
+            "learnedWindowRankingWins": 5
+          },
+          {
+            "source": "product-workflow",
+            "split": "all",
+            "comparisonCount": 8,
+            "winCount": 0,
+            "tieCount": 8,
+            "lossCount": 0,
+            "winRate": 0,
+            "lossRate": 0,
+            "meanPopulationDeltaVsBaseline": 0,
+            "medianPopulationDeltaVsBaseline": 0,
+            "worstDecilePopulationDeltaVsBaseline": 0,
+            "bestPopulationDeltaVsBaseline": 0,
+            "meanWallClockDeltaVsBaselineSeconds": 0.05024999999999999,
+            "validationFailureCount": 0,
+            "learnedWindowRankingEvaluations": 175,
+            "learnedWindowRankingWins": 9
+          },
+          {
+            "source": "cross-mode",
+            "split": "cross-mode",
+            "comparisonCount": 4,
+            "winCount": 0,
+            "tieCount": 4,
+            "lossCount": 0,
+            "winRate": 0,
+            "lossRate": 0,
+            "meanPopulationDeltaVsBaseline": 0,
+            "medianPopulationDeltaVsBaseline": 0,
+            "worstDecilePopulationDeltaVsBaseline": 0,
+            "bestPopulationDeltaVsBaseline": 0,
+            "meanWallClockDeltaVsBaselineSeconds": 0.01725000000000003,
+            "validationFailureCount": 0,
+            "learnedWindowRankingEvaluations": 61,
+            "learnedWindowRankingWins": 2
+          },
+          {
+            "source": "all",
+            "split": "all",
+            "comparisonCount": 12,
+            "winCount": 0,
+            "tieCount": 12,
+            "lossCount": 0,
+            "winRate": 0,
+            "lossRate": 0,
+            "meanPopulationDeltaVsBaseline": 0,
+            "medianPopulationDeltaVsBaseline": 0,
+            "worstDecilePopulationDeltaVsBaseline": 0,
+            "bestPopulationDeltaVsBaseline": 0,
+            "meanWallClockDeltaVsBaselineSeconds": 0.03925,
+            "validationFailureCount": 0,
+            "learnedWindowRankingEvaluations": 236,
+            "learnedWindowRankingWins": 11
+          }
+        ],
+        "gate": {
+          "passed": false,
+          "failedReasons": [
+            "no product-holdout quality lift"
+          ],
+          "protectedProductHoldout": true,
+          "requiresQualityLift": true,
+          "productHoldout": {
+            "source": "product-workflow",
+            "split": "holdout",
+            "comparisonCount": 4,
+            "winCount": 0,
+            "tieCount": 4,
+            "lossCount": 0,
+            "winRate": 0,
+            "lossRate": 0,
+            "meanPopulationDeltaVsBaseline": 0,
+            "medianPopulationDeltaVsBaseline": 0,
+            "worstDecilePopulationDeltaVsBaseline": 0,
+            "bestPopulationDeltaVsBaseline": 0,
+            "meanWallClockDeltaVsBaselineSeconds": 0.036250000000000004,
+            "validationFailureCount": 0,
+            "learnedWindowRankingEvaluations": 83,
+            "learnedWindowRankingWins": 5
+          },
+          "all": {
+            "source": "all",
+            "split": "all",
+            "comparisonCount": 12,
+            "winCount": 0,
+            "tieCount": 12,
+            "lossCount": 0,
+            "winRate": 0,
+            "lossRate": 0,
+            "meanPopulationDeltaVsBaseline": 0,
+            "medianPopulationDeltaVsBaseline": 0,
+            "worstDecilePopulationDeltaVsBaseline": 0,
+            "bestPopulationDeltaVsBaseline": 0,
+            "meanWallClockDeltaVsBaselineSeconds": 0.03925,
+            "validationFailureCount": 0,
+            "learnedWindowRankingEvaluations": 236,
+            "learnedWindowRankingWins": 11
+          }
+        },
+        "hardware": {
+          "captured": true,
+          "platform": "darwin",
+          "arch": "arm64",
+          "cpuModel": "Apple M1 Pro",
+          "logicalCpuCount": 10,
+          "memoryBytes": 17179869184,
+          "totalMemoryBytes": 17179869184,
+          "gpuUsed": false
+        },
+        "decision": "keep-lns-learned-window-ranking-opt-in",
+        "summary": "LNS learned default promotion review did not pass: product holdout median delta 0, mean delta 0, losses 0; overall losses 0, validation failures 0. Defaults stay unchanged."
+      },
+      "gate": {
+        "safeNoRegression": true,
+        "qualityLift": false,
+        "eligibleForPromotionReview": false,
+        "failedReasons": [
+          "no product-holdout quality lift"
+        ]
+      }
+    },
+    {
+      "minScoreRatio": 0.9,
+      "review": {
+        "generatedAt": "2026-05-17T17:08:52.584Z",
+        "schemaVersion": 1,
+        "seeds": [
+          7
+        ],
+        "selectedProductCaseNames": [
+          "planner-corridor-reuse",
+          "planner-gate-choke",
+          "planner-footprint-pressure",
+          "planner-service-overlap",
+          "planner-anchor-service",
+          "planner-multi-anchor-islands",
+          "planner-rotated-rowhouse",
+          "planner-gate-service-tradeoff"
+        ],
+        "selectedCrossModeCaseNames": [
+          "typed-housing-single",
+          "compact-service-single",
+          "compact-service-repair",
+          "row0-corridor-repair-pressure"
+        ],
+        "variants": [
+          "baseline",
+          "learned-guarded"
+        ],
+        "candidateLimit": 12,
+        "guardedMinScoreRatio": 0.9,
+        "model": {
+          "version": "lns-ranker-feature-enrichment-2026-05-17",
+          "fingerprint": "12ba51f1f0a0c51b0e084caa5e524926aedcd66ccfc28c253e98e8daa618ff70",
+          "cpuOnly": true,
+          "featureFlag": "lns.learnedWindowRanking"
+        },
+        "cases": [
+          {
+            "source": "product-workflow",
+            "split": "development",
+            "family": "corridor",
+            "caseName": "planner-corridor-reuse",
+            "description": "Saved corridor payload with manual road cleanup and expansion replay.",
+            "seed": 7,
+            "variants": [
+              {
+                "variantName": "baseline",
+                "totalPopulation": 130,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 0.945,
+                "wallClockDeltaVsBaselineSeconds": 0,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 2,
+                "serviceCount": 1,
+                "residentialCount": 2,
+                "stopReason": "stale-iteration-limit",
+                "improvingIterations": 0,
+                "learnedWindowRankingEvaluations": 0,
+                "learnedWindowRankingWins": 0
+              },
+              {
+                "variantName": "learned-guarded",
+                "totalPopulation": 130,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 0.952,
+                "wallClockDeltaVsBaselineSeconds": 0.007000000000000006,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 2,
+                "serviceCount": 1,
+                "residentialCount": 2,
+                "stopReason": "stale-iteration-limit",
+                "improvingIterations": 0,
+                "learnedWindowRankingEvaluations": 22,
+                "learnedWindowRankingWins": 1
+              }
+            ]
+          },
+          {
+            "source": "product-workflow",
+            "split": "development",
+            "family": "gate",
+            "caseName": "planner-gate-choke",
+            "description": "Gate-shaped map with an explicit central access check.",
+            "seed": 7,
+            "variants": [
+              {
+                "variantName": "baseline",
+                "totalPopulation": 60,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 0.93,
+                "wallClockDeltaVsBaselineSeconds": 0,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 0,
+                "serviceCount": 1,
+                "residentialCount": 3,
+                "stopReason": "stale-iteration-limit",
+                "improvingIterations": 0,
+                "learnedWindowRankingEvaluations": 0,
+                "learnedWindowRankingWins": 0
+              },
+              {
+                "variantName": "learned-guarded",
+                "totalPopulation": 60,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 0.941,
+                "wallClockDeltaVsBaselineSeconds": 0.010999999999999899,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 0,
+                "serviceCount": 1,
+                "residentialCount": 3,
+                "stopReason": "stale-iteration-limit",
+                "improvingIterations": 0,
+                "learnedWindowRankingEvaluations": 23,
+                "learnedWindowRankingWins": 1
+              }
+            ]
+          },
+          {
+            "source": "product-workflow",
+            "split": "development",
+            "family": "footprint-pressure",
+            "caseName": "planner-footprint-pressure",
+            "description": "Dense footprint pressure payload with large residential slabs.",
+            "seed": 7,
+            "variants": [
+              {
+                "variantName": "baseline",
+                "totalPopulation": 140,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 0.989,
+                "wallClockDeltaVsBaselineSeconds": 0,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 0,
+                "serviceCount": 1,
+                "residentialCount": 2,
+                "stopReason": "stale-iteration-limit",
+                "improvingIterations": 0,
+                "learnedWindowRankingEvaluations": 0,
+                "learnedWindowRankingWins": 0
+              },
+              {
+                "variantName": "learned-guarded",
+                "totalPopulation": 140,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 0.998,
+                "wallClockDeltaVsBaselineSeconds": 0.009000000000000008,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 0,
+                "serviceCount": 1,
+                "residentialCount": 2,
+                "stopReason": "stale-iteration-limit",
+                "improvingIterations": 0,
+                "learnedWindowRankingEvaluations": 23,
+                "learnedWindowRankingWins": 1
+              }
+            ]
+          },
+          {
+            "source": "product-workflow",
+            "split": "holdout",
+            "family": "service-overlap",
+            "caseName": "planner-service-overlap",
+            "description": "Service-overlap case where expansion can trade another service against another home.",
+            "seed": 7,
+            "variants": [
+              {
+                "variantName": "baseline",
+                "totalPopulation": 130,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 1.059,
+                "wallClockDeltaVsBaselineSeconds": 0,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 1,
+                "serviceCount": 1,
+                "residentialCount": 2,
+                "stopReason": "stale-iteration-limit",
+                "improvingIterations": 0,
+                "learnedWindowRankingEvaluations": 0,
+                "learnedWindowRankingWins": 0
+              },
+              {
+                "variantName": "learned-guarded",
+                "totalPopulation": 130,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 1.157,
+                "wallClockDeltaVsBaselineSeconds": 0.09800000000000009,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 1,
+                "serviceCount": 1,
+                "residentialCount": 2,
+                "stopReason": "stale-iteration-limit",
+                "improvingIterations": 0,
+                "learnedWindowRankingEvaluations": 25,
+                "learnedWindowRankingWins": 1
+              }
+            ]
+          },
+          {
+            "source": "product-workflow",
+            "split": "holdout",
+            "family": "anchor-service",
+            "caseName": "planner-anchor-service",
+            "description": "Boundary-touching service and housing payload that should stay road-light.",
+            "seed": 7,
+            "variants": [
+              {
+                "variantName": "baseline",
+                "totalPopulation": 120,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 0.95,
+                "wallClockDeltaVsBaselineSeconds": 0,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 0,
+                "serviceCount": 1,
+                "residentialCount": 2,
+                "stopReason": "stale-iteration-limit",
+                "improvingIterations": 0,
+                "learnedWindowRankingEvaluations": 0,
+                "learnedWindowRankingWins": 0
+              },
+              {
+                "variantName": "learned-guarded",
+                "totalPopulation": 120,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 0.948,
+                "wallClockDeltaVsBaselineSeconds": -0.0020000000000000018,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 0,
+                "serviceCount": 1,
+                "residentialCount": 2,
+                "stopReason": "stale-iteration-limit",
+                "improvingIterations": 0,
+                "learnedWindowRankingEvaluations": 12,
+                "learnedWindowRankingWins": 1
+              }
+            ]
+          },
+          {
+            "source": "product-workflow",
+            "split": "holdout",
+            "family": "multi-anchor",
+            "caseName": "planner-multi-anchor-islands",
+            "description": "Planner-shaped multi-anchor payload with two independent islands.",
+            "seed": 7,
+            "variants": [
+              {
+                "variantName": "baseline",
+                "totalPopulation": 80,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 0.928,
+                "wallClockDeltaVsBaselineSeconds": 0,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 4,
+                "serviceCount": 0,
+                "residentialCount": 2,
+                "stopReason": "stale-iteration-limit",
+                "improvingIterations": 0,
+                "learnedWindowRankingEvaluations": 0,
+                "learnedWindowRankingWins": 0
+              },
+              {
+                "variantName": "learned-guarded",
+                "totalPopulation": 80,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 0.938,
+                "wallClockDeltaVsBaselineSeconds": 0.009999999999999898,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 4,
+                "serviceCount": 0,
+                "residentialCount": 2,
+                "stopReason": "stale-iteration-limit",
+                "improvingIterations": 0,
+                "learnedWindowRankingEvaluations": 22,
+                "learnedWindowRankingWins": 1
+              }
+            ]
+          },
+          {
+            "source": "product-workflow",
+            "split": "development",
+            "family": "footprint-pressure",
+            "caseName": "planner-rotated-rowhouse",
+            "description": "Rotated rowhouse payload with a saved service-and-road reuse pattern.",
+            "seed": 7,
+            "variants": [
+              {
+                "variantName": "baseline",
+                "totalPopulation": 140,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 1.043,
+                "wallClockDeltaVsBaselineSeconds": 0,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 0,
+                "serviceCount": 1,
+                "residentialCount": 2,
+                "stopReason": "stale-iteration-limit",
+                "improvingIterations": 0,
+                "learnedWindowRankingEvaluations": 0,
+                "learnedWindowRankingWins": 0
+              },
+              {
+                "variantName": "learned-guarded",
+                "totalPopulation": 140,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 1.13,
+                "wallClockDeltaVsBaselineSeconds": 0.08699999999999997,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 0,
+                "serviceCount": 1,
+                "residentialCount": 2,
+                "stopReason": "stale-iteration-limit",
+                "improvingIterations": 0,
+                "learnedWindowRankingEvaluations": 24,
+                "learnedWindowRankingWins": 1
+              }
+            ]
+          },
+          {
+            "source": "product-workflow",
+            "split": "holdout",
+            "family": "gate",
+            "caseName": "planner-gate-service-tradeoff",
+            "description": "Gate-shaped service tradeoff payload with two saved service anchors.",
+            "seed": 7,
+            "variants": [
+              {
+                "variantName": "baseline",
+                "totalPopulation": 200,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 1.808,
+                "wallClockDeltaVsBaselineSeconds": 0,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 5,
+                "serviceCount": 2,
+                "residentialCount": 2,
+                "stopReason": "iteration-limit",
+                "improvingIterations": 1,
+                "learnedWindowRankingEvaluations": 0,
+                "learnedWindowRankingWins": 0
+              },
+              {
+                "variantName": "learned-guarded",
+                "totalPopulation": 200,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 1.795,
+                "wallClockDeltaVsBaselineSeconds": -0.013000000000000123,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 5,
+                "serviceCount": 2,
+                "residentialCount": 2,
+                "stopReason": "iteration-limit",
+                "improvingIterations": 1,
+                "learnedWindowRankingEvaluations": 24,
+                "learnedWindowRankingWins": 2
+              }
+            ]
+          },
+          {
+            "source": "cross-mode",
+            "split": "cross-mode",
+            "family": "tiny",
+            "caseName": "typed-housing-single",
+            "description": "Tiny typed-housing case shared by all solver modes.",
+            "seed": 7,
+            "variants": [
+              {
+                "variantName": "baseline",
+                "totalPopulation": 110,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 0.463,
+                "wallClockDeltaVsBaselineSeconds": 0,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 0,
+                "serviceCount": 0,
+                "residentialCount": 2,
+                "stopReason": "stale-iteration-limit",
+                "improvingIterations": 0,
+                "learnedWindowRankingEvaluations": 0,
+                "learnedWindowRankingWins": 0
+              },
+              {
+                "variantName": "learned-guarded",
+                "totalPopulation": 110,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 0.466,
+                "wallClockDeltaVsBaselineSeconds": 0.0030000000000000027,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 0,
+                "serviceCount": 0,
+                "residentialCount": 2,
+                "stopReason": "stale-iteration-limit",
+                "improvingIterations": 0,
+                "learnedWindowRankingEvaluations": 6,
+                "learnedWindowRankingWins": 0
+              }
+            ]
+          },
+          {
+            "source": "cross-mode",
+            "split": "cross-mode",
+            "family": "small",
+            "caseName": "compact-service-single",
+            "description": "Small service-and-housing case for equal-budget mode comparisons.",
+            "seed": 7,
+            "variants": [
+              {
+                "variantName": "baseline",
+                "totalPopulation": 40,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 0.467,
+                "wallClockDeltaVsBaselineSeconds": 0,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 0,
+                "serviceCount": 1,
+                "residentialCount": 1,
+                "stopReason": "stale-iteration-limit",
+                "improvingIterations": 0,
+                "learnedWindowRankingEvaluations": 0,
+                "learnedWindowRankingWins": 0
+              },
+              {
+                "variantName": "learned-guarded",
+                "totalPopulation": 40,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 0.489,
+                "wallClockDeltaVsBaselineSeconds": 0.021999999999999964,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 0,
+                "serviceCount": 1,
+                "residentialCount": 1,
+                "stopReason": "stale-iteration-limit",
+                "improvingIterations": 0,
+                "learnedWindowRankingEvaluations": 6,
+                "learnedWindowRankingWins": 0
+              }
+            ]
+          },
+          {
+            "source": "cross-mode",
+            "split": "cross-mode",
+            "family": "small",
+            "caseName": "compact-service-repair",
+            "description": "Small 6x6 mixed case for LNS and Auto repair scorecards.",
+            "seed": 7,
+            "variants": [
+              {
+                "variantName": "baseline",
+                "totalPopulation": 570,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 1.075,
+                "wallClockDeltaVsBaselineSeconds": 0,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 0,
+                "serviceCount": 1,
+                "residentialCount": 3,
+                "stopReason": "stale-iteration-limit",
+                "improvingIterations": 0,
+                "learnedWindowRankingEvaluations": 0,
+                "learnedWindowRankingWins": 0
+              },
+              {
+                "variantName": "learned-guarded",
+                "totalPopulation": 570,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 1.072,
+                "wallClockDeltaVsBaselineSeconds": -0.0029999999999998916,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 0,
+                "serviceCount": 1,
+                "residentialCount": 3,
+                "stopReason": "stale-iteration-limit",
+                "improvingIterations": 0,
+                "learnedWindowRankingEvaluations": 25,
+                "learnedWindowRankingWins": 1
+              }
+            ]
+          },
+          {
+            "source": "cross-mode",
+            "split": "cross-mode",
+            "family": "small",
+            "caseName": "row0-corridor-repair-pressure",
+            "description": "Sparse road-anchor access case with competing service footprints for Auto/LNS budget ablations.",
+            "seed": 7,
+            "variants": [
+              {
+                "variantName": "baseline",
+                "totalPopulation": 330,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 0.959,
+                "wallClockDeltaVsBaselineSeconds": 0,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 5,
+                "serviceCount": 1,
+                "residentialCount": 2,
+                "stopReason": "iteration-limit",
+                "improvingIterations": 2,
+                "learnedWindowRankingEvaluations": 0,
+                "learnedWindowRankingWins": 0
+              },
+              {
+                "variantName": "learned-guarded",
+                "totalPopulation": 330,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 0.981,
+                "wallClockDeltaVsBaselineSeconds": 0.02200000000000002,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 5,
+                "serviceCount": 1,
+                "residentialCount": 2,
+                "stopReason": "iteration-limit",
+                "improvingIterations": 1,
+                "learnedWindowRankingEvaluations": 24,
+                "learnedWindowRankingWins": 1
+              }
+            ]
+          }
+        ],
+        "summaries": [
+          {
+            "source": "product-workflow",
+            "split": "development",
+            "comparisonCount": 4,
+            "winCount": 0,
+            "tieCount": 4,
+            "lossCount": 0,
+            "winRate": 0,
+            "lossRate": 0,
+            "meanPopulationDeltaVsBaseline": 0,
+            "medianPopulationDeltaVsBaseline": 0,
+            "worstDecilePopulationDeltaVsBaseline": 0,
+            "bestPopulationDeltaVsBaseline": 0,
+            "meanWallClockDeltaVsBaselineSeconds": 0.02849999999999997,
+            "validationFailureCount": 0,
+            "learnedWindowRankingEvaluations": 92,
+            "learnedWindowRankingWins": 4
+          },
+          {
+            "source": "product-workflow",
+            "split": "holdout",
+            "comparisonCount": 4,
+            "winCount": 0,
+            "tieCount": 4,
+            "lossCount": 0,
+            "winRate": 0,
+            "lossRate": 0,
+            "meanPopulationDeltaVsBaseline": 0,
+            "medianPopulationDeltaVsBaseline": 0,
+            "worstDecilePopulationDeltaVsBaseline": 0,
+            "bestPopulationDeltaVsBaseline": 0,
+            "meanWallClockDeltaVsBaselineSeconds": 0.023249999999999965,
+            "validationFailureCount": 0,
+            "learnedWindowRankingEvaluations": 83,
+            "learnedWindowRankingWins": 5
+          },
+          {
+            "source": "product-workflow",
+            "split": "all",
+            "comparisonCount": 8,
+            "winCount": 0,
+            "tieCount": 8,
+            "lossCount": 0,
+            "winRate": 0,
+            "lossRate": 0,
+            "meanPopulationDeltaVsBaseline": 0,
+            "medianPopulationDeltaVsBaseline": 0,
+            "worstDecilePopulationDeltaVsBaseline": 0,
+            "bestPopulationDeltaVsBaseline": 0,
+            "meanWallClockDeltaVsBaselineSeconds": 0.025874999999999967,
+            "validationFailureCount": 0,
+            "learnedWindowRankingEvaluations": 175,
+            "learnedWindowRankingWins": 9
+          },
+          {
+            "source": "cross-mode",
+            "split": "cross-mode",
+            "comparisonCount": 4,
+            "winCount": 0,
+            "tieCount": 4,
+            "lossCount": 0,
+            "winRate": 0,
+            "lossRate": 0,
+            "meanPopulationDeltaVsBaseline": 0,
+            "medianPopulationDeltaVsBaseline": 0,
+            "worstDecilePopulationDeltaVsBaseline": 0,
+            "bestPopulationDeltaVsBaseline": 0,
+            "meanWallClockDeltaVsBaselineSeconds": 0.011000000000000024,
+            "validationFailureCount": 0,
+            "learnedWindowRankingEvaluations": 61,
+            "learnedWindowRankingWins": 2
+          },
+          {
+            "source": "all",
+            "split": "all",
+            "comparisonCount": 12,
+            "winCount": 0,
+            "tieCount": 12,
+            "lossCount": 0,
+            "winRate": 0,
+            "lossRate": 0,
+            "meanPopulationDeltaVsBaseline": 0,
+            "medianPopulationDeltaVsBaseline": 0,
+            "worstDecilePopulationDeltaVsBaseline": 0,
+            "bestPopulationDeltaVsBaseline": 0,
+            "meanWallClockDeltaVsBaselineSeconds": 0.020916666666666653,
+            "validationFailureCount": 0,
+            "learnedWindowRankingEvaluations": 236,
+            "learnedWindowRankingWins": 11
+          }
+        ],
+        "gate": {
+          "passed": false,
+          "failedReasons": [
+            "no product-holdout quality lift"
+          ],
+          "protectedProductHoldout": true,
+          "requiresQualityLift": true,
+          "productHoldout": {
+            "source": "product-workflow",
+            "split": "holdout",
+            "comparisonCount": 4,
+            "winCount": 0,
+            "tieCount": 4,
+            "lossCount": 0,
+            "winRate": 0,
+            "lossRate": 0,
+            "meanPopulationDeltaVsBaseline": 0,
+            "medianPopulationDeltaVsBaseline": 0,
+            "worstDecilePopulationDeltaVsBaseline": 0,
+            "bestPopulationDeltaVsBaseline": 0,
+            "meanWallClockDeltaVsBaselineSeconds": 0.023249999999999965,
+            "validationFailureCount": 0,
+            "learnedWindowRankingEvaluations": 83,
+            "learnedWindowRankingWins": 5
+          },
+          "all": {
+            "source": "all",
+            "split": "all",
+            "comparisonCount": 12,
+            "winCount": 0,
+            "tieCount": 12,
+            "lossCount": 0,
+            "winRate": 0,
+            "lossRate": 0,
+            "meanPopulationDeltaVsBaseline": 0,
+            "medianPopulationDeltaVsBaseline": 0,
+            "worstDecilePopulationDeltaVsBaseline": 0,
+            "bestPopulationDeltaVsBaseline": 0,
+            "meanWallClockDeltaVsBaselineSeconds": 0.020916666666666653,
+            "validationFailureCount": 0,
+            "learnedWindowRankingEvaluations": 236,
+            "learnedWindowRankingWins": 11
+          }
+        },
+        "hardware": {
+          "captured": true,
+          "platform": "darwin",
+          "arch": "arm64",
+          "cpuModel": "Apple M1 Pro",
+          "logicalCpuCount": 10,
+          "memoryBytes": 17179869184,
+          "totalMemoryBytes": 17179869184,
+          "gpuUsed": false
+        },
+        "decision": "keep-lns-learned-window-ranking-opt-in",
+        "summary": "LNS learned default promotion review did not pass: product holdout median delta 0, mean delta 0, losses 0; overall losses 0, validation failures 0. Defaults stay unchanged."
+      },
+      "gate": {
+        "safeNoRegression": true,
+        "qualityLift": false,
+        "eligibleForPromotionReview": false,
+        "failedReasons": [
+          "no product-holdout quality lift"
+        ]
+      }
+    },
+    {
+      "minScoreRatio": 0.75,
+      "review": {
+        "generatedAt": "2026-05-17T17:09:16.300Z",
+        "schemaVersion": 1,
+        "seeds": [
+          7
+        ],
+        "selectedProductCaseNames": [
+          "planner-corridor-reuse",
+          "planner-gate-choke",
+          "planner-footprint-pressure",
+          "planner-service-overlap",
+          "planner-anchor-service",
+          "planner-multi-anchor-islands",
+          "planner-rotated-rowhouse",
+          "planner-gate-service-tradeoff"
+        ],
+        "selectedCrossModeCaseNames": [
+          "typed-housing-single",
+          "compact-service-single",
+          "compact-service-repair",
+          "row0-corridor-repair-pressure"
+        ],
+        "variants": [
+          "baseline",
+          "learned-guarded"
+        ],
+        "candidateLimit": 12,
+        "guardedMinScoreRatio": 0.75,
+        "model": {
+          "version": "lns-ranker-feature-enrichment-2026-05-17",
+          "fingerprint": "12ba51f1f0a0c51b0e084caa5e524926aedcd66ccfc28c253e98e8daa618ff70",
+          "cpuOnly": true,
+          "featureFlag": "lns.learnedWindowRanking"
+        },
+        "cases": [
+          {
+            "source": "product-workflow",
+            "split": "development",
+            "family": "corridor",
+            "caseName": "planner-corridor-reuse",
+            "description": "Saved corridor payload with manual road cleanup and expansion replay.",
+            "seed": 7,
+            "variants": [
+              {
+                "variantName": "baseline",
+                "totalPopulation": 130,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 0.926,
+                "wallClockDeltaVsBaselineSeconds": 0,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 2,
+                "serviceCount": 1,
+                "residentialCount": 2,
+                "stopReason": "stale-iteration-limit",
+                "improvingIterations": 0,
+                "learnedWindowRankingEvaluations": 0,
+                "learnedWindowRankingWins": 0
+              },
+              {
+                "variantName": "learned-guarded",
+                "totalPopulation": 130,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 0.93,
+                "wallClockDeltaVsBaselineSeconds": 0.0040000000000000036,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 2,
+                "serviceCount": 1,
+                "residentialCount": 2,
+                "stopReason": "stale-iteration-limit",
+                "improvingIterations": 0,
+                "learnedWindowRankingEvaluations": 22,
+                "learnedWindowRankingWins": 1
+              }
+            ]
+          },
+          {
+            "source": "product-workflow",
+            "split": "development",
+            "family": "gate",
+            "caseName": "planner-gate-choke",
+            "description": "Gate-shaped map with an explicit central access check.",
+            "seed": 7,
+            "variants": [
+              {
+                "variantName": "baseline",
+                "totalPopulation": 60,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 0.929,
+                "wallClockDeltaVsBaselineSeconds": 0,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 0,
+                "serviceCount": 1,
+                "residentialCount": 3,
+                "stopReason": "stale-iteration-limit",
+                "improvingIterations": 0,
+                "learnedWindowRankingEvaluations": 0,
+                "learnedWindowRankingWins": 0
+              },
+              {
+                "variantName": "learned-guarded",
+                "totalPopulation": 60,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 0.969,
+                "wallClockDeltaVsBaselineSeconds": 0.039999999999999925,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 0,
+                "serviceCount": 1,
+                "residentialCount": 3,
+                "stopReason": "stale-iteration-limit",
+                "improvingIterations": 0,
+                "learnedWindowRankingEvaluations": 23,
+                "learnedWindowRankingWins": 1
+              }
+            ]
+          },
+          {
+            "source": "product-workflow",
+            "split": "development",
+            "family": "footprint-pressure",
+            "caseName": "planner-footprint-pressure",
+            "description": "Dense footprint pressure payload with large residential slabs.",
+            "seed": 7,
+            "variants": [
+              {
+                "variantName": "baseline",
+                "totalPopulation": 140,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 1.007,
+                "wallClockDeltaVsBaselineSeconds": 0,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 0,
+                "serviceCount": 1,
+                "residentialCount": 2,
+                "stopReason": "stale-iteration-limit",
+                "improvingIterations": 0,
+                "learnedWindowRankingEvaluations": 0,
+                "learnedWindowRankingWins": 0
+              },
+              {
+                "variantName": "learned-guarded",
+                "totalPopulation": 140,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 0.996,
+                "wallClockDeltaVsBaselineSeconds": -0.010999999999999899,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 0,
+                "serviceCount": 1,
+                "residentialCount": 2,
+                "stopReason": "stale-iteration-limit",
+                "improvingIterations": 0,
+                "learnedWindowRankingEvaluations": 23,
+                "learnedWindowRankingWins": 1
+              }
+            ]
+          },
+          {
+            "source": "product-workflow",
+            "split": "holdout",
+            "family": "service-overlap",
+            "caseName": "planner-service-overlap",
+            "description": "Service-overlap case where expansion can trade another service against another home.",
+            "seed": 7,
+            "variants": [
+              {
+                "variantName": "baseline",
+                "totalPopulation": 130,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 1.044,
+                "wallClockDeltaVsBaselineSeconds": 0,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 1,
+                "serviceCount": 1,
+                "residentialCount": 2,
+                "stopReason": "stale-iteration-limit",
+                "improvingIterations": 0,
+                "learnedWindowRankingEvaluations": 0,
+                "learnedWindowRankingWins": 0
+              },
+              {
+                "variantName": "learned-guarded",
+                "totalPopulation": 130,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 1.078,
+                "wallClockDeltaVsBaselineSeconds": 0.03400000000000003,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 1,
+                "serviceCount": 1,
+                "residentialCount": 2,
+                "stopReason": "stale-iteration-limit",
+                "improvingIterations": 0,
+                "learnedWindowRankingEvaluations": 25,
+                "learnedWindowRankingWins": 1
+              }
+            ]
+          },
+          {
+            "source": "product-workflow",
+            "split": "holdout",
+            "family": "anchor-service",
+            "caseName": "planner-anchor-service",
+            "description": "Boundary-touching service and housing payload that should stay road-light.",
+            "seed": 7,
+            "variants": [
+              {
+                "variantName": "baseline",
+                "totalPopulation": 120,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 0.943,
+                "wallClockDeltaVsBaselineSeconds": 0,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 0,
+                "serviceCount": 1,
+                "residentialCount": 2,
+                "stopReason": "stale-iteration-limit",
+                "improvingIterations": 0,
+                "learnedWindowRankingEvaluations": 0,
+                "learnedWindowRankingWins": 0
+              },
+              {
+                "variantName": "learned-guarded",
+                "totalPopulation": 120,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 0.952,
+                "wallClockDeltaVsBaselineSeconds": 0.009000000000000008,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 0,
+                "serviceCount": 1,
+                "residentialCount": 2,
+                "stopReason": "stale-iteration-limit",
+                "improvingIterations": 0,
+                "learnedWindowRankingEvaluations": 12,
+                "learnedWindowRankingWins": 1
+              }
+            ]
+          },
+          {
+            "source": "product-workflow",
+            "split": "holdout",
+            "family": "multi-anchor",
+            "caseName": "planner-multi-anchor-islands",
+            "description": "Planner-shaped multi-anchor payload with two independent islands.",
+            "seed": 7,
+            "variants": [
+              {
+                "variantName": "baseline",
+                "totalPopulation": 80,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 0.911,
+                "wallClockDeltaVsBaselineSeconds": 0,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 4,
+                "serviceCount": 0,
+                "residentialCount": 2,
+                "stopReason": "stale-iteration-limit",
+                "improvingIterations": 0,
+                "learnedWindowRankingEvaluations": 0,
+                "learnedWindowRankingWins": 0
+              },
+              {
+                "variantName": "learned-guarded",
+                "totalPopulation": 80,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 0.923,
+                "wallClockDeltaVsBaselineSeconds": 0.01200000000000001,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 4,
+                "serviceCount": 0,
+                "residentialCount": 2,
+                "stopReason": "stale-iteration-limit",
+                "improvingIterations": 0,
+                "learnedWindowRankingEvaluations": 22,
+                "learnedWindowRankingWins": 1
+              }
+            ]
+          },
+          {
+            "source": "product-workflow",
+            "split": "development",
+            "family": "footprint-pressure",
+            "caseName": "planner-rotated-rowhouse",
+            "description": "Rotated rowhouse payload with a saved service-and-road reuse pattern.",
+            "seed": 7,
+            "variants": [
+              {
+                "variantName": "baseline",
+                "totalPopulation": 140,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 1.058,
+                "wallClockDeltaVsBaselineSeconds": 0,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 0,
+                "serviceCount": 1,
+                "residentialCount": 2,
+                "stopReason": "stale-iteration-limit",
+                "improvingIterations": 0,
+                "learnedWindowRankingEvaluations": 0,
+                "learnedWindowRankingWins": 0
+              },
+              {
+                "variantName": "learned-guarded",
+                "totalPopulation": 140,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 1.121,
+                "wallClockDeltaVsBaselineSeconds": 0.06299999999999994,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 0,
+                "serviceCount": 1,
+                "residentialCount": 2,
+                "stopReason": "stale-iteration-limit",
+                "improvingIterations": 0,
+                "learnedWindowRankingEvaluations": 24,
+                "learnedWindowRankingWins": 1
+              }
+            ]
+          },
+          {
+            "source": "product-workflow",
+            "split": "holdout",
+            "family": "gate",
+            "caseName": "planner-gate-service-tradeoff",
+            "description": "Gate-shaped service tradeoff payload with two saved service anchors.",
+            "seed": 7,
+            "variants": [
+              {
+                "variantName": "baseline",
+                "totalPopulation": 200,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 1.665,
+                "wallClockDeltaVsBaselineSeconds": 0,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 5,
+                "serviceCount": 2,
+                "residentialCount": 2,
+                "stopReason": "iteration-limit",
+                "improvingIterations": 1,
+                "learnedWindowRankingEvaluations": 0,
+                "learnedWindowRankingWins": 0
+              },
+              {
+                "variantName": "learned-guarded",
+                "totalPopulation": 200,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 1.771,
+                "wallClockDeltaVsBaselineSeconds": 0.10599999999999987,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 5,
+                "serviceCount": 2,
+                "residentialCount": 2,
+                "stopReason": "iteration-limit",
+                "improvingIterations": 1,
+                "learnedWindowRankingEvaluations": 24,
+                "learnedWindowRankingWins": 2
+              }
+            ]
+          },
+          {
+            "source": "cross-mode",
+            "split": "cross-mode",
+            "family": "tiny",
+            "caseName": "typed-housing-single",
+            "description": "Tiny typed-housing case shared by all solver modes.",
+            "seed": 7,
+            "variants": [
+              {
+                "variantName": "baseline",
+                "totalPopulation": 110,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 0.468,
+                "wallClockDeltaVsBaselineSeconds": 0,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 0,
+                "serviceCount": 0,
+                "residentialCount": 2,
+                "stopReason": "stale-iteration-limit",
+                "improvingIterations": 0,
+                "learnedWindowRankingEvaluations": 0,
+                "learnedWindowRankingWins": 0
+              },
+              {
+                "variantName": "learned-guarded",
+                "totalPopulation": 110,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 0.482,
+                "wallClockDeltaVsBaselineSeconds": 0.013999999999999957,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 0,
+                "serviceCount": 0,
+                "residentialCount": 2,
+                "stopReason": "stale-iteration-limit",
+                "improvingIterations": 0,
+                "learnedWindowRankingEvaluations": 6,
+                "learnedWindowRankingWins": 0
+              }
+            ]
+          },
+          {
+            "source": "cross-mode",
+            "split": "cross-mode",
+            "family": "small",
+            "caseName": "compact-service-single",
+            "description": "Small service-and-housing case for equal-budget mode comparisons.",
+            "seed": 7,
+            "variants": [
+              {
+                "variantName": "baseline",
+                "totalPopulation": 40,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 0.471,
+                "wallClockDeltaVsBaselineSeconds": 0,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 0,
+                "serviceCount": 1,
+                "residentialCount": 1,
+                "stopReason": "stale-iteration-limit",
+                "improvingIterations": 0,
+                "learnedWindowRankingEvaluations": 0,
+                "learnedWindowRankingWins": 0
+              },
+              {
+                "variantName": "learned-guarded",
+                "totalPopulation": 40,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 0.457,
+                "wallClockDeltaVsBaselineSeconds": -0.013999999999999957,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 0,
+                "serviceCount": 1,
+                "residentialCount": 1,
+                "stopReason": "stale-iteration-limit",
+                "improvingIterations": 0,
+                "learnedWindowRankingEvaluations": 6,
+                "learnedWindowRankingWins": 0
+              }
+            ]
+          },
+          {
+            "source": "cross-mode",
+            "split": "cross-mode",
+            "family": "small",
+            "caseName": "compact-service-repair",
+            "description": "Small 6x6 mixed case for LNS and Auto repair scorecards.",
+            "seed": 7,
+            "variants": [
+              {
+                "variantName": "baseline",
+                "totalPopulation": 570,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 1.297,
+                "wallClockDeltaVsBaselineSeconds": 0,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 0,
+                "serviceCount": 1,
+                "residentialCount": 3,
+                "stopReason": "stale-iteration-limit",
+                "improvingIterations": 0,
+                "learnedWindowRankingEvaluations": 0,
+                "learnedWindowRankingWins": 0
+              },
+              {
+                "variantName": "learned-guarded",
+                "totalPopulation": 570,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 1.262,
+                "wallClockDeltaVsBaselineSeconds": -0.03499999999999992,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 0,
+                "serviceCount": 1,
+                "residentialCount": 3,
+                "stopReason": "stale-iteration-limit",
+                "improvingIterations": 0,
+                "learnedWindowRankingEvaluations": 25,
+                "learnedWindowRankingWins": 1
+              }
+            ]
+          },
+          {
+            "source": "cross-mode",
+            "split": "cross-mode",
+            "family": "small",
+            "caseName": "row0-corridor-repair-pressure",
+            "description": "Sparse road-anchor access case with competing service footprints for Auto/LNS budget ablations.",
+            "seed": 7,
+            "variants": [
+              {
+                "variantName": "baseline",
+                "totalPopulation": 330,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 1.05,
+                "wallClockDeltaVsBaselineSeconds": 0,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 5,
+                "serviceCount": 1,
+                "residentialCount": 2,
+                "stopReason": "iteration-limit",
+                "improvingIterations": 2,
+                "learnedWindowRankingEvaluations": 0,
+                "learnedWindowRankingWins": 0
+              },
+              {
+                "variantName": "learned-guarded",
+                "totalPopulation": 330,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 1.002,
+                "wallClockDeltaVsBaselineSeconds": -0.04800000000000004,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 5,
+                "serviceCount": 1,
+                "residentialCount": 2,
+                "stopReason": "iteration-limit",
+                "improvingIterations": 1,
+                "learnedWindowRankingEvaluations": 24,
+                "learnedWindowRankingWins": 1
+              }
+            ]
+          }
+        ],
+        "summaries": [
+          {
+            "source": "product-workflow",
+            "split": "development",
+            "comparisonCount": 4,
+            "winCount": 0,
+            "tieCount": 4,
+            "lossCount": 0,
+            "winRate": 0,
+            "lossRate": 0,
+            "meanPopulationDeltaVsBaseline": 0,
+            "medianPopulationDeltaVsBaseline": 0,
+            "worstDecilePopulationDeltaVsBaseline": 0,
+            "bestPopulationDeltaVsBaseline": 0,
+            "meanWallClockDeltaVsBaselineSeconds": 0.023999999999999994,
+            "validationFailureCount": 0,
+            "learnedWindowRankingEvaluations": 92,
+            "learnedWindowRankingWins": 4
+          },
+          {
+            "source": "product-workflow",
+            "split": "holdout",
+            "comparisonCount": 4,
+            "winCount": 0,
+            "tieCount": 4,
+            "lossCount": 0,
+            "winRate": 0,
+            "lossRate": 0,
+            "meanPopulationDeltaVsBaseline": 0,
+            "medianPopulationDeltaVsBaseline": 0,
+            "worstDecilePopulationDeltaVsBaseline": 0,
+            "bestPopulationDeltaVsBaseline": 0,
+            "meanWallClockDeltaVsBaselineSeconds": 0.04024999999999998,
+            "validationFailureCount": 0,
+            "learnedWindowRankingEvaluations": 83,
+            "learnedWindowRankingWins": 5
+          },
+          {
+            "source": "product-workflow",
+            "split": "all",
+            "comparisonCount": 8,
+            "winCount": 0,
+            "tieCount": 8,
+            "lossCount": 0,
+            "winRate": 0,
+            "lossRate": 0,
+            "meanPopulationDeltaVsBaseline": 0,
+            "medianPopulationDeltaVsBaseline": 0,
+            "worstDecilePopulationDeltaVsBaseline": 0,
+            "bestPopulationDeltaVsBaseline": 0,
+            "meanWallClockDeltaVsBaselineSeconds": 0.03212499999999999,
+            "validationFailureCount": 0,
+            "learnedWindowRankingEvaluations": 175,
+            "learnedWindowRankingWins": 9
+          },
+          {
+            "source": "cross-mode",
+            "split": "cross-mode",
+            "comparisonCount": 4,
+            "winCount": 0,
+            "tieCount": 4,
+            "lossCount": 0,
+            "winRate": 0,
+            "lossRate": 0,
+            "meanPopulationDeltaVsBaseline": 0,
+            "medianPopulationDeltaVsBaseline": 0,
+            "worstDecilePopulationDeltaVsBaseline": 0,
+            "bestPopulationDeltaVsBaseline": 0,
+            "meanWallClockDeltaVsBaselineSeconds": -0.02074999999999999,
+            "validationFailureCount": 0,
+            "learnedWindowRankingEvaluations": 61,
+            "learnedWindowRankingWins": 2
+          },
+          {
+            "source": "all",
+            "split": "all",
+            "comparisonCount": 12,
+            "winCount": 0,
+            "tieCount": 12,
+            "lossCount": 0,
+            "winRate": 0,
+            "lossRate": 0,
+            "meanPopulationDeltaVsBaseline": 0,
+            "medianPopulationDeltaVsBaseline": 0,
+            "worstDecilePopulationDeltaVsBaseline": 0,
+            "bestPopulationDeltaVsBaseline": 0,
+            "meanWallClockDeltaVsBaselineSeconds": 0.014499999999999994,
+            "validationFailureCount": 0,
+            "learnedWindowRankingEvaluations": 236,
+            "learnedWindowRankingWins": 11
+          }
+        ],
+        "gate": {
+          "passed": false,
+          "failedReasons": [
+            "no product-holdout quality lift"
+          ],
+          "protectedProductHoldout": true,
+          "requiresQualityLift": true,
+          "productHoldout": {
+            "source": "product-workflow",
+            "split": "holdout",
+            "comparisonCount": 4,
+            "winCount": 0,
+            "tieCount": 4,
+            "lossCount": 0,
+            "winRate": 0,
+            "lossRate": 0,
+            "meanPopulationDeltaVsBaseline": 0,
+            "medianPopulationDeltaVsBaseline": 0,
+            "worstDecilePopulationDeltaVsBaseline": 0,
+            "bestPopulationDeltaVsBaseline": 0,
+            "meanWallClockDeltaVsBaselineSeconds": 0.04024999999999998,
+            "validationFailureCount": 0,
+            "learnedWindowRankingEvaluations": 83,
+            "learnedWindowRankingWins": 5
+          },
+          "all": {
+            "source": "all",
+            "split": "all",
+            "comparisonCount": 12,
+            "winCount": 0,
+            "tieCount": 12,
+            "lossCount": 0,
+            "winRate": 0,
+            "lossRate": 0,
+            "meanPopulationDeltaVsBaseline": 0,
+            "medianPopulationDeltaVsBaseline": 0,
+            "worstDecilePopulationDeltaVsBaseline": 0,
+            "bestPopulationDeltaVsBaseline": 0,
+            "meanWallClockDeltaVsBaselineSeconds": 0.014499999999999994,
+            "validationFailureCount": 0,
+            "learnedWindowRankingEvaluations": 236,
+            "learnedWindowRankingWins": 11
+          }
+        },
+        "hardware": {
+          "captured": true,
+          "platform": "darwin",
+          "arch": "arm64",
+          "cpuModel": "Apple M1 Pro",
+          "logicalCpuCount": 10,
+          "memoryBytes": 17179869184,
+          "totalMemoryBytes": 17179869184,
+          "gpuUsed": false
+        },
+        "decision": "keep-lns-learned-window-ranking-opt-in",
+        "summary": "LNS learned default promotion review did not pass: product holdout median delta 0, mean delta 0, losses 0; overall losses 0, validation failures 0. Defaults stay unchanged."
+      },
+      "gate": {
+        "safeNoRegression": true,
+        "qualityLift": false,
+        "eligibleForPromotionReview": false,
+        "failedReasons": [
+          "no product-holdout quality lift"
+        ]
+      }
+    },
+    {
+      "minScoreRatio": 0,
+      "review": {
+        "generatedAt": "2026-05-17T17:09:39.365Z",
+        "schemaVersion": 1,
+        "seeds": [
+          7
+        ],
+        "selectedProductCaseNames": [
+          "planner-corridor-reuse",
+          "planner-gate-choke",
+          "planner-footprint-pressure",
+          "planner-service-overlap",
+          "planner-anchor-service",
+          "planner-multi-anchor-islands",
+          "planner-rotated-rowhouse",
+          "planner-gate-service-tradeoff"
+        ],
+        "selectedCrossModeCaseNames": [
+          "typed-housing-single",
+          "compact-service-single",
+          "compact-service-repair",
+          "row0-corridor-repair-pressure"
+        ],
+        "variants": [
+          "baseline",
+          "learned-guarded"
+        ],
+        "candidateLimit": 12,
+        "guardedMinScoreRatio": 0,
+        "model": {
+          "version": "lns-ranker-feature-enrichment-2026-05-17",
+          "fingerprint": "12ba51f1f0a0c51b0e084caa5e524926aedcd66ccfc28c253e98e8daa618ff70",
+          "cpuOnly": true,
+          "featureFlag": "lns.learnedWindowRanking"
+        },
+        "cases": [
+          {
+            "source": "product-workflow",
+            "split": "development",
+            "family": "corridor",
+            "caseName": "planner-corridor-reuse",
+            "description": "Saved corridor payload with manual road cleanup and expansion replay.",
+            "seed": 7,
+            "variants": [
+              {
+                "variantName": "baseline",
+                "totalPopulation": 130,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 0.945,
+                "wallClockDeltaVsBaselineSeconds": 0,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 2,
+                "serviceCount": 1,
+                "residentialCount": 2,
+                "stopReason": "stale-iteration-limit",
+                "improvingIterations": 0,
+                "learnedWindowRankingEvaluations": 0,
+                "learnedWindowRankingWins": 0
+              },
+              {
+                "variantName": "learned-guarded",
+                "totalPopulation": 130,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 0.93,
+                "wallClockDeltaVsBaselineSeconds": -0.014999999999999902,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 2,
+                "serviceCount": 1,
+                "residentialCount": 2,
+                "stopReason": "stale-iteration-limit",
+                "improvingIterations": 0,
+                "learnedWindowRankingEvaluations": 22,
+                "learnedWindowRankingWins": 1
+              }
+            ]
+          },
+          {
+            "source": "product-workflow",
+            "split": "development",
+            "family": "gate",
+            "caseName": "planner-gate-choke",
+            "description": "Gate-shaped map with an explicit central access check.",
+            "seed": 7,
+            "variants": [
+              {
+                "variantName": "baseline",
+                "totalPopulation": 60,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 0.938,
+                "wallClockDeltaVsBaselineSeconds": 0,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 0,
+                "serviceCount": 1,
+                "residentialCount": 3,
+                "stopReason": "stale-iteration-limit",
+                "improvingIterations": 0,
+                "learnedWindowRankingEvaluations": 0,
+                "learnedWindowRankingWins": 0
+              },
+              {
+                "variantName": "learned-guarded",
+                "totalPopulation": 60,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 1,
+                "wallClockDeltaVsBaselineSeconds": 0.062000000000000055,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 0,
+                "serviceCount": 1,
+                "residentialCount": 3,
+                "stopReason": "stale-iteration-limit",
+                "improvingIterations": 0,
+                "learnedWindowRankingEvaluations": 23,
+                "learnedWindowRankingWins": 1
+              }
+            ]
+          },
+          {
+            "source": "product-workflow",
+            "split": "development",
+            "family": "footprint-pressure",
+            "caseName": "planner-footprint-pressure",
+            "description": "Dense footprint pressure payload with large residential slabs.",
+            "seed": 7,
+            "variants": [
+              {
+                "variantName": "baseline",
+                "totalPopulation": 140,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 0.981,
+                "wallClockDeltaVsBaselineSeconds": 0,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 0,
+                "serviceCount": 1,
+                "residentialCount": 2,
+                "stopReason": "stale-iteration-limit",
+                "improvingIterations": 0,
+                "learnedWindowRankingEvaluations": 0,
+                "learnedWindowRankingWins": 0
+              },
+              {
+                "variantName": "learned-guarded",
+                "totalPopulation": 140,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 1.012,
+                "wallClockDeltaVsBaselineSeconds": 0.031000000000000028,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 0,
+                "serviceCount": 1,
+                "residentialCount": 2,
+                "stopReason": "stale-iteration-limit",
+                "improvingIterations": 0,
+                "learnedWindowRankingEvaluations": 23,
+                "learnedWindowRankingWins": 1
+              }
+            ]
+          },
+          {
+            "source": "product-workflow",
+            "split": "holdout",
+            "family": "service-overlap",
+            "caseName": "planner-service-overlap",
+            "description": "Service-overlap case where expansion can trade another service against another home.",
+            "seed": 7,
+            "variants": [
+              {
+                "variantName": "baseline",
+                "totalPopulation": 130,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 1.038,
+                "wallClockDeltaVsBaselineSeconds": 0,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 1,
+                "serviceCount": 1,
+                "residentialCount": 2,
+                "stopReason": "stale-iteration-limit",
+                "improvingIterations": 0,
+                "learnedWindowRankingEvaluations": 0,
+                "learnedWindowRankingWins": 0
+              },
+              {
+                "variantName": "learned-guarded",
+                "totalPopulation": 130,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 1.058,
+                "wallClockDeltaVsBaselineSeconds": 0.020000000000000018,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 1,
+                "serviceCount": 1,
+                "residentialCount": 2,
+                "stopReason": "stale-iteration-limit",
+                "improvingIterations": 0,
+                "learnedWindowRankingEvaluations": 25,
+                "learnedWindowRankingWins": 1
+              }
+            ]
+          },
+          {
+            "source": "product-workflow",
+            "split": "holdout",
+            "family": "anchor-service",
+            "caseName": "planner-anchor-service",
+            "description": "Boundary-touching service and housing payload that should stay road-light.",
+            "seed": 7,
+            "variants": [
+              {
+                "variantName": "baseline",
+                "totalPopulation": 120,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 0.926,
+                "wallClockDeltaVsBaselineSeconds": 0,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 0,
+                "serviceCount": 1,
+                "residentialCount": 2,
+                "stopReason": "stale-iteration-limit",
+                "improvingIterations": 0,
+                "learnedWindowRankingEvaluations": 0,
+                "learnedWindowRankingWins": 0
+              },
+              {
+                "variantName": "learned-guarded",
+                "totalPopulation": 120,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 0.932,
+                "wallClockDeltaVsBaselineSeconds": 0.006000000000000005,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 0,
+                "serviceCount": 1,
+                "residentialCount": 2,
+                "stopReason": "stale-iteration-limit",
+                "improvingIterations": 0,
+                "learnedWindowRankingEvaluations": 12,
+                "learnedWindowRankingWins": 1
+              }
+            ]
+          },
+          {
+            "source": "product-workflow",
+            "split": "holdout",
+            "family": "multi-anchor",
+            "caseName": "planner-multi-anchor-islands",
+            "description": "Planner-shaped multi-anchor payload with two independent islands.",
+            "seed": 7,
+            "variants": [
+              {
+                "variantName": "baseline",
+                "totalPopulation": 80,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 0.904,
+                "wallClockDeltaVsBaselineSeconds": 0,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 4,
+                "serviceCount": 0,
+                "residentialCount": 2,
+                "stopReason": "stale-iteration-limit",
+                "improvingIterations": 0,
+                "learnedWindowRankingEvaluations": 0,
+                "learnedWindowRankingWins": 0
+              },
+              {
+                "variantName": "learned-guarded",
+                "totalPopulation": 80,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 0.919,
+                "wallClockDeltaVsBaselineSeconds": 0.015000000000000013,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 4,
+                "serviceCount": 0,
+                "residentialCount": 2,
+                "stopReason": "stale-iteration-limit",
+                "improvingIterations": 0,
+                "learnedWindowRankingEvaluations": 22,
+                "learnedWindowRankingWins": 1
+              }
+            ]
+          },
+          {
+            "source": "product-workflow",
+            "split": "development",
+            "family": "footprint-pressure",
+            "caseName": "planner-rotated-rowhouse",
+            "description": "Rotated rowhouse payload with a saved service-and-road reuse pattern.",
+            "seed": 7,
+            "variants": [
+              {
+                "variantName": "baseline",
+                "totalPopulation": 140,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 1.028,
+                "wallClockDeltaVsBaselineSeconds": 0,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 0,
+                "serviceCount": 1,
+                "residentialCount": 2,
+                "stopReason": "stale-iteration-limit",
+                "improvingIterations": 0,
+                "learnedWindowRankingEvaluations": 0,
+                "learnedWindowRankingWins": 0
+              },
+              {
+                "variantName": "learned-guarded",
+                "totalPopulation": 140,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 1.107,
+                "wallClockDeltaVsBaselineSeconds": 0.07899999999999996,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 0,
+                "serviceCount": 1,
+                "residentialCount": 2,
+                "stopReason": "stale-iteration-limit",
+                "improvingIterations": 0,
+                "learnedWindowRankingEvaluations": 24,
+                "learnedWindowRankingWins": 1
+              }
+            ]
+          },
+          {
+            "source": "product-workflow",
+            "split": "holdout",
+            "family": "gate",
+            "caseName": "planner-gate-service-tradeoff",
+            "description": "Gate-shaped service tradeoff payload with two saved service anchors.",
+            "seed": 7,
+            "variants": [
+              {
+                "variantName": "baseline",
+                "totalPopulation": 200,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 1.599,
+                "wallClockDeltaVsBaselineSeconds": 0,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 5,
+                "serviceCount": 2,
+                "residentialCount": 2,
+                "stopReason": "iteration-limit",
+                "improvingIterations": 1,
+                "learnedWindowRankingEvaluations": 0,
+                "learnedWindowRankingWins": 0
+              },
+              {
+                "variantName": "learned-guarded",
+                "totalPopulation": 200,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 1.774,
+                "wallClockDeltaVsBaselineSeconds": 0.17500000000000004,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 5,
+                "serviceCount": 2,
+                "residentialCount": 2,
+                "stopReason": "iteration-limit",
+                "improvingIterations": 1,
+                "learnedWindowRankingEvaluations": 24,
+                "learnedWindowRankingWins": 2
+              }
+            ]
+          },
+          {
+            "source": "cross-mode",
+            "split": "cross-mode",
+            "family": "tiny",
+            "caseName": "typed-housing-single",
+            "description": "Tiny typed-housing case shared by all solver modes.",
+            "seed": 7,
+            "variants": [
+              {
+                "variantName": "baseline",
+                "totalPopulation": 110,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 0.448,
+                "wallClockDeltaVsBaselineSeconds": 0,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 0,
+                "serviceCount": 0,
+                "residentialCount": 2,
+                "stopReason": "stale-iteration-limit",
+                "improvingIterations": 0,
+                "learnedWindowRankingEvaluations": 0,
+                "learnedWindowRankingWins": 0
+              },
+              {
+                "variantName": "learned-guarded",
+                "totalPopulation": 110,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 0.493,
+                "wallClockDeltaVsBaselineSeconds": 0.044999999999999984,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 0,
+                "serviceCount": 0,
+                "residentialCount": 2,
+                "stopReason": "stale-iteration-limit",
+                "improvingIterations": 0,
+                "learnedWindowRankingEvaluations": 6,
+                "learnedWindowRankingWins": 0
+              }
+            ]
+          },
+          {
+            "source": "cross-mode",
+            "split": "cross-mode",
+            "family": "small",
+            "caseName": "compact-service-single",
+            "description": "Small service-and-housing case for equal-budget mode comparisons.",
+            "seed": 7,
+            "variants": [
+              {
+                "variantName": "baseline",
+                "totalPopulation": 40,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 0.461,
+                "wallClockDeltaVsBaselineSeconds": 0,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 0,
+                "serviceCount": 1,
+                "residentialCount": 1,
+                "stopReason": "stale-iteration-limit",
+                "improvingIterations": 0,
+                "learnedWindowRankingEvaluations": 0,
+                "learnedWindowRankingWins": 0
+              },
+              {
+                "variantName": "learned-guarded",
+                "totalPopulation": 40,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 0.457,
+                "wallClockDeltaVsBaselineSeconds": -0.0040000000000000036,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 0,
+                "serviceCount": 1,
+                "residentialCount": 1,
+                "stopReason": "stale-iteration-limit",
+                "improvingIterations": 0,
+                "learnedWindowRankingEvaluations": 6,
+                "learnedWindowRankingWins": 0
+              }
+            ]
+          },
+          {
+            "source": "cross-mode",
+            "split": "cross-mode",
+            "family": "small",
+            "caseName": "compact-service-repair",
+            "description": "Small 6x6 mixed case for LNS and Auto repair scorecards.",
+            "seed": 7,
+            "variants": [
+              {
+                "variantName": "baseline",
+                "totalPopulation": 570,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 1.055,
+                "wallClockDeltaVsBaselineSeconds": 0,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 0,
+                "serviceCount": 1,
+                "residentialCount": 3,
+                "stopReason": "stale-iteration-limit",
+                "improvingIterations": 0,
+                "learnedWindowRankingEvaluations": 0,
+                "learnedWindowRankingWins": 0
+              },
+              {
+                "variantName": "learned-guarded",
+                "totalPopulation": 570,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 1.154,
+                "wallClockDeltaVsBaselineSeconds": 0.09899999999999998,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 0,
+                "serviceCount": 1,
+                "residentialCount": 3,
+                "stopReason": "stale-iteration-limit",
+                "improvingIterations": 0,
+                "learnedWindowRankingEvaluations": 25,
+                "learnedWindowRankingWins": 1
+              }
+            ]
+          },
+          {
+            "source": "cross-mode",
+            "split": "cross-mode",
+            "family": "small",
+            "caseName": "row0-corridor-repair-pressure",
+            "description": "Sparse road-anchor access case with competing service footprints for Auto/LNS budget ablations.",
+            "seed": 7,
+            "variants": [
+              {
+                "variantName": "baseline",
+                "totalPopulation": 330,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 0.962,
+                "wallClockDeltaVsBaselineSeconds": 0,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 5,
+                "serviceCount": 1,
+                "residentialCount": 2,
+                "stopReason": "iteration-limit",
+                "improvingIterations": 2,
+                "learnedWindowRankingEvaluations": 0,
+                "learnedWindowRankingWins": 0
+              },
+              {
+                "variantName": "learned-guarded",
+                "totalPopulation": 330,
+                "populationDeltaVsBaseline": 0,
+                "wallClockSeconds": 0.944,
+                "wallClockDeltaVsBaselineSeconds": -0.018000000000000016,
+                "validationValid": true,
+                "validationErrors": [],
+                "roadCount": 5,
+                "serviceCount": 1,
+                "residentialCount": 2,
+                "stopReason": "iteration-limit",
+                "improvingIterations": 1,
+                "learnedWindowRankingEvaluations": 24,
+                "learnedWindowRankingWins": 1
+              }
+            ]
+          }
+        ],
+        "summaries": [
+          {
+            "source": "product-workflow",
+            "split": "development",
+            "comparisonCount": 4,
+            "winCount": 0,
+            "tieCount": 4,
+            "lossCount": 0,
+            "winRate": 0,
+            "lossRate": 0,
+            "meanPopulationDeltaVsBaseline": 0,
+            "medianPopulationDeltaVsBaseline": 0,
+            "worstDecilePopulationDeltaVsBaseline": 0,
+            "bestPopulationDeltaVsBaseline": 0,
+            "meanWallClockDeltaVsBaselineSeconds": 0.039250000000000035,
+            "validationFailureCount": 0,
+            "learnedWindowRankingEvaluations": 92,
+            "learnedWindowRankingWins": 4
+          },
+          {
+            "source": "product-workflow",
+            "split": "holdout",
+            "comparisonCount": 4,
+            "winCount": 0,
+            "tieCount": 4,
+            "lossCount": 0,
+            "winRate": 0,
+            "lossRate": 0,
+            "meanPopulationDeltaVsBaseline": 0,
+            "medianPopulationDeltaVsBaseline": 0,
+            "worstDecilePopulationDeltaVsBaseline": 0,
+            "bestPopulationDeltaVsBaseline": 0,
+            "meanWallClockDeltaVsBaselineSeconds": 0.05400000000000002,
+            "validationFailureCount": 0,
+            "learnedWindowRankingEvaluations": 83,
+            "learnedWindowRankingWins": 5
+          },
+          {
+            "source": "product-workflow",
+            "split": "all",
+            "comparisonCount": 8,
+            "winCount": 0,
+            "tieCount": 8,
+            "lossCount": 0,
+            "winRate": 0,
+            "lossRate": 0,
+            "meanPopulationDeltaVsBaseline": 0,
+            "medianPopulationDeltaVsBaseline": 0,
+            "worstDecilePopulationDeltaVsBaseline": 0,
+            "bestPopulationDeltaVsBaseline": 0,
+            "meanWallClockDeltaVsBaselineSeconds": 0.04662500000000003,
+            "validationFailureCount": 0,
+            "learnedWindowRankingEvaluations": 175,
+            "learnedWindowRankingWins": 9
+          },
+          {
+            "source": "cross-mode",
+            "split": "cross-mode",
+            "comparisonCount": 4,
+            "winCount": 0,
+            "tieCount": 4,
+            "lossCount": 0,
+            "winRate": 0,
+            "lossRate": 0,
+            "meanPopulationDeltaVsBaseline": 0,
+            "medianPopulationDeltaVsBaseline": 0,
+            "worstDecilePopulationDeltaVsBaseline": 0,
+            "bestPopulationDeltaVsBaseline": 0,
+            "meanWallClockDeltaVsBaselineSeconds": 0.030499999999999985,
+            "validationFailureCount": 0,
+            "learnedWindowRankingEvaluations": 61,
+            "learnedWindowRankingWins": 2
+          },
+          {
+            "source": "all",
+            "split": "all",
+            "comparisonCount": 12,
+            "winCount": 0,
+            "tieCount": 12,
+            "lossCount": 0,
+            "winRate": 0,
+            "lossRate": 0,
+            "meanPopulationDeltaVsBaseline": 0,
+            "medianPopulationDeltaVsBaseline": 0,
+            "worstDecilePopulationDeltaVsBaseline": 0,
+            "bestPopulationDeltaVsBaseline": 0,
+            "meanWallClockDeltaVsBaselineSeconds": 0.04125000000000001,
+            "validationFailureCount": 0,
+            "learnedWindowRankingEvaluations": 236,
+            "learnedWindowRankingWins": 11
+          }
+        ],
+        "gate": {
+          "passed": false,
+          "failedReasons": [
+            "no product-holdout quality lift"
+          ],
+          "protectedProductHoldout": true,
+          "requiresQualityLift": true,
+          "productHoldout": {
+            "source": "product-workflow",
+            "split": "holdout",
+            "comparisonCount": 4,
+            "winCount": 0,
+            "tieCount": 4,
+            "lossCount": 0,
+            "winRate": 0,
+            "lossRate": 0,
+            "meanPopulationDeltaVsBaseline": 0,
+            "medianPopulationDeltaVsBaseline": 0,
+            "worstDecilePopulationDeltaVsBaseline": 0,
+            "bestPopulationDeltaVsBaseline": 0,
+            "meanWallClockDeltaVsBaselineSeconds": 0.05400000000000002,
+            "validationFailureCount": 0,
+            "learnedWindowRankingEvaluations": 83,
+            "learnedWindowRankingWins": 5
+          },
+          "all": {
+            "source": "all",
+            "split": "all",
+            "comparisonCount": 12,
+            "winCount": 0,
+            "tieCount": 12,
+            "lossCount": 0,
+            "winRate": 0,
+            "lossRate": 0,
+            "meanPopulationDeltaVsBaseline": 0,
+            "medianPopulationDeltaVsBaseline": 0,
+            "worstDecilePopulationDeltaVsBaseline": 0,
+            "bestPopulationDeltaVsBaseline": 0,
+            "meanWallClockDeltaVsBaselineSeconds": 0.04125000000000001,
+            "validationFailureCount": 0,
+            "learnedWindowRankingEvaluations": 236,
+            "learnedWindowRankingWins": 11
+          }
+        },
+        "hardware": {
+          "captured": true,
+          "platform": "darwin",
+          "arch": "arm64",
+          "cpuModel": "Apple M1 Pro",
+          "logicalCpuCount": 10,
+          "memoryBytes": 17179869184,
+          "totalMemoryBytes": 17179869184,
+          "gpuUsed": false
+        },
+        "decision": "keep-lns-learned-window-ranking-opt-in",
+        "summary": "LNS learned default promotion review did not pass: product holdout median delta 0, mean delta 0, losses 0; overall losses 0, validation failures 0. Defaults stay unchanged."
+      },
+      "gate": {
+        "safeNoRegression": true,
+        "qualityLift": false,
+        "eligibleForPromotionReview": false,
+        "failedReasons": [
+          "no product-holdout quality lift"
+        ]
+      }
+    }
+  ],
+  "gate": {
+    "passed": false,
+    "failedReasons": [
+      "no calibrated guard had product-holdout quality lift without regressions"
+    ],
+    "safeRatioCount": 5,
+    "qualityLiftRatioCount": 0,
+    "eligibleRatioCount": 0,
+    "recommendedMinScoreRatio": null
+  },
+  "hardware": {
+    "captured": true,
+    "platform": "darwin",
+    "arch": "arm64",
+    "cpuModel": "Apple M1 Pro",
+    "logicalCpuCount": 10,
+    "memoryBytes": 17179869184,
+    "totalMemoryBytes": 17179869184,
+    "gpuUsed": false
+  },
+  "decision": "keep-phase14-guard-and-opt-in",
+  "summary": "LNS learned guard calibration did not find a promotion-review candidate: 5/5 ratios were regression-safe and 0/5 showed product-holdout quality lift. Defaults remain opt-in."
+}

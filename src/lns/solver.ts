@@ -82,6 +82,11 @@ interface LnsRepairAttempt {
   operatorScoreBefore: number;
   operatorExploration: boolean;
   learnedWindowRankingScore?: number;
+  learnedWindowRankingBaselineScore?: number;
+  learnedWindowRankingSelectedAdaptiveScore?: number;
+  learnedWindowRankingBaselineAdaptiveScore?: number;
+  learnedWindowRankingCandidateCount?: number;
+  learnedWindowRankingShortlistCount?: number;
   learnedWindowRankingDisplaced?: boolean;
   stagnantIterationsBefore: number;
   staleSecondsBefore: number;
@@ -520,6 +525,11 @@ interface LearnedNeighborhoodSelection {
   evaluations: number;
   displaced: boolean;
   learnedWindowRankingScore: number;
+  learnedWindowRankingBaselineScore: number;
+  learnedWindowRankingSelectedAdaptiveScore: number;
+  learnedWindowRankingBaselineAdaptiveScore: number;
+  learnedWindowRankingCandidateCount: number;
+  learnedWindowRankingShortlistCount: number;
 }
 
 function sameNeighborhoodWindow(left: CpSatNeighborhoodWindow, right: CpSatNeighborhoodWindow): boolean {
@@ -603,6 +613,11 @@ function selectLearnedNeighborhoodCandidate(
     evaluations: scored.length,
     displaced,
     learnedWindowRankingScore: selected.score,
+    learnedWindowRankingBaselineScore: baselineScored.score,
+    learnedWindowRankingSelectedAdaptiveScore: selected.plan.adaptiveScore,
+    learnedWindowRankingBaselineAdaptiveScore: baselinePlan.adaptiveScore,
+    learnedWindowRankingCandidateCount: plans.length,
+    learnedWindowRankingShortlistCount: shortlist.length,
   };
 }
 
@@ -698,6 +713,21 @@ function buildRepairOutcome(
     ...(attempt.learnedWindowRankingScore !== undefined ? {
       learnedWindowRankingScore: attempt.learnedWindowRankingScore,
       learnedWindowRankingModelVersion: PHASE12_LNS_WINDOW_RANKER_VERSION,
+    } : {}),
+    ...(attempt.learnedWindowRankingBaselineScore !== undefined ? {
+      learnedWindowRankingBaselineScore: attempt.learnedWindowRankingBaselineScore,
+    } : {}),
+    ...(attempt.learnedWindowRankingSelectedAdaptiveScore !== undefined ? {
+      learnedWindowRankingSelectedAdaptiveScore: attempt.learnedWindowRankingSelectedAdaptiveScore,
+    } : {}),
+    ...(attempt.learnedWindowRankingBaselineAdaptiveScore !== undefined ? {
+      learnedWindowRankingBaselineAdaptiveScore: attempt.learnedWindowRankingBaselineAdaptiveScore,
+    } : {}),
+    ...(attempt.learnedWindowRankingCandidateCount !== undefined ? {
+      learnedWindowRankingCandidateCount: attempt.learnedWindowRankingCandidateCount,
+    } : {}),
+    ...(attempt.learnedWindowRankingShortlistCount !== undefined ? {
+      learnedWindowRankingShortlistCount: attempt.learnedWindowRankingShortlistCount,
     } : {}),
     ...(attempt.learnedWindowRankingDisplaced !== undefined ? {
       learnedWindowRankingDisplaced: attempt.learnedWindowRankingDisplaced,
@@ -834,6 +864,11 @@ export function solveLns(G: Grid, params: SolverParams): Solution {
         operatorExploration: candidate.exploration,
         ...(learnedSelection ? {
           learnedWindowRankingScore: learnedSelection.learnedWindowRankingScore,
+          learnedWindowRankingBaselineScore: learnedSelection.learnedWindowRankingBaselineScore,
+          learnedWindowRankingSelectedAdaptiveScore: learnedSelection.learnedWindowRankingSelectedAdaptiveScore,
+          learnedWindowRankingBaselineAdaptiveScore: learnedSelection.learnedWindowRankingBaselineAdaptiveScore,
+          learnedWindowRankingCandidateCount: learnedSelection.learnedWindowRankingCandidateCount,
+          learnedWindowRankingShortlistCount: learnedSelection.learnedWindowRankingShortlistCount,
           learnedWindowRankingDisplaced: learnedSelection.displaced,
         } : {}),
         stagnantIterationsBefore: stagnantIterations,
@@ -862,6 +897,11 @@ export function solveLns(G: Grid, params: SolverParams): Solution {
       operatorExploration: candidate.exploration,
       ...(learnedSelection ? {
         learnedWindowRankingScore: learnedSelection.learnedWindowRankingScore,
+        learnedWindowRankingBaselineScore: learnedSelection.learnedWindowRankingBaselineScore,
+        learnedWindowRankingSelectedAdaptiveScore: learnedSelection.learnedWindowRankingSelectedAdaptiveScore,
+        learnedWindowRankingBaselineAdaptiveScore: learnedSelection.learnedWindowRankingBaselineAdaptiveScore,
+        learnedWindowRankingCandidateCount: learnedSelection.learnedWindowRankingCandidateCount,
+        learnedWindowRankingShortlistCount: learnedSelection.learnedWindowRankingShortlistCount,
         learnedWindowRankingDisplaced: learnedSelection.displaced,
       } : {}),
       stagnantIterationsBefore: stagnantIterations,

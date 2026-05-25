@@ -167,21 +167,20 @@ function buildWindowCellIndex(
   const cellIndexByKey = new Map<string, number>();
   const allowedBits: number[] = [];
   const allowedKeysByBit = new Map<number, string>();
-  let index = 0;
+  let allowedIndex = 0;
   const H = height(G);
   const W = width(G);
   const bottom = Math.min(H, window.top + window.rows);
   const right = Math.min(W, window.left + window.cols);
   for (let r = Math.max(0, window.top); r < bottom; r++) {
     for (let c = Math.max(0, window.left); c < right; c++) {
+      if (!isAllowed(G, r, c)) continue;
       const key = cellKey(r, c);
-      const bit = 1 << index;
-      cellIndexByKey.set(key, index);
-      if (isAllowed(G, r, c)) {
-        allowedBits.push(bit);
-        allowedKeysByBit.set(bit, key);
-      }
-      index += 1;
+      const bit = 1 << allowedIndex;
+      cellIndexByKey.set(key, allowedIndex);
+      allowedBits.push(bit);
+      allowedKeysByBit.set(bit, key);
+      allowedIndex += 1;
     }
   }
   return { cellIndexByKey, allowedBits, allowedKeysByBit };

@@ -85,6 +85,7 @@ export interface LnsLearnedPromotionReviewRunOptions {
   cpSat?: Partial<CpSatOptions>;
   greedy?: Partial<GreedyOptions>;
   learnedWindowRankingCandidateLimit?: number;
+  learnedWindowRankingMinScoreRatio?: number;
   solve?: LnsLearnedPromotionReviewSolve;
 }
 
@@ -101,6 +102,11 @@ export interface LnsLearnedPromotionReviewVariantResult {
   residentialCount: number;
   stopReason: string | null;
   improvingIterations: number;
+  learnedWindowRankingDisplacedAttempts: number;
+  learnedWindowRankingDisplacedImprovements: number;
+  learnedWindowRankingDisplacedNeutrals: number;
+  learnedWindowRankingDisplacedRecoverableFailures: number;
+  learnedWindowRankingDisplacedPopulationImprovement: number;
   learnedWindowRankingEvaluations: number;
   learnedWindowRankingWins: number;
 }
@@ -132,6 +138,11 @@ export interface LnsLearnedPromotionReviewSummary {
   validationFailureCount: number;
   learnedWindowRankingEvaluations: number;
   learnedWindowRankingWins: number;
+  learnedWindowRankingDisplacedAttempts: number;
+  learnedWindowRankingDisplacedImprovements: number;
+  learnedWindowRankingDisplacedNeutrals: number;
+  learnedWindowRankingDisplacedRecoverableFailures: number;
+  learnedWindowRankingDisplacedPopulationImprovement: number;
 }
 
 export interface LnsLearnedPromotionReviewGate {
@@ -151,7 +162,7 @@ export interface LnsLearnedPromotionReviewResult {
   selectedCrossModeCaseNames: string[];
   variants: LnsLearnedPromotionReviewVariantName[];
   candidateLimit: number;
-  guardedMinScoreRatio: 1;
+  guardedMinScoreRatio: number;
   model: {
     version: typeof PHASE12_LNS_WINDOW_RANKER_VERSION;
     fingerprint: typeof PHASE12_LNS_WINDOW_RANKER_FINGERPRINT;
@@ -217,7 +228,8 @@ function buildVariantParams(
   seed: number,
   variantName: LnsLearnedPromotionReviewVariantName,
   options: LnsLearnedPromotionReviewRunOptions,
-  candidateLimit: number
+  candidateLimit: number,
+  minScoreRatio: number
 ): SolverParams {
   const params = cloneBenchmarkSolverParams(benchmarkCase.params);
   const greedy = normalizeGreedyBenchmarkOptions(inheritGreedyBenchmarkOptions<GreedyOptions>(params), {
@@ -231,7 +243,7 @@ function buildVariantParams(
       : {
           learnedWindowRanking: true,
           learnedWindowRankingCandidateLimit: candidateLimit,
-          learnedWindowRankingMinScoreRatio: 1,
+          learnedWindowRankingMinScoreRatio: minScoreRatio,
         };
   return {
     ...applyNormalizedGreedyBenchmarkParams(params, greedy, "lns"),
@@ -257,9 +269,10 @@ function runVariant(options: {
   baseline?: LnsLearnedPromotionReviewVariantResult;
   runOptions: LnsLearnedPromotionReviewRunOptions;
   candidateLimit: number;
+  minScoreRatio: number;
 }): LnsLearnedPromotionReviewVariantResult {
-  const { benchmarkCase, seed, variantName, baseline, runOptions, candidateLimit } = options;
-  const params = buildVariantParams(benchmarkCase, seed, variantName, runOptions, candidateLimit);
+  const { benchmarkCase, seed, variantName, baseline, runOptions, candidateLimit, minScoreRatio } = options;
+  const params = buildVariantParams(benchmarkCase, seed, variantName, runOptions, candidateLimit, minScoreRatio);
   const startedAt = performance.now();
   const solution = (runOptions.solve ?? defaultSolve)(cloneBenchmarkGrid(benchmarkCase.grid), params, {
     benchmarkCase,
@@ -272,6 +285,8 @@ function runVariant(options: {
     params,
     solution,
   });
+  const outcomes = solution.lnsTelemetry?.outcomes ?? [];
+  const displacedOutcomes = outcomes.filter((outcome) => outcome.learnedWindowRankingDisplaced === true);
   return {
     variantName,
     totalPopulation: solution.totalPopulation,
@@ -285,6 +300,11 @@ function runVariant(options: {
     residentialCount: solution.residentials.length,
     stopReason: solution.lnsTelemetry?.stopReason ?? null,
     improvingIterations: solution.lnsTelemetry?.improvingIterations ?? 0,
+    learnedWindowRankingDisplacedAttempts: displacedOutcomes.length,
+    learnedWindowRankingDisplacedImprovements: countBenchmarkMatches(displacedOutcomes, (outcome) => outcome.status === "improved"),
+    learnedWindowRankingDisplacedNeutrals: countBenchmarkMatches(displacedOutcomes, (outcome) => outcome.status === "neutral"),
+    learnedWindowRankingDisplacedRecoverableFailures: countBenchmarkMatches(displacedOutcomes, (outcome) => outcome.status === "recoverable-failure"),
+    learnedWindowRankingDisplacedPopulationImprovement: sumBenchmarkBy(displacedOutcomes, (outcome) => outcome.improvement),
     learnedWindowRankingEvaluations: solution.lnsTelemetry?.learnedWindowRankingEvaluations ?? 0,
     learnedWindowRankingWins: solution.lnsTelemetry?.learnedWindowRankingWins ?? 0,
   };
@@ -324,6 +344,11 @@ function summarize(
     validationFailureCount: sumBenchmarkBy(learnedRuns, (variant) => variant.validationValid ? 0 : 1),
     learnedWindowRankingEvaluations: sumBenchmarkBy(learnedRuns, (variant) => variant.learnedWindowRankingEvaluations),
     learnedWindowRankingWins: sumBenchmarkBy(learnedRuns, (variant) => variant.learnedWindowRankingWins),
+    learnedWindowRankingDisplacedAttempts: sumBenchmarkBy(learnedRuns, (variant) => variant.learnedWindowRankingDisplacedAttempts),
+    learnedWindowRankingDisplacedImprovements: sumBenchmarkBy(learnedRuns, (variant) => variant.learnedWindowRankingDisplacedImprovements),
+    learnedWindowRankingDisplacedNeutrals: sumBenchmarkBy(learnedRuns, (variant) => variant.learnedWindowRankingDisplacedNeutrals),
+    learnedWindowRankingDisplacedRecoverableFailures: sumBenchmarkBy(learnedRuns, (variant) => variant.learnedWindowRankingDisplacedRecoverableFailures),
+    learnedWindowRankingDisplacedPopulationImprovement: sumBenchmarkBy(learnedRuns, (variant) => variant.learnedWindowRankingDisplacedPopulationImprovement),
   };
 }
 
@@ -381,6 +406,10 @@ export function runLnsLearnedPromotionReview(
   if (!Number.isInteger(candidateLimit) || candidateLimit <= 0) {
     throw new Error("Expected LNS learned promotion review candidate limit to be a positive integer.");
   }
+  const minScoreRatio = options.learnedWindowRankingMinScoreRatio ?? 1;
+  if (!Number.isFinite(minScoreRatio) || minScoreRatio < 0 || minScoreRatio > 1) {
+    throw new Error("Expected LNS learned promotion review min-score ratio to be between 0 and 1.");
+  }
   const cases: LnsLearnedPromotionReviewCaseResult[] = [];
   const variantNames: LnsLearnedPromotionReviewVariantName[] = ["baseline", "learned-guarded"];
   for (const benchmarkCase of [...productCases, ...crossModeCases]) {
@@ -391,6 +420,7 @@ export function runLnsLearnedPromotionReview(
         variantName: "baseline",
         runOptions: options,
         candidateLimit,
+        minScoreRatio,
       });
       const learned = runVariant({
         benchmarkCase,
@@ -399,6 +429,7 @@ export function runLnsLearnedPromotionReview(
         baseline,
         runOptions: options,
         candidateLimit,
+        minScoreRatio,
       });
       cases.push({
         source: benchmarkCase.source,
@@ -421,7 +452,7 @@ export function runLnsLearnedPromotionReview(
     selectedCrossModeCaseNames: uniqueBenchmarkValuesBy(crossModeCases, (benchmarkCase) => benchmarkCase.name),
     variants: variantNames,
     candidateLimit,
-    guardedMinScoreRatio: 1,
+    guardedMinScoreRatio: minScoreRatio,
     model: {
       version: PHASE12_LNS_WINDOW_RANKER_VERSION,
       fingerprint: PHASE12_LNS_WINDOW_RANKER_FINGERPRINT,
@@ -471,6 +502,7 @@ export function formatLnsLearnedPromotionReview(result: LnsLearnedPromotionRevie
   for (const summary of result.summaries) {
     lines.push(
       `- ${summary.source}/${summary.split}: n=${summary.comparisonCount} wins=${summary.winCount} ties=${summary.tieCount} losses=${summary.lossCount} win-rate=${formatBenchmarkRate(summary.winRate)} mean-delta=${formatBenchmarkSignedNumber(summary.meanPopulationDeltaVsBaseline)} median-delta=${formatBenchmarkSignedNumber(summary.medianPopulationDeltaVsBaseline)} worst-decile=${formatBenchmarkSignedNumber(summary.worstDecilePopulationDeltaVsBaseline)} wall-delta=${formatBenchmarkSeconds(summary.meanWallClockDeltaVsBaselineSeconds)} validation-failures=${summary.validationFailureCount} learned-evals=${summary.learnedWindowRankingEvaluations} learned-wins=${summary.learnedWindowRankingWins}`
+      + ` displaced-attempts=${summary.learnedWindowRankingDisplacedAttempts} displaced-improvements=${summary.learnedWindowRankingDisplacedImprovements} displaced-neutral=${summary.learnedWindowRankingDisplacedNeutrals}`
     );
   }
   lines.push(`Decision: ${result.decision}`);

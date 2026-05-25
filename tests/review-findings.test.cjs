@@ -5,7 +5,15 @@ const path = require("node:path");
 const vm = require("node:vm");
 
 const { CP_SAT_PORTFOLIO_CAPABILITY_LIMITS, solve } = require("../dist/index.js");
+const { parseNonNegativeInteger, parsePositiveNumberList, parseScoreRatio } = require("../dist/apps/cliParsing.js");
 const { evaluateLayout } = require("../dist/core/evaluator.js");
+const {
+  assertValidGrid,
+  assertValidSolveInputs,
+  assertValidSerializedSolutionPayload,
+  assertSerializedSolutionFootprintsWithinGrid,
+  isValidGrid,
+} = require("../dist/core/solverInputValidation.js");
 const { buildManualLayoutResponse, buildSolveResponse } = require("../dist/server/http/contracts.js");
 const { SolveProgressLogWriter } = require("../dist/runtime/jobs/solveProgressLog.js");
 
@@ -129,7 +137,45 @@ function testCpSatPortfolioCapabilitiesAreExported() {
   );
 }
 
-function loadPlannerSolveRuntimeModule() {
+function testCliScoreRatioParsingRejectsBlankValue() {
+  assert.equal(parseScoreRatio("0", "--min-score-ratio"), 0);
+  assert.equal(parseScoreRatio(" 0.75 ", "--min-score-ratio"), 0.75);
+  assert.throws(
+    () => parseScoreRatio("", "--min-score-ratio"),
+    /Expected --min-score-ratio to be a finite number between 0 and 1/
+  );
+  assert.throws(
+    () => parseScoreRatio("   ", "--min-score-ratio"),
+    /Expected --min-score-ratio to be a finite number between 0 and 1/
+  );
+}
+
+function testCliPositiveNumberListRejectsNonPositiveBudgets() {
+  assert.deepEqual(parsePositiveNumberList("1, 2.5", "--budgets"), [1, 2.5]);
+  assert.throws(
+    () => parsePositiveNumberList("1, 0", "--budgets"),
+    /Expected --budgets to contain only positive finite numbers/
+  );
+  assert.throws(
+    () => parsePositiveNumberList("-1", "--budgets"),
+    /Expected --budgets to contain only positive finite numbers/
+  );
+}
+
+function testCliNonNegativeIntegerRejectsBlankValue() {
+  assert.equal(parseNonNegativeInteger("0", "--exploration-windows"), 0);
+  assert.equal(parseNonNegativeInteger(" 4 ", "--exploration-windows"), 4);
+  assert.throws(
+    () => parseNonNegativeInteger("", "--exploration-windows"),
+    /Expected --exploration-windows to be a non-negative integer/
+  );
+  assert.throws(
+    () => parseNonNegativeInteger("   ", "--exploration-windows"),
+    /Expected --exploration-windows to be a non-negative integer/
+  );
+}
+
+function loadPlannerSolveRuntimeModule(fetch = undefined) {
   return loadBrowserModule("../web/plannerSolveRuntime.js", {
     window: {
       clearInterval,
@@ -137,6 +183,8 @@ function loadPlannerSolveRuntimeModule() {
     },
     context: {
       Error,
+      fetch,
+      URLSearchParams,
     },
   }).CityBuilderSolveRuntime;
 }
@@ -377,22 +425,62 @@ function testPlannerServiceAvailabilityRoundTrip() {
     bonus: 40,
     range: 1,
     avail: 3,
+    allowRotation: false,
   });
   assert.equal(serialized.avail, "3");
+  assert.equal(serialized.allowRotation, false);
 
   const parsed = plannerShared.parseServiceCatalogEntry(serialized, 0);
   assert.equal(parsed.avail, 3);
+  assert.equal(parsed.allowRotation, false);
 
   const imported = plannerShared.parseCatalogImportText(
-    ["Name\tBonus\tSize\tEffective\tAvail", "Health Clinic\t40\t2x2\t4x4\t3"].join("\n")
+    ["Name\tBonus\tSize\tEffective\tAvail\tAllow Rotation", "Health Clinic\t40\t2x2\t4x4\t3\tfalse"].join("\n")
   );
   assert.equal(imported.services.length, 1);
   assert.equal(imported.services[0].avail, "3");
+  assert.equal(plannerShared.parseServiceCatalogEntry(imported.services[0], 0).allowRotation, false);
 
   const importedLegacy = plannerShared.parseCatalogImportText(
     ["Name\tBonus\tSize\tEffective", "Health Clinic\t40\t2x2\t4x4"].join("\n")
   );
   assert.equal(importedLegacy.services[0].avail, "1");
+  assert.equal(plannerShared.parseServiceCatalogEntry(importedLegacy.services[0], 0).allowRotation, true);
+}
+
+function testPlannerCatalogParsingRejectsPartialIntegers() {
+  const plannerShared = loadPlannerSharedModule();
+  assert.throws(
+    () => plannerShared.parsePair("2x3junk", "x", "Service 1 size"),
+    /Service 1 size must be in the format AxB using positive integers\./
+  );
+  assert.throws(
+    () => plannerShared.parsePair("1.5x2", "x", "Residential 1 size"),
+    /Residential 1 size must be in the format AxB using positive integers\./
+  );
+  assert.throws(
+    () => plannerShared.parseIntegerField("12abc", "Service 1 bonus", 0),
+    /Service 1 bonus must be an integer greater than or equal to 0\./
+  );
+  assert.throws(
+    () => plannerShared.parseServiceCatalogEntry({
+      name: "Clinic",
+      bonus: "40abc",
+      size: "1x1",
+      effective: "3x3",
+      avail: "1",
+    }, 0),
+    /Service 1 bonus must be an integer greater than or equal to 0\./
+  );
+  assert.throws(
+    () => plannerShared.parseResidentialCatalogEntry({
+      name: "Home",
+      resident: "10/20abc",
+      size: "2x2",
+      avail: "1",
+    }, 0),
+    /Residential 1 resident must be in the format A\/B using positive integers\./
+  );
 }
 
 function testPlannerAutoFillsCpSatRandomSeed() {
@@ -922,6 +1010,34 @@ function testPlannerSavedLayoutRestoreRoundTripsHintSeedTogglesAndPortfolio() {
   assert.equal(restoredState.cpSat.portfolio.perWorkerTimeLimitSeconds, "12");
   assert.equal(restoredState.cpSat.portfolio.perWorkerNumWorkers, 2);
   assert.equal(restoredState.cpSat.portfolio.randomizeSearch, false);
+
+  restoredState.cpSat.portfolio = {
+    enabled: true,
+    workerCount: 8,
+    randomSeeds: "41, 43, 47",
+    perWorkerTimeLimitSeconds: "90",
+    perWorkerNumWorkers: 4,
+    randomizeSearch: false,
+  };
+  workbenchController.applySolveRequestToPlanner({
+    ...savedRequest,
+    params: {
+      ...savedRequest.params,
+      cpSat: {
+        timeLimitSeconds: 6,
+      },
+    },
+  }, {
+    preserveCpSatRuntime: false,
+    optimizer: "cp-sat",
+  });
+
+  assert.equal(restoredState.cpSat.portfolio.enabled, false);
+  assert.equal(restoredState.cpSat.portfolio.workerCount, 3);
+  assert.equal(restoredState.cpSat.portfolio.randomSeeds, "");
+  assert.equal(restoredState.cpSat.portfolio.perWorkerTimeLimitSeconds, "30");
+  assert.equal(restoredState.cpSat.portfolio.perWorkerNumWorkers, 1);
+  assert.equal(restoredState.cpSat.portfolio.randomizeSearch, true);
 }
 
 function testPlannerRuntimePresetAppliesBoundedCpSatPolicy() {
@@ -1617,6 +1733,197 @@ function testPlannerPersistenceRestoresLegacyPendingValidationLayoutWithoutFlag(
   persistence.loadSelectedLayout();
 
   assert.equal(state.layoutEditor.pendingValidation, true);
+}
+
+function testPlannerPersistenceDisablesPortfolioWhenConfigHasNoPortfolio() {
+  const plannerShared = loadPlannerSharedModule();
+  const storage = new Map();
+  const localStorage = {
+    getItem(key) {
+      return storage.has(key) ? storage.get(key) : null;
+    },
+    setItem(key, value) {
+      storage.set(key, String(value));
+    },
+  };
+  const plannerPersistence = loadPlannerPersistenceModule(localStorage);
+  const state = {
+    isSolving: false,
+    grid: [[1]],
+    optimizer: "cp-sat",
+    serviceTypes: [],
+    residentialTypes: [],
+    availableBuildings: { services: "", residentials: "" },
+    greedy: {},
+    cpSat: {
+      timeLimitSeconds: "",
+      noImprovementTimeoutSeconds: "",
+      randomSeed: "",
+      numWorkers: 8,
+      logSearchProgress: false,
+      pythonExecutable: "",
+      useDisplayedHint: true,
+      portfolio: {
+        enabled: true,
+        workerCount: 8,
+        randomSeeds: "41, 43, 47",
+        perWorkerTimeLimitSeconds: "90",
+        perWorkerNumWorkers: 4,
+        randomizeSearch: false,
+      },
+    },
+    lns: {},
+    auto: { wallClockLimitSeconds: "" },
+  };
+  const elements = {
+    savedLayoutsSelect: createFakeDomElement(),
+    layoutStorageName: createFakeDomElement(),
+    layoutStorageStatus: createFakeDomElement(),
+    savedConfigsSelect: createFakeDomElement({ value: "config-1" }),
+    configStorageName: createFakeDomElement(),
+    configStorageStatus: createFakeDomElement(),
+  };
+  const persistence = plannerPersistence.createPlannerPersistence({
+    state,
+    elements,
+    constants: {
+      CONFIG_STORAGE_KEY: "configs",
+      LAYOUT_STORAGE_KEY: "layouts",
+      defaultResidentialTypes: [],
+      defaultServiceTypes: [],
+      sampleGrid: [[1]],
+    },
+    helpers: {
+      buildCpSatWarmStartCheckpoint() {
+        return null;
+      },
+      cloneGrid: plannerShared.cloneGrid,
+      cloneJson: plannerShared.cloneJson,
+      createSavedEntryId: plannerShared.createSavedEntryId,
+      formatElapsedTime(value) {
+        return String(value);
+      },
+      formatSavedTimestamp(value) {
+        return String(value);
+      },
+      getSavedLayoutElapsedMs: plannerShared.getSavedLayoutElapsedMs,
+      isGridLike: plannerShared.isGridLike,
+      normalizeElapsedMs: plannerShared.normalizeElapsedMs,
+      normalizeOptimizer: plannerShared.normalizeOptimizer,
+    },
+    callbacks: {
+      applySolveRequestToPlanner() {},
+      clearExpansionAdvice() {},
+      clearRenderedResultState() {},
+      renderResults() {},
+      resetSolveTimer() {},
+      setResultElapsed() {},
+      setSolveState() {},
+      syncPlannerFromState() {},
+    },
+  });
+
+  localStorage.setItem("configs", JSON.stringify([
+    {
+      id: "config-1",
+      name: "Legacy CP-SAT config",
+      savedAt: "2026-04-19T00:00:00.000Z",
+      snapshot: {
+        grid: [[1]],
+        optimizer: "cp-sat",
+        serviceTypes: [],
+        residentialTypes: [],
+        availableBuildings: { services: "0", residentials: "0" },
+        cpSat: {
+          timeLimitSeconds: "6",
+        },
+      },
+    },
+  ]));
+
+  persistence.loadSelectedConfig();
+
+  assert.equal(state.cpSat.portfolio.enabled, false);
+  assert.equal(state.cpSat.portfolio.workerCount, 3);
+  assert.equal(state.cpSat.portfolio.randomSeeds, "");
+  assert.equal(state.cpSat.portfolio.perWorkerTimeLimitSeconds, "30");
+  assert.equal(state.cpSat.portfolio.perWorkerNumWorkers, 1);
+  assert.equal(state.cpSat.portfolio.randomizeSearch, true);
+}
+
+function testPlannerPersistenceReportsStorageWriteFailures() {
+  const plannerShared = loadPlannerSharedModule();
+  const localStorage = {
+    getItem() {
+      return null;
+    },
+    setItem() {
+      throw new Error("quota exceeded");
+    },
+  };
+  const plannerPersistence = loadPlannerPersistenceModule(localStorage);
+  const state = {
+    grid: [[1]],
+    optimizer: "auto",
+    serviceTypes: [],
+    residentialTypes: [],
+    availableBuildings: { services: "", residentials: "" },
+    greedy: {},
+    cpSat: {},
+    lns: {},
+    auto: { wallClockLimitSeconds: "" },
+  };
+  const elements = {
+    savedLayoutsSelect: createFakeDomElement(),
+    layoutStorageName: createFakeDomElement(),
+    layoutStorageStatus: createFakeDomElement(),
+    savedConfigsSelect: createFakeDomElement(),
+    configStorageName: createFakeDomElement({ value: "Quota case" }),
+    configStorageStatus: createFakeDomElement(),
+  };
+  const persistence = plannerPersistence.createPlannerPersistence({
+    state,
+    elements,
+    constants: {
+      CONFIG_STORAGE_KEY: "configs",
+      LAYOUT_STORAGE_KEY: "layouts",
+      defaultResidentialTypes: [],
+      defaultServiceTypes: [],
+      sampleGrid: [[1]],
+    },
+    helpers: {
+      buildCpSatWarmStartCheckpoint() {
+        return null;
+      },
+      cloneGrid: plannerShared.cloneGrid,
+      cloneJson: plannerShared.cloneJson,
+      createSavedEntryId: plannerShared.createSavedEntryId,
+      formatElapsedTime(value) {
+        return String(value);
+      },
+      formatSavedTimestamp(value) {
+        return String(value);
+      },
+      getSavedLayoutElapsedMs: plannerShared.getSavedLayoutElapsedMs,
+      isGridLike: plannerShared.isGridLike,
+      normalizeElapsedMs: plannerShared.normalizeElapsedMs,
+      normalizeOptimizer: plannerShared.normalizeOptimizer,
+    },
+    callbacks: {
+      applySolveRequestToPlanner() {},
+      clearExpansionAdvice() {},
+      clearRenderedResultState() {},
+      renderResults() {},
+      resetSolveTimer() {},
+      setResultElapsed() {},
+      setSolveState() {},
+      syncPlannerFromState() {},
+    },
+  });
+
+  assert.doesNotThrow(() => persistence.saveCurrentConfig());
+  assert.match(elements.configStorageStatus.textContent, /Could not update browser storage: quota exceeded/);
+  assert.equal(elements.savedConfigsSelect.children?.length ?? 0, 0);
 }
 
 function testPlannerPersistenceSavedLayoutOptionsShowPopulation() {
@@ -2949,6 +3256,140 @@ function testManualLayoutResponseReportsOutOfBoundsRoads() {
   ]);
 }
 
+function testReusableSolutionFootprintsAreBoundedToGrid() {
+  const grid = [[1]];
+  const oversizedSerializedSolution = {
+    roads: [],
+    services: [{ r: 0, c: 0, rows: 2, cols: 1, range: 0 }],
+    serviceTypeIndices: [-1],
+    servicePopulationIncreases: [0],
+    residentials: [],
+    residentialTypeIndices: [],
+    populations: [],
+    totalPopulation: 0,
+  };
+
+  assertValidSerializedSolutionPayload(oversizedSerializedSolution, "Manual layout solution");
+  assert.throws(
+    () => assertSerializedSolutionFootprintsWithinGrid(grid, oversizedSerializedSolution, "Manual layout solution"),
+    /Manual layout solution\.services\[0\] footprint must fit within the 1x1 grid/
+  );
+  assert.throws(
+    () => buildManualLayoutResponse(grid, {}, { ...oversizedSerializedSolution, roads: new Set() }),
+    /Manual layout solution\.services\[0\] footprint must fit within the 1x1 grid/
+  );
+
+  assert.throws(
+    () => assertValidSolveInputs(grid, {
+      optimizer: "cp-sat",
+      cpSat: {
+        warmStartHint: {
+          solution: {
+            roads: [],
+            services: [{ r: 0, c: 0, rows: 2, cols: 1, range: 0, typeIndex: -1, bonus: 0 }],
+            residentials: [],
+            populations: [],
+            totalPopulation: 0,
+          },
+        },
+      },
+    }),
+    /CP-SAT warm-start hint cpSat\.warmStartHint\.solution\.services\[0\] footprint must fit within the 1x1 grid/
+  );
+
+  assert.throws(
+    () => assertValidSolveInputs(grid, {
+      optimizer: "lns",
+      lns: {
+        seedHint: {
+          solution: {
+            roads: [],
+            services: [],
+            residentials: [{ r: 0, c: 0, rows: 1, cols: 2, typeIndex: -1, population: 0 }],
+            populations: [0],
+            totalPopulation: 0,
+          },
+        },
+      },
+    }),
+    /LNS seed hint\.residentials\[0\] footprint must fit within the 1x1 grid/
+  );
+}
+
+function testEvaluatorSkipsInvalidPlacementGeometryForDerivedChecks() {
+  const evaluation = evaluateLayout({
+    grid: [
+      [1, 1],
+      [1, 1],
+    ],
+    roads: new Set(),
+    services: [
+      {
+        r: 1,
+        c: 1,
+        rows: Number.POSITIVE_INFINITY,
+        cols: 1,
+        range: 1,
+        bonus: 5,
+      },
+    ],
+    residentials: [
+      { r: 0, c: 0, rows: Number.NaN, cols: 1 },
+      { r: 0, c: 1, rows: 1, cols: 1 },
+    ],
+    params: {
+      basePop: 10,
+      maxPop: 20,
+      availableBuildings: { residentials: 2, services: 1 },
+    },
+  });
+
+  assert.equal(evaluation.valid, false);
+  assert.match(evaluation.errors.join("\n"), /Service at \(1,1\) must have positive integer dimensions/);
+  assert.match(evaluation.errors.join("\n"), /Residential at \(0,0\) must have positive integer dimensions/);
+  assert.deepEqual(evaluation.boosts, [0, 0]);
+  assert.equal(evaluation.populations[0].population, 0);
+  assert.equal(evaluation.populations[1].population, 10);
+}
+
+function testGridValidationRejectsSparseRows() {
+  const sparseGrid = [[1, 1, 1]];
+  delete sparseGrid[0][1];
+
+  assert.equal(Object.prototype.hasOwnProperty.call(sparseGrid[0], 1), false);
+  assert.throws(
+    () => assertValidGrid(sparseGrid),
+    /Grid must be a non-empty rectangular 0\/1 grid/
+  );
+  assert.equal(isValidGrid(sparseGrid), false);
+}
+
+function testRoadKeyValidationRejectsPartialCoordinates() {
+  assert.throws(
+    () => assertValidSerializedSolutionPayload({
+      roads: ["0,"],
+      services: [],
+      serviceTypeIndices: [],
+      servicePopulationIncreases: [],
+      residentials: [],
+      residentialTypeIndices: [],
+      populations: [],
+      totalPopulation: 0,
+    }, "Manual layout solution"),
+    /Manual layout solution\.roads\[0\] must be a road key like "r,c"/
+  );
+
+  const evaluation = evaluateLayout({
+    grid: [[1]],
+    roads: new Set(["0,"]),
+    services: [],
+    residentials: [],
+    params: {},
+  });
+  assert.equal(evaluation.valid, false);
+  assert.match(evaluation.errors.join("\n"), /Road key "0," must be like "r,c"/);
+}
+
 function testBuildCpSatWarmStartCheckpointRejectsInvalidLayouts() {
   const plannerShared = loadPlannerSharedModule();
   const grid = [
@@ -3699,6 +4140,305 @@ async function testPlannerExpansionOmitsStaleComparisonHint() {
   assert.equal(capturedStartRequest.params.cpSat.warmStartHint, undefined);
 }
 
+async function testPlannerExpansionCancelsActiveComparison() {
+  const plannerShared = loadPlannerSharedModule();
+  const grid = [
+    [1, 1, 1, 1],
+    [1, 1, 1, 1],
+    [1, 1, 1, 1],
+    [1, 1, 1, 1],
+  ];
+  const params = {
+    optimizer: "cp-sat",
+    serviceTypes: [],
+    residentialTypes: [{ name: "Residential 1", w: 2, h: 2, min: 10, max: 10, avail: 1 }],
+    availableBuildings: { services: 0, residentials: 1 },
+    cpSat: {},
+    lns: {},
+  };
+  const validResult = buildManualLayoutResponse(grid, params, {
+    roads: new Set(["0,3"]),
+    services: [],
+    serviceTypeIndices: [],
+    servicePopulationIncreases: [],
+    residentials: [{ r: 0, c: 0, rows: 2, cols: 2 }],
+    residentialTypeIndices: [0],
+    populations: [10],
+    totalPopulation: 10,
+  });
+  let capturedStartRequest = null;
+  let capturedCancelRequest = null;
+  let cancelCalled = false;
+  let releaseDelay = null;
+  const plannerExpansion = loadPlannerExpansionModule(async (url, options = {}) => {
+    const urlText = String(url);
+    if (urlText === "/api/solve/start") {
+      capturedStartRequest = JSON.parse(String(options.body));
+      return {
+        ok: true,
+        async json() {
+          return { ok: true, requestId: capturedStartRequest.requestId };
+        },
+      };
+    }
+    if (urlText === "/api/solve/cancel") {
+      capturedCancelRequest = JSON.parse(String(options.body));
+      cancelCalled = true;
+      return {
+        ok: true,
+        async json() {
+          return { ok: true, stopped: true, message: "Stop requested." };
+        },
+      };
+    }
+    if (urlText.startsWith("/api/solve/status")) {
+      return {
+        ok: true,
+        async json() {
+          return cancelCalled
+            ? { ok: true, jobStatus: "stopped", error: "Candidate comparison stopped." }
+            : { ok: true, jobStatus: "running", hasFeasibleSolution: false };
+        },
+      };
+    }
+    throw new Error(`Unexpected fetch URL ${urlText}`);
+  });
+  const state = {
+    isSolving: false,
+    isStopping: false,
+    optimizer: "cp-sat",
+    grid,
+    serviceTypes: [],
+    residentialTypes: [
+      plannerShared.serializeResidentialTypeForCatalog(params.residentialTypes[0]),
+    ],
+    availableBuildings: { services: "0", residentials: "1" },
+    greedy: {},
+    cpSat: { useDisplayedHint: false },
+    lns: { useDisplayedSeed: false },
+    result: validResult,
+    resultContext: { grid, params },
+    expansionAdvice: {
+      nextServiceText: "Clinic, 5, 1x1, 3x3",
+      nextResidentialText: "",
+      isRunning: false,
+      activeRequestId: "",
+      status: "",
+      result: null,
+      error: "",
+    },
+  };
+  const controller = plannerExpansion.createExpansionAdviceController({
+    state,
+    elements: {
+      expansionAdviceStatus: createFakeDomElement(),
+      expansionAdviceMetrics: createFakeDomElement(),
+      expansionAdviceWinner: createFakeDomElement(),
+      expansionAdviceBaseline: createFakeDomElement(),
+      expansionAdviceServiceOutcome: createFakeDomElement(),
+      expansionAdviceResidentialOutcome: createFakeDomElement(),
+    },
+    constants: {
+      COMPARISON_PROGRESS_HINT_INTERVAL_MS: 1,
+      SOLVE_STATUS_POLL_INTERVAL_MS: 1,
+    },
+    helpers: {
+      buildCpSatContinuationModelInput: plannerShared.buildCpSatContinuationModelInput,
+      cloneJson: plannerShared.cloneJson,
+      computeCpSatModelFingerprint: plannerShared.computeCpSatModelFingerprint,
+      createSolveRequestId() {
+        return "expansion-cancel-test";
+      },
+      delay() {
+        return new Promise((resolve) => {
+          releaseDelay = resolve;
+        });
+      },
+      parseResidentialCatalogEntry: plannerShared.parseResidentialCatalogEntry,
+      parseServiceCatalogEntry: plannerShared.parseServiceCatalogEntry,
+    },
+    callbacks: {
+      buildSolveRequest() {
+        return {
+          grid: plannerShared.cloneGrid(grid),
+          params: {
+            optimizer: state.optimizer,
+            greedy: {},
+            cpSat: {},
+            lns: {},
+          },
+        };
+      },
+      getDisplayedLayoutCheckpoint() {
+        return null;
+      },
+      getDisplayedLayoutSourceLabel() {
+        return "Displayed layout";
+      },
+      getOptimizerLabel() {
+        return "CP-SAT";
+      },
+      syncActionAvailability() {},
+    },
+  });
+
+  const comparison = controller.compareExpansionOptions();
+  for (let attempt = 0; attempt < 20 && !releaseDelay; attempt += 1) {
+    await Promise.resolve();
+  }
+  assert.ok(capturedStartRequest);
+  assert.equal(state.expansionAdvice.activeRequestId, "expansion-cancel-test-compare");
+
+  await controller.requestStopComparison();
+  assert.deepEqual(capturedCancelRequest, { requestId: "expansion-cancel-test-compare" });
+  assert.equal(state.isStopping, true);
+
+  releaseDelay();
+  await comparison;
+
+  assert.equal(state.expansionAdvice.isRunning, false);
+  assert.equal(state.expansionAdvice.activeRequestId, "");
+  assert.equal(state.isStopping, false);
+  assert.match(state.expansionAdvice.error, /Candidate comparison stopped/);
+}
+
+async function testPlannerExpansionTreatsStoppedSolutionAsStopped() {
+  const plannerShared = loadPlannerSharedModule();
+  const grid = [
+    [1, 1, 1, 1],
+    [1, 1, 1, 1],
+    [1, 1, 1, 1],
+    [1, 1, 1, 1],
+  ];
+  const params = {
+    optimizer: "cp-sat",
+    serviceTypes: [],
+    residentialTypes: [{ name: "Residential 1", w: 2, h: 2, min: 10, max: 10, avail: 1 }],
+    availableBuildings: { services: 0, residentials: 1 },
+    cpSat: {},
+    lns: {},
+  };
+  const validResult = buildManualLayoutResponse(grid, params, {
+    roads: new Set(["0,3"]),
+    services: [],
+    serviceTypeIndices: [],
+    servicePopulationIncreases: [],
+    residentials: [{ r: 0, c: 0, rows: 2, cols: 2 }],
+    residentialTypeIndices: [0],
+    populations: [10],
+    totalPopulation: 10,
+  });
+  const startRequests = [];
+  const plannerExpansion = loadPlannerExpansionModule(async (url, options = {}) => {
+    const urlText = String(url);
+    if (urlText === "/api/solve/start") {
+      const request = JSON.parse(String(options.body));
+      startRequests.push(request);
+      return {
+        ok: true,
+        async json() {
+          return { ok: true, requestId: request.requestId };
+        },
+      };
+    }
+    if (urlText.startsWith("/api/solve/status")) {
+      return {
+        ok: true,
+        async json() {
+          return {
+            ok: true,
+            jobStatus: "stopped",
+            error: "Candidate comparison stopped.",
+            solution: { totalPopulation: 15 },
+            stats: { totalPopulation: 15 },
+          };
+        },
+      };
+    }
+    throw new Error(`Unexpected fetch URL ${urlText}`);
+  });
+  const state = {
+    isSolving: false,
+    isStopping: false,
+    optimizer: "cp-sat",
+    grid,
+    serviceTypes: [],
+    residentialTypes: [
+      plannerShared.serializeResidentialTypeForCatalog(params.residentialTypes[0]),
+    ],
+    availableBuildings: { services: "0", residentials: "1" },
+    greedy: {},
+    cpSat: { useDisplayedHint: false },
+    lns: { useDisplayedSeed: false },
+    result: validResult,
+    resultContext: { grid, params },
+    expansionAdvice: {
+      nextServiceText: "Clinic, 5, 1x1, 3x3",
+      nextResidentialText: "Tower, 20/20, 1x1",
+      isRunning: false,
+      activeRequestId: "",
+      status: "",
+      result: null,
+      error: "",
+    },
+  };
+  const controller = plannerExpansion.createExpansionAdviceController({
+    state,
+    elements: {
+      expansionAdviceStatus: createFakeDomElement(),
+      expansionAdviceMetrics: createFakeDomElement(),
+      expansionAdviceWinner: createFakeDomElement(),
+      expansionAdviceBaseline: createFakeDomElement(),
+      expansionAdviceServiceOutcome: createFakeDomElement(),
+      expansionAdviceResidentialOutcome: createFakeDomElement(),
+    },
+    constants: {
+      COMPARISON_PROGRESS_HINT_INTERVAL_MS: 1,
+      SOLVE_STATUS_POLL_INTERVAL_MS: 1,
+    },
+    helpers: {
+      buildCpSatContinuationModelInput: plannerShared.buildCpSatContinuationModelInput,
+      cloneJson: plannerShared.cloneJson,
+      computeCpSatModelFingerprint: plannerShared.computeCpSatModelFingerprint,
+      createSolveRequestId() {
+        return `stopped-solution-${startRequests.length}`;
+      },
+      async delay() {},
+      parseResidentialCatalogEntry: plannerShared.parseResidentialCatalogEntry,
+      parseServiceCatalogEntry: plannerShared.parseServiceCatalogEntry,
+    },
+    callbacks: {
+      buildSolveRequest() {
+        return {
+          grid: plannerShared.cloneGrid(grid),
+          params: {
+            optimizer: state.optimizer,
+            greedy: {},
+            cpSat: {},
+            lns: {},
+          },
+        };
+      },
+      getDisplayedLayoutCheckpoint() {
+        return null;
+      },
+      getDisplayedLayoutSourceLabel() {
+        return "Displayed layout";
+      },
+      getOptimizerLabel() {
+        return "CP-SAT";
+      },
+      syncActionAvailability() {},
+    },
+  });
+
+  await controller.compareExpansionOptions();
+
+  assert.equal(startRequests.length, 1);
+  assert.equal(state.expansionAdvice.result, null);
+  assert.match(state.expansionAdvice.error, /Candidate comparison stopped/);
+}
+
 function testPlannerRequestBuilderTreatsBlankAutoCapAsUnlimited() {
   const plannerShared = loadPlannerSharedModule();
   const plannerRequestBuilder = loadPlannerRequestBuilderModule();
@@ -4168,6 +4908,140 @@ function testPlannerSolveProgressLogPrefersBackendProgressEntry() {
   assert.equal(log[0].autoStage.stageIndex, 2);
 }
 
+async function testPlannerSolveRuntimeCancelsStartedSolveAfterStatusReadFailure() {
+  let statusAttempts = 0;
+  let cancelRequest = null;
+  const runtimeModule = loadPlannerSolveRuntimeModule(async (url, options = {}) => {
+    const urlText = String(url);
+    if (urlText === "/api/solve/start") {
+      return {
+        ok: true,
+        async json() {
+          return { ok: true, requestId: "runtime-cancel-test" };
+        },
+      };
+    }
+    if (urlText.startsWith("/api/solve/status")) {
+      statusAttempts += 1;
+      throw new Error("status read failed");
+    }
+    if (urlText === "/api/solve/cancel") {
+      cancelRequest = JSON.parse(String(options.body));
+      return {
+        ok: true,
+        async json() {
+          return { ok: true, stopped: true };
+        },
+      };
+    }
+    throw new Error(`Unexpected fetch URL ${urlText}`);
+  });
+  const elements = {
+    solveTimer: createFakeDomElement(),
+    resultElapsed: createFakeDomElement(),
+    solveStatus: createFakeDomElement(),
+  };
+  const state = {
+    isSolving: false,
+    isStopping: false,
+    activeSolveRequestId: "",
+    optimizer: "greedy",
+    greedy: {},
+    cpSat: {},
+    lns: {},
+    result: null,
+    resultContext: null,
+    resultIsLiveSnapshot: false,
+    resultError: "",
+    solveProgressLog: [],
+    solveTimerHandle: 0,
+    solveTimerStartedAt: 0,
+    solveTimerElapsedMs: 0,
+    solveTimerFrozen: true,
+    resultElapsedMs: 0,
+    selectedMapCell: null,
+    layoutEditor: {
+      edited: false,
+      pendingValidation: false,
+      status: "",
+      mode: "inspect",
+      pendingPlacement: null,
+      isApplying: false,
+    },
+  };
+  const controller = runtimeModule.createSolveRuntime({
+    state,
+    elements,
+    constants: {
+      LIVE_SNAPSHOT_REFRESH_INTERVAL_MS: 1,
+      SOLVE_STATUS_POLL_INTERVAL_MS: 1,
+    },
+    helpers: {
+      createSolveRequestId() {
+        return "runtime-cancel-test";
+      },
+      async delay() {},
+      formatElapsedTime(value) {
+        return String(value);
+      },
+      normalizeElapsedMs(value) {
+        return Number(value) || 0;
+      },
+    },
+    callbacks: {
+      buildSolveRequest() {
+        return {
+          grid: [[1]],
+          params: { optimizer: "greedy", greedy: {} },
+        };
+      },
+      clearExpansionAdvice() {},
+      ensureCpSatRandomSeed() {},
+      getDisplayedLayoutCheckpoint() {
+        return null;
+      },
+      getOptimizerLabel(value) {
+        return value;
+      },
+      renderResults() {},
+      setSolveState(message) {
+        elements.solveStatus.textContent = message;
+      },
+    },
+  });
+
+  await controller.runSolve();
+
+  assert.equal(statusAttempts, 3);
+  assert.deepEqual(cancelRequest, { requestId: "runtime-cancel-test" });
+  assert.equal(state.activeSolveRequestId, "");
+  assert.equal(state.isSolving, false);
+  assert.match(state.resultError, /status read failed/);
+}
+
+function testFilesystemSolveLogNamesDoNotCollideAfterSanitizingRequestIds() {
+  const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "solve-progress-log-collision-"));
+  const baseOptions = {
+    rootDirectory: tempRoot,
+    optimizer: "greedy",
+    grid: [[1]],
+    params: { optimizer: "greedy" },
+    createdAtMs: 1234,
+  };
+  const first = new SolveProgressLogWriter({
+    ...baseOptions,
+    requestId: "abc.",
+  });
+  const second = new SolveProgressLogWriter({
+    ...baseOptions,
+    requestId: "abc-",
+  });
+
+  assert.notEqual(first.fileName, second.fileName);
+  assert.equal(fs.existsSync(first.filePath), true);
+  assert.equal(fs.existsSync(second.filePath), true);
+}
+
 function testFilesystemSolveLogTracksSolverClockAcrossHeartbeats() {
   const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "solve-progress-log-"));
   const writer = new SolveProgressLogWriter({
@@ -4300,7 +5174,11 @@ async function main() {
   testGreedyLocalSearchDoesNotRegressNontrivialSeed();
   testIndexImportHasNoSideEffects();
   testCpSatPortfolioCapabilitiesAreExported();
+  testCliScoreRatioParsingRejectsBlankValue();
+  testCliPositiveNumberListRejectsNonPositiveBudgets();
+  testCliNonNegativeIntegerRejectsBlankValue();
   testPlannerServiceAvailabilityRoundTrip();
+  testPlannerCatalogParsingRejectsPartialIntegers();
   testPlannerAutoFillsCpSatRandomSeed();
   testPlannerBuildSolveRequestIncludesCpSatNoImprovementTimeout();
   testPlannerBuildSolveRequestEnablesGreedyDiagnosticsOnlyForStandaloneGreedy();
@@ -4310,6 +5188,8 @@ async function main() {
   testPlannerShellRequiresManualValidationBeforeContinuationReuse();
   testPlannerPersistenceRestoresLegacyReviewedInvalidLayoutWithoutPendingFlag();
   testPlannerPersistenceRestoresLegacyPendingValidationLayoutWithoutFlag();
+  testPlannerPersistenceDisablesPortfolioWhenConfigHasNoPortfolio();
+  testPlannerPersistenceReportsStorageWriteFailures();
   testPlannerPersistenceSavedLayoutOptionsShowPopulation();
   testPlannerResultsRotatePendingPlacementUpdatesFootprint();
   testPlannerResultsShowsAutoGeneratedSeedSummary();
@@ -4322,6 +5202,10 @@ async function main() {
   testManualLayoutResponseCleansRedundantRoads();
   testBoundaryAnchorBuildingsDoNotRequireExplicitRoads();
   testManualLayoutResponseReportsOutOfBoundsRoads();
+  testReusableSolutionFootprintsAreBoundedToGrid();
+  testEvaluatorSkipsInvalidPlacementGeometryForDerivedChecks();
+  testGridValidationRejectsSparseRows();
+  testRoadKeyValidationRejectsPartialCoordinates();
   testBuildCpSatWarmStartCheckpointRejectsInvalidLayouts();
   testBuildCpSatWarmStartCheckpointRejectsLegacyLayoutsWithoutValidation();
   testPlannerRequestBuilderSkipsLegacySavedCheckpointWithoutValidation();
@@ -4330,11 +5214,15 @@ async function main() {
   testPlannerRequestBuilderSkipsLegacyDisplayedLayoutContinuationWithoutValidation();
   testPlannerRequestBuilderIncludesHintAndSeedForAuto();
   await testPlannerExpansionOmitsStaleComparisonHint();
+  await testPlannerExpansionCancelsActiveComparison();
+  await testPlannerExpansionTreatsStoppedSolutionAsStopped();
   testPlannerRequestBuilderTreatsBlankAutoCapAsUnlimited();
   testPlannerRequestBuilderUsesBoundedGreedyProfileForAuto();
   testPlannerRequestBuilderKeepsPortfolioStandaloneOnly();
   testPlannerSolveProgressLogCapturesSnapshotAndFinalResult();
   testPlannerSolveProgressLogPrefersBackendProgressEntry();
+  await testPlannerSolveRuntimeCancelsStartedSolveAfterStatusReadFailure();
+  testFilesystemSolveLogNamesDoNotCollideAfterSanitizingRequestIds();
   testFilesystemSolveLogTracksSolverClockAcrossHeartbeats();
 
   console.log("All review finding regression tests passed.");

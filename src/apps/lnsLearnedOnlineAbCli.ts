@@ -11,6 +11,7 @@ import {
   parseNameList,
   parseNumberList,
   parsePositiveInteger,
+  parseScoreRatio,
 } from "./cliParsing.js";
 import { runCliMain } from "./cliEntrypoint.js";
 import { writeCliJsonOrText, writeCliText } from "./cliOutput.js";
@@ -22,14 +23,6 @@ interface ParsedLnsLearnedOnlineAbArgs {
   seeds?: number[];
   candidateLimit?: number;
   exploratoryMinScoreRatio?: number;
-}
-
-function parseScoreRatio(value: string, label: string): number {
-  const number = Number(value);
-  if (!Number.isFinite(number) || number < 0 || number > 1) {
-    throw new Error(`Expected ${label} to be a finite number between 0 and 1.`);
-  }
-  return number;
 }
 
 function parseArgs(argv: string[]): ParsedLnsLearnedOnlineAbArgs {

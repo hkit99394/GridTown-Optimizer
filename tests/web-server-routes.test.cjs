@@ -308,6 +308,13 @@ function buildTinySolvePayload() {
   };
 }
 
+function progressLogPath(progressLogRoot, payload) {
+  assert.equal(typeof payload.progressLogFileName, "string");
+  assert.equal(path.basename(payload.progressLogFileName), payload.progressLogFileName);
+  assert.equal(payload.progressLogFilePath, undefined);
+  return path.join(progressLogRoot, payload.progressLogFileName);
+}
+
 function buildAllowedGrid(rows, cols) {
   return Array.from({ length: rows }, () => Array.from({ length: cols }, () => 1));
 }
@@ -1330,6 +1337,12 @@ async function testLayoutEvaluateRoute(handler) {
   const solved = solve(solvePayload.grid, solvePayload.params);
   const serializedSolution = {
     ...solved,
+    optimizer: "auto",
+    activeOptimizer: "greedy",
+    autoStage: { requestedOptimizer: "auto", activeStage: "greedy", stageIndex: 1, cycleIndex: 0, generatedSeeds: [] },
+    greedyProfile: { phases: [] },
+    greedyDiagnostics: { serviceRejections: [], residentialRejections: [] },
+    lnsTelemetry: { stopReason: "iteration-limit" },
     roads: Array.from(solved.roads),
   };
 
@@ -1347,8 +1360,16 @@ async function testLayoutEvaluateRoute(handler) {
   assert.equal(result.payload.validation.valid, true);
   assert.equal(result.payload.stats.totalPopulation, 100);
   assert.equal(result.payload.solution.manualLayout, true);
+  assert.equal(result.payload.solution.activeOptimizer, undefined);
+  assert.equal(result.payload.solution.autoStage, undefined);
+  assert.equal(result.payload.solution.greedyProfile, undefined);
+  assert.equal(result.payload.solution.greedyDiagnostics, undefined);
+  assert.equal(result.payload.solution.lnsTelemetry, undefined);
   assert.equal(result.payload.stats.manualLayout, true);
+  assert.equal(result.payload.stats.activeOptimizer, undefined);
+  assert.equal(result.payload.stats.autoStage, undefined);
   assert.equal(result.payload.stats.cpSatStatus, null);
+  assert.equal(result.payload.stats.lnsTelemetry, undefined);
   assertPlannerExplainabilityPayload(result.payload, solvePayload.grid);
 }
 
@@ -1472,7 +1493,7 @@ async function testLayoutEvaluateRejectsInvalidProblemDefinition(handler) {
   );
 }
 
-async function testBackgroundSolveRoutes(handler) {
+async function testBackgroundSolveRoutes(handler, progressLogRoot) {
   const solvePayload = buildTinySolvePayload();
   const requestId = "route-test-greedy";
   const startResult = await invoke(handler, {
@@ -1488,15 +1509,16 @@ async function testBackgroundSolveRoutes(handler) {
   assert.equal(startResult.payload.ok, true);
   assert.equal(startResult.payload.requestId, requestId);
   assert.equal(startResult.payload.jobStatus, "running");
-  assert.equal(typeof startResult.payload.progressLogFilePath, "string");
+  const logPath = progressLogPath(progressLogRoot, startResult.payload);
 
   const finalPayload = await waitForSolve(handler, requestId);
   assert.equal(finalPayload.jobStatus, "completed");
   assert.equal(finalPayload.stats.totalPopulation, 100);
   assert.equal(finalPayload.solution.residentials.length, 1);
-  assert.equal(finalPayload.progressLogFilePath, startResult.payload.progressLogFilePath);
+  assert.equal(finalPayload.progressLogFileName, startResult.payload.progressLogFileName);
+  assert.equal(finalPayload.progressLogFilePath, undefined);
 
-  const persistedLog = JSON.parse(fs.readFileSync(startResult.payload.progressLogFilePath, "utf8"));
+  const persistedLog = JSON.parse(fs.readFileSync(logPath, "utf8"));
   assert.equal(persistedLog.requestId, requestId);
   assert.equal(persistedLog.status, "completed");
   assert.deepEqual(persistedLog.input.grid, solvePayload.grid);
@@ -1508,7 +1530,47 @@ async function testBackgroundSolveRoutes(handler) {
   assert.equal(persistedLog.entries[persistedLog.entries.length - 1].source, "final-result");
 }
 
-async function testStartSolveDefaultsOmittedOptimizerToAuto(handler) {
+async function testStartSolveRejectsUnsafeRequestIds(handler) {
+  const solvePayload = buildTinySolvePayload();
+  const pathTraversalResult = await invoke(handler, {
+    method: "POST",
+    url: "/api/solve/start",
+    json: {
+      ...solvePayload,
+      requestId: "../outside",
+    },
+  });
+  assert.equal(pathTraversalResult.statusCode, 400);
+  assert.match(pathTraversalResult.payload.error, /Solve requestId must be 1-120 characters/);
+
+  const longIdResult = await invoke(handler, {
+    method: "POST",
+    url: "/api/solve/start",
+    json: {
+      ...solvePayload,
+      requestId: "a".repeat(121),
+    },
+  });
+  assert.equal(longIdResult.statusCode, 400);
+  assert.match(longIdResult.payload.error, /Solve requestId must be 1-120 characters/);
+
+  const statusResult = await invoke(handler, {
+    method: "GET",
+    url: `/api/solve/status?${new URLSearchParams({ requestId: "../outside" }).toString()}`,
+  });
+  assert.equal(statusResult.statusCode, 400);
+  assert.match(statusResult.payload.error, /Solve requestId must be 1-120 characters/);
+
+  const cancelResult = await invoke(handler, {
+    method: "POST",
+    url: "/api/solve/cancel",
+    json: { requestId: "../outside" },
+  });
+  assert.equal(cancelResult.statusCode, 400);
+  assert.match(cancelResult.payload.error, /Solve requestId must be 1-120 characters/);
+}
+
+async function testStartSolveDefaultsOmittedOptimizerToAuto(handler, progressLogRoot) {
   const solvePayload = buildTinySolvePayload();
   const { optimizer, ...paramsWithoutOptimizer } = solvePayload.params;
   assert.equal(optimizer, "greedy");
@@ -1581,7 +1643,7 @@ async function testStartSolveDefaultsOmittedOptimizerToAuto(handler) {
     assert.equal(finalPayload.stats.optimizer, "auto");
     assert.equal(finalPayload.stats.activeOptimizer, "greedy");
 
-    const persistedLog = JSON.parse(fs.readFileSync(startResult.payload.progressLogFilePath, "utf8"));
+    const persistedLog = JSON.parse(fs.readFileSync(progressLogPath(progressLogRoot, startResult.payload), "utf8"));
     assert.equal(persistedLog.optimizer, "auto");
     assert.equal(persistedLog.input.params.optimizer, undefined);
   } finally {
@@ -1791,7 +1853,7 @@ async function testRecoveredAutoFailureNormalizesTerminalMetadata() {
     assert.equal(finalPayload.solution.autoStage.stageIndex, 3);
     assert.equal(finalPayload.solution.autoStage.stopReason, "stage-error");
 
-    const persistedLog = JSON.parse(fs.readFileSync(startResult.payload.progressLogFilePath, "utf8"));
+    const persistedLog = JSON.parse(fs.readFileSync(progressLogPath(progressLogRoot, startResult.payload), "utf8"));
     assert.equal(persistedLog.message, "Auto kept the best available incumbent after a later stage ended without a usable result.");
     assert.equal(persistedLog.finalResult.solution.activeOptimizer, "cp-sat");
     assert.equal(persistedLog.finalResult.solution.autoStage.activeStage, "cp-sat");
@@ -2014,6 +2076,77 @@ async function testCancelMissingSolveRoute(handler) {
   assert.equal(result.payload.stopped, false);
 }
 
+async function testCancelRunningSolveRoute(handler) {
+  const solvePayload = buildTinySolvePayload();
+  const backgroundSolution = solve(solvePayload.grid, solvePayload.params);
+  const originalGetOptimizerAdapter = optimizerRegistry.getOptimizerAdapter;
+  const handlePromiseDeferred = createDeferred();
+  const startBackgroundSolveDeferred = createDeferred();
+  let cancelCalled = false;
+
+  optimizerRegistry.getOptimizerAdapter = () => ({
+    name: "greedy",
+    solve() {
+      throw new Error("Cancel route test should use the background adapter.");
+    },
+    startBackgroundSolve() {
+      startBackgroundSolveDeferred.resolve();
+      return {
+        promise: handlePromiseDeferred.promise,
+        cancel() {
+          cancelCalled = true;
+          handlePromiseDeferred.resolve({
+            ...backgroundSolution,
+            stoppedByUser: true,
+          });
+        },
+        getLatestSnapshot() {
+          return null;
+        },
+        getLatestSnapshotState() {
+          return {
+            hasFeasibleSolution: false,
+            totalPopulation: null,
+          };
+        },
+      };
+    },
+  });
+
+  try {
+    const requestId = "cancel-running-solve";
+    const startResult = await invoke(handler, {
+      method: "POST",
+      url: "/api/solve/start",
+      json: {
+        ...solvePayload,
+        requestId,
+      },
+    });
+    assert.equal(startResult.statusCode, 202);
+    await startBackgroundSolveDeferred.promise;
+
+    const cancelResult = await invoke(handler, {
+      method: "POST",
+      url: "/api/solve/cancel",
+      json: { requestId },
+    });
+
+    assert.equal(cancelResult.statusCode, 200);
+    assert.equal(cancelResult.payload.ok, true);
+    assert.equal(cancelResult.payload.stopped, true);
+    assert.equal(cancelCalled, true);
+
+    const finalPayload = await waitForSolve(handler, requestId);
+    assert.equal(finalPayload.jobStatus, "stopped");
+    assert.equal(finalPayload.cancelRequested, true);
+    assert.equal(finalPayload.stats.stoppedByUser, true);
+  } finally {
+    handlePromiseDeferred.resolve(backgroundSolution);
+    optimizerRegistry.getOptimizerAdapter = originalGetOptimizerAdapter;
+  }
+}
+
 async function testCompletedSolveJobsExpire() {
   const progressLogRoot = fs.mkdtempSync(path.join(os.tmpdir(), "planner-route-expiry-"));
   const handler = createPlannerRequestHandler({
@@ -2048,7 +2181,7 @@ async function testCompletedSolveJobsExpire() {
   assert.equal(expiredResult.statusCode, 404);
   assert.equal(expiredResult.payload.ok, false);
   assert.match(expiredResult.payload.error, /No solve job was found/);
-  assert.equal(fs.existsSync(startResult.payload.progressLogFilePath), true);
+  assert.equal(fs.existsSync(progressLogPath(progressLogRoot, startResult.payload)), true);
 }
 
 async function main() {
@@ -2088,8 +2221,9 @@ async function main() {
   await testLayoutEvaluateRejectsMalformedSerializedSolutions(handler);
   await testLayoutEvaluateReportsWellFormedInvalidManualLayout(handler);
   await testLayoutEvaluateRejectsInvalidProblemDefinition(handler);
-  await testBackgroundSolveRoutes(handler);
-  await testStartSolveDefaultsOmittedOptimizerToAuto(handler);
+  await testBackgroundSolveRoutes(handler, progressLogRoot);
+  await testStartSolveRejectsUnsafeRequestIds(handler);
+  await testStartSolveDefaultsOmittedOptimizerToAuto(handler, progressLogRoot);
   await testSolveStatusIncludesAutoStageMetadata(handler);
   await testRecoveredAutoFailureNormalizesTerminalMetadata();
   await testStartSolveRejectsInvalidLnsSeedHint(handler);
@@ -2097,6 +2231,7 @@ async function main() {
   await testStartSolveRejectsInvalidCpSatWarmStartBeforeStartingJob(handler);
   await testStartSolveRejectsInvalidGreedyOptionsBeforeStartingJob(handler);
   await testCancelMissingSolveRoute(handler);
+  await testCancelRunningSolveRoute(handler);
   await testCompletedSolveJobsExpire();
 
   console.log("Web server route tests passed.");

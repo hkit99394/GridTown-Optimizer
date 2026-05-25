@@ -1,5 +1,9 @@
 import { materializeSerializedSolution } from "../../core/solutionSerialization.js";
-import { assertValidSerializedSolutionPayload, SolverInputError } from "../../core/solverInputValidation.js";
+import {
+  assertValidSerializedSolutionPayload,
+  isValidGrid,
+  SolverInputError,
+} from "../../core/solverInputValidation.js";
 import type { Grid, SerializedSolution, SolverParams } from "../../core/types.js";
 
 export interface SolveRequest {
@@ -58,13 +62,7 @@ function positiveDimension(value: unknown): number | null {
 }
 
 export function isGrid(value: unknown): value is Grid {
-  if (!Array.isArray(value) || value.length === 0) return false;
-  if (!value.every((row) => Array.isArray(row) && row.length > 0)) return false;
-  const width = Array.isArray(value[0]) ? value[0].length : 0;
-  if (width === 0) return false;
-  return value.every(
-    (row) => Array.isArray(row) && row.length === width && row.every((cell) => cell === 0 || cell === 1)
-  );
+  return isValidGrid(value);
 }
 
 export function isSolveRequest(value: unknown): value is SolveRequest {

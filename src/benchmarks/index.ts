@@ -16,6 +16,8 @@ export * from "./lnsOfflineRanker.js";
 export * from "./greedyLearnedOnlineAb.js";
 export * from "./lnsLearnedOnlineAb.js";
 export * from "./lnsLearnedPromotionReview.js";
+export * from "./lnsLearnedGuardCalibration.js";
+export * from "./lnsLearnedDisplacementDiagnostics.js";
 export * from "./experimentRegistry.js";
 export * from "./roadSemanticsScorecard.js";
 export * from "./productWorkflow.js";

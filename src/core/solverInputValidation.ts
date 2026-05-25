@@ -7,7 +7,7 @@ import { validateSolution } from "./evaluator.js";
 import { computeCpSatRequestFingerprint } from "./cpSatContinuation.js";
 import { NO_TYPE_INDEX } from "./rules.js";
 import { CP_SAT_PORTFOLIO_CAPABILITY_LIMITS } from "./capabilities.js";
-import { isOptimizerName, OMITTED_SOLVER_OPTIMIZER } from "./types.js";
+import { isCellKey, isOptimizerName, OMITTED_SOLVER_OPTIMIZER } from "./types.js";
 
 import type { CpSatWarmStartHint, Grid, OptimizerName, SerializedSolution, Solution, SolverParams } from "./types.js";
 
@@ -82,6 +82,35 @@ function resolveOptimizerName(params: Pick<SolverParams, "optimizer"> | null | u
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
+}
+
+export function assertValidGrid(value: unknown, label = "Grid"): asserts value is Grid {
+  if (!Array.isArray(value) || value.length === 0) {
+    throw new SolverInputError(`${label} must be a non-empty rectangular 0/1 grid.`);
+  }
+  const width = Array.isArray(value[0]) ? value[0].length : 0;
+  if (width === 0) {
+    throw new SolverInputError(`${label} must be a non-empty rectangular 0/1 grid.`);
+  }
+  for (const row of value) {
+    if (!Array.isArray(row) || row.length !== width) {
+      throw new SolverInputError(`${label} must be a non-empty rectangular 0/1 grid.`);
+    }
+    for (let col = 0; col < width; col++) {
+      if (!Object.prototype.hasOwnProperty.call(row, col) || (row[col] !== 0 && row[col] !== 1)) {
+        throw new SolverInputError(`${label} must be a non-empty rectangular 0/1 grid.`);
+      }
+    }
+  }
+}
+
+export function isValidGrid(value: unknown): value is Grid {
+  try {
+    assertValidGrid(value);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 function isInteger(value: unknown, minimum = 0): value is number {
@@ -454,6 +483,61 @@ function materializeCpSatWarmStartReusableSolution(value: unknown, path: string)
   };
 }
 
+interface SolutionFootprintCollections {
+  services: readonly Pick<Solution["services"][number], "r" | "c" | "rows" | "cols">[];
+  residentials: readonly Pick<Solution["residentials"][number], "r" | "c" | "rows" | "cols">[];
+}
+
+function assertSafeFootprintInteger(value: number, minimum: number, path: string): void {
+  if (!Number.isSafeInteger(value) || value < minimum) {
+    throw new SolverInputError(`${path} must be a safe integer >= ${minimum}.`);
+  }
+}
+
+function assertPlacementFootprintWithinGrid(
+  G: Grid,
+  placement: Pick<Solution["services"][number], "r" | "c" | "rows" | "cols">,
+  path: string
+): void {
+  assertSafeFootprintInteger(placement.r, 0, `${path}.r`);
+  assertSafeFootprintInteger(placement.c, 0, `${path}.c`);
+  assertSafeFootprintInteger(placement.rows, 1, `${path}.rows`);
+  assertSafeFootprintInteger(placement.cols, 1, `${path}.cols`);
+
+  const gridRows = G.length;
+  const gridCols = G[0]?.length ?? 0;
+  if (
+    placement.rows > gridRows
+    || placement.cols > gridCols
+    || placement.r > gridRows - placement.rows
+    || placement.c > gridCols - placement.cols
+  ) {
+    throw new SolverInputError(`${path} footprint must fit within the ${gridRows}x${gridCols} grid.`);
+  }
+}
+
+export function assertSolutionFootprintsWithinGrid(
+  G: Grid,
+  solution: SolutionFootprintCollections,
+  path = "Solution"
+): void {
+  assertValidGrid(G);
+  solution.services.forEach((service, index) => {
+    assertPlacementFootprintWithinGrid(G, service, `${path}.services[${index}]`);
+  });
+  solution.residentials.forEach((residential, index) => {
+    assertPlacementFootprintWithinGrid(G, residential, `${path}.residentials[${index}]`);
+  });
+}
+
+export function assertSerializedSolutionFootprintsWithinGrid(
+  G: Grid,
+  solution: SerializedSolution,
+  path = "Serialized solution"
+): void {
+  assertSolutionFootprintsWithinGrid(G, solution, path);
+}
+
 function assertValidReusableSolution(
   G: Grid,
   params: SolverParams,
@@ -461,6 +545,7 @@ function assertValidReusableSolution(
   context: string,
   fallbackDetail = "the reusable layout is not valid for the current grid and building settings."
 ): void {
+  assertSolutionFootprintsWithinGrid(G, solution, context);
   const validation = validateSolution({
     grid: G,
     params,
@@ -516,13 +601,7 @@ function assertValidCpSatReusableInputs(G: Grid, params: SolverParams): void {
 }
 
 function isRoadKey(value: unknown): value is string {
-  if (typeof value !== "string") return false;
-  const [row, col, ...rest] = value.split(",");
-  return rest.length === 0
-    && Number.isInteger(Number(row))
-    && Number(row) >= 0
-    && Number.isInteger(Number(col))
-    && Number(col) >= 0;
+  return isCellKey(value);
 }
 
 function requireRoadKeys(value: unknown, path: string): string[] {
@@ -866,7 +945,7 @@ function assertValidCpSatPortfolioOptions(value: unknown, path: string, cpSat: R
 
   const resolvedWorkerCount = randomSeedCount
     ?? getOptionalIntegerInRange(portfolio, "workerCount", 1, CP_SAT_PORTFOLIO_MAX_WORKERS)
-    ?? Math.min(4, CP_SAT_PORTFOLIO_MAX_WORKERS);
+    ?? Math.min(CP_SAT_PORTFOLIO_CAPABILITY_LIMITS.defaultWorkers, CP_SAT_PORTFOLIO_MAX_WORKERS);
   const perWorkerNumWorkers = getOptionalIntegerInRange(portfolio, "perWorkerNumWorkers", 1, CP_SAT_MAX_NUM_WORKERS) ?? 1;
   const requestedWorkerThreads = resolvedWorkerCount * perWorkerNumWorkers;
   if (requestedWorkerThreads > CP_SAT_PORTFOLIO_MAX_TOTAL_WORKER_THREADS) {
@@ -1318,6 +1397,7 @@ export function assertValidLnsOptions(params: SolverParams): void {
 }
 
 export function assertValidSolveInputs(G: Grid, params: SolverParams): void {
+  assertValidGrid(G);
   assertValidProblemDefinition(params);
   const optimizer = resolveOptimizerName(params);
   assertValidAutoOptions(params);
@@ -1329,6 +1409,7 @@ export function assertValidSolveInputs(G: Grid, params: SolverParams): void {
   materializeValidLnsSeedSolution(G, params, params.lns?.seedHint);
 }
 
-export function assertValidLayoutEvaluateInputs(_G: Grid, params: SolverParams): void {
+export function assertValidLayoutEvaluateInputs(G: Grid, params: SolverParams): void {
+  assertValidGrid(G);
   assertValidProblemDefinition(params);
 }

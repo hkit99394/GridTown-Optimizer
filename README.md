@@ -187,13 +187,22 @@ Available scripts from [package.json](./package.json):
 - `npm run benchmark:lns`
 - `npm run benchmark:cp-sat`
 - `npm run benchmark:labels`
+- `npm run benchmark:greedy-ranker`
+- `npm run benchmark:lns-ranker`
+- `npm run benchmark:greedy-online-ab`
+- `npm run benchmark:lns-online-ab`
+- `npm run benchmark:lns-promotion-review`
+- `npm run benchmark:lns-guard-calibration`
+- `npm run benchmark:lns-displacement-diagnostics`
 - `npm run benchmark:road-semantics`
 - `npm run benchmark:product-workflows`
+- `npm run benchmark:service-master`
 - `npm run benchmark:scorecard`
 - `npm run experiment-registry`
 - `npm run experiment-registry:check`
 - `npm run setup:cp-sat`
 - `npm run test:acceptance`
+- `npm run test:cp-sat`
 - `npm test`
 
 `npm run solve` currently runs the built-in example with the default `auto` backend in the example CLI.

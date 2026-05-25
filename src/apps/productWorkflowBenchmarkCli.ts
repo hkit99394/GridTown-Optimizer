@@ -12,6 +12,7 @@ import {
   applyInlineOptionHandlers,
   isCliFlag,
   parseNumberList,
+  parsePositiveNumberList,
 } from "./cliParsing.js";
 
 interface ParsedProductWorkflowBenchmarkArgs {
@@ -44,7 +45,7 @@ function parseArgs(argv: string[]): ParsedProductWorkflowBenchmarkArgs {
       manifestOutputPath = value;
     },
     budgets: (value) => {
-      budgetsSeconds = parseNumberList(value, "benchmark budgets");
+      budgetsSeconds = parsePositiveNumberList(value, "benchmark budgets");
     },
     seeds: (value) => {
       seeds = parseNumberList(value, "benchmark seeds");

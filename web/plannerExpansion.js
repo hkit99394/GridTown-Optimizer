@@ -30,6 +30,7 @@
 
     function clearExpansionAdvice() {
       state.expansionAdvice.isRunning = false;
+      state.expansionAdvice.activeRequestId = "";
       state.expansionAdvice.status = "";
       state.expansionAdvice.result = null;
       state.expansionAdvice.error = "";
@@ -237,31 +238,88 @@
         throw new Error(startPayload.error || "Failed to start the candidate comparison.");
       }
 
+      state.expansionAdvice.activeRequestId = requestId;
       let nextProgressHintAt = Date.now() + COMPARISON_PROGRESS_HINT_INTERVAL_MS;
-      while (true) {
-        const response = await fetch(`/api/solve/status?${new URLSearchParams({ requestId }).toString()}`, {
-          cache: "no-store",
-        });
-        const payload = await response.json();
-        if (!response.ok || !payload.ok) {
-          throw new Error(payload.error || "Failed to read candidate comparison status.");
-        }
-
-        if (payload.jobStatus === "running") {
-          if (Date.now() >= nextProgressHintAt) {
-            state.expansionAdvice.status = buildExpansionProgressMessage(candidateName, payload);
-            renderExpansionAdvice();
-            nextProgressHintAt = Date.now() + COMPARISON_PROGRESS_HINT_INTERVAL_MS;
+      let shouldCancelOnError = true;
+      try {
+        while (true) {
+          const response = await fetch(`/api/solve/status?${new URLSearchParams({ requestId }).toString()}`, {
+            cache: "no-store",
+          });
+          const payload = await response.json();
+          if (!response.ok || !payload.ok) {
+            throw new Error(payload.error || "Failed to read candidate comparison status.");
           }
-          await delay(SOLVE_STATUS_POLL_INTERVAL_MS);
-          continue;
-        }
 
-        if (payload.solution) {
-          return payload;
-        }
+          if (payload.jobStatus === "running") {
+            if (Date.now() >= nextProgressHintAt) {
+              state.expansionAdvice.status = buildExpansionProgressMessage(candidateName, payload);
+              renderExpansionAdvice();
+              nextProgressHintAt = Date.now() + COMPARISON_PROGRESS_HINT_INTERVAL_MS;
+            }
+            await delay(SOLVE_STATUS_POLL_INTERVAL_MS);
+            continue;
+          }
 
-        throw new Error(payload.error || "Candidate comparison failed.");
+          shouldCancelOnError = false;
+          if (payload.jobStatus === "stopped") {
+            throw new Error(payload.error || "Candidate comparison stopped.");
+          }
+          if (payload.solution) {
+            return payload;
+          }
+
+          throw new Error(payload.error || "Candidate comparison failed.");
+        }
+      } catch (error) {
+        if (shouldCancelOnError) {
+          await cancelComparisonRequest(requestId).catch(() => {});
+        }
+        throw error;
+      } finally {
+        if (state.expansionAdvice.activeRequestId === requestId) {
+          state.expansionAdvice.activeRequestId = "";
+        }
+      }
+    }
+
+    async function cancelComparisonRequest(requestId) {
+      const response = await fetch("/api/solve/cancel", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ requestId }),
+      });
+      const payload = await response.json();
+      if (!response.ok || !payload.ok) {
+        throw new Error(payload.error || "Failed to stop the candidate comparison.");
+      }
+      return payload;
+    }
+
+    async function requestStopComparison() {
+      const requestId = state.expansionAdvice.activeRequestId;
+      if (!state.expansionAdvice.isRunning || !requestId || state.isStopping) return;
+
+      state.isStopping = true;
+      state.expansionAdvice.status = "Stopping candidate comparison...";
+      renderExpansionAdvice();
+      syncActionAvailability();
+
+      try {
+        const payload = await cancelComparisonRequest(requestId);
+        state.expansionAdvice.status = payload.stopped
+          ? (payload.message || "Stop requested. Finalizing the candidate comparison...")
+          : "The candidate comparison is no longer running.";
+        renderExpansionAdvice();
+      } catch (error) {
+        state.isStopping = false;
+        state.expansionAdvice.status = error instanceof Error
+          ? error.message
+          : "Failed to stop the candidate comparison.";
+        renderExpansionAdvice();
+        syncActionAvailability();
       }
     }
 
@@ -348,6 +406,9 @@
             await runComparisonSolve(serviceScenario.request, `service option "${serviceScenario.candidateName}"`)
           )
           : null;
+        if (state.isStopping) {
+          throw new Error("Candidate comparison stopped.");
+        }
         const residentialPayload = residentialScenario
           ? (
             state.expansionAdvice.status = `Testing residential option "${residentialScenario.candidateName}"...`,
@@ -429,6 +490,8 @@
           : "Failed to compare the typed additions.";
         renderExpansionAdvice();
       } finally {
+        state.expansionAdvice.activeRequestId = "";
+        state.isStopping = false;
         syncActionAvailability();
       }
     }
@@ -436,6 +499,7 @@
     return Object.freeze({
       clearExpansionAdvice,
       compareExpansionOptions,
+      requestStopComparison,
       readExpansionCandidateFlags,
       renderExpansionAdvice,
     });

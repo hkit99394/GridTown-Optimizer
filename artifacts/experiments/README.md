@@ -6,7 +6,7 @@ Each line is one JSON object with:
 
 - `schemaVersion`: registry schema version
 - `runId`: stable artifact identifier
-- `artifactType`: benchmark, label bundle, ablation gate, health check, or model experiment
+- `artifactType`: benchmark, label bundle, ablation gate, health check, model experiment, or portfolio scorecard
 - `generatedAt`: artifact date or timestamp when known
 - `indexedAt`: date this registry entry was added
 - `indexedGitCommit`: git commit used when the registry entry was added

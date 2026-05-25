@@ -13,6 +13,8 @@ const {
   collectGreedyOrderingLabelsFromBenchmarkSuite,
   createGreedyLearnedOnlineAbSnapshot,
   createGreedyOfflineRankerSnapshot,
+  createLnsLearnedDisplacementDiagnosticsSnapshot,
+  createLnsLearnedGuardCalibrationSnapshot,
   createLnsLearnedOnlineAbSnapshot,
   createLnsLearnedPromotionReviewSnapshot,
   createLnsOfflineRankerSnapshot,
@@ -44,6 +46,8 @@ const {
   formatGreedyLearnedOnlineAb,
   formatGreedyOfflineRankerExperiment,
   formatLearnedRankingLabelSuite,
+  formatLnsLearnedDisplacementDiagnostics,
+  formatLnsLearnedGuardCalibration,
   formatLnsLearnedOnlineAb,
   formatLnsLearnedPromotionReview,
   formatLnsOfflineRankerExperiment,
@@ -61,6 +65,8 @@ const {
   runCrossModeBenchmarkSuite,
   runGreedyConnectivityShadowOrderingLabels,
   runGreedyLearnedOnlineAb,
+  runLnsLearnedDisplacementDiagnostics,
+  runLnsLearnedGuardCalibration,
   runLnsLearnedOnlineAb,
   runLnsLearnedPromotionReview,
   runGreedyOfflineRankerExperiment,
@@ -84,6 +90,7 @@ const {
   listServiceMasterBenchmarkCaseNames,
   listRoadSemanticsScorecardCaseNames,
   listProductWorkflowBenchmarkCaseNames,
+  runProductWorkflowBenchmarkSuite,
   runServiceMasterBenchmarkSuite,
   solveServiceMasterDecomposition,
   validateSolverTelemetryManifest,
@@ -136,6 +143,7 @@ const {
 } = require("../dist/index.js");
 const { parseCpSatRawSolution } = require("../dist/cp-sat/solver.js");
 const { buildNeighborhoodCandidates, buildNeighborhoodWindows } = require("../dist/lns/solver.js");
+const { solveSmallWindowDpRepair } = require("../dist/lns/smallWindowDpRepair.js");
 const { startJsonBackgroundSolve } = require("../dist/runtime/index.js");
 const { applyDeterministicDominanceUpgrades } = require("../dist/core/dominanceUpgrades.js");
 const { buildPlannerExplainabilityMap } = require("../dist/core/plannerExplainability.js");
@@ -1345,6 +1353,11 @@ function resolveCpSatPython() {
     }
   }
 
+  if (process.env.CITY_BUILDER_REQUIRE_CP_SAT === "1") {
+    throw new Error(
+      "CP-SAT optimizer tests require a Python runtime with OR-Tools. Run npm run setup:cp-sat or set CITY_BUILDER_CP_SAT_PYTHON."
+    );
+  }
   console.log("Skipping CP-SAT optimizer test because no Python runtime with OR-Tools is configured.");
   return null;
 }
@@ -1442,6 +1455,18 @@ async function testPublicSolverDispatchValidatesInputs() {
   ];
 
   assert.throws(
+    () => solve([], { optimizer: "greedy" }),
+    /Invalid solver input: Grid must be a non-empty rectangular 0\/1 grid\./
+  );
+  assert.throws(
+    () => solve([[1], [1, 1]], { optimizer: "greedy" }),
+    /Invalid solver input: Grid must be a non-empty rectangular 0\/1 grid\./
+  );
+  assert.throws(
+    () => solve([[1, 2]], { optimizer: "greedy" }),
+    /Invalid solver input: Grid must be a non-empty rectangular 0\/1 grid\./
+  );
+  assert.throws(
     () => solve(grid, { optimizer: "bogus" }),
     /Invalid solver input: Solver params optimizer must be one of auto, greedy, cp-sat, or lns\./
   );
@@ -1460,6 +1485,10 @@ async function testPublicSolverDispatchValidatesInputs() {
   assert.throws(
     () => solve(grid, { optimizer: "lns", lns: { learnedWindowRankingMinScoreRatio: 2 } }),
     /Invalid solver input: LNS option lns\.learnedWindowRankingMinScoreRatio must be a finite number >= 0 and <= 1\./
+  );
+  await assert.rejects(
+    () => solveAsync([[1], [1, 1]], { optimizer: "greedy" }),
+    /Invalid solver input: Grid must be a non-empty rectangular 0\/1 grid\./
   );
   await assert.rejects(
     () => solveAsync(grid, { optimizer: "greedy", greedy: { restarts: 0 } }),
@@ -2258,6 +2287,179 @@ function testLnsLearnedPromotionReviewKeepsDefaultOptInWithoutQualityLift() {
   assert.match(formatted, /no product-holdout quality lift/);
 }
 
+function testLnsLearnedGuardCalibrationKeepsPhase14GuardWithoutQualityLift() {
+  const observedLearnedRatios = [];
+  const result = runLnsLearnedGuardCalibration({
+    productNames: ["planner-service-overlap"],
+    crossModeNames: ["typed-housing-single"],
+    seeds: [7],
+    minScoreRatios: [1, 0],
+    solve: (_grid, params) => {
+      const learned = params.lns.learnedWindowRanking === true;
+      if (learned) {
+        observedLearnedRatios.push(params.lns.learnedWindowRankingMinScoreRatio ?? null);
+      }
+      return {
+        ...buildMockSolution({
+          optimizer: "lns",
+          totalPopulation: 0,
+          cpSatStatus: "FEASIBLE",
+        }),
+        roads: new Set(),
+        lnsTelemetry: {
+          stopReason: "iteration-limit",
+          seedSource: "greedy",
+          seedWallClockSeconds: 0,
+          seedTimeLimitSeconds: null,
+          wallClockLimitSeconds: null,
+          noImprovementTimeoutSeconds: null,
+          focusedRepairTimeLimitSeconds: 1,
+          escalatedRepairTimeLimitSeconds: 1,
+          iterationsStarted: 1,
+          iterationsCompleted: 1,
+          improvingIterations: 0,
+          neutralIterations: 1,
+          recoverableFailures: 0,
+          skippedIterations: 0,
+          finalStagnantIterations: 1,
+          elapsedSeconds: 0,
+          operatorSelectionPolicy: "adaptive",
+          learnedWindowRankingEnabled: learned,
+          learnedWindowRankingModelVersion: learned ? "lns-ranker-feature-enrichment-2026-05-17" : null,
+          learnedWindowRankingModelFingerprint: learned
+            ? "12ba51f1f0a0c51b0e084caa5e524926aedcd66ccfc28c253e98e8daa618ff70"
+            : null,
+          learnedWindowRankingCandidateLimit: params.lns.learnedWindowRankingCandidateLimit ?? 12,
+          learnedWindowRankingMinScoreRatio: params.lns.learnedWindowRankingMinScoreRatio ?? 1,
+          learnedWindowRankingEvaluations: learned ? 4 : 0,
+          learnedWindowRankingWins: 0,
+          operatorScores: [],
+          outcomes: [],
+        },
+      };
+    },
+  });
+  const snapshot = createLnsLearnedGuardCalibrationSnapshot(result);
+  const formatted = formatLnsLearnedGuardCalibration(result);
+
+  assert.equal(result.schemaVersion, 1);
+  assert.deepEqual(result.minScoreRatios, [1, 0]);
+  assert.equal(result.ratios.length, 2);
+  assert.equal(result.ratios[0].review.guardedMinScoreRatio, 1);
+  assert.equal(result.ratios[1].review.guardedMinScoreRatio, 0);
+  assert.equal(result.gate.passed, false);
+  assert.equal(result.gate.safeRatioCount, 2);
+  assert.equal(result.gate.qualityLiftRatioCount, 0);
+  assert.equal(result.gate.recommendedMinScoreRatio, null);
+  assert.equal(result.decision, "keep-phase14-guard-and-opt-in");
+  assert.equal(Object.hasOwn(snapshot, "generatedAt"), false);
+  assert.deepEqual(observedLearnedRatios, [1, 1, 0, 0]);
+  assert.match(formatted, /LNS Learned Guard Calibration/);
+  assert.match(formatted, /ratio=0/);
+}
+
+function testLnsLearnedDisplacementDiagnosticsFindsNeutralDisplacements() {
+  const result = runLnsLearnedDisplacementDiagnostics({
+    productNames: ["planner-service-overlap"],
+    crossModeNames: ["typed-housing-single"],
+    seeds: [7],
+    configurations: [
+      {
+        name: "strict",
+        learnedWindowRankingCandidateLimit: 12,
+        learnedWindowRankingMinScoreRatio: 1,
+      },
+      {
+        name: "relaxed",
+        learnedWindowRankingCandidateLimit: 24,
+        learnedWindowRankingMinScoreRatio: 0,
+      },
+    ],
+    solve: (_grid, params) => {
+      const learned = params.lns.learnedWindowRanking === true;
+      const displaced = learned && params.lns.learnedWindowRankingMinScoreRatio === 0;
+      return {
+        ...buildMockSolution({
+          optimizer: "lns",
+          totalPopulation: 0,
+          cpSatStatus: "FEASIBLE",
+        }),
+        roads: new Set(),
+        lnsTelemetry: {
+          stopReason: "iteration-limit",
+          seedSource: "greedy",
+          seedWallClockSeconds: 0,
+          seedTimeLimitSeconds: null,
+          wallClockLimitSeconds: null,
+          noImprovementTimeoutSeconds: null,
+          focusedRepairTimeLimitSeconds: 1,
+          escalatedRepairTimeLimitSeconds: 1,
+          iterationsStarted: 1,
+          iterationsCompleted: 1,
+          improvingIterations: 0,
+          neutralIterations: 1,
+          recoverableFailures: 0,
+          skippedIterations: 0,
+          finalStagnantIterations: 1,
+          elapsedSeconds: 0,
+          operatorSelectionPolicy: "adaptive",
+          learnedWindowRankingEnabled: learned,
+          learnedWindowRankingModelVersion: learned ? "lns-ranker-feature-enrichment-2026-05-17" : null,
+          learnedWindowRankingModelFingerprint: learned
+            ? "12ba51f1f0a0c51b0e084caa5e524926aedcd66ccfc28c253e98e8daa618ff70"
+            : null,
+          learnedWindowRankingCandidateLimit: params.lns.learnedWindowRankingCandidateLimit ?? 12,
+          learnedWindowRankingMinScoreRatio: params.lns.learnedWindowRankingMinScoreRatio ?? 1,
+          learnedWindowRankingEvaluations: learned ? 4 : 0,
+          learnedWindowRankingWins: displaced ? 1 : 0,
+          operatorScores: [],
+          outcomes: [
+            {
+              iteration: 0,
+              phase: "focused",
+              window: { top: 0, left: 0, rows: 3, cols: 3 },
+              operatorName: "weak-service-repair",
+              operatorScoreBefore: 0,
+              operatorExploration: false,
+              learnedWindowRankingScore: learned ? 0.5 : undefined,
+              learnedWindowRankingBaselineScore: learned ? 0.4 : undefined,
+              learnedWindowRankingSelectedAdaptiveScore: learned ? 1 : undefined,
+              learnedWindowRankingBaselineAdaptiveScore: learned ? 1 : undefined,
+              learnedWindowRankingCandidateCount: learned ? 4 : undefined,
+              learnedWindowRankingShortlistCount: learned ? 4 : undefined,
+              learnedWindowRankingDisplaced: displaced,
+              learnedWindowRankingModelVersion: learned ? "lns-ranker-feature-enrichment-2026-05-17" : undefined,
+              stagnantIterationsBefore: 0,
+              staleSecondsBefore: 0,
+              repairTimeLimitSeconds: 1,
+              wallClockSeconds: 0,
+              populationBefore: 0,
+              populationAfter: 0,
+              improvement: 0,
+              status: "neutral",
+            },
+          ],
+        },
+      };
+    },
+  });
+  const snapshot = createLnsLearnedDisplacementDiagnosticsSnapshot(result);
+  const formatted = formatLnsLearnedDisplacementDiagnostics(result);
+
+  assert.equal(result.schemaVersion, 1);
+  assert.equal(result.configurations.length, 2);
+  assert.equal(result.configurations[0].diagnosis, "strict-guard-blocked");
+  assert.equal(result.configurations[1].diagnosis, "displaced-windows-neutral");
+  assert.equal(result.gate.safeConfigCount, 2);
+  assert.equal(result.gate.qualityLiftConfigCount, 0);
+  assert.equal(result.decision, "retrain-lns-window-objective-before-promotion-review");
+  assert.equal(result.configurations[1].review.gate.all.learnedWindowRankingDisplacedAttempts, 2);
+  assert.equal(result.configurations[1].review.gate.all.learnedWindowRankingDisplacedImprovements, 0);
+  assert.equal(Object.hasOwn(snapshot, "generatedAt"), false);
+  assert.match(formatted, /LNS Learned Displacement Diagnostics/);
+  assert.match(formatted, /displaced-windows-neutral/);
+}
+
 function testGreedyRoadOpportunityCounterfactualsAreBoundedAndObservational() {
   const grid = [
     [1, 1],
@@ -2861,6 +3063,39 @@ function maybeTestCpSatSyncCompatibility() {
   assert.match(direct.cpSatStatus ?? "", /^(OPTIMAL|FEASIBLE)$/);
   assert.equal(dispatched.totalPopulation, 10);
   assert.equal(direct.totalPopulation, 10);
+}
+
+function testCpSatBridgeRejectsInvalidBackendPopulation() {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "cp-sat-invalid-backend-"));
+  const scriptPath = path.join(tempDir, "fake-cp-sat-backend.cjs");
+  fs.writeFileSync(
+    scriptPath,
+    `process.stdin.resume();
+process.stdin.on("end", () => {
+  process.stdout.write(JSON.stringify({
+    roads: [],
+    services: [],
+    residentials: [{ r: 0, c: 0, rows: 1, cols: 1, typeIndex: 0, population: 999 }],
+    populations: [999],
+    totalPopulation: 999,
+    status: "FEASIBLE"
+  }));
+});
+`
+  );
+
+  assert.throws(
+    () => solveCpSat([[1, 1], [1, 1]], {
+      optimizer: "cp-sat",
+      residentialTypes: [{ w: 1, h: 1, min: 10, max: 10, avail: 1 }],
+      availableBuildings: { services: 0, residentials: 1 },
+      cpSat: {
+        pythonExecutable: process.execPath,
+        scriptPath,
+      },
+    }),
+    /CP-SAT backend produced an invalid solution:.*reports population 999, expected 10/
+  );
 }
 
 async function maybeTestCpSatSupportsShapedServices() {
@@ -3588,6 +3823,11 @@ results = module.run_portfolio_workers(
     lambda grid, params, worker_option, worker_index: {"workerIndex": worker_index, "seed": worker_option["randomSeed"]},
 )
 
+default_worker_options = module.build_portfolio_worker_options({
+    "timeLimitSeconds": 10,
+    "portfolio": {},
+})
+
 try:
     module.build_portfolio_worker_options({"portfolio": {"workerCount": 2}})
     missing_budget_error = None
@@ -3642,6 +3882,7 @@ except ValueError as error:
 
 print(json.dumps({
     "results": results,
+    "defaultWorkerCount": len(default_worker_options),
     "missingBudgetError": missing_budget_error,
     "workerThreadError": worker_thread_error,
     "cpuBudgetError": cpu_budget_error,
@@ -3662,6 +3903,7 @@ print(json.dumps({
     { workerIndex: 0, seed: 7 },
     { workerIndex: 1, seed: 9 },
   ]);
+  assert.equal(payload.defaultWorkerCount, 3);
   assert.match(payload.missingBudgetError, /requires timeLimitSeconds/);
   assert.match(payload.workerThreadError, /exceeding the 8 worker portfolio limit/);
   assert.match(payload.cpuBudgetError, /exceeding the 28800\.0 second portfolio budget/);
@@ -4061,7 +4303,7 @@ function testRoadSemanticsScorecardCorpusHelpers() {
   assert.equal(parsedArtifact.hardware.captured, true);
 }
 
-function testProductWorkflowBenchmarkCorpusHelpers() {
+async function testProductWorkflowBenchmarkCorpusHelpers() {
   const names = DEFAULT_PRODUCT_WORKFLOW_BENCHMARK_CORPUS.map((entry) => entry.name);
   assert.equal(new Set(names).size, names.length);
   assert.deepEqual(listProductWorkflowBenchmarkCaseNames(), names);
@@ -4126,6 +4368,27 @@ function testProductWorkflowBenchmarkCorpusHelpers() {
       },
     }),
     /Product Workflow Benchmark Suite/
+  );
+  await assert.rejects(
+    () => runProductWorkflowBenchmarkSuite(DEFAULT_PRODUCT_WORKFLOW_BENCHMARK_CORPUS.slice(0, 1), {
+      seeds: [7.5],
+      budgetsSeconds: [1],
+    }),
+    /Product workflow benchmark seeds must contain only integer seeds/
+  );
+  await assert.rejects(
+    () => runProductWorkflowBenchmarkSuite(DEFAULT_PRODUCT_WORKFLOW_BENCHMARK_CORPUS.slice(0, 1), {
+      seeds: [7, 7],
+      budgetsSeconds: [1],
+    }),
+    /Product workflow benchmark seeds must not contain duplicate seeds/
+  );
+  await assert.rejects(
+    () => runProductWorkflowBenchmarkSuite(DEFAULT_PRODUCT_WORKFLOW_BENCHMARK_CORPUS.slice(0, 1), {
+      seeds: [7],
+      budgetsSeconds: [1, 0],
+    }),
+    /Product workflow benchmark budgets must contain only finite numbers greater than 0/
   );
 }
 
@@ -5501,6 +5764,14 @@ async function testCrossModeBenchmarkHelpers() {
     () => runCrossModeBenchmarkSuite([benchmarkCase], { names: ["missing-case"], modes: ["greedy"] }),
     /Unknown cross-mode benchmark case\(s\): missing-case/
   );
+  await assert.rejects(
+    () => runCrossModeBenchmarkSuite([benchmarkCase], { modes: ["greedy"], seeds: [7.5] }),
+    /Cross-mode benchmark seeds must contain only integer seeds/
+  );
+  await assert.rejects(
+    () => runCrossModeBenchmarkSuite([benchmarkCase], { modes: ["greedy"], seeds: [7, 7] }),
+    /Cross-mode benchmark seeds must not contain duplicate seeds/
+  );
 }
 
 async function testServiceMasterBenchmarkHelpers() {
@@ -5559,6 +5830,19 @@ async function testServiceMasterBenchmarkHelpers() {
   assert.equal(suite.runs.length, 1);
   assert.equal(suite.summary.invalidRunCount, 0);
   assert.match(formatServiceMasterBenchmarkSuite(suite), /Service-master decomposition scorecard/);
+
+  await assert.rejects(
+    () => runServiceMasterBenchmarkSuite({ names: ["planner-service-overlap"], seeds: [7.5] }),
+    /Service-master benchmark seeds must contain only integer seeds/
+  );
+  await assert.rejects(
+    () => runServiceMasterBenchmarkSuite({ names: ["planner-service-overlap"], seeds: [7, 7] }),
+    /Service-master benchmark seeds must not contain duplicate seeds/
+  );
+  await assert.rejects(
+    () => runServiceMasterBenchmarkSuite({ names: ["planner-service-overlap"], budgetsSeconds: [1, 0] }),
+    /Service-master benchmark budget seconds must be a finite number greater than 0/
+  );
 
   assert.throws(
     () => solve([[1]], {
@@ -6686,7 +6970,7 @@ function testGreedyIncrementalInvalidationPreservesBenchmarkOutputs() {
     "geometry-occupancy-hot-path": { totalPopulation: 1160, serviceCount: 5, residentialCount: 7 },
     "typed-footprint-pressure": { totalPopulation: 505, serviceCount: 2, residentialCount: 4 },
     "adaptive-cap-search-wide": { totalPopulation: 1028, serviceCount: 1, residentialCount: 9 },
-    "crowded-invalidation-heavy": { totalPopulation: 791, serviceCount: 4, residentialCount: 5 },
+    "crowded-invalidation-heavy": { totalPopulation: 809, serviceCount: 3, residentialCount: 6 },
     "service-local-neighborhood": { totalPopulation: 395, serviceCount: 2, residentialCount: 3 },
     "step14-deterministic-lookahead-ties": { totalPopulation: 200, serviceCount: 1, residentialCount: 2 },
     "step14-row0-path-null-reservation": { totalPopulation: 230, serviceCount: 1, residentialCount: 2 },
@@ -7100,7 +7384,7 @@ function testGreedyTypedFootprintPressureBenchmarkCase() {
   assert.equal(solution.totalPopulation, 505);
   assert.deepEqual(solution.serviceTypeIndices, [1, 0]);
   assert.deepEqual(solution.services, [
-    { r: 3, c: 2, rows: 1, cols: 1, range: 2 },
+    { r: 2, c: 2, rows: 1, cols: 1, range: 2 },
     { r: 2, c: 3, rows: 1, cols: 1, range: 1 },
   ]);
   assert.deepEqual(solution.residentialTypeIndices, [2, 2, 0, 1]);
@@ -8249,6 +8533,60 @@ function testSmallWindowDpRepairImprovesTinyWindowWithoutCpSat() {
   }
 }
 
+function testSmallWindowDpRepairUsesCompactBitsForSparseWindows() {
+  const grid = Array.from({ length: 6 }, () => Array.from({ length: 6 }, () => 0));
+  for (const [row, col] of [
+    [0, 1],
+    [1, 1],
+    [2, 1],
+    [3, 1],
+    [4, 1],
+    [5, 1],
+    [5, 2],
+    [5, 3],
+    [4, 4],
+    [4, 5],
+    [5, 4],
+    [5, 5],
+  ]) {
+    grid[row][col] = 1;
+  }
+  const params = {
+    optimizer: "lns",
+    residentialTypes: [{ w: 2, h: 2, min: 10, max: 10, avail: 1 }],
+    availableBuildings: { residentials: 1, services: 0 },
+  };
+  const incumbent = {
+    optimizer: "lns",
+    roads: new Set(),
+    services: [],
+    serviceTypeIndices: [],
+    servicePopulationIncreases: [],
+    residentials: [],
+    residentialTypeIndices: [],
+    populations: [],
+    totalPopulation: 0,
+  };
+
+  const result = solveSmallWindowDpRepair(
+    grid,
+    params,
+    incumbent,
+    { top: 0, left: 0, rows: 6, cols: 6 },
+    { maxWindowCells: 12, maxCandidates: 64, maxStates: 50000 }
+  );
+
+  assert.equal(result.telemetry.eligible, true);
+  assert.equal(result.telemetry.usableWindowCells, 12);
+  assert(result.solution);
+  assert.equal(result.solution.totalPopulation, 10);
+  assert.deepEqual(result.solution.residentials, [{ r: 4, c: 4, rows: 2, cols: 2 }]);
+  assert(result.solution.roads.has("0,1"));
+  assert(result.solution.roads.has("5,3"));
+  const validation = validateSolution({ grid, params, solution: result.solution });
+  assert.equal(validation.valid, true, validation.errors.join("\n"));
+}
+
 function testSmallWindowDpRepairFallsBackToCpSatWhenIneligible() {
   const cpSatModule = require("../dist/cp-sat/solver.js");
   const originalSolveCpSat = cpSatModule.solveCpSat;
@@ -8562,6 +8900,36 @@ function testSolutionValidator() {
   assert.equal(brokenValidation.valid, false);
   assert.match(brokenValidation.errors.join("\n"), /reports population/);
   assert.match(brokenValidation.errors.join("\n"), /reports total population/);
+
+  const zeroRowResidential = {
+    ...solution,
+    residentials: [{ r: 0, c: 0, rows: 0, cols: 2 }],
+    residentialTypeIndices: [0],
+    populations: [10],
+    totalPopulation: 10,
+  };
+  const zeroRowValidation = validateSolution({ grid, solution: zeroRowResidential, params });
+  assert.equal(zeroRowValidation.valid, false);
+  assert.match(zeroRowValidation.errors.join("\n"), /Residential at \(0,0\) must have positive integer dimensions/);
+
+  const invalidService = {
+    optimizer: "greedy",
+    roads: new Set(["0,0"]),
+    services: [{ r: 1, c: 1, rows: -1, cols: 1, range: -1 }],
+    serviceTypeIndices: [-1],
+    servicePopulationIncreases: [Number.NaN],
+    residentials: [],
+    residentialTypeIndices: [],
+    populations: [],
+    totalPopulation: 0,
+  };
+  const invalidServiceValidation = validateSolution({
+    grid,
+    solution: invalidService,
+    params: { availableBuildings: { residentials: 0, services: 1 } },
+  });
+  assert.equal(invalidServiceValidation.valid, false);
+  assert.match(invalidServiceValidation.errors.join("\n"), /Service at \(1,1\) must have positive integer dimensions/);
 }
 
 function testSolutionMapValidatorRejectsRoadsNotConnectedToAnchorBoundary() {
@@ -8743,6 +9111,27 @@ function testGreedyRespectsTopRowConnectivityShortcut() {
   assert.equal(solution.residentials[0].r, 0);
   assert.equal(solution.roads.size, 0);
   assert.equal(validation.valid, true);
+}
+
+function testGreedyPlacesBoundaryBuildingWhenItConsumesAllAnchorCells() {
+  const grid = [
+    [1, 1],
+    [1, 1],
+  ];
+  const params = {
+    residentialTypes: [{ w: 2, h: 2, min: 25, max: 25, avail: 1 }],
+    availableBuildings: { residentials: 1, services: 0 },
+    greedy: { localSearch: false, restarts: 1, exhaustiveServiceSearch: false },
+  };
+
+  const solution = solveGreedy(grid, params);
+  const validation = validateSolution({ grid, solution, params });
+
+  assert.equal(solution.residentials.length, 1);
+  assert.deepEqual(solution.residentials[0], { r: 0, c: 0, rows: 2, cols: 2 });
+  assert.equal(solution.roads.size, 0);
+  assert.equal(solution.totalPopulation, 25);
+  assert.equal(validation.valid, true, validation.errors.join("\n"));
 }
 
 function testGreedySupportsShapedServices() {
@@ -9326,6 +9715,8 @@ async function main() {
   testGreedyLearnedServiceRankingOnlineAb();
   testLnsLearnedWindowRankingOnlineAb();
   testLnsLearnedPromotionReviewKeepsDefaultOptInWithoutQualityLift();
+  testLnsLearnedGuardCalibrationKeepsPhase14GuardWithoutQualityLift();
+  testLnsLearnedDisplacementDiagnosticsFindsNeutralDisplacements();
   testGreedyRoadOpportunityCounterfactualsAreBoundedAndObservational();
   testRoadOpportunityLocalSearchMeasurementUsesPostRemoveOccupancy();
   testGreedyStopFileCancelsBeforePrecompute();
@@ -9356,6 +9747,7 @@ async function main() {
   await maybeTestCpSatUsesColumnZeroRoadAnchor();
   await maybeTestCpSatAllowsMultipleAnchoredRoadComponents();
   maybeTestCpSatSyncCompatibility();
+  testCpSatBridgeRejectsInvalidBackendPopulation();
   await maybeTestCpSatAsyncOptimizer();
   await maybeTestAutoOptimizer();
   testAutoKeepsEqualPopulationOptimalCpSatResult();
@@ -9420,7 +9812,7 @@ async function main() {
   testGreedyGroupedServiceScoringDiscountsLimitedFallbackTypes();
   await testCpSatBenchmarkCorpusHelpers();
   testRoadSemanticsScorecardCorpusHelpers();
-  testProductWorkflowBenchmarkCorpusHelpers();
+  await testProductWorkflowBenchmarkCorpusHelpers();
   testGreedyMatchesProductWorkflowMultiAnchorManualReplay();
   testLnsBenchmarkCorpusHelpers();
   testLnsNeighborhoodAblationRunner();
@@ -9454,6 +9846,7 @@ async function main() {
   testTopRowBuildingCountsAsRoadConnected();
   testLeftColumnBuildingCountsAsRoadConnected();
   testGreedyRespectsTopRowConnectivityShortcut();
+  testGreedyPlacesBoundaryBuildingWhenItConsumesAllAnchorCells();
   testGreedySupportsShapedServices();
   testGreedyResidentialPopulationCacheRespectsTypedVariants();
   testLnsNeighborhoodWindowsEscalateWhenStagnating();
@@ -9462,6 +9855,7 @@ async function main() {
   testLnsGreedySeedReportsBudgetAndProfile();
   testLnsStopsAfterNoImprovementTimeout();
   testSmallWindowDpRepairImprovesTinyWindowWithoutCpSat();
+  testSmallWindowDpRepairUsesCompactBitsForSparseWindows();
   testSmallWindowDpRepairFallsBackToCpSatWhenIneligible();
   testLnsRejectsMalformedScalarOptions();
   maybeTestLnsOptimizer();

@@ -45,6 +45,10 @@
       setSolveState,
       syncPlannerFromState,
     } = callbacks;
+    const CP_SAT_PORTFOLIO_CAPABILITY_LIMITS = globalObject.CityBuilderShared?.CP_SAT_PORTFOLIO_CAPABILITY_LIMITS ?? Object.freeze({
+      defaultWorkers: 3,
+      defaultPerWorkerTimeLimitSeconds: 30,
+    });
 
     function readStoredEntries(storageKey) {
       try {
@@ -57,8 +61,25 @@
       }
     }
 
-    function writeStoredEntries(storageKey, entries) {
-      globalObject.localStorage.setItem(storageKey, JSON.stringify(entries));
+    function formatStorageWriteError(error) {
+      const message = error && typeof error === "object" && "message" in error
+        ? String(error.message)
+        : "";
+      return message
+        ? `Could not update browser storage: ${message}`
+        : "Could not update browser storage. The saved planner data may be too large for this browser.";
+    }
+
+    function writeStoredEntries(storageKey, entries, statusElement) {
+      try {
+        globalObject.localStorage.setItem(storageKey, JSON.stringify(entries));
+        return true;
+      } catch (error) {
+        if (statusElement) {
+          statusElement.textContent = formatStorageWriteError(error);
+        }
+        return false;
+      }
     }
 
     const PENDING_MANUAL_LAYOUT_ERROR =
@@ -89,6 +110,27 @@
       state.layoutEditor.pendingValidation = pendingValidation;
       state.layoutEditor.status = "";
       state.layoutEditor.isApplying = false;
+    }
+
+    function getDefaultCpSatPortfolioState() {
+      return {
+        enabled: false,
+        workerCount: CP_SAT_PORTFOLIO_CAPABILITY_LIMITS.defaultWorkers,
+        randomSeeds: "",
+        perWorkerTimeLimitSeconds: String(CP_SAT_PORTFOLIO_CAPABILITY_LIMITS.defaultPerWorkerTimeLimitSeconds),
+        perWorkerNumWorkers: 1,
+        randomizeSearch: true,
+      };
+    }
+
+    function normalizeConfigCpSatState(cpSat) {
+      return {
+        ...(cpSat ?? {}),
+        portfolio: {
+          ...getDefaultCpSatPortfolioState(),
+          ...(cpSat?.portfolio ?? {}),
+        },
+      };
     }
 
     function populateSavedSelect(selectElement, entries, placeholder, labelBuilder = null) {
@@ -173,7 +215,7 @@
       state.cpSat = {
         ...state.cpSat,
         randomSeed: "",
-        ...(snapshot?.cpSat ?? {}),
+        ...normalizeConfigCpSatState(snapshot?.cpSat),
       };
       state.lns = {
         ...state.lns,
@@ -201,7 +243,7 @@
       } else {
         entries.unshift(nextEntry);
       }
-      writeStoredEntries(CONFIG_STORAGE_KEY, entries);
+      if (!writeStoredEntries(CONFIG_STORAGE_KEY, entries, elements.configStorageStatus)) return;
       refreshSavedConfigOptions(id);
       elements.configStorageName.value = name;
       elements.configStorageStatus.textContent = `Saved input setup "${name}".`;
@@ -245,10 +287,11 @@
       }
       const entries = readStoredEntries(CONFIG_STORAGE_KEY);
       const entry = entries.find((item) => item.id === selectedId);
-      writeStoredEntries(
+      if (!writeStoredEntries(
         CONFIG_STORAGE_KEY,
-        entries.filter((item) => item.id !== selectedId)
-      );
+        entries.filter((item) => item.id !== selectedId),
+        elements.configStorageStatus
+      )) return;
       refreshSavedConfigOptions();
       elements.configStorageStatus.textContent = entry
         ? `Deleted input setup "${entry.name}".`
@@ -291,7 +334,7 @@
       } else {
         entries.unshift(nextEntry);
       }
-      writeStoredEntries(LAYOUT_STORAGE_KEY, entries);
+      if (!writeStoredEntries(LAYOUT_STORAGE_KEY, entries, elements.layoutStorageStatus)) return;
       refreshSavedLayoutOptions(id);
       elements.layoutStorageName.value = name;
       elements.layoutStorageStatus.textContent = continueCpSat
@@ -344,10 +387,11 @@
       }
       const entries = readStoredEntries(LAYOUT_STORAGE_KEY);
       const entry = entries.find((item) => item.id === selectedId);
-      writeStoredEntries(
+      if (!writeStoredEntries(
         LAYOUT_STORAGE_KEY,
-        entries.filter((item) => item.id !== selectedId)
-      );
+        entries.filter((item) => item.id !== selectedId),
+        elements.layoutStorageStatus
+      )) return;
       refreshSavedLayoutOptions();
       elements.layoutStorageStatus.textContent = entry ? `Deleted layout "${entry.name}".` : "Deleted the selected layout.";
     }

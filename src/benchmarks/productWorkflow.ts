@@ -29,6 +29,7 @@ import {
   roundBenchmarkMetric,
   selectBenchmarkCasesByName,
 } from "./benchmarkOptions.js";
+import { normalizeBenchmarkSeeds } from "./benchmarkSeeds.js";
 import {
   buildSolverTelemetryManifest,
   buildSolverTelemetryRunManifest,
@@ -232,7 +233,12 @@ function workflowSolution(
 
 function normalizePositiveNumbers(values: readonly number[] | undefined, fallback: readonly number[]): number[] {
   const source = values?.length ? values : fallback;
-  const normalized = [...new Set(source.filter((value) => Number.isFinite(value) && value > 0))]
+  for (const value of source) {
+    if (typeof value !== "number" || !Number.isFinite(value) || value <= 0) {
+      throw new Error("Product workflow benchmark budgets must contain only finite numbers greater than 0.");
+    }
+  }
+  const normalized = [...new Set(source)]
     .map((value) => roundBenchmarkMetric(value))
     .sort((left, right) => left - right);
   if (normalized.length === 0) {
@@ -242,13 +248,8 @@ function normalizePositiveNumbers(values: readonly number[] | undefined, fallbac
 }
 
 function normalizeSeeds(values: readonly number[] | undefined): number[] {
-  const source = values?.length ? values : DEFAULT_PRODUCT_WORKFLOW_SEEDS;
-  const normalized = [...new Set(source.filter((value) => Number.isInteger(value) && value >= 0))]
-    .sort((left, right) => left - right);
-  if (normalized.length === 0) {
-    throw new Error("Product workflow benchmark requires at least one non-negative integer seed.");
-  }
-  return normalized;
+  return normalizeBenchmarkSeeds(values, "Product workflow benchmark seeds")
+    ?? [...DEFAULT_PRODUCT_WORKFLOW_SEEDS];
 }
 
 function buildBudgetedGreedyParams(params: SolverParams, budgetSeconds: number, seed: number): SolverParams {

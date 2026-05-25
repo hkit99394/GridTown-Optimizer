@@ -10,6 +10,7 @@ const {
   completeExperimentRegistryEntry,
   formatExperimentRegistryIssues,
   validateExperimentRegistryEntry,
+  validateExperimentRegistryEntries,
 } = require("../dist/benchmarks/index.js");
 
 const repoRoot = path.join(__dirname, "..");
@@ -84,6 +85,17 @@ function testStrictMetadataRulesForBenchmarkAndLabelEntries() {
   const labelResult = validateExperimentRegistryEntry(labelBundle, { rootDir: repoRoot, validateArtifactPaths: false, strict: true });
 
   assert.equal(labelResult.issues.some((issue) => /label-bundle entries must include model metadata/.test(issue.message)), true);
+}
+
+function testValidateRegistryEntriesRejectsDuplicateRunIds() {
+  const result = validateExperimentRegistryEntries([
+    createBaseEntry({ runId: "duplicate-run" }),
+    createBaseEntry({ runId: "duplicate-run", summary: "Duplicate fixture." }),
+  ], { rootDir: repoRoot, validateArtifactPaths: false });
+
+  assert.equal(result.valid, false);
+  assert.equal(result.issues.some((issue) => issue.code === "duplicate-run-id"), true);
+  assert.match(formatExperimentRegistryIssues(result.issues), /Duplicate runId 'duplicate-run' also appears on line 1/);
 }
 
 function testAppendHelperAddsCommitCommandBudgetHardwareModelAndDecisionMetadata() {
@@ -173,6 +185,7 @@ function testRegistryCliCanAppendAndCheckLabelArtifacts() {
 
 testSeedRegistryChecksWithoutShapeErrors();
 testStrictMetadataRulesForBenchmarkAndLabelEntries();
+testValidateRegistryEntriesRejectsDuplicateRunIds();
 testAppendHelperAddsCommitCommandBudgetHardwareModelAndDecisionMetadata();
 testRegistryCliCanAppendAndCheckLabelArtifacts();
 

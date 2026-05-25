@@ -1,5 +1,6 @@
+import { randomUUID } from "node:crypto";
 import { mkdirSync, writeFileSync } from "node:fs";
-import { join, resolve } from "node:path";
+import { basename, join, resolve } from "node:path";
 
 import { renderSolutionMap } from "../../core/map.js";
 import { buildEmptySolverProgressSummary, buildSolverProgressSummary } from "../../core/progress.js";
@@ -59,20 +60,31 @@ export interface AppendPendingProgressLogEntryOptions {
 }
 
 const DEFAULT_PROGRESS_LOG_ROOT = resolve(process.cwd(), "artifacts", "solve-progress");
+const MAX_SAFE_FILE_NAME_SEGMENT_LENGTH = 120;
 
 function sanitizeFileNameSegment(value: string, fallback: string): string {
   const sanitized = value
     .trim()
     .replace(/[^a-z0-9._-]+/gi, "-")
     .replace(/^-+|-+$/g, "");
-  return sanitized || fallback;
+  const truncated = sanitized
+    .slice(0, MAX_SAFE_FILE_NAME_SEGMENT_LENGTH)
+    .replace(/[._-]+$/g, "");
+  return truncated || fallback;
 }
 
 function formatTimestampForFileName(createdAtMs: number): string {
   return new Date(createdAtMs)
     .toISOString()
     .replace(/[-:]/g, "")
-    .replace(/\.\d{3}Z$/, "Z");
+    .replace(/\.(\d{3})Z$/, "$1Z");
+}
+
+function createProgressLogFileName(createdAtMs: number, requestId: string): string {
+  const timestamp = formatTimestampForFileName(createdAtMs);
+  const safeRequestId = sanitizeFileNameSegment(requestId, "solve");
+  const uniqueSuffix = randomUUID().replace(/-/g, "").slice(0, 12);
+  return `${timestamp}-${safeRequestId}-${uniqueSuffix}.json`;
 }
 
 function countAllowedCells(grid: Grid): number {
@@ -353,6 +365,7 @@ function entriesMatch(left: SolveProgressLogEntry | undefined, right: SolveProgr
 
 export class SolveProgressLogWriter {
   readonly filePath: string;
+  readonly fileName: string;
 
   private readonly optimizer: OptimizerName;
   private readonly document: SolveProgressLogDocument;
@@ -362,9 +375,8 @@ export class SolveProgressLogWriter {
     const rootDirectory = resolve(options.rootDirectory ?? DEFAULT_PROGRESS_LOG_ROOT);
     mkdirSync(rootDirectory, { recursive: true });
 
-    const timestamp = formatTimestampForFileName(options.createdAtMs);
-    const safeRequestId = sanitizeFileNameSegment(options.requestId, "solve");
-    this.filePath = join(rootDirectory, `${timestamp}-${safeRequestId}.json`);
+    this.filePath = join(rootDirectory, createProgressLogFileName(options.createdAtMs, options.requestId));
+    this.fileName = basename(this.filePath);
     this.optimizer = options.optimizer;
     this.document = {
       version: 2,

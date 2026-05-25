@@ -27,6 +27,7 @@ import {
   selectBenchmarkCasesByName,
   uniqueBenchmarkValues,
 } from "./benchmarkOptions.js";
+import { normalizeBenchmarkSeeds } from "./benchmarkSeeds.js";
 import {
   buildCrossModeBenchmarkParams,
 } from "./crossMode.js";
@@ -207,27 +208,26 @@ function normalizePositiveNumber(value: number | undefined, fallback: number): n
   return typeof value === "number" && Number.isFinite(value) && value > 0 ? value : fallback;
 }
 
+function normalizeBudgetSeconds(value: number): number {
+  if (typeof value !== "number" || !Number.isFinite(value) || value <= 0) {
+    throw new Error("Service-master benchmark budget seconds must be a finite number greater than 0.");
+  }
+  return roundBenchmarkMetric(value);
+}
+
 function normalizeBudgets(options: ServiceMasterBenchmarkRunOptions): number[] {
   const requested = options.budgetsSeconds?.length
     ? options.budgetsSeconds
     : options.budgetSeconds !== undefined
       ? [options.budgetSeconds]
       : [DEFAULT_SERVICE_MASTER_BUDGET_SECONDS];
-  const budgets = requested
-    .map((budget) => normalizePositiveNumber(budget, DEFAULT_SERVICE_MASTER_BUDGET_SECONDS))
-    .map((budget) => roundBenchmarkMetric(budget));
+  const budgets = requested.map((budget) => normalizeBudgetSeconds(budget));
   return uniqueBenchmarkValues(budgets);
 }
 
 function normalizeSeeds(seeds: readonly number[] | undefined): number[] {
-  const requested = seeds?.length ? seeds : DEFAULT_SERVICE_MASTER_SEEDS;
-  const normalized = requested
-    .map((seed) => (Number.isFinite(seed) ? Math.max(0, Math.floor(seed)) : -1))
-    .filter((seed) => seed >= 0);
-  if (!normalized.length) {
-    throw new Error("Service-master benchmark suite must include at least one non-negative seed.");
-  }
-  return uniqueBenchmarkValues(normalized);
+  return normalizeBenchmarkSeeds(seeds, "Service-master benchmark seeds")
+    ?? [...DEFAULT_SERVICE_MASTER_SEEDS];
 }
 
 function serviceSlotCap(params: SolverParams): number {

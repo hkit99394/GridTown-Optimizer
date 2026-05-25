@@ -4,6 +4,7 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import {
   assertValidLayoutEvaluateInputs,
   assertValidSolveInputs,
+  SolverInputError,
 } from "../../core/solverInputValidation.js";
 import { getOptimizerAdapter, resolveOptimizerName } from "../../runtime/dispatch/optimizerRegistry.js";
 import { SolveJobManager, type SolveJob } from "../../runtime/jobs/solveJobManager.js";
@@ -27,7 +28,7 @@ function buildSolveJobResponseBase(job: {
   optimizer: string;
   status: string;
   cancelRequested: boolean;
-  progressLogFilePath: string;
+  progressLogFileName: string;
 }) {
   return {
     ok: true,
@@ -35,8 +36,34 @@ function buildSolveJobResponseBase(job: {
     optimizer: job.optimizer,
     jobStatus: job.status,
     cancelRequested: job.cancelRequested,
-    progressLogFilePath: job.progressLogFilePath,
+    progressLogFileName: job.progressLogFileName,
   };
+}
+
+const MAX_SOLVE_REQUEST_ID_LENGTH = 120;
+const SOLVE_REQUEST_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
+
+function normalizeProvidedSolveRequestId(requestId: unknown): string | null {
+  if (typeof requestId !== "string") return null;
+  const normalized = requestId.trim();
+  if (!normalized) return null;
+  if (
+    normalized.length > MAX_SOLVE_REQUEST_ID_LENGTH
+    || !SOLVE_REQUEST_ID_PATTERN.test(normalized)
+  ) {
+    throw new SolverInputError(
+      `Solve requestId must be 1-${MAX_SOLVE_REQUEST_ID_LENGTH} characters using letters, numbers, ".", "_", or "-".`
+    );
+  }
+  return normalized;
+}
+
+function normalizeRequiredSolveRequestId(requestId: unknown): string {
+  const normalized = normalizeProvidedSolveRequestId(requestId);
+  if (!normalized) {
+    throw new SolverInputError("Solve requestId is required.");
+  }
+  return normalized;
 }
 
 function buildCancelRequestedMessage(optimizer: string): string {
@@ -199,9 +226,7 @@ export async function handleStartSolve(
   const payload = await readSolvePayload(req, res);
   if (!payload) return true;
 
-  const requestId = typeof payload.requestId === "string" && payload.requestId.trim()
-    ? payload.requestId.trim()
-    : randomUUID();
+  const requestId = normalizeProvidedSolveRequestId(payload.requestId) ?? randomUUID();
   const existingJob = solveJobManager.replaceIfIdle(requestId);
   if (existingJob?.status === "running") {
     sendJson(res, 409, {
@@ -221,7 +246,7 @@ export async function handleStartSolve(
     requestId,
     optimizer: resolveOptimizerName(payload.params),
     jobStatus: "running",
-    progressLogFilePath: job.progressLogFilePath,
+    progressLogFileName: job.progressLogFileName,
   });
   return true;
 }
@@ -234,15 +259,16 @@ export function handleSolveStatus(
   const route = matchGetOrHeadRoute(req, "/api/solve/status");
   if (!route) return false;
 
-  const requestId = route.url.searchParams.get("requestId")?.trim() ?? "";
+  const requestIdValue = route.url.searchParams.get("requestId")?.trim() ?? "";
   const includeSnapshot = ["1", "true", "yes"].includes((route.url.searchParams.get("includeSnapshot") ?? "").toLowerCase());
-  if (!requestId) {
+  if (!requestIdValue) {
     sendJson(res, 400, {
       ok: false,
       error: "Missing requestId query parameter.",
     }, route.headOnly);
     return true;
   }
+  const requestId = normalizeRequiredSolveRequestId(requestIdValue);
 
   const jobStatus = solveJobManager.getStatus(requestId, includeSnapshot);
   if (!jobStatus) {
@@ -316,7 +342,8 @@ export async function handleCancelSolve(
   );
   if (!payload) return true;
 
-  const activeSolve = solveJobManager.get(payload.requestId.trim());
+  const requestId = normalizeRequiredSolveRequestId(payload.requestId);
+  const activeSolve = solveJobManager.get(requestId);
   if (!activeSolve) {
     sendJson(res, 200, {
       ok: true,
@@ -335,7 +362,7 @@ export async function handleCancelSolve(
     return true;
   }
 
-  solveJobManager.cancel(payload.requestId.trim());
+  solveJobManager.cancel(requestId);
   sendJson(res, 200, {
     ok: true,
     stopped: true,

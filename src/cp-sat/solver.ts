@@ -22,7 +22,7 @@ import type {
   SolverParams,
   Solution,
 } from "../core/index.js";
-import { assertValidLayout } from "../core/index.js";
+import { assertValidLayout, formatLayoutValidationErrors, validateSolution } from "../core/index.js";
 import { startJsonBackgroundSolve } from "../runtime/index.js";
 
 interface CpSatResidentialPlacement {
@@ -575,7 +575,7 @@ function validateCpSatLayout(G: Grid, params: SolverParams, raw: CpSatRawSolutio
 
 function materializeCpSatSolution(G: Grid, params: SolverParams, raw: CpSatRawSolution): Solution {
   const layout = validateCpSatLayout(G, params, raw);
-  return {
+  const solution: Solution = {
     optimizer: "cp-sat",
     cpSatStatus: raw.status,
     cpSatObjectivePolicy: raw.objectivePolicy,
@@ -591,6 +591,11 @@ function materializeCpSatSolution(G: Grid, params: SolverParams, raw: CpSatRawSo
     populations: raw.populations,
     totalPopulation: raw.totalPopulation,
   };
+  const validation = validateSolution({ grid: G, params, solution });
+  if (!validation.valid) {
+    throw new Error(`CP-SAT backend produced an invalid solution: ${formatLayoutValidationErrors(validation)}`);
+  }
+  return solution;
 }
 
 export function startCpSatSolve(G: Grid, params: SolverParams): CpSatSolveHandle {

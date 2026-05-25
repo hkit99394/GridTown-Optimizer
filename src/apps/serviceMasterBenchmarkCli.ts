@@ -12,6 +12,7 @@ import {
   parseNumberList,
   parsePositiveInteger,
   parsePositiveNumber,
+  parsePositiveNumberList,
 } from "./cliParsing.js";
 import { runCliMain } from "./cliEntrypoint.js";
 import { optionalCliNames, writeCliJsonOrText, writeCliList, writeCliText } from "./cliOutput.js";
@@ -50,7 +51,7 @@ function parseArgs(argv: string[]): ParsedArgs {
       budgetSeconds = parsePositiveNumber(value, "--budget");
     },
     budgets: (value) => {
-      budgetsSeconds = parseNumberList(value, "--budgets");
+      budgetsSeconds = parsePositiveNumberList(value, "--budgets");
     },
     seeds: (value) => {
       seeds = parseNumberList(value, "--seeds");

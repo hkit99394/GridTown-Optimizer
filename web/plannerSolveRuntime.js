@@ -431,17 +431,7 @@
       setSolveState(`Stopping ${getOptimizerLabel(state.optimizer)} solver...`);
 
       try {
-        const response = await fetch("/api/solve/cancel", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ requestId: state.activeSolveRequestId }),
-        });
-        const payload = await response.json();
-        if (!response.ok || !payload.ok) {
-          throw new Error(payload.error || "Failed to send the stop request.");
-        }
+        const payload = await cancelSolveRequest(state.activeSolveRequestId);
         setSolveState(
           payload.stopped
             ? (payload.message || `Stop requested. Finalizing the current ${getOptimizerLabel(state.optimizer)} run...`)
@@ -454,9 +444,26 @@
       }
     }
 
+    async function cancelSolveRequest(requestId) {
+      const response = await fetch("/api/solve/cancel", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ requestId }),
+      });
+      const payload = await response.json();
+      if (!response.ok || !payload.ok) {
+        throw new Error(payload.error || "Failed to send the stop request.");
+      }
+      return payload;
+    }
+
     async function waitForSolveResult(requestId) {
       let hasReceivedRunningSnapshot = false;
       let nextSnapshotRefreshAt = 0;
+      let transientStatusFailures = 0;
+      const maxTransientStatusFailures = 2;
       while (true) {
         const shouldRequestSnapshot = !hasReceivedRunningSnapshot || Date.now() >= nextSnapshotRefreshAt;
         const searchParams = new URLSearchParams({ requestId });
@@ -464,10 +471,23 @@
           searchParams.set("includeSnapshot", "1");
         }
 
-        const response = await fetch(`/api/solve/status?${searchParams.toString()}`, {
-          cache: "no-store",
-        });
-        const payload = await response.json();
+        let response;
+        let payload;
+        try {
+          response = await fetch(`/api/solve/status?${searchParams.toString()}`, {
+            cache: "no-store",
+          });
+          payload = await response.json();
+          transientStatusFailures = 0;
+        } catch (error) {
+          transientStatusFailures += 1;
+          if (transientStatusFailures <= maxTransientStatusFailures) {
+            setSolveState(`Temporary status read failure. Retrying ${getOptimizerLabel(state.optimizer)} status...`);
+            await delay(SOLVE_STATUS_POLL_INTERVAL_MS);
+            continue;
+          }
+          throw error;
+        }
         if (!response.ok || !payload.ok) {
           throw new Error(payload.error || "Failed to read solver status.");
         }
@@ -504,6 +524,7 @@
       state.solveProgressLog = [];
       clearManualEditState({ resetMode: true });
       clearExpansionAdvice();
+      let shouldCancelStartedSolveOnError = false;
       try {
         startSolveTimer();
         if (state.optimizer === "cp-sat") {
@@ -536,6 +557,7 @@
         } else {
           setSolveState(`Running Greedy solver in ${GREEDY_MODE_LABEL}...`);
         }
+        shouldCancelStartedSolveOnError = true;
         const startResponse = await fetch("/api/solve/start", {
           method: "POST",
           headers: {
@@ -551,6 +573,7 @@
           throw new Error(startPayload.error || "Failed to start the solver.");
         }
         const payload = await waitForSolveResult(state.activeSolveRequestId);
+        shouldCancelStartedSolveOnError = false;
 
         state.solveProgressLog = appendSolveProgressLog(state.solveProgressLog, payload, {
           elapsedMs: state.solveTimerElapsedMs,
@@ -578,6 +601,9 @@
                 : `Solved with ${getOptimizerLabel(payload.stats.optimizer)}${payload.stats.cpSatStatus ? ` (${payload.stats.cpSatStatus})` : ""}.`
         );
       } catch (error) {
+        if (shouldCancelStartedSolveOnError && state.activeSolveRequestId) {
+          await cancelSolveRequest(state.activeSolveRequestId).catch(() => {});
+        }
         state.result = null;
         state.resultIsLiveSnapshot = false;
         state.resultError = error instanceof Error ? error.message : "Unknown solve error.";

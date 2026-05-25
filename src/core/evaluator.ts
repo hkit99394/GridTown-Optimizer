@@ -13,7 +13,7 @@ import type {
   SolverParams,
   EvaluatedServicePlacement,
 } from "./types.js";
-import { cellFromKey } from "./types.js";
+import { cellFromKey, isCellKey } from "./types.js";
 import { isAllowed } from "./grid.js";
 import {
   serviceFootprint,
@@ -70,6 +70,55 @@ function hasBuildingRequiringExplicitRoadAccess(
 ): boolean {
   return services.some((service) => !serviceHasImplicitRoadAnchorAccess(service))
     || residentials.some((residential) => !buildingHasImplicitRoadAnchorAccess(residential));
+}
+
+function isNonNegativeInteger(value: unknown): value is number {
+  return typeof value === "number" && Number.isInteger(value) && value >= 0;
+}
+
+function isPositiveInteger(value: unknown): value is number {
+  return typeof value === "number" && Number.isInteger(value) && value > 0;
+}
+
+function isFiniteNonNegativeNumber(value: unknown): value is number {
+  return typeof value === "number" && Number.isFinite(value) && value >= 0;
+}
+
+function validatePlacementGeometry(
+  kind: "Service" | "Residential",
+  placement: { r: number; c: number; rows: number; cols: number },
+  errors: string[]
+): boolean {
+  const label = `${kind} at (${placement.r},${placement.c})`;
+  let valid = true;
+  if (!isNonNegativeInteger(placement.r) || !isNonNegativeInteger(placement.c)) {
+    errors.push(`${label} must have non-negative integer coordinates.`);
+    valid = false;
+  }
+  if (!isPositiveInteger(placement.rows) || !isPositiveInteger(placement.cols)) {
+    errors.push(`${label} must have positive integer dimensions.`);
+    valid = false;
+  }
+  return valid;
+}
+
+function hasValidPlacementGeometry(placement: { r: number; c: number; rows: number; cols: number }): boolean {
+  return isNonNegativeInteger(placement.r)
+    && isNonNegativeInteger(placement.c)
+    && isPositiveInteger(placement.rows)
+    && isPositiveInteger(placement.cols);
+}
+
+function isEvaluatableServicePlacement(service: EvaluatedServicePlacement): boolean {
+  return hasValidPlacementGeometry(service)
+    && isNonNegativeInteger(service.range)
+    && isFiniteNonNegativeNumber(service.bonus);
+}
+
+function isEvaluatableResidentialPlacement(
+  residential: { r: number; c: number; rows: number; cols: number }
+): boolean {
+  return hasValidPlacementGeometry(residential);
 }
 
 function validateRoadAnchorConnectivity(
@@ -190,6 +239,9 @@ export function validateLayoutConstraints(input: LayoutEvaluationInput): LayoutC
   const { maxServices, maxResidentials } = getBuildingLimits(params);
 
   const buildingCells = new Set<string>();
+  const validRoads = new Set<string>();
+  const evaluatableServices: EvaluatedServicePlacement[] = [];
+  const evaluatableResidentials: { r: number; c: number; rows: number; cols: number }[] = [];
 
   if (maxServices !== undefined && services.length > maxServices) {
     errors.push(`Layout uses ${services.length} services, exceeding the limit of ${maxServices}.`);
@@ -200,6 +252,16 @@ export function validateLayoutConstraints(input: LayoutEvaluationInput): LayoutC
 
   // Validate services.
   for (const s of services) {
+    if (!validatePlacementGeometry("Service", s, errors)) continue;
+    if (!isNonNegativeInteger(s.range)) {
+      errors.push(`Service at (${s.r},${s.c}) must have a non-negative integer range.`);
+      continue;
+    }
+    if (!isFiniteNonNegativeNumber(s.bonus)) {
+      errors.push(`Service at (${s.r},${s.c}) must have a finite non-negative bonus.`);
+      continue;
+    }
+    evaluatableServices.push(s);
     for (const k of serviceFootprint(s)) {
       const [r, c] = k.split(",").map(Number);
       if (!isAllowed(grid, r, c)) {
@@ -214,6 +276,8 @@ export function validateLayoutConstraints(input: LayoutEvaluationInput): LayoutC
 
   // Validate residentials.
   for (const res of residentials) {
+    if (!validatePlacementGeometry("Residential", res, errors)) continue;
+    evaluatableResidentials.push(res);
     for (const k of residentialFootprint(res.r, res.c, res.rows, res.cols)) {
       const [r, c] = k.split(",").map(Number);
       if (!isAllowed(grid, r, c)) {
@@ -228,7 +292,12 @@ export function validateLayoutConstraints(input: LayoutEvaluationInput): LayoutC
 
   // Road basic validation and no overlap with buildings.
   for (const k of roads) {
-    const [r, c] = k.split(",").map(Number);
+    if (!isCellKey(k)) {
+      errors.push(`Road key "${k}" must be like "r,c".`);
+      continue;
+    }
+    validRoads.add(k);
+    const { r, c } = cellFromKey(k);
     if (!isAllowed(grid, r, c)) {
       errors.push(`Road cell (${r},${c}) is not allowed.`);
     }
@@ -241,21 +310,21 @@ export function validateLayoutConstraints(input: LayoutEvaluationInput): LayoutC
   // Empty road sets are valid only when every building has implicit anchor-boundary access.
   validateRoadAnchorConnectivity(
     grid,
-    roads,
-    hasBuildingRequiringExplicitRoadAccess(services, residentials),
+    validRoads,
+    hasBuildingRequiringExplicitRoadAccess(evaluatableServices, evaluatableResidentials),
     errors
   );
 
   // Building-road adjacency.
   // Buildings that cover row 0 or column 0 are treated as connected to the road anchor.
-  for (const s of services) {
+  for (const s of evaluatableServices) {
     const normalized = normalizeServicePlacement(s);
-    if (!isAdjacentToRoads(roads, normalized.r, normalized.c, normalized.rows, normalized.cols)) {
+    if (!isAdjacentToRoads(validRoads, normalized.r, normalized.c, normalized.rows, normalized.cols)) {
       errors.push(`Service at (${s.r},${s.c}) is not adjacent to a road.`);
     }
   }
-  for (const res of residentials) {
-    if (!isAdjacentToRoads(roads, res.r, res.c, res.rows, res.cols)) {
+  for (const res of evaluatableResidentials) {
+    if (!isAdjacentToRoads(validRoads, res.r, res.c, res.rows, res.cols)) {
       errors.push(`Residential at (${res.r},${res.c}) size ${res.rows}x${res.cols} is not adjacent to a road.`);
     }
   }
@@ -270,20 +339,32 @@ export function evaluateLayout(input: LayoutEvaluationInput): LayoutEvaluationRe
   const { grid, services, residentials, params } = input;
   const constraintValidation = validateLayoutConstraints(input);
   const errors = [...constraintValidation.errors];
+  const evaluatableServices = services.filter(isEvaluatableServicePlacement);
+  const evaluatableResidentials = residentials
+    .map((placement, index) => ({ placement, index }))
+    .filter(({ placement }) => isEvaluatableResidentialPlacement(placement));
 
   // Population computation.
-  const boosts = computeResidentialBoosts(grid, services, residentials);
+  const boosts = new Array<number>(residentials.length).fill(0);
+  const evaluatableBoosts = computeResidentialBoosts(
+    grid,
+    evaluatableServices,
+    evaluatableResidentials.map(({ placement }) => placement)
+  );
+  for (let i = 0; i < evaluatableResidentials.length; i++) {
+    boosts[evaluatableResidentials[i].index] = evaluatableBoosts[i];
+  }
 
   const populations = new Array<number>(residentials.length).fill(0);
 
   if ((params.residentialTypes?.length ?? 0) > 0) {
     // Group residentials by normalized size so type assignment is exact under avail limits.
     const groups = new Map<string, number[]>();
-    for (let i = 0; i < residentials.length; i++) {
-      const [a, b] = normalizeSize(residentials[i].rows, residentials[i].cols);
+    for (const { placement, index } of evaluatableResidentials) {
+      const [a, b] = normalizeSize(placement.rows, placement.cols);
       const k = `${a}x${b}`;
       if (!groups.has(k)) groups.set(k, []);
-      groups.get(k)!.push(i);
+      groups.get(k)!.push(index);
     }
     for (const idxs of groups.values()) {
       const sample = residentials[idxs[0]];
@@ -302,10 +383,9 @@ export function evaluateLayout(input: LayoutEvaluationInput): LayoutEvaluationRe
     }
   } else {
     // Legacy per-size/base-max fallback.
-    for (let i = 0; i < residentials.length; i++) {
-      const res = residentials[i];
+    for (const { placement: res, index } of evaluatableResidentials) {
       const { base, max } = getResidentialBaseMax(params, res.rows, res.cols);
-      populations[i] = clamp(base + boosts[i], base, max);
+      populations[index] = clamp(base + boosts[index], base, max);
     }
   }
 

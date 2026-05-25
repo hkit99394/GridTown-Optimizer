@@ -1,7 +1,7 @@
 import {
-  formatLnsLearnedPromotionReview,
-  runLnsLearnedPromotionReview,
-  writeLnsLearnedPromotionReviewArtifact,
+  formatLnsLearnedGuardCalibration,
+  runLnsLearnedGuardCalibration,
+  writeLnsLearnedGuardCalibrationArtifact,
 } from "../benchmarks/index.js";
 import {
   applyInlineOptionHandlers,
@@ -9,29 +9,29 @@ import {
   parseNameList,
   parseNumberList,
   parsePositiveInteger,
-  parseScoreRatio,
+  parseScoreRatioList,
 } from "./cliParsing.js";
 import { runCliMain } from "./cliEntrypoint.js";
 import { writeCliJsonOrText, writeCliText } from "./cliOutput.js";
 
-interface ParsedLnsLearnedPromotionReviewArgs {
+interface ParsedLnsLearnedGuardCalibrationArgs {
   json: boolean;
   productNames?: string[];
   crossModeNames?: string[];
   outputPath?: string;
   seeds?: number[];
   candidateLimit?: number;
-  minScoreRatio?: number;
+  minScoreRatios?: number[];
 }
 
-function parseArgs(argv: string[]): ParsedLnsLearnedPromotionReviewArgs {
+function parseArgs(argv: string[]): ParsedLnsLearnedGuardCalibrationArgs {
   let json = false;
   let productNames: string[] | undefined;
   let crossModeNames: string[] | undefined;
   let outputPath: string | undefined;
   let seeds: number[] | undefined;
   let candidateLimit: number | undefined;
-  let minScoreRatio: number | undefined;
+  let minScoreRatios: number[] | undefined;
   const inlineOptions: Record<string, (value: string) => void> = {
     "product-names": (value) => {
       productNames = parseNameList(value, "--product-names");
@@ -48,8 +48,8 @@ function parseArgs(argv: string[]): ParsedLnsLearnedPromotionReviewArgs {
     "candidate-limit": (value) => {
       candidateLimit = parsePositiveInteger(value, "--candidate-limit");
     },
-    "min-score-ratio": (value) => {
-      minScoreRatio = parseScoreRatio(value, "--min-score-ratio");
+    "min-score-ratios": (value) => {
+      minScoreRatios = parseScoreRatioList(value, "--min-score-ratios");
     },
   };
 
@@ -61,30 +61,30 @@ function parseArgs(argv: string[]): ParsedLnsLearnedPromotionReviewArgs {
     if (applyInlineOptionHandlers(arg, inlineOptions)) {
       continue;
     }
-    throw new Error(`Unknown LNS learned promotion review argument: ${arg}`);
+    throw new Error(`Unknown LNS learned guard calibration argument: ${arg}`);
   }
 
-  return { json, productNames, crossModeNames, outputPath, seeds, candidateLimit, minScoreRatio };
+  return { json, productNames, crossModeNames, outputPath, seeds, candidateLimit, minScoreRatios };
 }
 
-export function runLnsLearnedPromotionReviewCli(): void {
+export function runLnsLearnedGuardCalibrationCli(): void {
   const args = parseArgs(process.argv.slice(2));
-  const result = runLnsLearnedPromotionReview({
+  const result = runLnsLearnedGuardCalibration({
     productNames: args.productNames,
     crossModeNames: args.crossModeNames,
     seeds: args.seeds,
     learnedWindowRankingCandidateLimit: args.candidateLimit,
-    learnedWindowRankingMinScoreRatio: args.minScoreRatio,
+    minScoreRatios: args.minScoreRatios,
   });
 
   if (args.outputPath) {
-    writeLnsLearnedPromotionReviewArtifact(result, args.outputPath);
+    writeLnsLearnedGuardCalibrationArtifact(result, args.outputPath);
     if (!args.json) {
-      writeCliText(`Wrote LNS learned promotion review artifact to ${args.outputPath}.`);
+      writeCliText(`Wrote LNS learned guard calibration artifact to ${args.outputPath}.`);
     }
   }
 
-  writeCliJsonOrText(args.json, result, () => formatLnsLearnedPromotionReview(result));
+  writeCliJsonOrText(args.json, result, () => formatLnsLearnedGuardCalibration(result));
 }
 
-runCliMain(runLnsLearnedPromotionReviewCli);
+runCliMain(runLnsLearnedGuardCalibrationCli);

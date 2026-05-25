@@ -6,9 +6,15 @@ export type Grid = number[][];
 
 export type Cell = { r: number; c: number };
 
+const CELL_KEY_PATTERN = /^(?:0|[1-9]\d*),(?:0|[1-9]\d*)$/;
+
 /** Key for set/map of cells */
 export function cellKey(r: number, c: number): string {
   return `${r},${c}`;
+}
+
+export function isCellKey(value: unknown): value is string {
+  return typeof value === "string" && CELL_KEY_PATTERN.test(value);
 }
 
 export function cellFromKey(key: string): Cell {
@@ -885,6 +891,11 @@ export interface LnsNeighborhoodOutcome {
   operatorScoreAfter?: number;
   operatorExploration?: boolean;
   learnedWindowRankingScore?: number;
+  learnedWindowRankingBaselineScore?: number;
+  learnedWindowRankingSelectedAdaptiveScore?: number;
+  learnedWindowRankingBaselineAdaptiveScore?: number;
+  learnedWindowRankingCandidateCount?: number;
+  learnedWindowRankingShortlistCount?: number;
   learnedWindowRankingDisplaced?: boolean;
   learnedWindowRankingModelVersion?: string;
   stagnantIterationsBefore: number;
@@ -1149,7 +1160,7 @@ export interface SolveResponsePayload {
   stats: SolveResponseStats;
   explainability?: PlannerExplainabilityMap;
   progressLog?: SolveProgressLogEntry[];
-  progressLogFilePath?: string;
+  progressLogFileName?: string;
   message?: string;
 }
 

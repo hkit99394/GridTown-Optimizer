@@ -194,6 +194,7 @@ const state = {
   },
   expansionAdvice: {
     isRunning: false,
+    activeRequestId: "",
     nextServiceText: "",
     nextResidentialText: "",
     status: "",
@@ -834,6 +835,10 @@ function init() {
     solveRuntimeController.runSolve();
   });
   elements.stopSolveButton.addEventListener("click", () => {
+    if (state.expansionAdvice.isRunning) {
+      expansionAdviceController.requestStopComparison();
+      return;
+    }
     solveRuntimeController.requestStopSolve();
   });
 }

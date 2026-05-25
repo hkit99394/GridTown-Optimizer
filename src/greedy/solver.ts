@@ -61,6 +61,7 @@ import {
 import type { RoadOpportunityCounterfactualCandidate, RoadOpportunityRecorder } from "./roadOpportunity.js";
 import {
   applyRoadConnectionProbe,
+  buildingHasImplicitRoadAnchorAccess,
   createRoadProbeScratch,
   ensureBuildingConnectedToRoads,
   roadAnchorRepresentativeSeedCandidates,
@@ -111,7 +112,7 @@ import {
   normalizeServicePlacement,
   serviceFootprint,
 } from "../core/buildings.js";
-import { collectRoadAnchorRefinementSeeds, placementLeavesRoadAnchorCellAvailable } from "./roadAnchors.js";
+import { collectRoadAnchorRefinementSeeds } from "./roadAnchors.js";
 import { getBuildingLimits, getResidentialBaseMax, NO_TYPE_INDEX } from "../core/rules.js";
 import { writeSolutionSnapshot } from "../core/solutionSerialization.js";
 import { forEachRectangleCell } from "../core/grid.js";
@@ -1296,9 +1297,6 @@ function solveOne(
         }
         if (roadsScratch.size === 0) {
           if (profileCounters) profileCounters.roads.roadAnchorChecks++;
-          if (!placementLeavesRoadAnchorCellAvailable(G, occupiedScratch, candidate.r, candidate.c, candidate.rows, candidate.cols)) {
-            continue;
-          }
         }
         const candidateFootprintKeys = precomputedIndexes.residentialCandidateFootprintKeys[candidateIndex];
         if (
@@ -1428,8 +1426,8 @@ function solveOne(
           return null;
         }
       }
-      if (roads.size === 0 && !placementLeavesRoadAnchorCellAvailable(G, occupied, placement.r, placement.c, placement.rows, placement.cols)) {
-        return null;
+      if (roads.size === 0) {
+        if (profileCounters) profileCounters.roads.roadAnchorChecks++;
       }
       if (overlaps(occupied, placement.r, placement.c, placement.rows, placement.cols)) {
         return null;
@@ -1513,7 +1511,6 @@ function solveOne(
         if (useServiceTypes && remainingServiceAvail && remainingServiceAvail[service.typeIndex] <= 0) continue;
         if (roads.size === 0) {
           if (profileCounters) profileCounters.roads.roadAnchorChecks++;
-          if (!placementLeavesRoadAnchorCellAvailable(G, occupied, placement.r, placement.c, placement.rows, placement.cols)) continue;
         }
         if (profileCounters) profileCounters.servicePhase.canConnectChecks++;
         const probe = probeRoadConnection(
@@ -1876,7 +1873,6 @@ function solveOne(
       if (profileCounters) profileCounters.residentialPhase.candidateScans++;
       if (roads.size === 0) {
         if (profileCounters) profileCounters.roads.roadAnchorChecks++;
-        if (!placementLeavesRoadAnchorCellAvailable(G, occupied, cand.r, cand.c, cand.rows, cand.cols)) continue;
       }
       if (profileCounters) profileCounters.residentialPhase.canConnectChecks++;
       const probe = probeRoadConnection(
@@ -2082,11 +2078,21 @@ function solveOne(
   // Keep only roads connected to the anchor boundary, then re-ensure each placed building
   // is connected to that network (robust against any stray/disconnected roads).
   let roadsValid = roadsConnectedToRoadAnchor(G, roads);
-  if (roadsValid.size === 0) {
+  const hasExplicitRoadAccessRequirement = roadConnectedBuildings.some(
+    (building) => !buildingHasImplicitRoadAnchorAccess(building)
+  );
+  if (roadsValid.size === 0 && hasExplicitRoadAccessRequirement) {
     const fallbackRoad = findAvailableRoadAnchorCell(G, occupiedBuildings);
     if (!fallbackRoad) return null;
     if (profileCounters) profileCounters.roads.fallbackRoads++;
     roadsValid.add(fallbackRoad);
+  } else if (
+    roadsValid.size === 0
+    && roadConnectedBuildings.length === 0
+    && (maxServices !== 0 || maxResidentials !== 0)
+    && !findAvailableRoadAnchorCell(G, occupiedBuildings)
+  ) {
+    return null;
   }
 
   for (const normalized of normalizedServices) {
@@ -3017,11 +3023,7 @@ function runGreedyServiceNeighborhoodSearch(options: {
     solution.services.map((_, index) => materializeChosenServiceCandidate(solution, index));
 
   const currentRoadSeedFromSolution = (solution: Solution): Set<string> | undefined => {
-    const seed = new Set<string>();
-    for (const key of solution.roads) {
-      if (key.startsWith("0,")) seed.add(key);
-    }
-    return seed.size > 0 ? seed : undefined;
+    return solutionRoadAnchorSeed(solution);
   };
 
   const realizeAcceptedServiceNeighborhoodMove = (
@@ -4290,7 +4292,6 @@ function localSearchImprove(
         }
         if (roads.size === 0) {
           if (profileCounters) profileCounters.roads.roadAnchorChecks++;
-          if (!placementLeavesRoadAnchorCellAvailable(G, othersOccupied, cand.r, cand.c, cand.rows, cand.cols)) continue;
         }
         if (overlaps(othersOccupied, cand.r, cand.c, cand.rows, cand.cols)) continue;
         if (profileCounters) profileCounters.localSearch.moveChecks++;
@@ -4353,7 +4354,6 @@ function localSearchImprove(
         }
         if (roads.size === 0) {
           if (profileCounters) profileCounters.roads.roadAnchorChecks++;
-          if (!placementLeavesRoadAnchorCellAvailable(G, occupied, cand.r, cand.c, cand.rows, cand.cols)) continue;
         }
         if (overlaps(occupied, cand.r, cand.c, cand.rows, cand.cols)) continue;
         if (profileCounters) profileCounters.localSearch.addChecks++;

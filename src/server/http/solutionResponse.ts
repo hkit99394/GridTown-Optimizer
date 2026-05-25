@@ -5,6 +5,7 @@ import { buildPlannerExplainabilityMap } from "../../core/plannerExplainability.
 import { buildSolverProgressSummary } from "../../core/progress.js";
 import { pruneRedundantRoads } from "../../core/roads.js";
 import { serializeSolution } from "../../core/solutionSerialization.js";
+import { assertSolutionFootprintsWithinGrid } from "../../core/solverInputValidation.js";
 import { cellFromKey, cellKey } from "../../core/types.js";
 
 import type { SolutionValidationOptions } from "../../core/evaluator.js";
@@ -149,12 +150,16 @@ function normalizeManualLayoutSolution(
   return {
     ...solution,
     optimizer: undefined,
+    activeOptimizer: undefined,
+    autoStage: undefined,
     manualLayout: true,
     cpSatStatus: undefined,
     cpSatObjectivePolicy: undefined,
     cpSatTelemetry: undefined,
     cpSatPortfolio: undefined,
     lnsTelemetry: undefined,
+    greedyProfile: undefined,
+    greedyDiagnostics: undefined,
     stoppedByUser: false,
     stoppedByTimeLimit: false,
     populations: [...validation.recomputedPopulations],
@@ -163,6 +168,7 @@ function normalizeManualLayoutSolution(
 }
 
 export function buildManualLayoutResponse(grid: Grid, params: SolverParams, solution: Solution) {
+  assertSolutionFootprintsWithinGrid(grid, solution, "Manual layout solution");
   const cleanedSolution = cleanManualLayoutRoads(grid, solution);
   const validation = buildSolveResponsePayload(grid, params, cleanedSolution, {
     ignoreReportedPopulation: true,

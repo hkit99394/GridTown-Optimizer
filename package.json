@@ -21,6 +21,8 @@
     "benchmark:greedy-online-ab": "npm run build && node dist/greedyLearnedOnlineAbCli.js",
     "benchmark:lns-online-ab": "npm run build && node dist/lnsLearnedOnlineAbCli.js",
     "benchmark:lns-promotion-review": "npm run build && node dist/lnsLearnedPromotionReviewCli.js",
+    "benchmark:lns-guard-calibration": "npm run build && node dist/lnsLearnedGuardCalibrationCli.js",
+    "benchmark:lns-displacement-diagnostics": "npm run build && node dist/lnsLearnedDisplacementDiagnosticsCli.js",
     "benchmark:road-semantics": "npm run build && node dist/roadSemanticsScorecardCli.js",
     "benchmark:product-workflows": "npm run build && node dist/productWorkflowBenchmarkCli.js",
     "benchmark:service-master": "npm run build && node dist/serviceMasterBenchmarkCli.js",
@@ -28,8 +30,9 @@
     "experiment-registry": "npm run build && node dist/experimentRegistryCli.js",
     "experiment-registry:check": "npm run build && node dist/experimentRegistryCli.js check",
     "setup:cp-sat": "bash scripts/setup-cp-sat.sh",
-    "test:acceptance": "node tests/acceptance/city-builder-bdd.test.cjs",
-    "test": "npm run build && npm run test:acceptance && node tests/review-findings.test.cjs && node tests/experiment-registry.test.cjs && node tests/web-server-routes.test.cjs && node tests/optimizers.test.cjs"
+    "test:acceptance": "npm run build && node tests/acceptance/city-builder-bdd.test.cjs",
+    "test:cp-sat": "npm run build && npm run setup:cp-sat && CITY_BUILDER_REQUIRE_CP_SAT=1 node tests/optimizers.test.cjs",
+    "test": "npm run test:acceptance && node tests/review-findings.test.cjs && node tests/experiment-registry.test.cjs && node tests/web-server-routes.test.cjs && node tests/optimizers.test.cjs"
   },
   "keywords": [],
   "author": "",

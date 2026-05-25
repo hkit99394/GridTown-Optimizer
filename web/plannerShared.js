@@ -64,6 +64,7 @@
       size: `${serviceType?.rows ?? 0}x${serviceType?.cols ?? 0}`,
       effective: `${(serviceType?.rows ?? 0) + (serviceType?.range ?? 0) * 2}x${(serviceType?.cols ?? 0) + (serviceType?.range ?? 0) * 2}`,
       avail: String(serviceType?.avail ?? 1),
+      allowRotation: serviceType?.allowRotation === false ? false : true,
     };
   }
 
@@ -331,6 +332,7 @@
       const sizeIndex = header.indexOf("size");
       const effectiveIndex = header.indexOf("effective");
       const availIndex = header.indexOf("avail");
+      const allowRotationIndex = header.indexOf("allowrotation");
       return {
         kind: "services",
         rows: rows.map((cells) => ({
@@ -339,6 +341,7 @@
           size: cells[sizeIndex] ?? "",
           effective: cells[effectiveIndex] ?? "",
           avail: availIndex >= 0 ? (cells[availIndex] ?? "") : "1",
+          ...(allowRotationIndex >= 0 ? { allowRotation: cells[allowRotationIndex] ?? "" } : {}),
         })),
       };
     }
@@ -380,19 +383,40 @@
 
   function parsePair(value, separator, label) {
     const text = String(value ?? "").trim().toLowerCase();
-    const parts = text.split(separator).map((part) => Number.parseInt(part.trim(), 10));
-    if (parts.length !== 2 || parts.some((part) => !Number.isInteger(part) || part <= 0)) {
+    const parts = text.split(separator).map((part) => parsePositiveIntegerToken(part));
+    if (parts.length !== 2 || parts.some((part) => part === null)) {
       throw new Error(`${label} must be in the format A${separator}B using positive integers.`);
     }
     return parts;
   }
 
+  function parsePositiveIntegerToken(value) {
+    const text = String(value ?? "").trim();
+    if (!/^\d+$/.test(text)) return null;
+    const number = Number(text);
+    return Number.isSafeInteger(number) && number > 0 ? number : null;
+  }
+
   function parseIntegerField(value, label, min = 0) {
-    const number = Number.parseInt(String(value ?? "").trim(), 10);
-    if (!Number.isInteger(number) || number < min) {
+    const text = String(value ?? "").trim();
+    if (!/^\d+$/.test(text)) {
+      throw new Error(`${label} must be an integer greater than or equal to ${min}.`);
+    }
+    const number = Number(text);
+    if (!Number.isSafeInteger(number) || number < min) {
       throw new Error(`${label} must be an integer greater than or equal to ${min}.`);
     }
     return number;
+  }
+
+  function parseBooleanField(value, label, fallback = true) {
+    if (value === undefined || value === null || value === "") return fallback;
+    if (typeof value === "boolean") return value;
+    const text = String(value).trim().toLowerCase();
+    if (text === "") return fallback;
+    if (["true", "yes", "y", "1"].includes(text)) return true;
+    if (["false", "no", "n", "0"].includes(text)) return false;
+    throw new Error(`${label} must be true or false.`);
   }
 
   function parseServiceCatalogEntry(entry, index) {
@@ -414,7 +438,7 @@
       bonus: parseIntegerField(entry.bonus, `Service ${index + 1} bonus`, 0),
       range: rangeByRows,
       avail: rawAvail ? parseIntegerField(rawAvail, `Service ${index + 1} avail`, 0) : 1,
-      allowRotation: true,
+      allowRotation: parseBooleanField(entry.allowRotation, `Service ${index + 1} allow rotation`, true),
     };
   }
 
@@ -463,6 +487,7 @@
     normalizeHeaderName,
     normalizeOptimizer,
     parseCatalogImportText,
+    parseBooleanField,
     parseIntegerField,
     parsePair,
     parseResidentialCatalogEntry,

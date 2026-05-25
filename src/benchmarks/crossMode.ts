@@ -29,6 +29,7 @@ import {
   uniqueBenchmarkValues,
   uniqueBenchmarkValuesBy,
 } from "./benchmarkOptions.js";
+import { normalizeBenchmarkSeeds } from "./benchmarkSeeds.js";
 import { buildCpSatBenchmarkCpuPlan, normalizeCpSatBenchmarkOptions } from "./cpSat.js";
 import { normalizeGreedyBenchmarkOptions } from "./greedy.js";
 import { normalizeLnsBenchmarkOptions } from "./lns.js";
@@ -360,14 +361,8 @@ function normalizeBudgetList(options: CrossModeBenchmarkRunOptions): number[] {
 }
 
 function normalizeSeeds(seeds: readonly number[] | undefined): number[] {
-  const requested = seeds?.length ? seeds : DEFAULT_CROSS_MODE_BENCHMARK_SEEDS;
-  const normalized = requested
-    .map((value) => (Number.isFinite(value) ? Math.max(0, Math.floor(value)) : -1))
-    .filter((value) => value >= 0);
-  if (normalized.length === 0) {
-    throw new Error("Cross-mode benchmark suite must include at least one non-negative seed.");
-  }
-  return uniqueBenchmarkValues(normalized);
+  return normalizeBenchmarkSeeds(seeds, "Cross-mode benchmark seeds")
+    ?? [...DEFAULT_CROSS_MODE_BENCHMARK_SEEDS];
 }
 
 function modeToOptimizer(mode: CrossModeBenchmarkMode): OptimizerName {

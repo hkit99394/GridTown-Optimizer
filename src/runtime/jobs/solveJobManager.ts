@@ -39,7 +39,7 @@ export interface SolveJob {
   error: string | null;
   createdAt: number;
   finishedAt?: number;
-  progressLogFilePath: string;
+  progressLogFileName: string;
   progressLogWriter: SolveProgressLogWriter;
   progressLogIntervalHandle: NodeJS.Timeout | null;
 }
@@ -158,7 +158,7 @@ export class SolveJobManager {
         message: null,
         error: null,
         createdAt,
-        progressLogFilePath: progressLogWriter.filePath,
+        progressLogFileName: progressLogWriter.fileName,
         progressLogWriter,
         progressLogIntervalHandle: null,
       };

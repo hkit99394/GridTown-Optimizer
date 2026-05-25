@@ -1,9 +1,9 @@
 import concurrent.futures
 import multiprocessing
-import os
 from concurrent.futures.process import BrokenProcessPool
 
 MAX_PORTFOLIO_WORKERS = 8
+DEFAULT_PORTFOLIO_WORKERS = 3
 MAX_PORTFOLIO_WORKER_THREADS = 8
 MAX_PORTFOLIO_TOTAL_CPU_SECONDS = 8 * 60 * 60
 MAX_CP_SAT_NUM_WORKERS = 64
@@ -71,14 +71,13 @@ def _build_portfolio_seeds(cp_sat_options, portfolio_options):
             raise ValueError("portfolio.randomSeeds must not contain duplicate seeds.")
         return seeds
 
-    default_worker_count = min(os.cpu_count() or 2, 4)
     worker_count = _optional_int_range(
         portfolio_options,
         "workerCount",
         "portfolio.workerCount",
         1,
         MAX_PORTFOLIO_WORKERS,
-        fallback=default_worker_count,
+        fallback=min(DEFAULT_PORTFOLIO_WORKERS, MAX_PORTFOLIO_WORKERS),
     )
     base_seed = _optional_int_range(
         cp_sat_options,

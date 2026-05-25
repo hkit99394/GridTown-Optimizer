@@ -53,7 +53,13 @@
 
       elements.solveButton.disabled = editorBusy;
       elements.solveButton.textContent = state.isSolving ? "Solving..." : "Run solver";
-      elements.stopSolveButton.disabled = !(state.isSolving && state.activeSolveRequestId && !state.isStopping);
+      elements.stopSolveButton.disabled = !(
+        !state.isStopping
+        && (
+          (state.isSolving && state.activeSolveRequestId)
+          || (comparisonBusy && state.expansionAdvice.activeRequestId)
+        )
+      );
       elements.loadConfigButton.disabled = editorBusy;
       elements.loadLayoutButton.disabled = editorBusy;
       elements.saveLayoutButton.disabled = editorControlsDisabled;

@@ -63,7 +63,11 @@ export function parsePositiveInteger(value: string, label: string): number {
 }
 
 export function parseNonNegativeInteger(value: string, label: string): number {
-  const number = Number(value);
+  const trimmed = value.trim();
+  if (!trimmed) {
+    throw new Error(`Expected ${label} to be a non-negative integer.`);
+  }
+  const number = Number(trimmed);
   if (!Number.isInteger(number) || number < 0) {
     throw new Error(`Expected ${label} to be a non-negative integer.`);
   }
@@ -76,4 +80,34 @@ export function parsePositiveNumber(value: string, label: string): number {
     throw new Error(`Expected ${label} to be a positive finite number.`);
   }
   return number;
+}
+
+export function parsePositiveNumberList(value: string, label: string): number[] {
+  return parseNumberList(value, label).map((number) => {
+    if (number <= 0) {
+      throw new Error(`Expected ${label} to contain only positive finite numbers.`);
+    }
+    return number;
+  });
+}
+
+export function parseScoreRatio(value: string, label: string): number {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    throw new Error(`Expected ${label} to be a finite number between 0 and 1.`);
+  }
+  const number = Number(trimmed);
+  if (!Number.isFinite(number) || number < 0 || number > 1) {
+    throw new Error(`Expected ${label} to be a finite number between 0 and 1.`);
+  }
+  return number;
+}
+
+export function parseScoreRatioList(value: string, label: string): number[] {
+  return parseNumberList(value, label).map((number) => {
+    if (number < 0 || number > 1) {
+      throw new Error(`Expected ${label} to contain only finite numbers between 0 and 1.`);
+    }
+    return number;
+  });
 }

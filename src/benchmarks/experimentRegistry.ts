@@ -899,14 +899,30 @@ export function validateExperimentRegistryEntries(
   const normalizedOptions = normalizeCheckOptions(options);
   const validEntries: ExperimentRegistryEntry[] = [];
   const issues: ExperimentRegistryIssue[] = [];
+  const seenRunIds = new Map<string, number>();
 
   entries.forEach((entry, index) => {
+    const lineNumber = index + 1;
+    const runId = isRecord(entry) && isNonEmptyString(entry.runId) ? entry.runId : undefined;
+    if (runId !== undefined) {
+      const previousLine = seenRunIds.get(runId);
+      if (previousLine !== undefined) {
+        issue(issues, "duplicate-run-id", `Duplicate runId '${runId}' also appears on line ${previousLine}.`, {
+          lineNumber,
+          runId,
+          field: "runId",
+        });
+      } else {
+        seenRunIds.set(runId, lineNumber);
+      }
+    }
+
     const validation = validateExperimentRegistryEntry(entry, {
       ...options,
       rootDir: normalizedOptions.rootDir,
       validateArtifactPaths: normalizedOptions.validateArtifactPaths,
       strict: normalizedOptions.strict,
-      lineNumber: index + 1,
+      lineNumber,
     });
     issues.push(...validation.issues.map((validationIssue) => ({ ...validationIssue, severity: validationIssue.severity ?? "error" as const })));
     if (validation.entry !== undefined) {

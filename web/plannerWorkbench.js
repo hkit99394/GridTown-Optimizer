@@ -55,11 +55,14 @@
     }
 
     function applyCpSatPortfolioRequestToState(portfolio) {
-      if (!portfolio) return {};
+      if (!portfolio) {
+        return {
+          portfolio: getDefaultCpSatPortfolioState(),
+        };
+      }
       return {
         portfolio: {
           ...getDefaultCpSatPortfolioState(),
-          ...state.cpSat.portfolio,
           enabled: true,
           ...(portfolio.workerCount != null ? { workerCount: portfolio.workerCount } : {}),
           ...(Array.isArray(portfolio.randomSeeds) ? { randomSeeds: portfolio.randomSeeds.join(", ") } : {}),
@@ -111,19 +114,20 @@
         wallClockLimitSeconds: params.auto?.wallClockLimitSeconds != null ? String(params.auto.wallClockLimitSeconds) : "",
       };
 
-      if (!preserveCpSatRuntime && params.cpSat) {
+      if (!preserveCpSatRuntime) {
+        const cpSat = params.cpSat ?? {};
         state.cpSat = {
           ...state.cpSat,
           randomSeed: "",
-          ...(params.cpSat.timeLimitSeconds != null ? { timeLimitSeconds: String(params.cpSat.timeLimitSeconds) } : {}),
-          ...(params.cpSat.noImprovementTimeoutSeconds != null
-            ? { noImprovementTimeoutSeconds: String(params.cpSat.noImprovementTimeoutSeconds) }
+          ...(cpSat.timeLimitSeconds != null ? { timeLimitSeconds: String(cpSat.timeLimitSeconds) } : {}),
+          ...(cpSat.noImprovementTimeoutSeconds != null
+            ? { noImprovementTimeoutSeconds: String(cpSat.noImprovementTimeoutSeconds) }
             : {}),
-          ...(params.cpSat.randomSeed != null ? { randomSeed: String(params.cpSat.randomSeed) } : {}),
-          ...(params.cpSat.numWorkers != null ? { numWorkers: params.cpSat.numWorkers } : {}),
-          ...(params.cpSat.logSearchProgress != null ? { logSearchProgress: Boolean(params.cpSat.logSearchProgress) } : {}),
-          ...(params.cpSat.useDisplayedHint != null ? { useDisplayedHint: Boolean(params.cpSat.useDisplayedHint) } : {}),
-          ...applyCpSatPortfolioRequestToState(params.cpSat.portfolio),
+          ...(cpSat.randomSeed != null ? { randomSeed: String(cpSat.randomSeed) } : {}),
+          ...(cpSat.numWorkers != null ? { numWorkers: cpSat.numWorkers } : {}),
+          ...(cpSat.logSearchProgress != null ? { logSearchProgress: Boolean(cpSat.logSearchProgress) } : {}),
+          ...(cpSat.useDisplayedHint != null ? { useDisplayedHint: Boolean(cpSat.useDisplayedHint) } : {}),
+          ...applyCpSatPortfolioRequestToState(cpSat.portfolio),
         };
       }
 

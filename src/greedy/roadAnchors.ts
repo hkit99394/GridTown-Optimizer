@@ -3,30 +3,13 @@
  */
 
 import {
-  buildingTouchesRoadAnchorBoundary,
   cellFromKey,
   cellKey,
   forEachRoadAnchorCellInRectangle,
-  forEachRectangleCell,
-  hasAvailableRoadAnchorCell,
   isRoadAnchorCell,
   normalizeServicePlacement,
 } from "../core/index.js";
-import type { Grid, Solution } from "../core/index.js";
-
-export function placementLeavesRoadAnchorCellAvailable(
-  G: Grid,
-  occupied: Set<string>,
-  r: number,
-  c: number,
-  rows: number,
-  cols: number
-): boolean {
-  if (!buildingTouchesRoadAnchorBoundary(r, c)) return true;
-  const blocked = new Set<string>(occupied);
-  forEachRectangleCell(r, c, rows, cols, (rr, cc) => blocked.add(cellKey(rr, cc)));
-  return hasAvailableRoadAnchorCell(G, blocked);
-}
+import type { Solution } from "../core/index.js";
 
 export function collectRoadAnchorRefinementSeeds(solution: Solution): Set<string>[] {
   const seedKeys = new Set<string>();

@@ -96,7 +96,7 @@ Concrete work:
 Guardrail:
 
 - do not reject high-population placements purely because they disconnect low-value space
-- every returned solution must still include explicit roads and pass the strict evaluator
+- every returned solution must pass the strict evaluator: explicit road components must each touch row `0` or column `0`, and buildings touching the anchor boundary may bypass adjacency to explicit roads
 - keep the feature behind an option until equal-budget scorecards show downstream benefit to `auto` and `LNS`
 
 ## Residual Bottlenecks

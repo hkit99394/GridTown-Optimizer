@@ -3,6 +3,7 @@
 Optimize a city layout on a 2D grid by placing roads, service buildings, and residential buildings to maximize total population.
 
 This project now includes:
+
 - an `auto` staged solver that runs `greedy -> LNS -> bounded CP-SAT`
 - a `greedy` heuristic solver with restarts and local search
 - an `LNS` solver that improves a seed layout with neighborhood CP-SAT repair
@@ -11,6 +12,7 @@ This project now includes:
 - a local web planner with saved layouts, map inspection, planner explainability maps, and manual editing
 
 Core reference docs:
+
 - [SPEC.md](./docs/requirements/SPEC.md): formal problem statement
 - [Requirement.md](./docs/requirements/Requirement.md): product-level summary
 - [ALGORITHM.md](./docs/design/ALGORITHM.md): heuristic design notes
@@ -23,15 +25,18 @@ Core reference docs:
 ## Problem Summary
 
 The input is a grid of `0` and `1` values:
+
 - `1` means the cell is allowed
 - `0` means the cell is blocked
 
 The solver must place:
+
 - roads on allowed cells
 - service buildings on allowed rectangular footprints
 - residential buildings on allowed rectangular footprints
 
 Subject to these core rules:
+
 - every road component must touch row `0` or column `0`
 - every building must connect to a row-0-or-column-0-connected road component
 - buildings touching row `0` or column `0` are treated as road-connected automatically
@@ -47,6 +52,7 @@ For the CP-SAT solver, ties are broken explicitly in favor of fewer roads and fe
 ### Service buildings
 
 Each service type defines:
+
 - `rows`
 - `cols`
 - `bonus`
@@ -57,6 +63,7 @@ Each service type defines:
 ### Residential buildings
 
 Each residential type defines:
+
 - `w`
 - `h`
 - `min`
@@ -72,6 +79,7 @@ Preferred configuration is typed `residentialTypes`. Legacy `residentialSettings
 `auto` is the recommended quality path and the default optimizer for omitted `params.optimizer` values in the public runtime, HTTP API, example CLI, and web planner.
 
 In this project it:
+
 - starts with a capped fast greedy incumbent
 - improves it with `LNS`
 - follows with bounded `CP-SAT` polishing
@@ -86,6 +94,7 @@ Auto owns orchestration details. It generates per-stage random seeds and reports
 The greedy solver is the heavy standalone heuristic / advanced inspection mode.
 
 It uses:
+
 - service candidate ranking
 - constructive placement
 - optional restarts
@@ -99,6 +108,7 @@ Use standalone `greedy` when you want Greedy-only quality checks or heuristic tu
 `LNS` means `Large Neighborhood Search`.
 
 In this project it:
+
 - starts from a greedy solution or a displayed saved layout seed
 - fixes everything outside one neighborhood window
 - repairs that window with CP-SAT
@@ -113,6 +123,7 @@ Use this when you want a better layout than greedy without doing a full global C
 The CP-SAT solver is the exact optimization backend using OR-Tools.
 
 In practice it may return:
+
 - `OPTIMAL`: best solution found and proven optimal
 - `FEASIBLE`: best known solution found within limits, not proven optimal
 
@@ -175,6 +186,7 @@ npm test
 ## CLI Commands
 
 Available scripts from [package.json](./package.json):
+
 - `npm run build`
 - `npm start`
 - `npm run web`
@@ -218,6 +230,7 @@ npm run web
 Then open [http://localhost:4173](http://localhost:4173).
 
 The planner now includes:
+
 - an interactive grid editor
 - service and residential catalog editing
 - collapsible catalog import
@@ -237,11 +250,13 @@ The planner now includes:
 - expansion comparison tooling for proposed next service or residential additions
 
 Notes:
+
 - `LNS` and `CP-SAT` need the Python OR-Tools backend
 - stopping a background solve preserves the best feasible result when one exists
 - the displayed output can be reused as the default seed or hint only when the current model fingerprint still matches and the layout has been validated
 
 Planner HTTP limits:
+
 - `/api/solve` and `/api/layout/evaluate` reject oversized planner inputs before starting an optimizer
 - maximum grid cells: `10000`
 - maximum combined service/residential catalog entries: `200`
@@ -269,9 +284,7 @@ const grid = [
 
 const params = {
   optimizer: "greedy",
-  serviceTypes: [
-    { rows: 2, cols: 3, bonus: 50, range: 1, avail: 1 },
-  ],
+  serviceTypes: [{ rows: 2, cols: 3, bonus: 50, range: 1, avail: 1 }],
   residentialTypes: [
     { w: 2, h: 2, min: 100, max: 200, avail: 2 },
     { w: 2, h: 3, min: 140, max: 260, avail: 2 },
@@ -355,11 +368,15 @@ const solution = await solveAsync(
   {
     onProgress(update) {
       if (update.telemetry) {
-        console.log(update.kind, update.telemetry.incumbentPopulation, update.telemetry.bestPopulationUpperBound);
+        console.log(
+          update.kind,
+          update.telemetry.incumbentPopulation,
+          update.telemetry.bestPopulationUpperBound,
+        );
       }
     },
     progressIntervalSeconds: 0.5,
-  }
+  },
 );
 ```
 
@@ -662,6 +679,7 @@ The public API is exposed from [src/index.ts](./src/index.ts). That file is the 
 - experiment registry helpers such as `validateExperimentRegistryEntry`, `checkExperimentRegistryFile`, and `appendExperimentRegistryEntry`
 
 Useful types include:
+
 - `OptimizerName`
 - `AutoOptions`
 - `AutoSolveStageMetadata`
@@ -687,6 +705,7 @@ Useful types include:
 ### Grid
 
 `Grid` is `number[][]`, where:
+
 - `1` = allowed
 - `0` = blocked
 
@@ -792,6 +811,7 @@ cpSat: {
 ## Output Shape
 
 A `Solution` contains:
+
 - `optimizer`
 - `activeOptimizer`
 - `autoStage`

@@ -8,11 +8,11 @@ Maximization problem: choose a feasible placement of roads and buildings so that
 
 ## 2. Input
 
-| Symbol | Type | Description |
-|--------|------|-------------|
-| `G` | `int[H][W]` | 2D grid. `G[r][c] = 1` ⇒ cell `(r, c)` is **allowed**; `G[r][c] = 0` ⇒ **not allowed**. |
-| `H` | `int` | Number of rows (height). |
-| `W` | `int` | Number of columns (width). |
+| Symbol | Type        | Description                                                                             |
+| ------ | ----------- | --------------------------------------------------------------------------------------- |
+| `G`    | `int[H][W]` | 2D grid. `G[r][c] = 1` ⇒ cell `(r, c)` is **allowed**; `G[r][c] = 0` ⇒ **not allowed**. |
+| `H`    | `int`       | Number of rows (height).                                                                |
+| `W`    | `int`       | Number of columns (width).                                                              |
 
 **Assumptions:**
 
@@ -75,7 +75,7 @@ A solution is **feasible** iff all of the following hold.
 2. **Disjoint placement**  
    No two buildings overlap (no cell belongs to more than one building). Roads may share cells with each other but **not** with building footprints (buildings and roads are disjoint).
 
-3. **Road connectivity**  
+3. **Road connectivity**
    - Road cells may form multiple connected components (orthogonal moves only).
    - Every road component has at least one road cell with row index `r = 0` or column index `c = 0`.
 
@@ -95,7 +95,7 @@ A solution is **feasible** iff all of the following hold.
   - a set of **road** cells,
   - a set of **service** buildings (each with its own rectangle size, population increase, and effect range),
   - a set of **residential** buildings (each with its own rectangular footprint and population bounds),  
-  such that **total city population** is **maximized**.
+    such that **total city population** is **maximized**.
 
 - **Total city population** = sum over all residential buildings of (min(base + sum of service bonuses from services that boost it, max population)).
 

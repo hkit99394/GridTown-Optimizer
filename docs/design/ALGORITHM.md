@@ -23,6 +23,7 @@ We design a support-road approach: place buildings for value, then materialize o
 ## 3. Phase 1: Road Network
 
 **Goal:** A set of explicit road cells `R` such that:
+
 - All cells in `R` are allowed.
 - Each connected component of `R` contains at least one cell in row `0` or column `0`.
 - `R` may be empty if every placed building footprint touches row `0` or column `0`.
@@ -150,14 +151,14 @@ If grid is small:
 
 ## 8. Summary
 
-| Step | Action |
-|------|--------|
-| 1 | Start with an empty explicit road set or an incumbent road seed. |
-| 2 | Enumerate all valid service and residential placements; mark implicit-anchor or explicitly connectable. |
-| 3 | Greedy place services (by coverage of residential potential). |
-| 4 | Greedy place residentials (by effective population); extend roads as needed. |
-| 5 | Optional: local search to improve total population. |
-| 6 | Prune redundant support roads. |
-| 7 | Return roads, buildings, total population. |
+| Step | Action                                                                                                  |
+| ---- | ------------------------------------------------------------------------------------------------------- |
+| 1    | Start with an empty explicit road set or an incumbent road seed.                                        |
+| 2    | Enumerate all valid service and residential placements; mark implicit-anchor or explicitly connectable. |
+| 3    | Greedy place services (by coverage of residential potential).                                           |
+| 4    | Greedy place residentials (by effective population); extend roads as needed.                            |
+| 5    | Optional: local search to improve total population.                                                     |
+| 6    | Prune redundant support roads.                                                                          |
+| 7    | Return roads, buildings, total population.                                                              |
 
 This gives a clear, implementable procedure that respects the formal spec (allowed cells, per-component road-anchor connectivity, explicit or implicit building road access, disjoint buildings) and aims to maximize total city population.

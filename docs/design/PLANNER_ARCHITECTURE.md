@@ -3,6 +3,7 @@
 ## Goal
 
 Keep the planner easy to extend by separating:
+
 - browser state + bootstrap wiring
 - planner UI modules by responsibility
 - HTTP request handling from server startup
@@ -15,12 +16,14 @@ Keep the planner easy to extend by separating:
 Thin bootstrap and orchestration layer.
 
 Owns:
+
 - initial planner state
 - DOM element lookup
 - controller creation
 - event wiring
 
 Does not own:
+
 - cross-module action availability rules
 - result rendering details
 - expansion comparison logic
@@ -34,6 +37,7 @@ Does not own:
 Shared planner shell and UI-state coordination.
 
 Owns:
+
 - optimizer display labels
 - solve-status text updates
 - cross-module action/button availability
@@ -44,6 +48,7 @@ Owns:
 Shared browser helpers and stable utility logic.
 
 Owns:
+
 - JSON/grid cloning
 - checkpoint and fingerprint helpers
 - catalog import parsing
@@ -54,6 +59,7 @@ Owns:
 Planner payload and hint/seed preparation.
 
 Owns:
+
 - displayed-layout checkpoint lookup
 - CP-SAT hint status
 - LNS seed status
@@ -65,6 +71,7 @@ Owns:
 Grid, catalog, and summary workbench.
 
 Owns:
+
 - grid painting and resize
 - preset application
 - solver field synchronization
@@ -79,6 +86,7 @@ Owns:
 Local storage for saved inputs and saved layouts.
 
 Owns:
+
 - save/load/delete input setups
 - save/load/delete solved layouts
 - restoring saved planner state
@@ -88,6 +96,7 @@ Owns:
 Long-running solve lifecycle.
 
 Owns:
+
 - solve timer
 - start/poll/stop flow
 - progress messages
@@ -98,6 +107,7 @@ Owns:
 Decision and expansion comparison workflow.
 
 Owns:
+
 - parsing typed service/residential candidates
 - building comparison scenarios
 - running background comparison solves
@@ -108,6 +118,7 @@ Owns:
 Solved output rendering and manual layout editing.
 
 Owns:
+
 - result badges and validation display
 - placement and remaining-availability rendering
 - solved-map rendering and overlays
@@ -122,6 +133,7 @@ Owns:
 Local server entrypoints.
 
 Owns:
+
 - compatibility entry from the historical `dist/webServer.js` path
 - creating the HTTP server in `src/apps/webServer.ts`
 - binding `createPlannerRequestHandler`
@@ -132,6 +144,7 @@ Owns:
 Thin backend composition layer.
 
 Owns:
+
 - constructing the planner route pipeline
 - binding `SolveJobManager` into route handlers
 - delegating API requests vs static asset requests
@@ -142,6 +155,7 @@ Owns:
 Planner API route handlers.
 
 Owns:
+
 - `/api/health`
 - `/api/solve`
 - `/api/layout/evaluate`
@@ -156,6 +170,7 @@ Owns:
 Planner HTTP request contracts.
 
 Owns:
+
 - request payload interfaces
 - route payload shape guards
 - browser-supplied local runtime parameter sanitization
@@ -163,6 +178,7 @@ Owns:
 - serialized solution payload assertions/materialization re-exports
 
 Current HTTP planner caps:
+
 - grid cells: `10000`
 - combined service/residential catalog entries: `200`
 - individual footprint area: `400`
@@ -170,6 +186,7 @@ Current HTTP planner caps:
 - estimated placement candidates: `250000`
 
 Does not own:
+
 - solver/manual-layout response assembly
 - route orchestration
 - request body parsing
@@ -179,6 +196,7 @@ Does not own:
 Planner response assembly.
 
 Owns:
+
 - solve/manual-layout response shaping
 - validation projection for the browser contract
 - stats projection for solver and manual-layout outputs
@@ -190,6 +208,7 @@ Owns:
 HTTP transport helpers shared by planner routes.
 
 Owns:
+
 - request-body byte parsing limits
 - JSON parsing and validation helpers
 - JSON/text response helpers
@@ -201,6 +220,7 @@ Owns:
 Planner static asset serving.
 
 Owns:
+
 - static asset path map
 - content-type lookup
 - static file reads for the local planner
@@ -210,6 +230,7 @@ Owns:
 Background solve job orchestration.
 
 Owns:
+
 - job lifecycle
 - cancellation state
 - snapshot recovery
@@ -220,6 +241,7 @@ Owns:
 Persistent solve-progress log writer.
 
 Owns:
+
 - progress-log document schema
 - pending, live-snapshot, and final-result samples
 - final solution serialization for long-running solve recovery/review
@@ -230,6 +252,7 @@ Owns:
 Single optimizer dispatch boundary.
 
 Owns:
+
 - optimizer lookup
 - sync/background solver adapter selection
 
@@ -240,6 +263,7 @@ Compatibility wrappers remain at `src/runtime/optimizerRegistry.ts`, `src/runtim
 LNS neighborhood planning.
 
 Owns:
+
 - anchor ranking for weak services, upgrade headroom, and frontier congestion
 - repair-window generation
 - neighborhood escalation after stagnant iterations
@@ -250,6 +274,7 @@ Owns:
 Shared solution persistence helpers.
 
 Owns:
+
 - serializing `Solution` objects for HTTP, logs, and worker boundaries
 - materializing serialized solutions back into `Set`-backed runtime objects
 - snapshot file writes for long-running solver flows
@@ -257,6 +282,7 @@ Owns:
 ## Placement Rules
 
 When adding a new behavior:
+
 - If it changes shared button availability or solver status messaging across modules, put it in `plannerShell.js`.
 - If it changes how planner payloads are built, put it in `plannerRequestBuilder.js`.
 - If it changes grid/catalog editing or summary behavior, put it in `plannerWorkbench.js`.
@@ -278,12 +304,15 @@ When adding a new behavior:
 
 ## Current Follow-Up
 
-Reviewed on 2026-05-17:
-- Road-semantics and HTTP planner-limit changes are treated as current behavior.
-- Solver roadmap priority is verification and scorecard closeout for CP-SAT road semantics, followed by product-shaped benchmarks and telemetry manifests.
+Reviewed on 2026-05-25:
+
+- Road-semantics, HTTP planner-limit changes, product workflow benchmarks, and telemetry manifests are treated as current behavior.
+- The solver roadmap now treats CP-SAT road-semantics verification, product-shaped benchmarks, telemetry manifests, adaptive LNS, Auto budget retuning, small-window DP repair, service-master decomposition, and learned-ranker no-promotion reviews as delivered evidence gates.
+- Current solver follow-up is gated research: geometry-native CP-SAT / `NoOverlap2D`, a new LNS scorer or window objective that beats the Phase 16 displacement baseline, or a cheaper service-master shortlist.
 - Backend route contracts own HTTP planner complexity caps; transport owns byte parsing and response mechanics.
 
 The next cleanup candidates are the largest still-active hotspots:
+
 - `src/greedy/solver.ts`: split stable profiling, scratch-state, and local-search helpers only when benchmark evidence justifies the boundary.
 - `web/plannerResults.js`: separate manual-edit command state from rendering/overlay projection.
 - `src/auto/solver.ts`: isolate stage-budget policy and terminal metadata normalization if the Auto path changes again.

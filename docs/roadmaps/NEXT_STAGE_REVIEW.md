@@ -2,6 +2,8 @@
 
 Date: 2026-04-30
 
+Historical status, reviewed on 2026-05-25: this document records the planning review that led to the May 17 solver evidence gate. Stages 1-7, LNS replay label scale-up, Greedy/LNS learned-ranker diagnostics, guard calibration, and displacement diagnostics have since been delivered or explicitly closed as no-promotion evidence in [SOLVER_ROADMAP.md](./SOLVER_ROADMAP.md). Treat recommendations below as historical context unless the current solver roadmap reopens the same gate.
+
 ## Executive Summary
 
 The next stage should move away from a GPU/learned-ranking-first plan and toward a tighter solver-improvement loop:
@@ -15,9 +17,9 @@ The current solver stack is already strong enough to improve incrementally: Gree
 
 The default posture remains unchanged: keep `auto` as the recommended quality path. Learned guidance, CP-SAT portfolio, GPU acceleration, distributed solving, and external solvers remain gated research tracks.
 
-## Current Status
+## Status At Review Time
 
-### Shipped Runtime
+### Runtime At Review Time
 
 - `auto` is the recommended quality path. It runs a Greedy seed, then bounded LNS / CP-SAT cycles while improvement remains useful.
 - `greedy` is a fast incumbent and diagnostics engine with restarts, local search, service ranking, final road cleanup, connectivity-shadow traces, and road-opportunity counterfactuals.
@@ -26,7 +28,7 @@ The default posture remains unchanged: keep `auto` as the recommended quality pa
 - The local planner supports saved layouts, manual editing, layout validation, continuation hints, solved-map inspection, explainability maps, and expansion comparison.
 - Cross-mode benchmarks, deterministic ablations, learned-label artifacts, CP-SAT portfolio measurement, and an experiment registry already exist.
 
-### Evidence Already Closed
+### Evidence Closed Before This Review
 
 - Deterministic ablations are closed as an evidence gate. No deterministic variant is ready for default promotion.
 - Connectivity-shadow scoring is a learning target, not a default. It produced isolated wins with no population regressions in the gate, but with positive wall-clock cost.
@@ -45,14 +47,14 @@ The highest-leverage closeout item is CP-SAT road semantics evidence.
 
 The formal spec permits multiple road components as long as every road component touches the road-anchor boundary. The TypeScript validation path follows that interpretation by accepting every road cell reachable from any row-0-or-column-0 road anchor.
 
-The current CP-SAT formulation has been updated to use selected anchor road cells as component roots rather than one global root. It also permits zero explicit roads when all selected buildings have implicit anchor-boundary access. The remaining risk is no longer discovery of the mismatch; it is proving the aligned formulation across adversarial cases and product-shaped benchmark families.
+At review time, the CP-SAT formulation had been updated to use selected anchor road cells as component roots rather than one global root. It also permitted zero explicit roads when all selected buildings had implicit anchor-boundary access. The remaining risk was no longer discovery of the mismatch; it was proving the aligned formulation across adversarial cases and product-shaped benchmark families.
 
-If the closeout is skipped:
+The review warned that skipping the closeout would leave these risks:
 
-- CP-SAT may still drift from the TypeScript evaluator on edge cases.
-- benchmark decisions may overfit to tiny smoke cases.
-- LNS repair quality may regress on corridor, gate, or multi-anchor maps without being caught.
-- roadmap status will overstate confidence in the exact backend.
+- CP-SAT might still drift from the TypeScript evaluator on edge cases.
+- benchmark decisions might overfit to tiny smoke cases.
+- LNS repair quality might regress on corridor, gate, or multi-anchor maps without being caught.
+- roadmap status could overstate confidence in the exact backend.
 
 Recommended action:
 
@@ -111,18 +113,18 @@ Do not start with learned ranking. It should follow telemetry and label scale, n
 - The planner exposes the actual user loop: solve, inspect, edit, validate, reuse, compare.
 - The benchmark and experiment registry are good foundations for promotion discipline.
 
-### Gaps
+### Gaps At Review Time
 
-- CP-SAT road-semantics confidence still needs product-shaped scorecards and registry closeout.
-- LNS still relies heavily on window selection rather than a broader adaptive destroy/repair operator set.
-- The default benchmark corpus is too small and too easy to saturate for promotion decisions.
-- Planner workflows are not yet first-class benchmark cases.
-- Stage telemetry is useful but not yet complete enough to diagnose candidate counts, model size, first feasible time, and best-score time across every run.
-- LNS replay labels are too small and too neutral for model promotion.
-- There is no trained model path, model artifact, offline metric report, or feature-flagged scorer ready for runtime use.
-- Job state remains local-process memory; that is acceptable for a local planner but not for hosted multi-user scale.
+- CP-SAT road-semantics confidence needed product-shaped scorecards and registry closeout.
+- LNS relied heavily on window selection rather than a broader adaptive destroy/repair operator set.
+- The default benchmark corpus was too small and too easy to saturate for promotion decisions.
+- Planner workflows were not first-class benchmark cases.
+- Stage telemetry was useful but not complete enough to diagnose candidate counts, model size, first feasible time, and best-score time across every run.
+- LNS replay labels were too small and too neutral for model promotion.
+- Runtime learned-scorer infrastructure, offline metric artifacts, and feature-flagged scorer hooks had not yet been added.
+- Job state remained local-process memory; that was acceptable for a local planner but not for hosted multi-user scale.
 
-## Recommended Next-Stage Roadmap
+## Historical Recommended Next-Stage Roadmap
 
 ### Stage 1: CP-SAT Road-Semantics Closeout
 
@@ -267,7 +269,7 @@ Do not train or integrate runtime learned guidance until:
 - offline ranking beats deterministic, random, and single-feature baselines
 - online equal-budget A/B improves population or time-to-best without worst-decile regression
 
-Near-term learned work should stay offline.
+At review time, near-term learned work was expected to stay offline. Later May evidence added feature-flagged Greedy and LNS scorers, then kept them opt-in after online/no-promotion reviews.
 
 ### GPU
 
@@ -317,7 +319,7 @@ Any default-path solver change must satisfy:
 - CPU-budget efficiency no worse than 10% below baseline unless population improvement justifies it
 - all benchmark, hardware, split, command, model, and decision metadata registered
 
-## Priority Recommendation
+## Historical Priority Recommendation
 
 Recommended order:
 

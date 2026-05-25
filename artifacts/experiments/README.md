@@ -46,14 +46,29 @@ The entry JSON should include the artifact metadata itself:
   "runId": "example-scorecard-2026-04-28",
   "artifactType": "benchmark",
   "generatedAt": "2026-04-28T12:00:00.000Z",
-  "commands": ["node dist/crossModeBenchmarkCli.js --json --modes=auto,greedy --budgets=5 --seeds=7 typed-housing-single"],
+  "commands": [
+    "node dist/crossModeBenchmarkCli.js --json --modes=auto,greedy --budgets=5 --seeds=7 typed-housing-single"
+  ],
   "artifactPaths": ["artifacts/example/scorecard.json"],
   "cases": ["typed-housing-single"],
   "caseFamilies": ["tiny"],
   "seeds": [7],
-  "splitStatus": { "protectedHoldout": false, "notes": "Development benchmark slice." },
-  "budget": { "wallClockBudgetsSeconds": [5], "cpuBudgetSeconds": 5, "observedCpuSeconds": 4.8 },
-  "hardware": { "captured": true, "cpuModel": "Apple M-series", "logicalCores": 8, "memoryGb": 16, "gpuUsed": false },
+  "splitStatus": {
+    "protectedHoldout": false,
+    "notes": "Development benchmark slice."
+  },
+  "budget": {
+    "wallClockBudgetsSeconds": [5],
+    "cpuBudgetSeconds": 5,
+    "observedCpuSeconds": 4.8
+  },
+  "hardware": {
+    "captured": true,
+    "cpuModel": "Apple M-series",
+    "logicalCores": 8,
+    "memoryGb": 16,
+    "gpuUsed": false
+  },
   "model": null,
   "decision": "no-default-promotion",
   "summary": "Auto matched the incumbent baseline on this development slice."

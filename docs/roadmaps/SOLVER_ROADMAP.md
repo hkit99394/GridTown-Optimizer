@@ -48,28 +48,34 @@ Completed details live in [SOLVER_ROADMAP_DELIVERED.md](SOLVER_ROADMAP_DELIVERED
 
 ## Current Solver Posture
 
-There is no ungated default-path solver change active after the current May 2026 evidence tranche. Learned LNS remains diagnostics-only, and short-budget Auto keeps the existing default policy. The active `features/service-master-shortlist` branch is a gated Greedy research track only; it must not change default `auto` behavior.
+There is no ungated default-path solver change active after the current May 2026 evidence tranche. Learned LNS remains diagnostics-only, and short-budget Auto keeps the existing default policy. The completed service-master shortlist implementation remains a gated Greedy research track only; it must not change default `auto` behavior.
 
-### Active gated track: service-master shortlist
+### Active gated evidence track: service-master shortlist
 
-Near-term goal: improve the opt-in Greedy `serviceMasterDecomposition` candidate pool before collecting promotion evidence. The branch now replaces the prior plain top-N pool with a deterministic shortlist that keeps legacy ranked coverage first, then adds bounded diversity across service type, footprint geometry, placement region, and likely residential payoff.
+Near-term goal: improve the opt-in Greedy `serviceMasterDecomposition` candidate pool before collecting promotion evidence. The completed implementation replaces the prior plain top-N pool with a deterministic shortlist that keeps legacy ranked coverage first, then adds bounded diversity across service type, footprint geometry, placement region, and likely residential payoff.
 
-Branch scope:
+Implementation scope:
 
 - Keep `serviceMasterDecomposition` explicit and opt-in.
-- Do not promote service-master into `auto`, Greedy seed policy, or default planner behavior on this branch.
+- Do not promote service-master into `auto`, Greedy seed policy, or default planner behavior on this track.
 - Replace the plain service-master pool with a deterministic shortlist helper that preserves strong ranked candidates while adding bounded diversity across service type, footprint geometry, placement region, and likely residential payoff.
 - Add focused diagnostics so service-master runs report candidates considered, candidates shortlisted, layouts evaluated, feasible layouts, no-good skips, and improvements.
 - Keep the existing focused benchmark win intact, and add tests for deterministic ordering, cap behavior, availability/overlap safety, disabled-mode no-op behavior, and formatter/telemetry stability.
 
 Stage plan:
 
-1. **Shortlist implementation:** done on this branch. `buildServiceMasterShortlist(...)` now lives inside the Greedy service-master path, runs only when `serviceMasterDecomposition` is enabled, preserves legacy `serviceMasterPoolLimit` and `serviceMasterMaxLayouts` coverage first, and allows only a small bounded additive budget for shortlist-only layouts.
+1. **Shortlist implementation:** done. `buildServiceMasterShortlist(...)` now lives inside the Greedy service-master path, runs only when `serviceMasterDecomposition` is enabled, preserves legacy `serviceMasterPoolLimit` and `serviceMasterMaxLayouts` coverage first, and allows only a small bounded additive budget for shortlist-only layouts.
 2. **Focused proof:** done locally on 2026-05-26. `npm test` passed, the focused `service-master-decomposition-experiment` benchmark reached `555`, and the fixed-seed deterministic ablation over seeds `7`, `19`, and `37` stayed at `555` with service-master enabled versus `465` when `no-service-master-decomposition` is applied.
 3. **Evidence gate:** collect equal-budget development and holdout scorecards before any promotion discussion. Evidence must include fixed seeds, CPU-budget cost, worst-row safety, final evaluator validity, and artifact registry metadata.
 4. **Decision:** promote only if scorecards show repeatable wins over the current Greedy/Auto seed path; otherwise keep the shortlist as an opt-in diagnostic/research path.
 
-The sections below are recently closed evidence tracks. They document why the work stays parked, what would reopen it, and which promotion gates a future candidate must clear. Except for the active service-master shortlist track above, they do not change solver defaults, do not promote learned guidance, and do not widen CP-SAT portfolio use.
+Post-PR plan:
+
+- **Short run:** merge only as an opt-in gated Greedy feature, keep default Auto and planner behavior unchanged, and open the next evidence branch (`features/service-master-shortlist-evidence`) from updated `main`.
+- **Middle run:** collect equal-budget development and protected-holdout scorecards over fixed seeds `7`, `19`, and `37`, comparing the current Greedy/Auto baseline against the service-master shortlist path. Record population deltas, worst-row regressions, CPU and wall-clock cost, evaluator validity, service-master telemetry counters, and artifact-registry metadata.
+- **Long run:** decide from evidence. Promote only if development and protected holdout show repeatable wins without worst-row regressions or unacceptable CPU cost; keep the feature opt-in if wins are narrow; park or revise it if regressions or cost appear. Auto/default behavior stays out of scope until protected holdout evidence clears.
+
+The sections below are recently closed evidence tracks. They document why the work stays parked, what would reopen it, and which promotion gates a future candidate must clear. Except for the service-master shortlist evidence track above, they do not change solver defaults, do not promote learned guidance, and do not widen CP-SAT portfolio use.
 
 ### 1. Strict LNS replay labels and feature payloads (closed evidence track)
 

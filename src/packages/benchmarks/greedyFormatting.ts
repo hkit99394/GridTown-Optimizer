@@ -105,7 +105,7 @@ export function formatGreedyBenchmarkSuite(result: GreedyBenchmarkSuiteResult): 
         `  attempts=caps:${counters.attempts.serviceCaps} restarts:${counters.attempts.restarts} refine:${counters.attempts.serviceRefineTrials} exhaustive:${counters.attempts.exhaustiveTrials} fixed-set:${counters.attempts.fixedServiceRealizationTrials}`
       );
       lines.push(
-        `  service-master=layouts:${counters.attempts.serviceMasterLayouts} feasible:${counters.attempts.serviceMasterFeasibleLayouts} no-good:${counters.attempts.serviceMasterNoGoodSkips}`
+        `  service-master=candidates:${counters.attempts.serviceMasterCandidatesShortlisted}/${counters.attempts.serviceMasterCandidatesConsidered} layouts:${counters.attempts.serviceMasterLayouts} feasible:${counters.attempts.serviceMasterFeasibleLayouts} improvements:${counters.attempts.serviceMasterImprovingLayouts} no-good:${counters.attempts.serviceMasterNoGoodSkips}`
       );
       lines.push(`  phases=${benchmark.greedyProfile?.phases.map(formatProfilePhaseSummary).join(", ") ?? "n/a"}`);
       lines.push(

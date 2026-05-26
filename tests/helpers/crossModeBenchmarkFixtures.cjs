@@ -1,4 +1,5 @@
 const { buildMockSolution } = require("./solverFixtures.cjs");
+const { createGreedyProfileCounters } = require("../../dist/packages/solvers/greedy/profile.js");
 
 function buildNeutralLnsTelemetry(modeScore, overrides = {}) {
   return {
@@ -190,6 +191,33 @@ function attachMockPortfolioTelemetry(solution, modeScore, seed) {
   };
 }
 
+function attachMockGreedyProfile(solution, modeScore) {
+  const counters = createGreedyProfileCounters();
+  counters.attempts.serviceMasterCandidatesConsidered = 8;
+  counters.attempts.serviceMasterCandidatesShortlisted = 4;
+  counters.attempts.serviceMasterLayouts = 6;
+  counters.attempts.serviceMasterFeasibleLayouts = 5;
+  counters.attempts.serviceMasterImprovingLayouts = 1;
+  counters.attempts.serviceMasterNoGoodSkips = 2;
+  solution.greedyProfile = {
+    counters,
+    phases: [
+      {
+        name: "serviceMasterDecomposition",
+        runs: 1,
+        elapsedMs: 12,
+        bestPopulationBefore: modeScore - 1,
+        bestPopulationAfter: modeScore,
+        bestPopulationDelta: 1,
+        candidatePopulationBefore: modeScore - 1,
+        candidatePopulationAfter: modeScore,
+        candidatePopulationDelta: 1,
+        improvements: 1
+      }
+    ]
+  };
+}
+
 function buildCrossModeMockSolve() {
   return async (_grid, params, context) => {
     const seedBonus = context.seed === 11 ? 1 : 0;
@@ -224,6 +252,9 @@ function buildCrossModeMockSolve() {
         wallClockLimitSeconds: 1.1,
         elapsedSeconds: 0.3
       });
+    }
+    if (context.mode === "greedy") {
+      attachMockGreedyProfile(solution, modeScore);
     }
     if (context.mode === "lns") {
       solution.lnsTelemetry = buildNeutralLnsTelemetry(modeScore);

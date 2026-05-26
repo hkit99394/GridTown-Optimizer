@@ -257,6 +257,12 @@ function greedyCandidateCounts(counters: GreedyProfileCounters | undefined): Rec
     serviceCandidateScans: counters.servicePhase.candidateScans,
     residentialCandidateScans: counters.residentialPhase.candidateScans,
     localSearchCandidateScans: counters.localSearch.candidateScans,
+    serviceMasterCandidatesConsidered: counters.attempts.serviceMasterCandidatesConsidered,
+    serviceMasterCandidatesShortlisted: counters.attempts.serviceMasterCandidatesShortlisted,
+    serviceMasterLayouts: counters.attempts.serviceMasterLayouts,
+    serviceMasterFeasibleLayouts: counters.attempts.serviceMasterFeasibleLayouts,
+    serviceMasterImprovingLayouts: counters.attempts.serviceMasterImprovingLayouts,
+    serviceMasterNoGoodSkips: counters.attempts.serviceMasterNoGoodSkips,
     roadProbeCalls: counters.roads.probeCalls
   };
 }

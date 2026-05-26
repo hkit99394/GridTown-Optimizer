@@ -9,6 +9,9 @@ const {
   runGreedyValidationOptimizerTests,
   createRoadOpportunityRecorder,
   recordRoadOpportunityPlacementFromOccupiedBuildings,
+  runGreedyServiceMasterDecomposition,
+  serviceCandidateKey,
+  createGreedyProfileCounters,
   roadAnchorSeedCandidates,
   roadAnchorRepresentativeSeedCandidates,
   runGreedyServiceLookaheadOptimizerAssertions,
@@ -225,6 +228,275 @@ function testGreedyRoadOpportunityCounterfactualsAreBoundedAndObservational() {
   assert.equal(counterfactual.scoreDelta, 0);
   assert.equal(counterfactual.roadCostDelta, counterfactual.roadCost - trace.roadCost);
   assert.equal(counterfactual.lostCells, counterfactual.reachableBefore - counterfactual.reachableAfter);
+}
+
+function testGreedyServiceMasterDecompositionAddsDeterministicDiverseLayouts() {
+  const serviceOrderSorted = [
+    { r: 0, c: 0, rows: 1, cols: 1, range: 1, typeIndex: 0, bonus: 50 },
+    { r: 0, c: 1, rows: 1, cols: 1, range: 1, typeIndex: 0, bonus: 49 },
+    { r: 0, c: 2, rows: 1, cols: 1, range: 1, typeIndex: 0, bonus: 48 },
+    { r: 4, c: 4, rows: 2, cols: 1, range: 1, typeIndex: 1, bonus: 45 },
+    { r: 4, c: 0, rows: 1, cols: 2, range: 2, typeIndex: 2, bonus: 44 },
+    { r: 2, c: 2, rows: 1, cols: 1, range: 1, typeIndex: 0, bonus: 43 }
+  ];
+  const residentialScoringGroups = [
+    { r: 1, c: 0, rows: 1, cols: 1, variants: [{ base: 10, max: 80, typeIndex: 0 }] },
+    { r: 4, c: 3, rows: 1, cols: 1, variants: [{ base: 10, max: 100, typeIndex: 0 }] },
+    { r: 3, c: 0, rows: 1, cols: 1, variants: [{ base: 10, max: 90, typeIndex: 0 }] }
+  ];
+  const serviceCoverageGroupsByKey = new Map([
+    [serviceCandidateKey(serviceOrderSorted[0]), [0]],
+    [serviceCandidateKey(serviceOrderSorted[1]), [0]],
+    [serviceCandidateKey(serviceOrderSorted[2]), [0]],
+    [serviceCandidateKey(serviceOrderSorted[3]), [1]],
+    [serviceCandidateKey(serviceOrderSorted[4]), [2]],
+    [serviceCandidateKey(serviceOrderSorted[5]), [0, 1, 2]]
+  ]);
+  const runAndCollectLayouts = () => {
+    const evaluatedLayouts = [];
+    runGreedyServiceMasterDecomposition({
+      initialBest: serviceMasterTestSolution([], 0),
+      enabled: true,
+      serviceMasterPoolLimit: 4,
+      serviceMasterMaxLayouts: 20,
+      gridRows: 6,
+      gridCols: 6,
+      serviceOrderSorted,
+      residentialScoringGroups,
+      serviceCoverageGroupsByKey,
+      residentialTypeAvailability: [3],
+      inferredUpper: 1,
+      serviceTypeAvailability: [4, 4, 4],
+      evaluateForcedServiceSet: (forcedServices) => {
+        evaluatedLayouts.push(forcedServices.map(serviceCandidateKey));
+        return serviceMasterTestSolution(forcedServices, forcedServices.length);
+      },
+      updateBest: () => {}
+    });
+    return evaluatedLayouts;
+  };
+
+  const first = runAndCollectLayouts();
+  const second = runAndCollectLayouts();
+  const singletonKeys = first.filter((layout) => layout.length === 1).map((layout) => layout[0]);
+
+  assert.deepEqual(first, second);
+  assert.equal(singletonKeys.includes(serviceCandidateKey(serviceOrderSorted[3])), true);
+  assert.equal(singletonKeys.includes(serviceCandidateKey(serviceOrderSorted[5])), true);
+  assert.equal(first.length <= 20, true);
+}
+
+function testGreedyServiceMasterDecompositionKeepsLegacyTopNLayouts() {
+  const serviceOrderSorted = [
+    { r: 0, c: 0, rows: 1, cols: 1, range: 1, typeIndex: 0, bonus: 50 },
+    { r: 0, c: 1, rows: 1, cols: 1, range: 1, typeIndex: 0, bonus: 49 },
+    { r: 0, c: 2, rows: 1, cols: 1, range: 1, typeIndex: 0, bonus: 48 },
+    { r: 4, c: 4, rows: 2, cols: 1, range: 1, typeIndex: 1, bonus: 45 },
+    { r: 4, c: 0, rows: 1, cols: 2, range: 2, typeIndex: 2, bonus: 44 },
+    { r: 2, c: 2, rows: 1, cols: 1, range: 1, typeIndex: 0, bonus: 43 }
+  ];
+  const oldTopNEvictedFromShortlist = serviceCandidateKey(serviceOrderSorted[2]);
+  const requiredLegacyLayout = [
+    serviceCandidateKey(serviceOrderSorted[0]),
+    serviceCandidateKey(serviceOrderSorted[1]),
+    oldTopNEvictedFromShortlist
+  ].sort();
+  const evaluatedLayouts = [];
+
+  const best = runGreedyServiceMasterDecomposition({
+    initialBest: serviceMasterTestSolution([], 0),
+    enabled: true,
+    serviceMasterPoolLimit: 4,
+    serviceMasterMaxLayouts: 20,
+    gridRows: 6,
+    gridCols: 6,
+    serviceOrderSorted,
+    residentialScoringGroups: [
+      { r: 1, c: 0, rows: 1, cols: 1, variants: [{ base: 10, max: 80, typeIndex: 0 }] },
+      { r: 4, c: 3, rows: 1, cols: 1, variants: [{ base: 10, max: 100, typeIndex: 0 }] },
+      { r: 3, c: 0, rows: 1, cols: 1, variants: [{ base: 10, max: 90, typeIndex: 0 }] }
+    ],
+    serviceCoverageGroupsByKey: new Map([
+      [serviceCandidateKey(serviceOrderSorted[0]), [0]],
+      [serviceCandidateKey(serviceOrderSorted[1]), [0]],
+      [oldTopNEvictedFromShortlist, [0]],
+      [serviceCandidateKey(serviceOrderSorted[3]), [1]],
+      [serviceCandidateKey(serviceOrderSorted[4]), [2]],
+      [serviceCandidateKey(serviceOrderSorted[5]), [0, 1, 2]]
+    ]),
+    residentialTypeAvailability: [3],
+    inferredUpper: 3,
+    serviceTypeAvailability: [4, 4, 4],
+    evaluateForcedServiceSet: (forcedServices) => {
+      const layoutKeys = forcedServices.map(serviceCandidateKey);
+      evaluatedLayouts.push(layoutKeys);
+      return serviceMasterTestSolution(
+        forcedServices,
+        layoutKeys.length === requiredLegacyLayout.length &&
+          layoutKeys.every((key) => requiredLegacyLayout.includes(key))
+          ? 999
+          : 1
+      );
+    },
+    updateBest: () => {}
+  });
+
+  assert.equal(best.totalPopulation, 999);
+  assert.equal(
+    evaluatedLayouts.some(
+      (layout) =>
+        layout.length === requiredLegacyLayout.length && layout.every((key) => requiredLegacyLayout.includes(key))
+    ),
+    true
+  );
+}
+
+function testGreedyServiceMasterDecompositionReservesDiverseLayoutBudget() {
+  const serviceOrderSorted = [
+    { r: 0, c: 0, rows: 1, cols: 1, range: 1, typeIndex: 0, bonus: 50 },
+    { r: 0, c: 1, rows: 1, cols: 1, range: 1, typeIndex: 0, bonus: 49 },
+    { r: 0, c: 2, rows: 1, cols: 1, range: 1, typeIndex: 0, bonus: 48 },
+    { r: 4, c: 4, rows: 2, cols: 1, range: 1, typeIndex: 1, bonus: 45 },
+    { r: 4, c: 0, rows: 1, cols: 2, range: 2, typeIndex: 2, bonus: 44 },
+    { r: 2, c: 2, rows: 1, cols: 1, range: 1, typeIndex: 0, bonus: 43 }
+  ];
+  const highPayoffCandidate = serviceCandidateKey(serviceOrderSorted[5]);
+  const evaluatedLayouts = [];
+
+  runGreedyServiceMasterDecomposition({
+    initialBest: serviceMasterTestSolution([], 0),
+    enabled: true,
+    serviceMasterPoolLimit: 4,
+    serviceMasterMaxLayouts: 4,
+    gridRows: 6,
+    gridCols: 6,
+    serviceOrderSorted,
+    residentialScoringGroups: [
+      { r: 1, c: 0, rows: 1, cols: 1, variants: [{ base: 10, max: 80, typeIndex: 0 }] },
+      { r: 4, c: 3, rows: 1, cols: 1, variants: [{ base: 10, max: 100, typeIndex: 0 }] },
+      { r: 3, c: 0, rows: 1, cols: 1, variants: [{ base: 10, max: 90, typeIndex: 0 }] }
+    ],
+    serviceCoverageGroupsByKey: new Map([
+      [serviceCandidateKey(serviceOrderSorted[0]), [0]],
+      [serviceCandidateKey(serviceOrderSorted[1]), [0]],
+      [serviceCandidateKey(serviceOrderSorted[2]), [0]],
+      [serviceCandidateKey(serviceOrderSorted[3]), [1]],
+      [serviceCandidateKey(serviceOrderSorted[4]), [2]],
+      [highPayoffCandidate, [0, 1, 2]]
+    ]),
+    residentialTypeAvailability: [3],
+    inferredUpper: 3,
+    serviceTypeAvailability: [4, 4, 4],
+    evaluateForcedServiceSet: (forcedServices) => {
+      evaluatedLayouts.push(forcedServices.map(serviceCandidateKey));
+      return serviceMasterTestSolution(forcedServices, forcedServices.length);
+    },
+    updateBest: () => {}
+  });
+
+  assert.equal(evaluatedLayouts.length, 5);
+  assert.equal(
+    evaluatedLayouts.some((layout) => layout.includes(highPayoffCandidate)),
+    true
+  );
+}
+
+function serviceMasterTestSolution(services, totalPopulation) {
+  return {
+    totalPopulation,
+    roads: new Set(),
+    services: services.map(({ r, c, rows, cols, range }) => ({ r, c, rows, cols, range })),
+    residentials: [],
+    serviceTypeIndices: services.map((service) => service.typeIndex),
+    servicePopulationIncreases: services.map((service) => service.bonus),
+    residentialTypeIndices: [],
+    populations: []
+  };
+}
+
+function testGreedyServiceMasterDecompositionCountersSafetyAndDisabledNoop() {
+  const serviceOrderSorted = [
+    { r: 0, c: 0, rows: 2, cols: 2, range: 1, typeIndex: 0, bonus: 40 },
+    { r: 1, c: 1, rows: 2, cols: 2, range: 1, typeIndex: 0, bonus: 39 },
+    { r: 3, c: 0, rows: 1, cols: 1, range: 1, typeIndex: 0, bonus: 38 },
+    { r: 3, c: 3, rows: 1, cols: 1, range: 1, typeIndex: 1, bonus: 37 }
+  ];
+  const serviceTypeAvailability = [1, 1];
+  const counters = createGreedyProfileCounters();
+  const initialBest = serviceMasterTestSolution([], 0);
+  const evaluatedLayouts = [];
+  const layoutsOverlap = (left, right) =>
+    left.r < right.r + right.rows &&
+    left.r + left.rows > right.r &&
+    left.c < right.c + right.cols &&
+    left.c + left.cols > right.c;
+
+  let updateCount = 0;
+  const best = runGreedyServiceMasterDecomposition({
+    initialBest,
+    enabled: true,
+    serviceMasterPoolLimit: 4,
+    serviceMasterMaxLayouts: 32,
+    gridRows: 5,
+    gridCols: 5,
+    serviceOrderSorted,
+    residentialScoringGroups: [],
+    serviceCoverageGroupsByKey: new Map(),
+    residentialTypeAvailability: null,
+    inferredUpper: 2,
+    serviceTypeAvailability,
+    evaluateForcedServiceSet: (forcedServices) => {
+      const usageByType = new Map();
+      for (let index = 0; index < forcedServices.length; index++) {
+        const service = forcedServices[index];
+        usageByType.set(service.typeIndex, (usageByType.get(service.typeIndex) ?? 0) + 1);
+        assert.equal((usageByType.get(service.typeIndex) ?? 0) <= serviceTypeAvailability[service.typeIndex], true);
+        for (let otherIndex = index + 1; otherIndex < forcedServices.length; otherIndex++) {
+          assert.equal(layoutsOverlap(service, forcedServices[otherIndex]), false);
+        }
+      }
+      evaluatedLayouts.push(forcedServices.map(serviceCandidateKey));
+      return serviceMasterTestSolution(forcedServices, forcedServices.length * 100);
+    },
+    updateBest: () => {
+      updateCount++;
+    },
+    profileCounters: counters
+  });
+
+  assert.equal(best.totalPopulation, 200);
+  assert.equal(updateCount > 0, true);
+  assert.equal(evaluatedLayouts.length > 0, true);
+  assert.equal(counters.attempts.serviceMasterCandidatesConsidered, 4);
+  assert.equal(counters.attempts.serviceMasterCandidatesShortlisted, 4);
+  assert.equal(counters.attempts.serviceMasterLayouts > 0, true);
+  assert.equal(counters.attempts.serviceMasterFeasibleLayouts > 0, true);
+  assert.equal(counters.attempts.serviceMasterImprovingLayouts > 0, true);
+  assert.equal(counters.attempts.serviceMasterNoGoodSkips > 0, true);
+
+  const disabled = runGreedyServiceMasterDecomposition({
+    initialBest,
+    enabled: false,
+    serviceMasterPoolLimit: 4,
+    serviceMasterMaxLayouts: 32,
+    gridRows: 5,
+    gridCols: 5,
+    serviceOrderSorted,
+    residentialScoringGroups: [],
+    serviceCoverageGroupsByKey: new Map(),
+    residentialTypeAvailability: null,
+    inferredUpper: 2,
+    serviceTypeAvailability,
+    evaluateForcedServiceSet: () => {
+      throw new Error("disabled service-master decomposition should not evaluate layouts");
+    },
+    updateBest: () => {
+      throw new Error("disabled service-master decomposition should not update best");
+    },
+    profileCounters: createGreedyProfileCounters()
+  });
+
+  assert.equal(disabled, initialBest);
 }
 
 function testRoadOpportunityLocalSearchMeasurementUsesPostRemoveOccupancy() {
@@ -535,6 +807,10 @@ async function runGreedyOptimizerTests() {
   testGreedyRandomSeedIsDeterministic();
   testGreedyConnectivityShadowScoringIsOptInTieBreaker();
   testGreedyRoadOpportunityCounterfactualsAreBoundedAndObservational();
+  testGreedyServiceMasterDecompositionAddsDeterministicDiverseLayouts();
+  testGreedyServiceMasterDecompositionKeepsLegacyTopNLayouts();
+  testGreedyServiceMasterDecompositionReservesDiverseLayoutBudget();
+  testGreedyServiceMasterDecompositionCountersSafetyAndDisabledNoop();
   testRoadOpportunityLocalSearchMeasurementUsesPostRemoveOccupancy();
   testGreedyStopFileCancelsBeforePrecompute();
   testGreedyWallClockBudgetStopsWithBestSolution();

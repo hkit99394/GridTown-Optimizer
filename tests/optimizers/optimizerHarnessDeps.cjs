@@ -107,6 +107,11 @@ const {
   recordRoadOpportunityPlacementFromOccupiedBuildings
 } = require("../../dist/packages/solvers/greedy/roadOpportunity.js");
 const {
+  runGreedyServiceMasterDecomposition
+} = require("../../dist/packages/solvers/greedy/serviceMasterDecomposition.js");
+const { serviceCandidateKey } = require("../../dist/packages/solvers/greedy/candidates.js");
+const { createGreedyProfileCounters } = require("../../dist/packages/solvers/greedy/profile.js");
+const {
   computeRoadAnchorReachableEmptyFrontier,
   createRoadProbeScratch,
   measureBuildingConnectivityShadow,
@@ -259,6 +264,9 @@ module.exports = {
   GreedyAttemptState,
   createRoadOpportunityRecorder,
   recordRoadOpportunityPlacementFromOccupiedBuildings,
+  runGreedyServiceMasterDecomposition,
+  serviceCandidateKey,
+  createGreedyProfileCounters,
   computeRoadAnchorReachableEmptyFrontier,
   createRoadProbeScratch,
   measureBuildingConnectivityShadow,

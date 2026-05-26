@@ -45,7 +45,7 @@ export interface GreedyOptions {
   serviceMasterDecomposition?: boolean;
   /** Ranked service-candidate pool size for service-master decomposition (default 12). */
   serviceMasterPoolLimit?: number;
-  /** Hard cap on service-master layouts evaluated through fixed-service realization (default 256). */
+  /** Hard cap on legacy top-N service-master layouts; shortlist-only layouts add a small bounded extra budget. */
   serviceMasterMaxLayouts?: number;
   /** Internal stop-token path used by the local web server. */
   stopFilePath?: string;
@@ -134,8 +134,11 @@ export interface GreedyProfileCounters {
     restartCaps: number;
     serviceRefineTrials: number;
     exhaustiveTrials: number;
+    serviceMasterCandidatesConsidered: number;
+    serviceMasterCandidatesShortlisted: number;
     serviceMasterLayouts: number;
     serviceMasterFeasibleLayouts: number;
+    serviceMasterImprovingLayouts: number;
     serviceMasterNoGoodSkips: number;
     fixedServiceRealizationTrials: number;
     localSearchIterations: number;

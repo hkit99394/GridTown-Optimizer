@@ -36,6 +36,10 @@ import {
   writeCliText
 } from "../../apps/cliOutput.js";
 import type { GreedyBenchmarkOptions, GreedyDeterministicAblationVariantName } from "../../benchmarkApi.js";
+import {
+  formatGreedyDeterministicAblationArtifactManifest,
+  writeGreedyDeterministicAblationArtifactBundle
+} from "./greedyBenchmarkArtifacts.js";
 
 interface ParsedBenchmarkArgs {
   json: boolean;
@@ -50,6 +54,11 @@ interface ParsedBenchmarkArgs {
   ablationVariantNames?: GreedyDeterministicAblationVariantName[];
   seeds?: number[];
   maxLabelsPerCase?: number;
+  artifactDir?: string;
+  ablationRunId?: string;
+  ablationDecision?: string;
+  ablationSummary?: string;
+  forceArtifactDir: boolean;
 }
 
 function parseArgs(argv: string[]): ParsedBenchmarkArgs {
@@ -65,6 +74,11 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
   let ablationVariantNames: GreedyDeterministicAblationVariantName[] | undefined;
   let seeds: number[] | undefined;
   let maxLabelsPerCase: number | undefined;
+  let artifactDir: string | undefined;
+  let ablationRunId: string | undefined;
+  let ablationDecision: string | undefined;
+  let ablationSummary: string | undefined;
+  let forceArtifactDir = false;
   const inlineOptions: Record<string, (value: string) => void> = {
     "ablation-variants": (value) => {
       ablationVariantNames = parseNameList(value, "ablation variant") as GreedyDeterministicAblationVariantName[];
@@ -74,6 +88,18 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
     },
     "max-labels": (value) => {
       maxLabelsPerCase = parsePositiveInteger(value, "max labels");
+    },
+    "artifact-dir": (value) => {
+      artifactDir = value;
+    },
+    "ablation-run-id": (value) => {
+      ablationRunId = value;
+    },
+    "ablation-decision": (value) => {
+      ablationDecision = value;
+    },
+    "ablation-summary": (value) => {
+      ablationSummary = value;
     }
   };
 
@@ -92,6 +118,10 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
     }
     if (isCliFlag(arg, "--product-corpus")) {
       productCorpus = true;
+      continue;
+    }
+    if (isCliFlag(arg, "--force-artifact-dir")) {
+      forceArtifactDir = true;
       continue;
     }
     if (isCliFlag(arg, "--connectivity-shadow-ablation", "--connectivity-shadow-ablations")) {
@@ -148,12 +178,18 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
     greedy,
     ablationVariantNames,
     seeds,
-    maxLabelsPerCase
+    maxLabelsPerCase,
+    artifactDir,
+    ablationRunId,
+    ablationDecision,
+    ablationSummary,
+    forceArtifactDir
   };
 }
 
 export function runGreedyBenchmarkCli(): void {
-  const args = parseArgs(process.argv.slice(2));
+  const argv = process.argv.slice(2);
+  const args = parseArgs(argv);
   const modeCount = countEnabledCliModes([
     args.connectivityShadowAblation,
     args.connectivityShadowLabels,
@@ -169,6 +205,21 @@ export function runGreedyBenchmarkCli(): void {
   }
   if (args.productCorpus && (args.connectivityShadowAblation || args.connectivityShadowLabels)) {
     throw new Error("--product-corpus is only available with Greedy benchmark and deterministic ablation runs.");
+  }
+  if (args.artifactDir !== undefined && !args.deterministicAblation) {
+    throw new Error("--artifact-dir is only available with --deterministic-ablation.");
+  }
+  if (args.artifactDir !== undefined && args.list) {
+    throw new Error("--artifact-dir cannot be combined with --list.");
+  }
+  if (
+    (args.ablationRunId !== undefined || args.ablationDecision !== undefined || args.ablationSummary !== undefined) &&
+    !args.deterministicAblation
+  ) {
+    throw new Error("--ablation-run-id, --ablation-decision, and --ablation-summary require --deterministic-ablation.");
+  }
+  if (args.forceArtifactDir && args.artifactDir === undefined) {
+    throw new Error("--force-artifact-dir requires --artifact-dir.");
   }
   const corpus = args.productCorpus ? DEFAULT_CROSS_MODE_PRODUCT_WORKFLOW_CORPUS : undefined;
   if (args.list) {
@@ -190,6 +241,12 @@ export function runGreedyBenchmarkCli(): void {
       variantNames: args.ablationVariantNames,
       seeds: args.seeds ?? (args.gateReport ? DEFAULT_DETERMINISTIC_ABLATION_GATE_SEEDS : undefined)
     });
+
+    if (args.artifactDir !== undefined) {
+      const manifest = writeGreedyDeterministicAblationArtifactBundle(result, args, argv);
+      writeCliJsonOrText(args.json, manifest, () => formatGreedyDeterministicAblationArtifactManifest(manifest));
+      return;
+    }
 
     if (args.gateReport) {
       const report = buildDeterministicAblationGateReport({ greedy: result });

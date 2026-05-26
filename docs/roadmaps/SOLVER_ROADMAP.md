@@ -65,7 +65,7 @@ Branch scope:
 Stage plan:
 
 1. **Shortlist implementation:** done on this branch. `buildServiceMasterShortlist(...)` now lives inside the Greedy service-master path, runs only when `serviceMasterDecomposition` is enabled, preserves legacy `serviceMasterPoolLimit` and `serviceMasterMaxLayouts` coverage first, and allows only a small bounded additive budget for shortlist-only layouts.
-2. **Focused proof:** run optimizer and benchmark tests around Greedy/service-master behavior, plus exact validation for the focused `service-master-decomposition-experiment` case.
+2. **Focused proof:** done locally on 2026-05-26. `npm test` passed, the focused `service-master-decomposition-experiment` benchmark reached `555`, and the fixed-seed deterministic ablation over seeds `7`, `19`, and `37` stayed at `555` with service-master enabled versus `465` when `no-service-master-decomposition` is applied.
 3. **Evidence gate:** collect equal-budget development and holdout scorecards before any promotion discussion. Evidence must include fixed seeds, CPU-budget cost, worst-row safety, final evaluator validity, and artifact registry metadata.
 4. **Decision:** promote only if scorecards show repeatable wins over the current Greedy/Auto seed path; otherwise keep the shortlist as an opt-in diagnostic/research path.
 

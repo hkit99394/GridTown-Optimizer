@@ -48,9 +48,28 @@ Completed details live in [SOLVER_ROADMAP_DELIVERED.md](SOLVER_ROADMAP_DELIVERED
 
 ## Current Solver Posture
 
-There is no ungated default-path solver change active after the current May 2026 evidence tranche. Learned LNS remains diagnostics-only, and short-budget Auto keeps the existing default policy.
+There is no ungated default-path solver change active after the current May 2026 evidence tranche. Learned LNS remains diagnostics-only, and short-budget Auto keeps the existing default policy. The active `features/service-master-shortlist` branch is a gated Greedy research track only; it must not change default `auto` behavior.
 
-The sections below are recently closed evidence tracks. They document why the work stays parked, what would reopen it, and which promotion gates a future candidate must clear. They do not change solver defaults, do not promote learned guidance, and do not widen CP-SAT portfolio use.
+### Active gated track: service-master shortlist
+
+Near-term goal: improve the opt-in Greedy `serviceMasterDecomposition` candidate pool before collecting promotion evidence. The branch now replaces the prior plain top-N pool with a deterministic shortlist that keeps legacy ranked coverage first, then adds bounded diversity across service type, footprint geometry, placement region, and likely residential payoff.
+
+Branch scope:
+
+- Keep `serviceMasterDecomposition` explicit and opt-in.
+- Do not promote service-master into `auto`, Greedy seed policy, or default planner behavior on this branch.
+- Replace the plain service-master pool with a deterministic shortlist helper that preserves strong ranked candidates while adding bounded diversity across service type, footprint geometry, placement region, and likely residential payoff.
+- Add focused diagnostics so service-master runs report candidates considered, candidates shortlisted, layouts evaluated, feasible layouts, no-good skips, and improvements.
+- Keep the existing focused benchmark win intact, and add tests for deterministic ordering, cap behavior, availability/overlap safety, disabled-mode no-op behavior, and formatter/telemetry stability.
+
+Stage plan:
+
+1. **Shortlist implementation:** done on this branch. `buildServiceMasterShortlist(...)` now lives inside the Greedy service-master path, runs only when `serviceMasterDecomposition` is enabled, preserves legacy `serviceMasterPoolLimit` and `serviceMasterMaxLayouts` coverage first, and allows only a small bounded additive budget for shortlist-only layouts.
+2. **Focused proof:** done locally on 2026-05-26. `npm test` passed, the focused `service-master-decomposition-experiment` benchmark reached `555`, and the fixed-seed deterministic ablation over seeds `7`, `19`, and `37` stayed at `555` with service-master enabled versus `465` when `no-service-master-decomposition` is applied.
+3. **Evidence gate:** collect equal-budget development and holdout scorecards before any promotion discussion. Evidence must include fixed seeds, CPU-budget cost, worst-row safety, final evaluator validity, and artifact registry metadata.
+4. **Decision:** promote only if scorecards show repeatable wins over the current Greedy/Auto seed path; otherwise keep the shortlist as an opt-in diagnostic/research path.
+
+The sections below are recently closed evidence tracks. They document why the work stays parked, what would reopen it, and which promotion gates a future candidate must clear. Except for the active service-master shortlist track above, they do not change solver defaults, do not promote learned guidance, and do not widen CP-SAT portfolio use.
 
 ### 1. Strict LNS replay labels and feature payloads (closed evidence track)
 
@@ -308,16 +327,16 @@ Historical evidence criteria:
 
 These are not next actions by default. They become active only when their trigger is satisfied.
 
-| Trigger                                                                                        | Candidate Work                                         | Success Signal                                                                                                                                               |
-| ---------------------------------------------------------------------------------------------- | ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| CP-SAT semantics and product corpus stay stable, and exact search quality remains a bottleneck | Geometry-native CP-SAT / `NoOverlap2D` experiment      | Better propagation or time-to-best without model-size blowup.                                                                                                |
-| Service-master scorecards show repeatable equal-budget wins                                    | Promote service-master into Auto or Greedy seed policy | Beats current Auto or Greedy seed path on development and holdout pressure families with evaluator-valid layouts.                                            |
-| New protected/fresh LNS value coverage or a materially different model class appears           | Learned LNS window ranking                             | Active protected/fresh overrides improve final population or time-to-best online without regressions, final-neutral override blockers, or product-axis loss. |
-| Greedy offline ranker evidence is paired with online equal-budget wins                         | Feature-flagged learned Greedy re-ranking              | Online seeded benchmarks improve population or time-to-best with bounded inference overhead.                                                                 |
-| Portfolio scorecards show wall-clock and CPU-normalized wins                                   | CP-SAT portfolio in Auto                               | Portfolio beats single CP-SAT on quality and CPU efficiency.                                                                                                 |
-| A CPU-first label, training, feature, or inference workflow becomes a measured bottleneck      | GPU acceleration                                       | GPU reduces the measured bottleneck while preserving solver quality gates.                                                                                   |
-| Hosted or multi-user execution becomes a product requirement                                   | Durable worker architecture                            | Status, cancellation, and snapshots survive process restarts and multi-instance routing.                                                                     |
-| Exact bounds or incumbents remain blocked after CP-SAT tuning                                  | External MILP/SCIP/Gurobi/cuOpt research adapter       | Better bounds or incumbents on selected families under exact evaluator validation.                                                                           |
+| Trigger                                                                                          | Candidate Work                                         | Success Signal                                                                                                                                                    |
+| ------------------------------------------------------------------------------------------------ | ------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| CP-SAT semantics and product corpus stay stable, and exact search quality remains a bottleneck   | Geometry-native CP-SAT / `NoOverlap2D` experiment      | Better propagation or time-to-best without model-size blowup.                                                                                                     |
+| Service-master shortlist preserves focused wins and scorecards show repeatable equal-budget wins | Promote service-master into Auto or Greedy seed policy | Beats current Auto or Greedy seed path on development and holdout pressure families with evaluator-valid layouts, bounded CPU cost, and no worst-row regressions. |
+| New protected/fresh LNS value coverage or a materially different model class appears             | Learned LNS window ranking                             | Active protected/fresh overrides improve final population or time-to-best online without regressions, final-neutral override blockers, or product-axis loss.      |
+| Greedy offline ranker evidence is paired with online equal-budget wins                           | Feature-flagged learned Greedy re-ranking              | Online seeded benchmarks improve population or time-to-best with bounded inference overhead.                                                                      |
+| Portfolio scorecards show wall-clock and CPU-normalized wins                                     | CP-SAT portfolio in Auto                               | Portfolio beats single CP-SAT on quality and CPU efficiency.                                                                                                      |
+| A CPU-first label, training, feature, or inference workflow becomes a measured bottleneck        | GPU acceleration                                       | GPU reduces the measured bottleneck while preserving solver quality gates.                                                                                        |
+| Hosted or multi-user execution becomes a product requirement                                     | Durable worker architecture                            | Status, cancellation, and snapshots survive process restarts and multi-instance routing.                                                                          |
+| Exact bounds or incumbents remain blocked after CP-SAT tuning                                    | External MILP/SCIP/Gurobi/cuOpt research adapter       | Better bounds or incumbents on selected families under exact evaluator validation.                                                                                |
 
 ## Promotion Gates
 

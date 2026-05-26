@@ -51,8 +51,11 @@ export function createGreedyProfileCounters(): GreedyProfileCounters {
       restartCaps: 0,
       serviceRefineTrials: 0,
       exhaustiveTrials: 0,
+      serviceMasterCandidatesConsidered: 0,
+      serviceMasterCandidatesShortlisted: 0,
       serviceMasterLayouts: 0,
       serviceMasterFeasibleLayouts: 0,
+      serviceMasterImprovingLayouts: 0,
       serviceMasterNoGoodSkips: 0,
       fixedServiceRealizationTrials: 0,
       localSearchIterations: 0

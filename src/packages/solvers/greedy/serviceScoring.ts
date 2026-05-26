@@ -101,9 +101,9 @@ export function buildServiceCoverageIndex(
 function buildServiceAvailabilityPressureByType(
   service: ServiceCandidate,
   coveredGroupIndices: number[],
-  residentialScoringGroups: ResidentialScoringGroup[],
+  residentialScoringGroups: readonly ResidentialScoringGroup[],
   currentResidentialGroupBoosts: number[],
-  remainingAvail: number[] | null,
+  remainingAvail: readonly number[] | null,
   occupied: Set<string> | null
 ): Map<number, number> | null {
   if (!remainingAvail || coveredGroupIndices.length === 0) return null;
@@ -191,9 +191,9 @@ function computeServiceGroupedScore(
   service: ServiceCandidate,
   occupied: Set<string> | null,
   currentResidentialGroupBoosts: number[],
-  residentialScoringGroups: ResidentialScoringGroup[],
+  residentialScoringGroups: readonly ResidentialScoringGroup[],
   serviceCoverageGroupsByKey: Map<string, number[]>,
-  remainingAvail: number[] | null,
+  remainingAvail: readonly number[] | null,
   profileCounters: GreedyProfileCounters | undefined,
   phase: "precompute" | "servicePhase"
 ): number {
@@ -255,9 +255,9 @@ function computeServiceGroupedScore(
 export function computeServiceStaticScore(
   service: ServiceCandidate,
   currentResidentialGroupBoosts: number[],
-  residentialScoringGroups: ResidentialScoringGroup[],
+  residentialScoringGroups: readonly ResidentialScoringGroup[],
   serviceCoverageGroupsByKey: Map<string, number[]>,
-  remainingAvail: number[] | null,
+  remainingAvail: readonly number[] | null,
   profileCounters?: GreedyProfileCounters
 ): number {
   return computeServiceGroupedScore(
@@ -276,9 +276,9 @@ export function computeServiceMarginalScore(
   service: ServiceCandidate,
   occupied: Set<string>,
   currentResidentialGroupBoosts: number[],
-  residentialScoringGroups: ResidentialScoringGroup[],
+  residentialScoringGroups: readonly ResidentialScoringGroup[],
   serviceCoverageGroupsByKey: Map<string, number[]>,
-  remainingAvail: number[] | null,
+  remainingAvail: readonly number[] | null,
   profileCounters?: GreedyProfileCounters
 ): number {
   return computeServiceGroupedScore(

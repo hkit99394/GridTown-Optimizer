@@ -154,6 +154,16 @@ async function testCrossModeBenchmarkSuiteAssertions() {
   assert.equal(mocked.portfolioEfficiencySignals.length, 0);
   assert.equal(mockedAuto.telemetry.stageCount, mockedAuto.telemetry.stages.length);
   assert(mockedAuto.telemetry.stages.some((entry) => entry.kind === "auto-stage" && entry.stage === "lns"));
+  const mockedGreedyServiceMasterStage = mockedGreedy.telemetry.stages.find(
+    (entry) => entry.kind === "greedy-profile" && entry.phase === "serviceMasterDecomposition"
+  );
+  assert(mockedGreedyServiceMasterStage);
+  assert.equal(mockedGreedyServiceMasterStage.candidateCounts.serviceMasterCandidatesConsidered, 8);
+  assert.equal(mockedGreedyServiceMasterStage.candidateCounts.serviceMasterCandidatesShortlisted, 4);
+  assert.equal(mockedGreedyServiceMasterStage.candidateCounts.serviceMasterLayouts, 6);
+  assert.equal(mockedGreedyServiceMasterStage.candidateCounts.serviceMasterFeasibleLayouts, 5);
+  assert.equal(mockedGreedyServiceMasterStage.candidateCounts.serviceMasterImprovingLayouts, 1);
+  assert.equal(mockedGreedyServiceMasterStage.candidateCounts.serviceMasterNoGoodSkips, 2);
   assert.equal(
     mockedAuto.telemetry.stages.find((entry) => entry.kind === "lns-neighborhood").operatorOutcome,
     "neutral"

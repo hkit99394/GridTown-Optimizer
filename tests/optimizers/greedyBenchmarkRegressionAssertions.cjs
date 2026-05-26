@@ -769,14 +769,17 @@ function testGreedyServiceMasterDecompositionBenchmarkCase() {
   assert.equal(masterSolution.totalPopulation, 555);
   assert.equal(masterSolution.totalPopulation > baselineSolution.totalPopulation, true);
   assert.deepEqual(masterSolution.services, [{ r: 0, c: 3, rows: 2, cols: 1, range: 1 }]);
+  assert.equal(counters.serviceMasterCandidatesConsidered >= counters.serviceMasterCandidatesShortlisted, true);
+  assert.equal(counters.serviceMasterCandidatesShortlisted > 0, true);
   assert.equal(counters.serviceMasterLayouts > 0, true);
   assert.equal(counters.serviceMasterFeasibleLayouts > 0, true);
+  assert.equal(counters.serviceMasterImprovingLayouts > 0, true);
   assert.equal(counters.serviceMasterNoGoodSkips > 0, true);
   assert.equal(counters.fixedServiceRealizationTrials > 0, true);
   assert.equal(phase.runs, 1);
   assert.equal(phase.improvements, 1);
   assert.match(formatGreedyBenchmarkSuite(result), /service-master-decomposition-experiment/);
-  assert.match(formatGreedyBenchmarkSuite(result), /service-master=/);
+  assert.match(formatGreedyBenchmarkSuite(result), /service-master=candidates:\d+\/\d+/);
 }
 
 function testGreedyServiceLocalNeighborhoodBenchmarkCase() {

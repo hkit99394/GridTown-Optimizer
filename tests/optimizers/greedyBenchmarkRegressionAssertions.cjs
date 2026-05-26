@@ -158,6 +158,18 @@ function testGreedyBenchmarkCliDeterministicAblationFlags() {
   assert.deepEqual(gateReport.suites[0].seeds, [7, 19, 37]);
   assert.equal(gateReport.suites[0].suite, "greedy-deterministic");
   assert.equal(Object.hasOwn(gateReport, "generatedAt"), false);
+
+  const productCorpusResult = runGreedyBenchmarkCliJson([
+    "--deterministic-ablation",
+    "--product-corpus",
+    "--ablation-variants=service-master-decomposition",
+    "--seeds=7",
+    "typed-housing-single"
+  ]);
+  assert.deepEqual(productCorpusResult.selectedCaseNames, ["typed-housing-single"]);
+  assert.deepEqual(productCorpusResult.variants, ["baseline", "service-master-decomposition"]);
+  assert.equal(productCorpusResult.coverage.runCount, 2);
+  assert.equal(productCorpusResult.cases[0].variants[1].greedyOptions.serviceMasterDecomposition, true);
 }
 
 function testLnsBenchmarkCliNeighborhoodAblationSeedListParsing() {

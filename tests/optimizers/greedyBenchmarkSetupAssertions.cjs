@@ -307,6 +307,16 @@ function testGreedyDeterministicAblationRunner() {
 
   assert.equal(DEFAULT_GREEDY_DETERMINISTIC_ABLATION_CASE_NAMES.includes("step14-service-lookahead-reranker"), true);
   assert.equal(listGreedyDeterministicAblationCaseNames().includes("row0-corridor-repair-pressure"), true);
+  const defaultServiceMasterVariantResult = runGreedyDeterministicAblation([ablationCase], {
+    variantNames: ["service-master-decomposition"]
+  });
+  assert.deepEqual(defaultServiceMasterVariantResult.variants, ["baseline", "service-master-decomposition"]);
+  assert.equal(
+    defaultServiceMasterVariantResult.cases[0].variants.find(
+      (entry) => entry.variantName === "service-master-decomposition"
+    ).greedyOptions.serviceMasterDecomposition,
+    true
+  );
   assert.equal(result.caseCount, 1);
   assert.equal(result.seedCount, 1);
   assert.equal(result.comparisonCount, 1);

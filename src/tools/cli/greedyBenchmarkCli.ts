@@ -13,6 +13,7 @@ import {
   listGreedyConnectivityShadowOrderingLabelCaseNames,
   listGreedyBenchmarkCaseNames,
   listGreedyDeterministicAblationCaseNames,
+  DEFAULT_CROSS_MODE_PRODUCT_WORKFLOW_CORPUS,
   runGreedyConnectivityShadowScoringAblation,
   runGreedyConnectivityShadowOrderingLabels,
   runGreedyDeterministicAblation,
@@ -42,6 +43,7 @@ interface ParsedBenchmarkArgs {
   connectivityShadowLabels: boolean;
   deterministicAblation: boolean;
   gateReport: boolean;
+  productCorpus: boolean;
   list: boolean;
   names: string[];
   greedy: Partial<GreedyBenchmarkOptions>;
@@ -57,6 +59,7 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
   let connectivityShadowLabels = false;
   let deterministicAblation = false;
   let gateReport = false;
+  let productCorpus = false;
   let list = false;
   const greedy: Partial<GreedyBenchmarkOptions> = {};
   let ablationVariantNames: GreedyDeterministicAblationVariantName[] | undefined;
@@ -85,6 +88,10 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
     }
     if (isCliFlag(arg, "--gate-report", "--ablation-gate-report")) {
       gateReport = true;
+      continue;
+    }
+    if (isCliFlag(arg, "--product-corpus")) {
+      productCorpus = true;
       continue;
     }
     if (isCliFlag(arg, "--connectivity-shadow-ablation", "--connectivity-shadow-ablations")) {
@@ -135,6 +142,7 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
     connectivityShadowLabels,
     deterministicAblation,
     gateReport,
+    productCorpus,
     list,
     names,
     greedy,
@@ -159,20 +167,24 @@ export function runGreedyBenchmarkCli(): void {
   if (args.gateReport && !args.deterministicAblation) {
     throw new Error("--gate-report is only available with --deterministic-ablation.");
   }
+  if (args.productCorpus && (args.connectivityShadowAblation || args.connectivityShadowLabels)) {
+    throw new Error("--product-corpus is only available with Greedy benchmark and deterministic ablation runs.");
+  }
+  const corpus = args.productCorpus ? DEFAULT_CROSS_MODE_PRODUCT_WORKFLOW_CORPUS : undefined;
   if (args.list) {
     const names = args.connectivityShadowAblation
       ? listGreedyConnectivityShadowScoringAblationCaseNames()
       : args.connectivityShadowLabels
         ? listGreedyConnectivityShadowOrderingLabelCaseNames()
         : args.deterministicAblation
-          ? listGreedyDeterministicAblationCaseNames()
-          : listGreedyBenchmarkCaseNames();
+          ? listGreedyDeterministicAblationCaseNames(corpus)
+          : listGreedyBenchmarkCaseNames(corpus);
     writeCliList(names);
     return;
   }
 
   if (args.deterministicAblation) {
-    const result = runGreedyDeterministicAblation(undefined, {
+    const result = runGreedyDeterministicAblation(corpus, {
       names: optionalCliNames(args.names),
       greedy: args.greedy,
       variantNames: args.ablationVariantNames,
@@ -223,7 +235,7 @@ export function runGreedyBenchmarkCli(): void {
     return;
   }
 
-  const result = runGreedyBenchmarkSuite(undefined, {
+  const result = runGreedyBenchmarkSuite(corpus, {
     names: optionalCliNames(args.names),
     greedy: args.greedy
   });

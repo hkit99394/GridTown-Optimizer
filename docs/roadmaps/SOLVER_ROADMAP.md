@@ -52,7 +52,7 @@ There is no ungated default-path solver change active after the current May 2026
 
 ### Active gated track: service-master shortlist
 
-Near-term goal: improve the opt-in Greedy `serviceMasterDecomposition` candidate pool before collecting promotion evidence. The current master pass is intentionally bounded, but its pool construction is still a plain top-N slice of `serviceOrderSorted`; that can over-focus on similar facilities, miss useful type/geometry diversity, and spend layout budget on low-information combinations.
+Near-term goal: improve the opt-in Greedy `serviceMasterDecomposition` candidate pool before collecting promotion evidence. The branch now replaces the prior plain top-N pool with a deterministic shortlist that keeps legacy ranked coverage first, then adds bounded diversity across service type, footprint geometry, placement region, and likely residential payoff.
 
 Branch scope:
 
@@ -64,7 +64,7 @@ Branch scope:
 
 Stage plan:
 
-1. **Shortlist implementation:** introduce `buildServiceMasterShortlist(...)` inside the Greedy service-master path, use it only when `serviceMasterDecomposition` is enabled, preserve the legacy `serviceMasterPoolLimit` and `serviceMasterMaxLayouts` coverage first, and allow only a small bounded additive budget for shortlist-only layouts.
+1. **Shortlist implementation:** done on this branch. `buildServiceMasterShortlist(...)` now lives inside the Greedy service-master path, runs only when `serviceMasterDecomposition` is enabled, preserves legacy `serviceMasterPoolLimit` and `serviceMasterMaxLayouts` coverage first, and allows only a small bounded additive budget for shortlist-only layouts.
 2. **Focused proof:** run optimizer and benchmark tests around Greedy/service-master behavior, plus exact validation for the focused `service-master-decomposition-experiment` case.
 3. **Evidence gate:** collect equal-budget development and holdout scorecards before any promotion discussion. Evidence must include fixed seeds, CPU-budget cost, worst-row safety, final evaluator validity, and artifact registry metadata.
 4. **Decision:** promote only if scorecards show repeatable wins over the current Greedy/Auto seed path; otherwise keep the shortlist as an opt-in diagnostic/research path.

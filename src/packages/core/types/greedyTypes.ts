@@ -45,7 +45,7 @@ export interface GreedyOptions {
   serviceMasterDecomposition?: boolean;
   /** Ranked service-candidate pool size for service-master decomposition (default 12). */
   serviceMasterPoolLimit?: number;
-  /** Hard cap on legacy top-N service-master layouts; shortlist-only layouts add a small bounded extra budget. */
+  /** Legacy top-N service-master layout budget; shortlist-only layouts may add a small bounded extra budget. */
   serviceMasterMaxLayouts?: number;
   /** Internal stop-token path used by the local web server. */
   stopFilePath?: string;

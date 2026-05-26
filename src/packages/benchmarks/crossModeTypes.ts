@@ -256,6 +256,8 @@ export interface CrossModeBenchmarkBudgetAblationPolicy {
   activeBudgetSeconds?: readonly number[];
   appliesToCase?: (benchmarkCase: CrossModeBenchmarkCase) => boolean;
   auto?: Partial<AutoOptions>;
+  /** Applies only to standalone Greedy scorecard rows; Auto keeps its guarded Greedy seed policy. */
+  greedy?: Partial<GreedyOptions>;
   lns?: Partial<LnsOptions>;
   lnsSeedBudgetRatio?: number;
   lnsRepairBudgetRatio?: number;

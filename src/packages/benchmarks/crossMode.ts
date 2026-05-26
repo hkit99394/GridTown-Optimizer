@@ -198,13 +198,18 @@ function applyGreedyCompatibilityFields(params: SolverParams, greedy: GreedyOpti
 }
 
 function buildBudgetedGreedyOptions(
+  benchmarkCase: CrossModeBenchmarkCase,
+  mode: CrossModeBenchmarkMode,
   params: SolverParams,
   options: CrossModeBenchmarkRunOptions,
   budgetSeconds: number,
   seed: number
 ): GreedyOptions {
   return {
-    ...normalizeGreedyBenchmarkOptions(params.greedy, options.greedy),
+    ...normalizeGreedyBenchmarkOptions(params.greedy, {
+      ...(options.greedy ?? {}),
+      ...budgetAblationGreedyOptions(options.budgetAblationPolicy, mode, budgetSeconds, benchmarkCase)
+    }),
     timeLimitSeconds: budgetSeconds,
     randomSeed: seed
   };
@@ -334,6 +339,18 @@ function budgetAblationAutoOptions(
   };
 }
 
+function budgetAblationGreedyOptions(
+  policy: CrossModeBenchmarkBudgetAblationPolicy | undefined,
+  mode: CrossModeBenchmarkMode,
+  budgetSeconds: number,
+  benchmarkCase: CrossModeBenchmarkCase
+): Partial<GreedyOptions> {
+  if (mode !== "greedy" || !policy || !budgetAblationPolicyApplies(policy, budgetSeconds, benchmarkCase)) return {};
+  return {
+    ...(policy.greedy ?? {})
+  };
+}
+
 function defaultTraceTunedLnsRepairBudgetSeconds(budgetSeconds: number): number {
   if (budgetSeconds <= TRACE_TUNED_LNS_SMALL_BUDGET_SECONDS) return 1;
   if (budgetSeconds <= TRACE_TUNED_LNS_MEDIUM_BUDGET_SECONDS) return 2;
@@ -405,7 +422,7 @@ export function buildCrossModeBenchmarkParams(
   const seed = normalizeSeeds(options.seeds)[0] ?? DEFAULT_CROSS_MODE_BENCHMARK_SEEDS[0];
   const params = cloneBenchmarkSolverParams(benchmarkCase.params);
   const optimizer = modeToOptimizer(mode);
-  const greedy = buildBudgetedGreedyOptions(params, options, budgetSeconds, seed);
+  const greedy = buildBudgetedGreedyOptions(benchmarkCase, mode, params, options, budgetSeconds, seed);
   const baseWithGreedy = applyGreedyCompatibilityFields(params, greedy);
   const portfolio = mode === "cp-sat-portfolio" ? buildPortfolioOptions(options, budgetSeconds, seed) : undefined;
   const cpSat = buildBudgetedCpSatOptions(baseWithGreedy, options, budgetSeconds, seed, portfolio);

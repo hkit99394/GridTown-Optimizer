@@ -67,6 +67,7 @@ async function testCrossModeBenchmarkParamsAssertions() {
     OPTIONAL_CROSS_MODE_BUDGET_ABLATION_POLICIES.map((policy) => policy.name),
     [
       "baseline-repeat",
+      "service-master-shortlist",
       "service-pressure-cp-sat-reserve-5s-guarded",
       "service-present-lns-seed-reserve-5s-guarded",
       "repair-heavy-5s-guarded",
@@ -420,6 +421,22 @@ async function testCrossModeBenchmarkParamsAssertions() {
   assert.equal(repairReserveFiveSecondAutoParams.lns.seedTimeLimitSeconds, 1);
   assert.equal(repairReserveFiveSecondAutoParams.lns.repairTimeLimitSeconds, 1);
   assert.equal(repairReserveFiveSecondAutoParams.lns.escalatedRepairTimeLimitSeconds, 1.5);
+  const serviceMasterShortlistPolicy = OPTIONAL_CROSS_MODE_BUDGET_ABLATION_POLICIES.find(
+    (policy) => policy.name === "service-master-shortlist"
+  );
+  const serviceMasterGreedyParams = buildCrossModeBenchmarkParams(typedFootprintCase, "greedy", {
+    budgetSeconds: 5,
+    seeds: [5],
+    budgetAblationPolicy: serviceMasterShortlistPolicy
+  });
+  assert.equal(serviceMasterGreedyParams.greedy.serviceMasterDecomposition, true);
+  const serviceMasterAutoParams = buildCrossModeBenchmarkParams(typedFootprintCase, "auto", {
+    budgetSeconds: 5,
+    seeds: [5],
+    budgetAblationPolicy: serviceMasterShortlistPolicy
+  });
+  assert.equal(serviceMasterAutoParams.greedy.serviceMasterDecomposition, undefined);
+  assert.equal(serviceMasterAutoParams.auto.wallClockLimitSeconds, 5);
 
   const portfolioParams = buildCrossModeBenchmarkParams(benchmarkCase, "cp-sat-portfolio", {
     budgetSeconds: 3,

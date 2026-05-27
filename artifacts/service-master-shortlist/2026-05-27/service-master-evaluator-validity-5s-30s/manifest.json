@@ -1,0 +1,14 @@
+{
+  "artifactDir": "artifacts/service-master-shortlist/2026-05-27/service-master-evaluator-validity-5s-30s",
+  "artifactPaths": {
+    "validityJson": "artifacts/service-master-shortlist/2026-05-27/service-master-evaluator-validity-5s-30s/service-master-evaluator-validity.json",
+    "validityText": "artifacts/service-master-shortlist/2026-05-27/service-master-evaluator-validity-5s-30s/service-master-evaluator-validity.txt",
+    "telemetryManifestJson": "artifacts/service-master-shortlist/2026-05-27/service-master-evaluator-validity-5s-30s/telemetry-manifest.json",
+    "registryEntryDraftJson": "artifacts/service-master-shortlist/2026-05-27/service-master-evaluator-validity-5s-30s/registry-entry-draft.json"
+  },
+  "runId": "service-master-shortlist-evaluator-validity-5s-30s-2026-05-27",
+  "generatedAt": "2026-05-27T00:04:08.761Z",
+  "rowCount": 120,
+  "validCount": 120,
+  "invalidCount": 0
+}

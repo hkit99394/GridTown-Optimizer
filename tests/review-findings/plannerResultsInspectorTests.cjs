@@ -1,17 +1,30 @@
 const { assert, createFakeDomElement, loadPlannerResultRenderingModule } = require("./helpers.cjs");
 
-function createInspectorFixture({ population, maxPopulation, pendingManualValidation = false }) {
+function createInspectorFixture({
+  population,
+  maxPopulation,
+  serviceBonuses = [500, 401],
+  pendingManualValidation = false
+}) {
   const plannerResultRendering = loadPlannerResultRenderingModule();
   const residentials = Array.from({ length: 11 }, (_, index) => ({ r: index, c: 1, rows: 1, cols: 1 }));
   const populations = Array.from({ length: 11 }, () => 100);
   populations[10] = population;
+  const services = [
+    { r: 9, c: 0, rows: 1, cols: 1, range: 2 },
+    { r: 10, c: 2, rows: 1, cols: 1, range: 1 }
+  ];
+  const serviceTypes = [
+    { name: "Clinic", bonus: serviceBonuses[0], rows: 1, cols: 1, range: 2, avail: 1 },
+    { name: "Park", bonus: serviceBonuses[1], rows: 1, cols: 1, range: 1, avail: 1 }
+  ];
   const state = {
     result: {
       solution: {
         roads: [],
-        services: [],
-        serviceTypeIndices: [],
-        servicePopulationIncreases: [],
+        services,
+        serviceTypeIndices: [0, 1],
+        servicePopulationIncreases: serviceBonuses,
         residentials,
         residentialTypeIndices: Array.from({ length: 11 }, () => 0),
         populations,
@@ -20,7 +33,7 @@ function createInspectorFixture({ population, maxPopulation, pendingManualValida
     },
     resultContext: {
       params: {
-        serviceTypes: [],
+        serviceTypes,
         residentialTypes: [{ name: "High-density home", min: 1200, max: maxPopulation, avail: 12 }]
       }
     },
@@ -82,8 +95,14 @@ function createInspectorFixture({ population, maxPopulation, pendingManualValida
       isCellInsidePlacement() {
         return false;
       },
-      isCellInsideServiceEffect() {
-        return false;
+      isCellInsideServiceEffect(service, row, col) {
+        return Boolean(
+          service &&
+          row >= service.r - service.range &&
+          row <= service.r + service.rows - 1 + service.range &&
+          col >= service.c - service.range &&
+          col <= service.c + service.cols - 1 + service.range
+        );
       },
       normalizeExplainabilityMode() {
         return "layout";
@@ -94,8 +113,8 @@ function createInspectorFixture({ population, maxPopulation, pendingManualValida
       lookupResidentialName() {
         return "High-density home";
       },
-      lookupServiceName() {
-        return "Service";
+      lookupServiceName(typeIndex) {
+        return serviceTypes[typeIndex]?.name ?? "Service";
       }
     },
     callbacks: {
@@ -123,14 +142,15 @@ function testInspectorShowsResidentialPossibleImprovement() {
   );
   assert.equal(
     elements.selectedBuildingEffect.textContent,
-    "2101 population, type range 1200-2160, possible improvement +59"
+    "2101 population = 1200 base + 901 service bonus, type range 1200-2160, possible improvement +59, services Clinic (S1 +500), Park (S2 +401)"
   );
 }
 
 function testInspectorOmitsResidentialPossibleImprovementAtMax() {
   const { controller, elements, solution } = createInspectorFixture({
     population: 2160,
-    maxPopulation: 2160
+    maxPopulation: 2160,
+    serviceBonuses: [500, 600]
   });
 
   controller.renderSelectedBuildingDetail(solution);
@@ -139,7 +159,10 @@ function testInspectorOmitsResidentialPossibleImprovementAtMax() {
     elements.selectedBuildingSummary.textContent,
     "R11 is a residential placement contributing 2160 population."
   );
-  assert.equal(elements.selectedBuildingEffect.textContent, "2160 population, type range 1200-2160");
+  assert.equal(
+    elements.selectedBuildingEffect.textContent,
+    "2160 population = 1200 base + 1100 service bonus, capped at 2160, type range 1200-2160, services Clinic (S1 +500), Park (S2 +600)"
+  );
 }
 
 function runPlannerResultsInspectorTests() {

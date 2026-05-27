@@ -210,6 +210,22 @@
     }
 
     /**
+     * @param {unknown} population
+     * @param {JsonObject | null | undefined} type
+     */
+    function getResidentialPossibleImprovement(population, type) {
+      const currentPopulation = Number(population);
+      const maxPopulation = Number(type?.max);
+      if (!Number.isFinite(currentPopulation) || !Number.isFinite(maxPopulation)) return null;
+      const possibleImprovement = maxPopulation - currentPopulation;
+      if (possibleImprovement <= 0) return null;
+      return {
+        possibleImprovement,
+        maxPopulation
+      };
+    }
+
+    /**
      * @param {ResultSolution | null | undefined} [solution]
      */
     function renderSelectedBuildingDetail(solution = state.result?.solution) {
@@ -299,13 +315,23 @@
       const name = isService ? lookupServiceName(typeIndex) : lookupResidentialName(typeIndex);
       const buildingId = `${isService ? "S" : "R"}${selected.index + 1}`;
       const availability = getTypeAvailabilitySummary(selected.kind, typeIndex, solution);
+      const residentialPopulation = solution.populations?.[selected.index] ?? 0;
+      const residentialPossibleImprovement = isService
+        ? null
+        : getResidentialPossibleImprovement(residentialPopulation, type);
+      const residentialPossibleImprovementSummary = residentialPossibleImprovement
+        ? ` Possible improvement: +${residentialPossibleImprovement.possibleImprovement} to max ${residentialPossibleImprovement.maxPopulation}.`
+        : "";
+      const residentialPossibleImprovementEffect = residentialPossibleImprovement
+        ? `, possible improvement +${residentialPossibleImprovement.possibleImprovement}`
+        : "";
 
       elements.selectedBuildingTitle.textContent = name;
       elements.selectedBuildingSummary.textContent = isService
         ? `${buildingId} is a service placement covering ${placement.rows}x${placement.cols} with range ${placement.range}.`
         : pendingManualValidation
           ? `${buildingId} is a residential placement with population pending validation.`
-          : `${buildingId} is a residential placement contributing ${solution.populations?.[selected.index] ?? 0} population.`;
+          : `${buildingId} is a residential placement contributing ${residentialPopulation} population.${residentialPossibleImprovementSummary}`;
       elements.selectedBuildingId.textContent = buildingId;
       elements.selectedBuildingCategory.textContent = isService ? "Service" : "Residential";
       elements.selectedBuildingPosition.textContent = `Row ${placement.r}, Col ${placement.c}`;
@@ -316,7 +342,7 @@
           : `+${solution.servicePopulationIncreases?.[selected.index] ?? 0} population, range ${placement.range}, type bonus ${type?.bonus ?? 0}`
         : pendingManualValidation
           ? `Population pending validation, type range ${type?.min ?? 0}-${type?.max ?? 0}`
-          : `${solution.populations?.[selected.index] ?? 0} population, type range ${type?.min ?? 0}-${type?.max ?? 0}`;
+          : `${residentialPopulation} population, type range ${type?.min ?? 0}-${type?.max ?? 0}${residentialPossibleImprovementEffect}`;
       elements.selectedBuildingAvailability.textContent = `${availability.remaining} left of ${availability.totalAvailable} for this type`;
       elements.selectedBuildingFacts.hidden = false;
     }

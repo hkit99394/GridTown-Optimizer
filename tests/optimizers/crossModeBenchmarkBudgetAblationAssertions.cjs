@@ -334,6 +334,36 @@ async function testCrossModeBenchmarkBudgetAblationAssertions() {
       .bestAutoPopulationDeltaVsBaseline,
     5
   );
+  const serviceMasterPolicyAblations = await runCrossModeBenchmarkBudgetAblations([benchmarkCase], {
+    modes: ["auto", "greedy"],
+    budgetsSeconds: [3],
+    seeds: [5],
+    policyNames: ["baseline", "service-master-shortlist"],
+    solve: async (_grid, params, context) => {
+      if (context.mode === "auto") {
+        assert.equal(params.greedy?.serviceMasterDecomposition, undefined);
+      }
+      const serviceMasterGreedy =
+        context.mode === "greedy" && params.greedy?.serviceMasterDecomposition === true ? 7 : 0;
+      return buildMockSolution({
+        optimizer: params.optimizer,
+        totalPopulation: context.mode === "auto" ? 10 : 20 + serviceMasterGreedy
+      });
+    }
+  });
+  const serviceMasterPolicyResult = serviceMasterPolicyAblations.policies.find(
+    (policy) => policy.policyName === "service-master-shortlist"
+  );
+  assert.equal(serviceMasterPolicyAblations.baselinePolicyName, "baseline");
+  assert.equal(serviceMasterPolicyAblations.topPolicyName, "baseline");
+  assert.equal(serviceMasterPolicyResult.autoSafetySummary.comparisonCount, 1);
+  assert.equal(serviceMasterPolicyResult.autoSafetySummary.meanAutoPopulationDeltaVsBaseline, 0);
+  assert.equal(serviceMasterPolicyResult.autoSafetySummary.regressedAutoCount, 0);
+  assert.equal(
+    serviceMasterPolicyResult.suite.cases[0].results.find((entry) => entry.mode === "greedy").totalPopulation,
+    27
+  );
+  assert.equal(serviceMasterPolicyResult.deltaVsBaselineMeanBestPopulation, 7);
   const repeatabilityAblations = await runCrossModeBenchmarkBudgetAblations([benchmarkCase], {
     modes: ["auto"],
     budgetsSeconds: [1],

@@ -1,0 +1,15 @@
+=== Service-Master Evaluator Validity ===
+Generated: 2026-05-27T00:04:08.761Z
+Cases: 10
+Budgets: 5, 30s
+Seeds: 7, 19, 37
+Coverage: rows=120 valid=120 invalid=0 population-mismatches=0 max-abs-delta=0
+
+- baseline: rows=60 valid=60 invalid=0 population-mismatches=0 max-abs-delta=0 mean-wall=0.041s
+- service-master-shortlist: rows=60 valid=60 invalid=0 population-mismatches=0 max-abs-delta=0 mean-wall=0.065s
+
+- split=development: rows=60 valid=60 invalid=0 population-mismatches=0
+- split=holdout: rows=60 valid=60 invalid=0 population-mismatches=0
+
+- budget=5s rows=60 valid=60 invalid=0 population-mismatches=0
+- budget=30s rows=60 valid=60 invalid=0 population-mismatches=0

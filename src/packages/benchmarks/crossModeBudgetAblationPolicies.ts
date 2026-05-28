@@ -54,6 +54,11 @@ export const OPTIONAL_CROSS_MODE_BUDGET_ABLATION_POLICIES = Object.freeze([
     description: "Repeat the current Auto/LNS budget policy as a short-budget variance control."
   },
   {
+    name: "service-master-shortlist",
+    description: "Enable the opt-in Greedy service-master shortlist path for standalone Greedy scorecards only.",
+    greedy: { serviceMasterDecomposition: true }
+  },
+  {
     name: "service-pressure-cp-sat-reserve-5s-guarded",
     description:
       "Reserve a small Auto CP-SAT slice at 5s only for service-pressure cases with disabled greedy refinement.",

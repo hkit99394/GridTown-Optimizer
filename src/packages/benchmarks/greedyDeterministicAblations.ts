@@ -40,6 +40,7 @@ export type GreedyDeterministicAblationVariantName =
   | "no-service-neighborhood"
   | "no-service-refinement"
   | "no-exhaustive-service-search"
+  | "service-master-decomposition"
   | "no-service-master-decomposition"
   | "no-service-lookahead"
   | "explicit-roads"
@@ -159,6 +160,11 @@ export const DEFAULT_GREEDY_DETERMINISTIC_ABLATION_VARIANTS: readonly GreedyDete
       name: "no-exhaustive-service-search",
       description: "Disable exhaustive fixed-service-set checks.",
       greedy: { exhaustiveServiceSearch: false }
+    },
+    {
+      name: "service-master-decomposition",
+      description: "Enable the experimental service-layout master pass.",
+      greedy: { serviceMasterDecomposition: true }
     },
     {
       name: "no-service-master-decomposition",

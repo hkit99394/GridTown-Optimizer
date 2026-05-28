@@ -1,0 +1,186 @@
+{
+  "schemaVersion": 1,
+  "runId": "service-master-shortlist-greedy-product-ablation-2026-05-27",
+  "artifactType": "ablation-gate",
+  "generatedAt": "2026-05-26T23:21:38.059Z",
+  "commands": [
+    "node dist/greedyBenchmarkCli.js --deterministic-ablation --product-corpus --artifact-dir=artifacts/service-master-shortlist/2026-05-27/product-greedy-ablation --ablation-run-id=service-master-shortlist-greedy-product-ablation-2026-05-27 --ablation-decision=diagnostics-only-no-default-promotion '--ablation-summary=Greedy service-master shortlist product-corpus ablation over 10 cases and seeds 7,19,37: +10.5 mean population, 9/30 improved, 0/30 regressed, worst delta 0.' --ablation-variants=service-master-decomposition,no-service-master-decomposition --seeds=7,19,37 --json"
+  ],
+  "artifactPaths": [
+    "artifacts/service-master-shortlist/2026-05-27/product-greedy-ablation/greedy-deterministic-ablation.json",
+    "artifacts/service-master-shortlist/2026-05-27/product-greedy-ablation/greedy-deterministic-ablation.txt",
+    "artifacts/service-master-shortlist/2026-05-27/product-greedy-ablation/telemetry-manifest.json"
+  ],
+  "cases": {
+    "development": [
+      "manual-layout-replay-warm-start",
+      "road-semantics-service-pressure",
+      "seeded-service-anchor-pressure",
+      "typed-footprint-pressure",
+      "typed-housing-single"
+    ],
+    "holdout": [
+      "expansion-comparison-replay",
+      "multi-anchor-road-components",
+      "road-semantics-gate-choke",
+      "row0-corridor-repair-pressure",
+      "service-local-neighborhood"
+    ]
+  },
+  "caseFamilies": [
+    "anchor-service",
+    "corridor",
+    "expansion-comparison",
+    "footprint-pressure",
+    "gate",
+    "greedy-deterministic-ablation",
+    "manual-layout-replay",
+    "multi-anchor",
+    "product-workflow",
+    "service-pressure",
+    "small",
+    "solver-smoke",
+    "tiny",
+    "variant:baseline",
+    "variant:no-service-master-decomposition",
+    "variant:service-master-decomposition"
+  ],
+  "seeds": [
+    7,
+    19,
+    37
+  ],
+  "splitStatus": {
+    "splitField": "CrossModeBenchmarkCase.split",
+    "protectedHoldout": true,
+    "caseCount": 10,
+    "casesBySplit": {
+      "development": [
+        "manual-layout-replay-warm-start",
+        "road-semantics-service-pressure",
+        "seeded-service-anchor-pressure",
+        "typed-footprint-pressure",
+        "typed-housing-single"
+      ],
+      "holdout": [
+        "expansion-comparison-replay",
+        "multi-anchor-road-components",
+        "road-semantics-gate-choke",
+        "row0-corridor-repair-pressure",
+        "service-local-neighborhood"
+      ]
+    },
+    "leakage": "product-workflow-development-holdout-splits",
+    "notes": "Greedy deterministic ablation uses the product workflow corpus split metadata; it remains opt-in evidence and does not promote solver defaults."
+  },
+  "budget": {
+    "caseCount": 10,
+    "seedCount": 3,
+    "comparisonCount": 30,
+    "variantCount": 3,
+    "runCount": 90,
+    "gridCellCount": 942,
+    "profileEnabledRuns": 0
+  },
+  "model": null,
+  "decision": "diagnostics-only-no-default-promotion",
+  "summary": "Greedy service-master shortlist product-corpus ablation over 10 cases and seeds 7,19,37: +10.5 mean population, 9/30 improved, 0/30 regressed, worst delta 0.",
+  "summaryMetrics": {
+    "productCorpus": true,
+    "coverage": {
+      "caseCount": 10,
+      "seedCount": 3,
+      "comparisonCount": 30,
+      "variantCount": 3,
+      "runCount": 90,
+      "gridCellCount": 942,
+      "profileEnabledRuns": 0
+    },
+    "variants": [
+      {
+        "variantName": "baseline",
+        "description": "Current deterministic Greedy settings inherited from each benchmark case.",
+        "caseCount": 10,
+        "seedCount": 3,
+        "comparisonCount": 30,
+        "meanPopulation": 376.5,
+        "medianPopulation": 260,
+        "worstDecilePopulation": 100,
+        "bestPopulation": 745,
+        "meanPopulationDeltaVsBaseline": 0,
+        "medianPopulationDeltaVsBaseline": 0,
+        "worstDecilePopulationDeltaVsBaseline": 0,
+        "bestPopulationDeltaVsBaseline": 0,
+        "worstPopulationDeltaVsBaseline": 0,
+        "meanWallClockSeconds": 0.03543331796666666,
+        "meanWallClockDeltaVsBaselineSeconds": 0,
+        "improvedCaseCount": 0,
+        "regressedCaseCount": 0,
+        "unchangedCaseCount": 30,
+        "winRate": 0,
+        "regressionRate": 0,
+        "unchangedRate": 1,
+        "bestPopulationDeltaCaseName": "typed-housing-single",
+        "bestPopulationDeltaSeed": 7,
+        "worstPopulationDeltaCaseName": "typed-housing-single",
+        "worstPopulationDeltaSeed": 7
+      },
+      {
+        "variantName": "service-master-decomposition",
+        "description": "Enable the experimental service-layout master pass.",
+        "caseCount": 10,
+        "seedCount": 3,
+        "comparisonCount": 30,
+        "meanPopulation": 387,
+        "medianPopulation": 275,
+        "worstDecilePopulation": 100,
+        "bestPopulation": 745,
+        "meanPopulationDeltaVsBaseline": 10.5,
+        "medianPopulationDeltaVsBaseline": 0,
+        "worstDecilePopulationDeltaVsBaseline": 0,
+        "bestPopulationDeltaVsBaseline": 70,
+        "worstPopulationDeltaVsBaseline": 0,
+        "meanWallClockSeconds": 0.04829846940000001,
+        "meanWallClockDeltaVsBaselineSeconds": 0.012865151433333359,
+        "improvedCaseCount": 9,
+        "regressedCaseCount": 0,
+        "unchangedCaseCount": 21,
+        "winRate": 0.3,
+        "regressionRate": 0,
+        "unchangedRate": 0.7,
+        "bestPopulationDeltaCaseName": "road-semantics-gate-choke",
+        "bestPopulationDeltaSeed": 7,
+        "worstPopulationDeltaCaseName": "typed-housing-single",
+        "worstPopulationDeltaSeed": 7
+      },
+      {
+        "variantName": "no-service-master-decomposition",
+        "description": "Disable the experimental service-layout master pass.",
+        "caseCount": 10,
+        "seedCount": 3,
+        "comparisonCount": 30,
+        "meanPopulation": 376.5,
+        "medianPopulation": 260,
+        "worstDecilePopulation": 100,
+        "bestPopulation": 745,
+        "meanPopulationDeltaVsBaseline": 0,
+        "medianPopulationDeltaVsBaseline": 0,
+        "worstDecilePopulationDeltaVsBaseline": 0,
+        "bestPopulationDeltaVsBaseline": 0,
+        "worstPopulationDeltaVsBaseline": 0,
+        "meanWallClockSeconds": 0.033303883333333374,
+        "meanWallClockDeltaVsBaselineSeconds": -0.002129434633333281,
+        "improvedCaseCount": 0,
+        "regressedCaseCount": 0,
+        "unchangedCaseCount": 30,
+        "winRate": 0,
+        "regressionRate": 0,
+        "unchangedRate": 1,
+        "bestPopulationDeltaCaseName": "typed-housing-single",
+        "bestPopulationDeltaSeed": 7,
+        "worstPopulationDeltaCaseName": "typed-housing-single",
+        "worstPopulationDeltaSeed": 7
+      }
+    ]
+  }
+}

@@ -1,0 +1,162 @@
+{
+  "schemaVersion": 1,
+  "runId": "service-master-shortlist-evaluator-validity-5s-30s-2026-05-27",
+  "artifactType": "ablation-gate",
+  "generatedAt": "2026-05-27T00:04:08.761Z",
+  "commands": [
+    "node scripts/generate-service-master-evaluator-validity.mjs --artifact-dir=artifacts/service-master-shortlist/2026-05-27/service-master-evaluator-validity-5s-30s --budgets=5,30 --seeds=7,19,37 --run-id=service-master-shortlist-evaluator-validity-5s-30s-2026-05-27 --decision=diagnostics-only-no-default-promotion \"--summary=Evaluator validity rerun for Greedy baseline and opt-in service-master shortlist over product corpus budgets 5s/30s and seeds 7,19,37; every final solution must validate against the core evaluator before promotion discussion.\""
+  ],
+  "artifactPaths": [
+    "artifacts/service-master-shortlist/2026-05-27/service-master-evaluator-validity-5s-30s/service-master-evaluator-validity.json",
+    "artifacts/service-master-shortlist/2026-05-27/service-master-evaluator-validity-5s-30s/service-master-evaluator-validity.txt",
+    "artifacts/service-master-shortlist/2026-05-27/service-master-evaluator-validity-5s-30s/telemetry-manifest.json"
+  ],
+  "cases": {
+    "development": [
+      "manual-layout-replay-warm-start",
+      "road-semantics-service-pressure",
+      "seeded-service-anchor-pressure",
+      "typed-footprint-pressure",
+      "typed-housing-single"
+    ],
+    "holdout": [
+      "expansion-comparison-replay",
+      "multi-anchor-road-components",
+      "road-semantics-gate-choke",
+      "row0-corridor-repair-pressure",
+      "service-local-neighborhood"
+    ]
+  },
+  "caseFamilies": [
+    "service-master-evaluator-validity",
+    "product-workflow"
+  ],
+  "seeds": [
+    7,
+    19,
+    37
+  ],
+  "splitStatus": {
+    "splitField": "CrossModeBenchmarkCase.split",
+    "protectedHoldout": true,
+    "caseCount": 10,
+    "casesBySplit": {
+      "development": [
+        "manual-layout-replay-warm-start",
+        "road-semantics-service-pressure",
+        "seeded-service-anchor-pressure",
+        "typed-footprint-pressure",
+        "typed-housing-single"
+      ],
+      "holdout": [
+        "expansion-comparison-replay",
+        "multi-anchor-road-components",
+        "road-semantics-gate-choke",
+        "row0-corridor-repair-pressure",
+        "service-local-neighborhood"
+      ]
+    },
+    "leakage": "product-workflow-development-holdout-splits",
+    "notes": "Evaluator validity reruns Greedy baseline and opt-in service-master rows over product workflow development/holdout cases; it does not promote solver defaults."
+  },
+  "budget": {
+    "wallClockBudgetsSeconds": [
+      5,
+      30
+    ],
+    "caseCount": 10,
+    "seedCount": 3,
+    "policyCount": 2,
+    "validationRowCount": 120,
+    "validRowCount": 120,
+    "invalidRowCount": 0,
+    "observedWallClockSeconds": 6.405994875
+  },
+  "model": null,
+  "decision": "diagnostics-only-no-default-promotion",
+  "summary": "Evaluator validity rerun for Greedy baseline and opt-in service-master shortlist over product corpus budgets 5s/30s and seeds 7,19,37; every final solution must validate against the core evaluator before promotion discussion.",
+  "summaryMetrics": {
+    "summary": {
+      "rowCount": 120,
+      "validCount": 120,
+      "invalidCount": 0,
+      "populationMismatchCount": 0,
+      "maxAbsPopulationDeltaFromEvaluator": 0,
+      "totalPopulation": 45810,
+      "recomputedTotalPopulation": 45810,
+      "meanWallClockSeconds": 0.05307211845000001
+    },
+    "policySummaries": [
+      {
+        "policyName": "baseline",
+        "rowCount": 60,
+        "validCount": 60,
+        "invalidCount": 0,
+        "populationMismatchCount": 0,
+        "maxAbsPopulationDeltaFromEvaluator": 0,
+        "totalPopulation": 22590,
+        "recomputedTotalPopulation": 22590,
+        "meanWallClockSeconds": 0.040961708349999994
+      },
+      {
+        "policyName": "service-master-shortlist",
+        "rowCount": 60,
+        "validCount": 60,
+        "invalidCount": 0,
+        "populationMismatchCount": 0,
+        "maxAbsPopulationDeltaFromEvaluator": 0,
+        "totalPopulation": 23220,
+        "recomputedTotalPopulation": 23220,
+        "meanWallClockSeconds": 0.06518252855
+      }
+    ],
+    "splitSummaries": [
+      {
+        "split": "development",
+        "rowCount": 60,
+        "validCount": 60,
+        "invalidCount": 0,
+        "populationMismatchCount": 0,
+        "maxAbsPopulationDeltaFromEvaluator": 0,
+        "totalPopulation": 21540,
+        "recomputedTotalPopulation": 21540,
+        "meanWallClockSeconds": 0.056668950766666656
+      },
+      {
+        "split": "holdout",
+        "rowCount": 60,
+        "validCount": 60,
+        "invalidCount": 0,
+        "populationMismatchCount": 0,
+        "maxAbsPopulationDeltaFromEvaluator": 0,
+        "totalPopulation": 24270,
+        "recomputedTotalPopulation": 24270,
+        "meanWallClockSeconds": 0.04947528613333331
+      }
+    ],
+    "budgetSummaries": [
+      {
+        "budgetSeconds": 5,
+        "rowCount": 60,
+        "validCount": 60,
+        "invalidCount": 0,
+        "populationMismatchCount": 0,
+        "maxAbsPopulationDeltaFromEvaluator": 0,
+        "totalPopulation": 22905,
+        "recomputedTotalPopulation": 22905,
+        "meanWallClockSeconds": 0.053657706999999936
+      },
+      {
+        "budgetSeconds": 30,
+        "rowCount": 60,
+        "validCount": 60,
+        "invalidCount": 0,
+        "populationMismatchCount": 0,
+        "maxAbsPopulationDeltaFromEvaluator": 0,
+        "totalPopulation": 22905,
+        "recomputedTotalPopulation": 22905,
+        "meanWallClockSeconds": 0.05248652990000003
+      }
+    ]
+  }
+}

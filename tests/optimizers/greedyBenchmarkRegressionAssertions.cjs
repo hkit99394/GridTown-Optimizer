@@ -12,6 +12,7 @@ const {
   materializeDeferredRoadNetwork,
   rectangleBorderCells
 } = require("./greedyBenchmarkHarnessDeps.cjs");
+const fs = require("node:fs");
 
 function testGreedyBenchmarkSuite() {
   const result = runGreedyBenchmarkSuite(DEFAULT_GREEDY_BENCHMARK_CORPUS, {
@@ -158,6 +159,60 @@ function testGreedyBenchmarkCliDeterministicAblationFlags() {
   assert.deepEqual(gateReport.suites[0].seeds, [7, 19, 37]);
   assert.equal(gateReport.suites[0].suite, "greedy-deterministic");
   assert.equal(Object.hasOwn(gateReport, "generatedAt"), false);
+
+  const productCorpusResult = runGreedyBenchmarkCliJson([
+    "--deterministic-ablation",
+    "--product-corpus",
+    "--ablation-variants=service-master-decomposition",
+    "--seeds=7",
+    "typed-housing-single"
+  ]);
+  assert.deepEqual(productCorpusResult.selectedCaseNames, ["typed-housing-single"]);
+  assert.deepEqual(productCorpusResult.variants, ["baseline", "service-master-decomposition"]);
+  assert.equal(productCorpusResult.coverage.runCount, 2);
+  assert.equal(productCorpusResult.cases[0].variants[1].greedyOptions.serviceMasterDecomposition, true);
+
+  const repoRoot = path.join(__dirname, "../..");
+  const artifactDir = `artifacts/tmp-greedy-deterministic-ablation-${process.pid}`;
+  const absoluteArtifactDir = path.join(repoRoot, artifactDir);
+  fs.rmSync(absoluteArtifactDir, { recursive: true, force: true });
+  try {
+    const artifactResult = runGreedyBenchmarkCliJson([
+      "--deterministic-ablation",
+      "--product-corpus",
+      `--artifact-dir=${artifactDir}`,
+      "--ablation-variants=service-master-decomposition",
+      "--seeds=7",
+      "typed-housing-single"
+    ]);
+    assert.equal(artifactResult.artifactDir, artifactDir);
+    assert.deepEqual(Object.keys(artifactResult.artifactPaths).sort(), [
+      "ablationJson",
+      "ablationText",
+      "registryEntryDraftJson",
+      "telemetryManifestJson"
+    ]);
+    const ablationArtifact = JSON.parse(
+      fs.readFileSync(path.join(repoRoot, artifactResult.artifactPaths.ablationJson), "utf8")
+    );
+    const telemetryArtifact = JSON.parse(
+      fs.readFileSync(path.join(repoRoot, artifactResult.artifactPaths.telemetryManifestJson), "utf8")
+    );
+    const registryDraft = JSON.parse(
+      fs.readFileSync(path.join(repoRoot, artifactResult.artifactPaths.registryEntryDraftJson), "utf8")
+    );
+    assert.deepEqual(ablationArtifact.selectedCaseNames, ["typed-housing-single"]);
+    assert.equal(telemetryArtifact.source, "greedy-deterministic-ablation");
+    assert.equal(telemetryArtifact.suite.productCorpus, true);
+    assert.equal(telemetryArtifact.suite.runCount, 2);
+    assert.match(telemetryArtifact.command, /--product-corpus/);
+    assert.equal(registryDraft.artifactType, "ablation-gate");
+    assert.equal(registryDraft.splitStatus.protectedHoldout, true);
+    assert.deepEqual(registryDraft.cases.development, ["typed-housing-single"]);
+    assert.equal(registryDraft.summaryMetrics.variants[1].variantName, "service-master-decomposition");
+  } finally {
+    fs.rmSync(absoluteArtifactDir, { recursive: true, force: true });
+  }
 }
 
 function testLnsBenchmarkCliNeighborhoodAblationSeedListParsing() {

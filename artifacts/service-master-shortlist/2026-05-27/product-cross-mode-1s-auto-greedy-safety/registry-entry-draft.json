@@ -1,0 +1,317 @@
+{
+  "schemaVersion": 1,
+  "runId": "service-master-shortlist-cross-mode-1s-auto-greedy-safety-2026-05-27",
+  "artifactType": "ablation-gate",
+  "generatedAt": "2026-05-26T23:36:38.559Z",
+  "commands": [
+    "node dist/crossModeBenchmarkCli.js --product-corpus --budget-ablation --ablation-policies=baseline,service-master-shortlist --modes=auto,greedy --budgets=1 --seeds=7,19,37 --artifact-dir=artifacts/service-master-shortlist/2026-05-27/product-cross-mode-1s-auto-greedy-safety --ablation-run-id=service-master-shortlist-cross-mode-1s-auto-greedy-safety-2026-05-27 --ablation-decision=diagnostics-only-no-default-promotion '--ablation-summary=Product-corpus 1s Auto/Greedy safety slice comparing baseline with opt-in service-master shortlist; Auto/default behavior must remain unchanged and service-master remains diagnostics-only.' --json"
+  ],
+  "artifactPaths": [
+    "artifacts/service-master-shortlist/2026-05-27/product-cross-mode-1s-auto-greedy-safety/budget-ablation.json",
+    "artifacts/service-master-shortlist/2026-05-27/product-cross-mode-1s-auto-greedy-safety/budget-ablation.txt",
+    "artifacts/service-master-shortlist/2026-05-27/product-cross-mode-1s-auto-greedy-safety/decision-trace.jsonl",
+    "artifacts/service-master-shortlist/2026-05-27/product-cross-mode-1s-auto-greedy-safety/telemetry-manifest.json"
+  ],
+  "cases": {
+    "development": [
+      "manual-layout-replay-warm-start",
+      "road-semantics-service-pressure",
+      "seeded-service-anchor-pressure",
+      "typed-footprint-pressure",
+      "typed-housing-single"
+    ],
+    "holdout": [
+      "expansion-comparison-replay",
+      "multi-anchor-road-components",
+      "road-semantics-gate-choke",
+      "row0-corridor-repair-pressure",
+      "service-local-neighborhood"
+    ]
+  },
+  "caseFamilies": [
+    "anchor-service",
+    "corridor",
+    "cross-mode-budget-ablation",
+    "expansion-comparison",
+    "footprint-pressure",
+    "gate",
+    "manual-layout-replay",
+    "multi-anchor",
+    "service-pressure",
+    "small",
+    "solver-smoke",
+    "tiny"
+  ],
+  "seeds": [
+    7,
+    19,
+    37
+  ],
+  "splitStatus": {
+    "splitField": "CrossModeBenchmarkCase.split",
+    "policyCount": 2,
+    "caseCount": 10,
+    "casesBySplit": {
+      "development": [
+        "manual-layout-replay-warm-start",
+        "road-semantics-service-pressure",
+        "seeded-service-anchor-pressure",
+        "typed-footprint-pressure",
+        "typed-housing-single"
+      ],
+      "holdout": [
+        "expansion-comparison-replay",
+        "multi-anchor-road-components",
+        "road-semantics-gate-choke",
+        "row0-corridor-repair-pressure",
+        "service-local-neighborhood"
+      ]
+    },
+    "leakage": "not-promotion-evidence",
+    "notes": "Budget ablation artifact is diagnostic evidence for Auto policy triage; it does not promote solver defaults."
+  },
+  "budget": {
+    "wallClockBudgetsSeconds": [
+      1
+    ],
+    "policyCount": 2,
+    "caseCount": 10,
+    "modeCount": 2,
+    "totalRuns": 120,
+    "budgetedModeSeconds": 120
+  },
+  "model": null,
+  "decision": "diagnostics-only-no-default-promotion",
+  "summary": "Product-corpus 1s Auto/Greedy safety slice comparing baseline with opt-in service-master shortlist; Auto/default behavior must remain unchanged and service-master remains diagnostics-only.",
+  "summaryMetrics": {
+    "baselinePolicyName": "baseline",
+    "topPolicyName": "baseline",
+    "topPolicyRankingBasis": "mean-auto-population",
+    "topPolicyTiedPolicyNames": [
+      "baseline",
+      "service-master-shortlist"
+    ],
+    "policies": [
+      {
+        "policyName": "baseline",
+        "description": "Current Auto/LNS budget policy.",
+        "meanBestPopulation": 409.8333333333333,
+        "meanAutoPopulation": 409.8333333333333,
+        "meanLnsPopulation": null,
+        "meanAutoDeltaToBest": 0,
+        "meanAutoLnsStageElapsedSeconds": 0.8895333333333333,
+        "meanAutoCpSatStageElapsedSeconds": 0.48564705882352943,
+        "deltaVsBaselineMeanBestPopulation": 0,
+        "deltaVsBaselineMeanAutoPopulation": 0,
+        "deltaVsBaselineMeanLnsPopulation": null,
+        "policyApplicationSummary": {
+          "scorecardCount": 30,
+          "appliedScorecardCount": 30,
+          "inactiveScorecardCount": 0,
+          "autoComparisonCount": 30,
+          "appliedAutoComparisonCount": 30,
+          "inactiveAutoComparisonCount": 0,
+          "nonzeroAutoDeltaCount": 0,
+          "appliedNonzeroAutoDeltaCount": 0,
+          "inactiveNonzeroAutoDeltaCount": 0,
+          "regressedAutoCount": 0,
+          "appliedRegressedAutoCount": 0,
+          "inactiveRegressedAutoCount": 0,
+          "meanAutoPopulationDeltaVsBaselineWhenApplied": 0,
+          "meanAutoPopulationDeltaVsBaselineWhenInactive": null
+        },
+        "autoSafetySummary": {
+          "comparisonCount": 30,
+          "improvedAutoCount": 0,
+          "regressedAutoCount": 0,
+          "unchangedAutoCount": 30,
+          "regressionRate": 0,
+          "meanAutoPopulationDeltaVsBaseline": 0,
+          "medianAutoPopulationDeltaVsBaseline": 0,
+          "worstDecileAutoPopulationDeltaVsBaseline": 0,
+          "worstAutoPopulationDeltaVsBaseline": 0,
+          "bestAutoPopulationDeltaVsBaseline": 0,
+          "worstAutoPopulationDeltaCaseName": "typed-housing-single",
+          "worstAutoPopulationDeltaSeed": 7,
+          "worstAutoPopulationDeltaBudgetSeconds": 1,
+          "bestAutoPopulationDeltaCaseName": "typed-housing-single",
+          "bestAutoPopulationDeltaSeed": 7,
+          "bestAutoPopulationDeltaBudgetSeconds": 1,
+          "meanAutoWallClockSeconds": 1.3349842666333334,
+          "baselineMeanAutoWallClockSeconds": 1.3349842666333334,
+          "meanAutoWallClockDeltaVsBaselineSeconds": 0,
+          "meanAutoPopulationPerCpuBudgetSecond": 409.8333333333333,
+          "baselineMeanAutoPopulationPerCpuBudgetSecond": 409.8333333333333,
+          "autoCpuBudgetEfficiencyRatioVsBaseline": 1
+        },
+        "autoReplayDiagnostics": [],
+        "autoVarianceSummary": null,
+        "recommendationCounts": {
+          "keep-auto": 30,
+          "add-auto-baseline": 0,
+          "shift-auto-budget-to-greedy": 0,
+          "shift-auto-budget-to-lns": 0,
+          "shift-auto-budget-to-cp-sat": 0,
+          "keep-portfolio-experimental": 0,
+          "investigate-auto-loss": 0
+        },
+        "budgetSummaries": [
+          {
+            "budgetSeconds": 1,
+            "caseCount": 30,
+            "meanBestPopulation": 409.8333333333333,
+            "meanAutoPopulation": 409.8333333333333,
+            "meanLnsPopulation": null,
+            "meanAutoDeltaToBest": 0,
+            "deltaVsBaselineMeanBestPopulation": 0,
+            "deltaVsBaselineMeanAutoPopulation": 0,
+            "deltaVsBaselineMeanLnsPopulation": null,
+            "autoSafetySummary": {
+              "comparisonCount": 30,
+              "improvedAutoCount": 0,
+              "regressedAutoCount": 0,
+              "unchangedAutoCount": 30,
+              "regressionRate": 0,
+              "meanAutoPopulationDeltaVsBaseline": 0,
+              "medianAutoPopulationDeltaVsBaseline": 0,
+              "worstDecileAutoPopulationDeltaVsBaseline": 0,
+              "worstAutoPopulationDeltaVsBaseline": 0,
+              "bestAutoPopulationDeltaVsBaseline": 0,
+              "worstAutoPopulationDeltaCaseName": "typed-housing-single",
+              "worstAutoPopulationDeltaSeed": 7,
+              "worstAutoPopulationDeltaBudgetSeconds": 1,
+              "bestAutoPopulationDeltaCaseName": "typed-housing-single",
+              "bestAutoPopulationDeltaSeed": 7,
+              "bestAutoPopulationDeltaBudgetSeconds": 1,
+              "meanAutoWallClockSeconds": 1.3349842666333334,
+              "baselineMeanAutoWallClockSeconds": 1.3349842666333334,
+              "meanAutoWallClockDeltaVsBaselineSeconds": 0,
+              "meanAutoPopulationPerCpuBudgetSecond": 409.8333333333333,
+              "baselineMeanAutoPopulationPerCpuBudgetSecond": 409.8333333333333,
+              "autoCpuBudgetEfficiencyRatioVsBaseline": 1
+            },
+            "recommendationCounts": {
+              "keep-auto": 30,
+              "add-auto-baseline": 0,
+              "shift-auto-budget-to-greedy": 0,
+              "shift-auto-budget-to-lns": 0,
+              "shift-auto-budget-to-cp-sat": 0,
+              "keep-portfolio-experimental": 0,
+              "investigate-auto-loss": 0
+            }
+          }
+        ]
+      },
+      {
+        "policyName": "service-master-shortlist",
+        "description": "Enable the opt-in Greedy service-master shortlist path for standalone Greedy scorecards only.",
+        "meanBestPopulation": 409.8333333333333,
+        "meanAutoPopulation": 409.8333333333333,
+        "meanLnsPopulation": null,
+        "meanAutoDeltaToBest": 0,
+        "meanAutoLnsStageElapsedSeconds": 0.8911666666666666,
+        "meanAutoCpSatStageElapsedSeconds": 0.48972222222222217,
+        "deltaVsBaselineMeanBestPopulation": 0,
+        "deltaVsBaselineMeanAutoPopulation": 0,
+        "deltaVsBaselineMeanLnsPopulation": null,
+        "policyApplicationSummary": {
+          "scorecardCount": 30,
+          "appliedScorecardCount": 30,
+          "inactiveScorecardCount": 0,
+          "autoComparisonCount": 30,
+          "appliedAutoComparisonCount": 30,
+          "inactiveAutoComparisonCount": 0,
+          "nonzeroAutoDeltaCount": 0,
+          "appliedNonzeroAutoDeltaCount": 0,
+          "inactiveNonzeroAutoDeltaCount": 0,
+          "regressedAutoCount": 0,
+          "appliedRegressedAutoCount": 0,
+          "inactiveRegressedAutoCount": 0,
+          "meanAutoPopulationDeltaVsBaselineWhenApplied": 0,
+          "meanAutoPopulationDeltaVsBaselineWhenInactive": null
+        },
+        "autoSafetySummary": {
+          "comparisonCount": 30,
+          "improvedAutoCount": 0,
+          "regressedAutoCount": 0,
+          "unchangedAutoCount": 30,
+          "regressionRate": 0,
+          "meanAutoPopulationDeltaVsBaseline": 0,
+          "medianAutoPopulationDeltaVsBaseline": 0,
+          "worstDecileAutoPopulationDeltaVsBaseline": 0,
+          "worstAutoPopulationDeltaVsBaseline": 0,
+          "bestAutoPopulationDeltaVsBaseline": 0,
+          "worstAutoPopulationDeltaCaseName": "typed-housing-single",
+          "worstAutoPopulationDeltaSeed": 7,
+          "worstAutoPopulationDeltaBudgetSeconds": 1,
+          "bestAutoPopulationDeltaCaseName": "typed-housing-single",
+          "bestAutoPopulationDeltaSeed": 7,
+          "bestAutoPopulationDeltaBudgetSeconds": 1,
+          "meanAutoWallClockSeconds": 1.3586558861666662,
+          "baselineMeanAutoWallClockSeconds": 1.3349842666333334,
+          "meanAutoWallClockDeltaVsBaselineSeconds": 0.023671619533333115,
+          "meanAutoPopulationPerCpuBudgetSecond": 409.8333333333333,
+          "baselineMeanAutoPopulationPerCpuBudgetSecond": 409.8333333333333,
+          "autoCpuBudgetEfficiencyRatioVsBaseline": 1
+        },
+        "autoReplayDiagnostics": [],
+        "autoVarianceSummary": null,
+        "recommendationCounts": {
+          "keep-auto": 30,
+          "add-auto-baseline": 0,
+          "shift-auto-budget-to-greedy": 0,
+          "shift-auto-budget-to-lns": 0,
+          "shift-auto-budget-to-cp-sat": 0,
+          "keep-portfolio-experimental": 0,
+          "investigate-auto-loss": 0
+        },
+        "budgetSummaries": [
+          {
+            "budgetSeconds": 1,
+            "caseCount": 30,
+            "meanBestPopulation": 409.8333333333333,
+            "meanAutoPopulation": 409.8333333333333,
+            "meanLnsPopulation": null,
+            "meanAutoDeltaToBest": 0,
+            "deltaVsBaselineMeanBestPopulation": 0,
+            "deltaVsBaselineMeanAutoPopulation": 0,
+            "deltaVsBaselineMeanLnsPopulation": null,
+            "autoSafetySummary": {
+              "comparisonCount": 30,
+              "improvedAutoCount": 0,
+              "regressedAutoCount": 0,
+              "unchangedAutoCount": 30,
+              "regressionRate": 0,
+              "meanAutoPopulationDeltaVsBaseline": 0,
+              "medianAutoPopulationDeltaVsBaseline": 0,
+              "worstDecileAutoPopulationDeltaVsBaseline": 0,
+              "worstAutoPopulationDeltaVsBaseline": 0,
+              "bestAutoPopulationDeltaVsBaseline": 0,
+              "worstAutoPopulationDeltaCaseName": "typed-housing-single",
+              "worstAutoPopulationDeltaSeed": 7,
+              "worstAutoPopulationDeltaBudgetSeconds": 1,
+              "bestAutoPopulationDeltaCaseName": "typed-housing-single",
+              "bestAutoPopulationDeltaSeed": 7,
+              "bestAutoPopulationDeltaBudgetSeconds": 1,
+              "meanAutoWallClockSeconds": 1.3586558861666662,
+              "baselineMeanAutoWallClockSeconds": 1.3349842666333334,
+              "meanAutoWallClockDeltaVsBaselineSeconds": 0.023671619533333115,
+              "meanAutoPopulationPerCpuBudgetSecond": 409.8333333333333,
+              "baselineMeanAutoPopulationPerCpuBudgetSecond": 409.8333333333333,
+              "autoCpuBudgetEfficiencyRatioVsBaseline": 1
+            },
+            "recommendationCounts": {
+              "keep-auto": 30,
+              "add-auto-baseline": 0,
+              "shift-auto-budget-to-greedy": 0,
+              "shift-auto-budget-to-lns": 0,
+              "shift-auto-budget-to-cp-sat": 0,
+              "keep-portfolio-experimental": 0,
+              "investigate-auto-loss": 0
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

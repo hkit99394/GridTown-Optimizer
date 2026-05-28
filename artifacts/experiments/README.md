@@ -82,3 +82,9 @@ The entry JSON should include the artifact metadata itself:
 ```
 
 `append` fills `indexedAt`, `indexedGitCommit`, `branch`, `artifactGitCommit`, and hardware metadata from the current checkout and runtime unless the entry or flags supply them explicitly. New appends are strict by default: they must include command, split, budget, hardware, model, and decision metadata, plus case coverage and seeds. Existing seeded entries that predate full hardware capture pass the default check without noisy historical warnings; use `--historical-warnings` to audit accepted historical debt, and use `--strict` when deciding whether an artifact is promotion-grade.
+
+## Retention
+
+Checked-in artifacts are evidence, not scratch space. Keep generated bundles in git only when they support a registry entry, roadmap decision, or reproducible regression fixture. Use `artifacts/tmp-*`, nested `tmp-*`, `artifacts/local-*`, nested `local-*`, or `artifacts/solve-progress/` for local probes and status traces; those paths are ignored and should stay untracked.
+
+The test suite enforces a repository artifact footprint guard so future evidence does not grow without an explicit review: tracked artifact files must stay below `15 MiB` each, tracked artifact count must stay below `1700`, and total tracked artifact bytes must stay below `800 MiB`. If a legitimate evidence bundle needs more room, raise the limit in `tests/artifact-repository-hygiene.test.cjs` in the same change and explain why.

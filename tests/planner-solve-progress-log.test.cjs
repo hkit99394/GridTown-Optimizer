@@ -176,6 +176,135 @@ function testPlannerSolveProgressLogPrefersBackendProgressEntry() {
   assert.equal(log[0].autoStage.stageIndex, 2);
 }
 
+function testPlannerSolveProgressLogCompactsUnchangedSamples() {
+  const runtimeModule = loadPlannerSolveRuntimeModule();
+  const firstLog = runtimeModule.appendSolveProgressLog(
+    [],
+    {
+      optimizer: "greedy",
+      solution: {
+        optimizer: "greedy",
+        totalPopulation: 100
+      },
+      stats: {
+        optimizer: "greedy",
+        totalPopulation: 100
+      }
+    },
+    {
+      elapsedMs: 60000,
+      capturedAt: "2026-04-14T18:00:00.000Z",
+      source: "live-snapshot"
+    }
+  );
+  const compactedLog = runtimeModule.appendSolveProgressLog(
+    firstLog,
+    {
+      optimizer: "greedy",
+      solution: {
+        optimizer: "greedy",
+        totalPopulation: 100
+      },
+      stats: {
+        optimizer: "greedy",
+        totalPopulation: 100
+      }
+    },
+    {
+      elapsedMs: 70000,
+      capturedAt: "2026-04-14T18:00:10.000Z",
+      source: "live-snapshot"
+    }
+  );
+
+  assert.equal(compactedLog.length, 1);
+  assert.equal(compactedLog[0].capturedAt, "2026-04-14T18:00:00.000Z");
+  assert.equal(compactedLog[0].elapsedMs, 60000);
+  assert.equal(compactedLog[0].lastCapturedAt, "2026-04-14T18:00:10.000Z");
+  assert.equal(compactedLog[0].lastElapsedMs, 70000);
+  assert.equal(compactedLog[0].progressSummary.elapsedTimeSeconds, 70);
+
+  const changedLog = runtimeModule.appendSolveProgressLog(
+    compactedLog,
+    {
+      optimizer: "greedy",
+      solution: {
+        optimizer: "greedy",
+        totalPopulation: 120
+      },
+      stats: {
+        optimizer: "greedy",
+        totalPopulation: 120
+      }
+    },
+    {
+      elapsedMs: 80000,
+      capturedAt: "2026-04-14T18:00:20.000Z",
+      source: "live-snapshot"
+    }
+  );
+
+  assert.equal(changedLog.length, 2);
+  assert.equal(changedLog[1].totalPopulation, 120);
+  assert.equal(changedLog[1].lastElapsedMs, undefined);
+}
+
+function testFilesystemSolveLogCompactsUnchangedLiveSamples() {
+  const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "solve-progress-log-compact-"));
+  const writer = new SolveProgressLogWriter({
+    rootDirectory: tempRoot,
+    requestId: "compact-test",
+    optimizer: "greedy",
+    grid: [[1]],
+    params: { optimizer: "greedy" },
+    createdAtMs: 0
+  });
+  const buildSolution = (totalPopulation) => ({
+    optimizer: "greedy",
+    stoppedByUser: false,
+    roads: new Set(),
+    services: [],
+    serviceTypeIndices: [],
+    servicePopulationIncreases: [],
+    residentials: [],
+    residentialTypeIndices: [],
+    populations: [],
+    totalPopulation
+  });
+
+  writer.appendSolutionSample(buildSolution(100), {
+    elapsedMs: 60000,
+    capturedAt: "2026-04-14T18:00:00.000Z",
+    source: "live-snapshot"
+  });
+  writer.appendSolutionSample(buildSolution(100), {
+    elapsedMs: 70000,
+    capturedAt: "2026-04-14T18:00:10.000Z",
+    source: "live-snapshot"
+  });
+
+  let payload = JSON.parse(fs.readFileSync(writer.filePath, "utf8"));
+  assert.equal(payload.entries.length, 1);
+  assert.equal(payload.entries[0].totalPopulation, 100);
+  assert.equal(payload.entries[0].capturedAt, "2026-04-14T18:00:00.000Z");
+  assert.equal(payload.entries[0].elapsedMs, 60000);
+  assert.equal(payload.entries[0].lastCapturedAt, "2026-04-14T18:00:10.000Z");
+  assert.equal(payload.entries[0].lastElapsedMs, 70000);
+  assert.equal(payload.entries[0].progressSummary.elapsedTimeSeconds, 70);
+  assert.equal(payload.updatedAt, "2026-04-14T18:00:10.000Z");
+
+  writer.appendSolutionSample(buildSolution(120), {
+    elapsedMs: 80000,
+    capturedAt: "2026-04-14T18:00:20.000Z",
+    source: "live-snapshot"
+  });
+
+  payload = JSON.parse(fs.readFileSync(writer.filePath, "utf8"));
+  assert.equal(payload.entries.length, 2);
+  assert.equal(payload.entries[1].totalPopulation, 120);
+  assert.equal(payload.entries[1].lastElapsedMs, undefined);
+}
+
 function testFilesystemSolveLogTracksSolverClockAcrossHeartbeats() {
   const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "solve-progress-log-"));
   const writer = new SolveProgressLogWriter({
@@ -242,7 +371,11 @@ function testFilesystemSolveLogTracksSolverClockAcrossHeartbeats() {
   });
 
   const payload = JSON.parse(fs.readFileSync(writer.filePath, "utf8"));
-  assert.equal(payload.entries.length, 2);
+  assert.equal(payload.entries.length, 1);
+  assert.equal(payload.entries[0].capturedAt, "2026-04-14T19:00:00.000Z");
+  assert.equal(payload.entries[0].elapsedMs, 100025);
+  assert.equal(payload.entries[0].lastCapturedAt, "2026-04-14T19:01:00.000Z");
+  assert.equal(payload.entries[0].lastElapsedMs, 160025);
   assert.deepEqual(
     payload.entries.map((entry) => ({
       solveWallTimeSeconds: entry.solveWallTimeSeconds,
@@ -250,11 +383,6 @@ function testFilesystemSolveLogTracksSolverClockAcrossHeartbeats() {
       secondsSinceLastImprovement: entry.secondsSinceLastImprovement
     })),
     [
-      {
-        solveWallTimeSeconds: 49.774,
-        lastImprovementAtSeconds: 49.774,
-        secondsSinceLastImprovement: 0
-      },
       {
         solveWallTimeSeconds: 109.774,
         lastImprovementAtSeconds: 49.774,
@@ -299,11 +427,11 @@ function testFilesystemSolveLogTracksSolverClockAcrossHeartbeats() {
   });
   assert.equal(
     payload.finalResult.solution.cpSatTelemetry.solveWallTimeSeconds,
-    payload.entries[1].solveWallTimeSeconds
+    payload.entries[0].solveWallTimeSeconds
   );
   assert.equal(
     payload.finalResult.solution.cpSatTelemetry.secondsSinceLastImprovement,
-    payload.entries[1].secondsSinceLastImprovement
+    payload.entries[0].secondsSinceLastImprovement
   );
 }
 
@@ -532,6 +660,8 @@ function testFilesystemSolveLogRecoveryRejectsInconsistentFinalResult() {
 function main() {
   testPlannerSolveProgressLogCapturesSnapshotAndFinalResult();
   testPlannerSolveProgressLogPrefersBackendProgressEntry();
+  testPlannerSolveProgressLogCompactsUnchangedSamples();
+  testFilesystemSolveLogCompactsUnchangedLiveSamples();
   testFilesystemSolveLogTracksSolverClockAcrossHeartbeats();
   testFilesystemSolveLogFinishWithSolutionSampleWritesTerminalDocumentInOneFlush();
   testFilesystemSolveLogUsesUniqueFilesForRepeatedRequestIds();

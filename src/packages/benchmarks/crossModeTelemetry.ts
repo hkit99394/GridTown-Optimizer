@@ -1,5 +1,6 @@
 import { roundBenchmarkMetric } from "./benchmarkOptions.js";
 
+import type { PopulationAttainmentMetrics } from "./benchmarkOptions.js";
 import type {
   AutoLnsNeighborhoodOutcomeSummary,
   AutoStageRunSummary,
@@ -85,6 +86,7 @@ export interface CrossModeBenchmarkRunTelemetry {
     bestScore: number | null;
     cpSatStatus: string | null;
     exactGap: number | null;
+    attainment: PopulationAttainmentMetrics;
     lnsStopReason: string | null;
     autoStopReason: string | null;
     stoppedByUser: boolean;
@@ -145,6 +147,7 @@ export interface BuildCrossModeRunTelemetryOptions {
   wallClockSeconds: number;
   workerCpuBudgetSeconds: number;
   observedWorkerCpuSeconds: number | null;
+  attainment: PopulationAttainmentMetrics;
 }
 
 function modeToOptimizer(mode: CrossModeBenchmarkMode): OptimizerName {
@@ -540,6 +543,7 @@ export function buildCrossModeRunTelemetry(options: BuildCrossModeRunTelemetryOp
       bestScore: options.traceArtifacts.timeToQuality.bestScore,
       cpSatStatus: options.solution.cpSatStatus ?? null,
       exactGap: options.solution.cpSatTelemetry?.populationGapUpperBound ?? null,
+      attainment: options.attainment,
       lnsStopReason: options.solution.lnsTelemetry?.stopReason ?? null,
       autoStopReason: options.solution.autoStage?.stopReason ?? null,
       stoppedByUser: Boolean(options.solution.stoppedByUser)

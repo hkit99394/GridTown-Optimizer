@@ -3,7 +3,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 
 const repoRoot = path.resolve(__dirname, "..");
-const checkedRoots = ["src", "apps", "tests", "python"];
+const checkedRoots = ["src", "apps", "tests", "python", "scripts"];
 const checkedExtensions = new Set([".ts", ".js", ".cjs", ".mjs", ".py"]);
 const skippedDirectories = new Set(["dist", "node_modules"]);
 const docsConsistencyRoots = [path.join(repoRoot, "docs", "decisions"), path.join(repoRoot, "docs", "roadmaps")];

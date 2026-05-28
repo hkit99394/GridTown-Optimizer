@@ -19,6 +19,11 @@ import {
   uniqueBenchmarkValuesBy
 } from "./benchmarkOptions.js";
 import { DEFAULT_GREEDY_BENCHMARK_CORPUS, runGreedyBenchmarkSuite } from "./greedy.js";
+import {
+  buildPopulationAttainmentMetrics,
+  buildPopulationAttainmentMetricsForParams,
+  formatPopulationAttainmentMetrics
+} from "./populationAttainment.js";
 
 import type {
   GreedyBenchmarkCase,
@@ -30,7 +35,8 @@ import type {
   BenchmarkVariantCoverageMetrics,
   BenchmarkVariantResultSnapshot,
   BenchmarkVariantSummaryMetrics,
-  BenchmarkVariantSummarySnapshot
+  BenchmarkVariantSummarySnapshot,
+  PopulationAttainmentMetrics
 } from "./benchmarkOptions.js";
 
 export type GreedyDeterministicAblationVariantName =
@@ -68,6 +74,7 @@ export interface GreedyDeterministicAblationVariantResult {
   populationDeltaVsBaseline: number;
   wallClockSeconds: number;
   wallClockDeltaVsBaselineSeconds: number;
+  attainment: PopulationAttainmentMetrics;
   roadCount: number;
   roadDeltaVsBaseline: number;
   serviceCount: number;
@@ -223,8 +230,14 @@ function variantResult(
   variant: GreedyDeterministicAblationVariant,
   result: GreedyBenchmarkCaseResult,
   baseline: GreedyBenchmarkCaseResult,
-  seed: number | null
+  seed: number | null,
+  benchmarkCase: GreedyBenchmarkCase | null
 ): GreedyDeterministicAblationVariantResult {
+  const attainmentOptions = {
+    totalPopulation: result.totalPopulation,
+    baselinePopulation: variant.name === "baseline" ? 0 : baseline.totalPopulation,
+    elapsedSeconds: result.wallClockSeconds
+  };
   return {
     variantName: variant.name,
     description: variant.description,
@@ -233,6 +246,9 @@ function variantResult(
     populationDeltaVsBaseline: result.totalPopulation - baseline.totalPopulation,
     wallClockSeconds: result.wallClockSeconds,
     wallClockDeltaVsBaselineSeconds: result.wallClockSeconds - baseline.wallClockSeconds,
+    attainment: benchmarkCase
+      ? buildPopulationAttainmentMetricsForParams(benchmarkCase.params, attainmentOptions)
+      : buildPopulationAttainmentMetrics({ ...attainmentOptions, capacityUpperBound: null }),
     roadCount: result.roadCount,
     roadDeltaVsBaseline: result.roadCount - baseline.roadCount,
     serviceCount: result.serviceCount,
@@ -305,6 +321,14 @@ export function listGreedyDeterministicAblationVariantNames(): GreedyDeterminist
   return DEFAULT_GREEDY_DETERMINISTIC_ABLATION_VARIANTS.map((variant) => variant.name);
 }
 
+function formatOptionalRate(value: number | null | undefined): string {
+  return value == null ? "n/a" : formatRate(value);
+}
+
+function formatOptionalDecimal(value: number | null | undefined): string {
+  return value == null ? "n/a" : value.toFixed(3);
+}
+
 export function runGreedyDeterministicAblation(
   corpus: readonly GreedyBenchmarkCase[] = DEFAULT_GREEDY_DETERMINISTIC_ABLATION_CORPUS,
   options: GreedyDeterministicAblationRunOptions = {}
@@ -316,6 +340,7 @@ export function runGreedyDeterministicAblation(
     profile: false,
     ...(options.greedy ?? {})
   };
+  const benchmarkCasesByName = new Map(corpus.map((benchmarkCase) => [benchmarkCase.name, benchmarkCase]));
   const suites = new Map<string, ReturnType<typeof runGreedyBenchmarkSuite>>();
   for (const seed of seedRuns) {
     for (const variant of variants) {
@@ -348,7 +373,13 @@ export function runGreedyDeterministicAblation(
             `Greedy deterministic ablation result missing: ${variant.name}/${baselineResult.name}/${seed ?? "case-default"}.`
           );
         }
-        return variantResult(variant, result, baselineResult, seed);
+        return variantResult(
+          variant,
+          result,
+          baselineResult,
+          seed,
+          benchmarkCasesByName.get(baselineResult.name) ?? null
+        );
       });
       return {
         name: baselineResult.name,
@@ -412,7 +443,7 @@ export function formatGreedyDeterministicAblation(result: GreedyDeterministicAbl
   lines.push("Summary:");
   for (const summary of result.variantSummaries) {
     lines.push(
-      `- ${summary.variantName}: mean=${formatDecimal(summary.meanPopulation)} median=${formatDecimal(summary.medianPopulation)} worst-decile=${formatDecimal(summary.worstDecilePopulation)} best=${formatDecimal(summary.bestPopulation)} delta-mean=${formatSigned(summary.meanPopulationDeltaVsBaseline)} delta-median=${formatSigned(summary.medianPopulationDeltaVsBaseline)} delta-worst-decile=${formatSigned(summary.worstDecilePopulationDeltaVsBaseline)} delta-best=${formatSigned(summary.bestPopulationDeltaVsBaseline)} delta-worst=${formatSigned(summary.worstPopulationDeltaVsBaseline)} wall-mean=${formatSeconds(summary.meanWallClockSeconds)} wall-delta-mean=${formatSeconds(summary.meanWallClockDeltaVsBaselineSeconds)} improved=${summary.improvedCaseCount} regressed=${summary.regressedCaseCount} unchanged=${summary.unchangedCaseCount} win-rate=${formatRate(summary.winRate)} regression-rate=${formatRate(summary.regressionRate)} unchanged-rate=${formatRate(summary.unchangedRate)} best-case=${formatSeedCase(summary.bestPopulationDeltaCaseName, summary.bestPopulationDeltaSeed)} worst-case=${formatSeedCase(summary.worstPopulationDeltaCaseName, summary.worstPopulationDeltaSeed)}`
+      `- ${summary.variantName}: mean=${formatDecimal(summary.meanPopulation)} median=${formatDecimal(summary.medianPopulation)} worst-decile=${formatDecimal(summary.worstDecilePopulation)} best=${formatDecimal(summary.bestPopulation)} delta-mean=${formatSigned(summary.meanPopulationDeltaVsBaseline)} delta-median=${formatSigned(summary.medianPopulationDeltaVsBaseline)} delta-worst-decile=${formatSigned(summary.worstDecilePopulationDeltaVsBaseline)} delta-best=${formatSigned(summary.bestPopulationDeltaVsBaseline)} delta-worst=${formatSigned(summary.worstPopulationDeltaVsBaseline)} util-mean=${formatOptionalRate(summary.meanCapacityUtilization)} closed/s-mean=${formatOptionalDecimal(summary.meanGapClosedPerSecond)} wall-mean=${formatSeconds(summary.meanWallClockSeconds)} wall-delta-mean=${formatSeconds(summary.meanWallClockDeltaVsBaselineSeconds)} improved=${summary.improvedCaseCount} regressed=${summary.regressedCaseCount} unchanged=${summary.unchangedCaseCount} win-rate=${formatRate(summary.winRate)} regression-rate=${formatRate(summary.regressionRate)} unchanged-rate=${formatRate(summary.unchangedRate)} best-case=${formatSeedCase(summary.bestPopulationDeltaCaseName, summary.bestPopulationDeltaSeed)} worst-case=${formatSeedCase(summary.worstPopulationDeltaCaseName, summary.worstPopulationDeltaSeed)}`
     );
   }
   lines.push("");
@@ -422,7 +453,7 @@ export function formatGreedyDeterministicAblation(result: GreedyDeterministicAbl
     lines.push(`- ${benchmarkCase.name} seed=${seedLabel}: ${benchmarkCase.description}`);
     for (const variant of benchmarkCase.variants) {
       lines.push(
-        `  ${variant.variantName}=population:${variant.totalPopulation} delta:${formatSigned(variant.populationDeltaVsBaseline)} wall:${formatSeconds(variant.wallClockSeconds)} wall-delta:${formatSeconds(variant.wallClockDeltaVsBaselineSeconds)} roads:${variant.roadCount} road-delta:${formatSigned(variant.roadDeltaVsBaseline)} services:${variant.serviceCount} residentials:${variant.residentialCount} phases:${variant.phaseCount}`
+        `  ${variant.variantName}=population:${variant.totalPopulation} delta:${formatSigned(variant.populationDeltaVsBaseline)} wall:${formatSeconds(variant.wallClockSeconds)} wall-delta:${formatSeconds(variant.wallClockDeltaVsBaselineSeconds)} attainment:${formatPopulationAttainmentMetrics(variant.attainment)} roads:${variant.roadCount} road-delta:${formatSigned(variant.roadDeltaVsBaseline)} services:${variant.serviceCount} residentials:${variant.residentialCount} phases:${variant.phaseCount}`
       );
     }
   }

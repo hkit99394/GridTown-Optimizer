@@ -7,6 +7,7 @@ export * from "./grid.js";
 export * from "./lnsWindowRankerSchema.js";
 export * from "./map.js";
 export * from "./plannerExplainability.js";
+export * from "./populationBounds.js";
 export * from "./progress.js";
 export * from "./roads.js";
 export * from "./rules.js";

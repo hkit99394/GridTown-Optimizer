@@ -100,6 +100,7 @@ const { repairSmallWindowWithDp } = require("../../dist/packages/solvers/lns/sma
 const { startJsonBackgroundSolve } = require("../../dist/packages/runtime/index.js");
 const { applyDeterministicDominanceUpgrades } = require("../../dist/packages/core/dominanceUpgrades.js");
 const { buildPlannerExplainabilityMap } = require("../../dist/packages/core/plannerExplainability.js");
+const { computePopulationCapacityUpperBound } = require("../../dist/packages/core/populationBounds.js");
 const { createCpSatPythonHelperAssertions } = require("./cpSatPythonHelperAssertions.cjs");
 const { GreedyAttemptState } = require("../../dist/packages/solvers/greedy/attemptState.js");
 const {
@@ -261,6 +262,7 @@ module.exports = {
   startJsonBackgroundSolve,
   applyDeterministicDominanceUpgrades,
   buildPlannerExplainabilityMap,
+  computePopulationCapacityUpperBound,
   GreedyAttemptState,
   createRoadOpportunityRecorder,
   recordRoadOpportunityPlacementFromOccupiedBuildings,

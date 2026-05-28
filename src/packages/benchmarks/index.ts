@@ -7,6 +7,7 @@
 
 export * from "./greedy.js";
 export * from "./benchmarkOptions.js";
+export * from "./populationAttainment.js";
 export * from "./benchmarkSeeds.js";
 export * from "./cpSat.js";
 export * from "./lns.js";

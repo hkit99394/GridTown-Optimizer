@@ -4,151 +4,17 @@ import fs from "node:fs";
 import path from "node:path";
 import url from "node:url";
 
-const SCRIPT_PATH = "scripts/discover-lns-replay-state-conditioned-pockets.mjs";
-const DEFAULT_SOURCE_ROOT = "artifacts/lns-window-replay-labels";
-const DEFAULT_TOP = 25;
-const DEFAULT_MAX_ATOMS = 160;
-const DEFAULT_MAX_GROUP_SIZE = 2;
-const DEFAULT_MIN_IMPROVED_LABELS = 1;
-
-const CATEGORICAL_FIELDS = Object.freeze([
-  { path: "statePolicy", label: "statePolicy", kind: "state" },
-  { path: "stateSourceStatus", label: "stateSourceStatus", kind: "state" },
-  { path: "operator", label: "operator", kind: "operator" },
-  { path: "selectionSource", label: "selectionSource", kind: "operator" },
-  { path: "selectedByBaseline", label: "selectedByBaseline", kind: "operator" }
-]);
-
-const NUMERIC_FIELDS = Object.freeze([
-  { path: "operatorScore", label: "operatorScore", kind: "operator" },
-  { path: "incumbentPopulation", label: "incumbentPopulation", kind: "state" },
-  { path: "stateSourceIteration", label: "stateSourceIteration", kind: "state" },
-  { path: "stateStagnantIterations", label: "stateStagnantIterations", kind: "state" },
-  { path: "window.top", label: "windowTop", kind: "window" },
-  { path: "window.left", label: "windowLeft", kind: "window" },
-  { path: "window.rows", label: "windowRows", kind: "window" },
-  { path: "window.cols", label: "windowCols", kind: "window" },
-  { path: "features.area", label: "area", kind: "feature" },
-  { path: "features.roadCountInside", label: "roadCountInside", kind: "feature" },
-  { path: "features.serviceCountInside", label: "serviceCountInside", kind: "feature" },
-  { path: "features.residentialCountInside", label: "residentialCountInside", kind: "feature" },
-  { path: "features.residentialHeadroomInside", label: "residentialHeadroomInside", kind: "feature" },
-  { path: "features.serviceBonusInside", label: "serviceBonusInside", kind: "feature" },
-  {
-    path: "features.connectivityShadow.reachableEmptyCellsBefore",
-    label: "reachableBefore",
-    kind: "feature"
-  },
-  {
-    path: "features.connectivityShadow.reachableEmptyCellsAfterClearingWindow",
-    label: "reachableAfter",
-    kind: "feature"
-  },
-  {
-    path: "features.connectivityShadow.newlyReachableEmptyCellsIfCleared",
-    label: "newlyReachable",
-    kind: "feature"
-  },
-  {
-    path: "features.connectivityShadow.disconnectedEmptyCellsBefore",
-    label: "disconnectedBefore",
-    kind: "feature"
-  },
-  {
-    path: "features.connectivityShadow.disconnectedEmptyCellsAfterClearingWindow",
-    label: "disconnectedAfter",
-    kind: "feature"
-  },
-  {
-    path: "features.connectivityShadow.clearedBuildingFootprintCells",
-    label: "clearedFootprint",
-    kind: "feature"
-  },
-  {
-    path: "features.fragmentation.emptyComponentCountBefore",
-    label: "componentsBefore",
-    kind: "feature"
-  },
-  {
-    path: "features.fragmentation.emptyComponentCountAfterClearingWindow",
-    label: "componentsAfter",
-    kind: "feature"
-  },
-  {
-    path: "features.fragmentation.componentDeltaAfterClearingWindow",
-    label: "componentDelta",
-    kind: "feature"
-  },
-  {
-    path: "features.fragmentation.allowedWindowCellCount",
-    label: "allowedWindowCells",
-    kind: "feature"
-  },
-  {
-    path: "features.fragmentation.anchorReachableWindowCellCount",
-    label: "anchorReachableWindowCells",
-    kind: "feature"
-  },
-  {
-    path: "features.fragmentation.narrowGateCellCount",
-    label: "narrowGateCells",
-    kind: "feature"
-  },
-  {
-    path: "features.candidateLoss.serviceCandidatesIntersectingWindow",
-    label: "serviceCandidatesIntersecting",
-    kind: "feature"
-  },
-  {
-    path: "features.candidateLoss.residentialCandidatesIntersectingWindow",
-    label: "residentialCandidatesIntersecting",
-    kind: "feature"
-  },
-  {
-    path: "features.candidateLoss.serviceCandidatesBlockedByIncumbent",
-    label: "serviceCandidatesBlocked",
-    kind: "feature"
-  },
-  {
-    path: "features.candidateLoss.residentialCandidatesBlockedByIncumbent",
-    label: "residentialCandidatesBlocked",
-    kind: "feature"
-  },
-  {
-    path: "features.candidateLoss.serviceCandidateBonusInside",
-    label: "serviceCandidateBonus",
-    kind: "feature"
-  },
-  {
-    path: "features.candidateLoss.maxServiceCandidateBonusInside",
-    label: "maxServiceCandidateBonus",
-    kind: "feature"
-  },
-  {
-    path: "features.candidateLoss.residentialCandidateHeadroomInside",
-    label: "residentialCandidateHeadroom",
-    kind: "feature"
-  }
-]);
-
-function usage() {
-  return [
-    "Usage: node scripts/discover-lns-replay-state-conditioned-pockets.mjs --artifact-dir=<path> [options]",
-    "",
-    "Discovers diagnostics-only state-conditioned durable opportunity pockets from LNS replay-label artifacts.",
-    "",
-    "Options:",
-    `  --source-root=<path>          Root to scan for lns-window-replay-labels.json files. Default: ${DEFAULT_SOURCE_ROOT}`,
-    "  --artifact-dir=<path>         Artifact bundle output directory under artifacts/.",
-    "  --include-pressure-family=<csv>  Restrict scanned labels to these pressure families.",
-    "  --exclude-pressure-family=<csv>  Exclude scanned labels from these pressure families.",
-    "  --min-improved-labels=<n>     Minimum improved labels for a durable candidate. Default: 1.",
-    "  --max-atoms=<n>               Candidate atom cap before conjunction search. Default: 160.",
-    "  --max-group-size=<n>          Maximum atom conjunction size, 1 or 2. Default: 2.",
-    "  --top=<n>                     Number of safe and blocked candidates to keep. Default: 25.",
-    "  --force-artifact-dir          Replace an existing artifact directory."
-  ].join("\n");
-}
+import {
+  CATEGORICAL_FIELDS,
+  DEFAULT_MAX_ATOMS,
+  DEFAULT_MAX_GROUP_SIZE,
+  DEFAULT_MIN_IMPROVED_LABELS,
+  DEFAULT_SOURCE_ROOT,
+  DEFAULT_TOP,
+  NUMERIC_FIELDS,
+  usage
+} from "./lib/lns-replay-state-conditioned-pocket-config.mjs";
+import { writeStateConditionedPocketArtifacts } from "./lib/lns-replay-state-conditioned-pocket-output.mjs";
 
 function repoRoot() {
   return path.resolve(path.dirname(url.fileURLToPath(import.meta.url)), "..");
@@ -922,89 +788,6 @@ function buildScan(artifacts, options, benchmarkApi) {
   };
 }
 
-function formatCandidate(candidate) {
-  return [
-    `${candidate.expression}: selected=${candidate.selected} improved=${candidate.improved} regressed=${candidate.regressed} neutral=${candidate.neutral} unknown=${candidate.unknown} best=${candidate.bestDelta} worst=${candidate.worstDelta} repeatabilitySafe=${candidate.repeatabilitySafeSelected} durable=${candidate.durablePocket}`,
-    `  states=${Object.entries(candidate.byStatePolicy)
-      .map(([state, counts]) => `${state}:${counts.improved}/${counts.selected}`)
-      .join(", ")}`,
-    `  families=${Object.entries(candidate.byPressureFamily)
-      .map(([family, counts]) => `${family}:${counts.improved}/${counts.selected}`)
-      .join(", ")}`
-  ].join("\n");
-}
-
-function formatScan(scan) {
-  const lines = [
-    "LNS replay state-conditioned durable pocket discovery",
-    `generatedAt=${scan.generatedAt}`,
-    `sourceRoot=${scan.sourceRoot}`,
-    `sourceArtifacts=${scan.sourceSummary.sourceArtifactCount}`,
-    `cases=${scan.sourceSummary.caseCount}`,
-    `seeds=${scan.sourceSummary.seeds.join(",")}`,
-    `labels=${scan.sourceSummary.labelCount}`,
-    `rollForwardLabels=${scan.sourceSummary.rollForwardLabelCount}`,
-    `repeatabilitySafeBuckets=${scan.oracleSummary.repeatabilitySafeBucketCount}/${scan.oracleSummary.bucketCount}`,
-    `repeatabilitySafeBucketLabels=${scan.oracleSummary.repeatabilitySafeBucketLabels.improved}/${scan.oracleSummary.repeatabilitySafeBucketLabels.selected} improved/selected`,
-    `featureIdenticalConflictBuckets=${scan.oracleSummary.featureIdenticalConflictBucketCount}`,
-    `atoms=${scan.discovery.atomCount}`,
-    `searchedCandidates=${scan.discovery.searchedCandidateCount}`,
-    `safeCandidates=${scan.discovery.safeCandidateCount}`,
-    `blockedCandidates=${scan.discovery.blockedCandidateCount}`,
-    `inputFingerprint=${scan.inputFingerprint}`,
-    `scanFingerprint=${scan.scanFingerprint}`,
-    "",
-    "Top safe candidates:"
-  ];
-  if (scan.discovery.safeCandidates.length === 0) {
-    lines.push("  none");
-  } else {
-    for (const candidate of scan.discovery.safeCandidates) lines.push(formatCandidate(candidate));
-  }
-  lines.push("", "Top blocked candidates:");
-  if (scan.discovery.blockedCandidates.length === 0) {
-    lines.push("  none");
-  } else {
-    for (const candidate of scan.discovery.blockedCandidates) lines.push(formatCandidate(candidate));
-  }
-  return lines.join("\n");
-}
-
-function artifactPathsFor(artifacts) {
-  return {
-    scanJson: artifacts.artifactPath("state-conditioned-pockets.json"),
-    scanText: artifacts.artifactPath("state-conditioned-pockets.txt"),
-    telemetryManifestJson: artifacts.artifactPath("telemetry-manifest.json"),
-    registryEntryDraftJson: artifacts.artifactPath("registry-entry-draft.json"),
-    manifestJson: artifacts.artifactPath("manifest.json")
-  };
-}
-
-function diagnosticArtifactPaths(artifactPaths) {
-  return Object.entries(artifactPaths)
-    .filter(([name]) => name !== "registryEntryDraftJson")
-    .map(([, artifactPath]) => artifactPath);
-}
-
-function replayCommand(defaultCliReplayCommand, options) {
-  const argv = [
-    `--source-root=${normalizeRepoRelativePath(options.sourceRoot)}`,
-    `--artifact-dir=${options.artifactDir}`,
-    ...(options.includePressureFamilies === undefined
-      ? []
-      : [`--include-pressure-family=${[...options.includePressureFamilies].sort().join(",")}`]),
-    ...(options.excludePressureFamilies.size === 0
-      ? []
-      : [`--exclude-pressure-family=${[...options.excludePressureFamilies].sort().join(",")}`]),
-    `--min-improved-labels=${options.minImprovedLabels}`,
-    `--max-atoms=${options.maxAtoms}`,
-    `--max-group-size=${options.maxGroupSize}`,
-    `--top=${options.top}`
-  ];
-  if (options.forceArtifactDir) argv.push("--force-artifact-dir");
-  return defaultCliReplayCommand(SCRIPT_PATH, argv);
-}
-
 const options = parseArgs(process.argv.slice(2));
 const artifactHelpers = await loadArtifactBundleHelpers();
 const benchmarkApi = await loadBenchmarkApi();
@@ -1017,111 +800,12 @@ if (loadedArtifacts.length === 0) {
 }
 
 const scan = buildScan(loadedArtifacts, options, benchmarkApi);
-const artifactPaths = artifactPathsFor(artifacts);
-const outputArtifacts = diagnosticArtifactPaths(artifactPaths);
-const command = replayCommand(artifactHelpers.defaultCliReplayCommand, options);
-const telemetryManifest = {
-  schemaVersion: 1,
-  source: "lns-replay-state-conditioned-pocket-discovery",
-  command,
-  generatedAt: scan.generatedAt,
-  git: benchmarkApi.resolveExperimentRegistryGitMetadata(),
-  hardware: benchmarkApi.captureExperimentRegistryHardwareMetadata(),
-  diagnosticsOnly: true,
-  inputFingerprint: scan.inputFingerprint,
-  scanFingerprint: scan.scanFingerprint,
-  sourceRoot: scan.sourceRoot,
-  outputArtifacts,
-  metrics: {
-    sourceArtifactCount: scan.sourceSummary.sourceArtifactCount,
-    caseCount: scan.sourceSummary.caseCount,
-    seedCount: scan.sourceSummary.seeds.length,
-    labelCount: scan.sourceSummary.labelCount,
-    rollForwardLabelCount: scan.sourceSummary.rollForwardLabelCount,
-    repeatabilitySafeBucketCount: scan.oracleSummary.repeatabilitySafeBucketCount,
-    featureIdenticalConflictBucketCount: scan.oracleSummary.featureIdenticalConflictBucketCount,
-    atomCount: scan.discovery.atomCount,
-    searchedCandidateCount: scan.discovery.searchedCandidateCount,
-    safeCandidateCount: scan.discovery.safeCandidateCount,
-    blockedCandidateCount: scan.discovery.blockedCandidateCount,
-    topSafeCandidate: scan.discovery.safeCandidates[0] ?? null
-  },
-  notes:
-    "Diagnostics-only state-conditioned replay pocket discovery over existing LNS replay labels; no solver default changed."
-};
-const registryEntryDraft = {
-  schemaVersion: 1,
-  runId: `lns-replay-state-conditioned-pockets-${scan.scanFingerprint.slice(-8)}`,
-  artifactType: "ablation-gate",
-  generatedAt: scan.generatedAt,
-  commands: [command],
-  artifactPaths: outputArtifacts,
-  cases: scan.sourceSummary.cases,
-  caseFamilies: ["lns-window-replay", ...scan.sourceSummary.pressureFamilies.map((family) => `lns-${family}`)].sort(),
-  seeds: scan.sourceSummary.seeds,
-  inputFingerprint: scan.inputFingerprint,
-  datasetFingerprint: scan.scanFingerprint,
-  splitStatus: {
-    diagnosticsOnly: true,
-    source: "existing-lns-window-replay-state-conditioned-pocket-discovery",
-    sourceRoot: scan.sourceRoot,
-    sourceArtifactCount: scan.sourceSummary.sourceArtifactCount
-  },
-  budget: {
-    sourceArtifactCount: scan.sourceSummary.sourceArtifactCount,
-    caseCount: scan.sourceSummary.caseCount,
-    seedCount: scan.sourceSummary.seeds.length,
-    labelCount: scan.sourceSummary.labelCount,
-    rollForwardLabelCount: scan.sourceSummary.rollForwardLabelCount,
-    atomCount: scan.discovery.atomCount,
-    searchedCandidateCount: scan.discovery.searchedCandidateCount
-  },
-  hardware: telemetryManifest.hardware,
-  model: {
-    trained: false,
-    diagnosticsOnly: true,
-    labelSource: "existing-lns-window-replay-labels",
-    discoveryKind: "state-conditioned-repeatability-safe-pocket-search"
-  },
-  decision: "diagnostics-only",
-  summary:
-    "Existing protected LNS replay labels mined for state-conditioned repeatability-safe durable pockets; no solver default changed.",
-  summaryMetrics: telemetryManifest.metrics
-};
-const manifest = {
-  artifactDir: artifacts.artifactDir,
-  artifactPaths,
-  command,
-  generatedAt: scan.generatedAt,
-  inputFingerprint: scan.inputFingerprint,
-  scanFingerprint: scan.scanFingerprint,
-  sourceRoot: scan.sourceRoot,
-  sourceSummary: scan.sourceSummary,
-  generator: {
-    script: SCRIPT_PATH,
-    requiresBuild: true,
-    command
-  }
-};
-
-artifactHelpers.writeJsonArtifact(artifacts.absoluteArtifactPath("state-conditioned-pockets.json"), scan, {
-  force: options.forceArtifactDir
+writeStateConditionedPocketArtifacts({
+  artifactHelpers,
+  benchmarkApi,
+  artifacts,
+  options,
+  scan,
+  normalizeRepoRelativePath
 });
-artifactHelpers.writeTextArtifact(
-  artifacts.absoluteArtifactPath("state-conditioned-pockets.txt"),
-  `${formatScan(scan)}\n`,
-  {
-    force: options.forceArtifactDir
-  }
-);
-artifactHelpers.writeJsonArtifact(artifacts.absoluteArtifactPath("telemetry-manifest.json"), telemetryManifest, {
-  force: options.forceArtifactDir
-});
-artifactHelpers.writeJsonArtifact(artifacts.absoluteArtifactPath("registry-entry-draft.json"), registryEntryDraft, {
-  force: options.forceArtifactDir
-});
-artifactHelpers.writeJsonArtifact(artifacts.absoluteArtifactPath("manifest.json"), manifest, {
-  force: options.forceArtifactDir
-});
-
 console.log(`Wrote LNS replay state-conditioned pocket discovery to ${artifacts.artifactDir}`);

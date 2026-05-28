@@ -14,6 +14,7 @@ import {
   listBenchmarkCaseNames,
   selectBenchmarkCasesByName
 } from "./benchmarkOptions.js";
+import { buildPopulationAttainmentMetricsForParams } from "./populationAttainment.js";
 
 import type {
   GreedyOptions,
@@ -23,6 +24,7 @@ import type {
   SolverParams,
   SolverProgressSummary
 } from "../core/index.js";
+import type { PopulationAttainmentMetrics } from "./benchmarkOptions.js";
 
 export interface GreedyServiceLookaheadBenchmarkOptions {
   serviceLookaheadCandidates?: number;
@@ -54,6 +56,7 @@ export interface GreedyBenchmarkCaseResult {
   greedyOptions: GreedyBenchmarkOptions;
   greedyProfile: GreedyProfile | null;
   progressSummary: SolverProgressSummary;
+  attainment: PopulationAttainmentMetrics;
   wallClockSeconds: number;
 }
 
@@ -175,6 +178,11 @@ function runGreedyBenchmarkCase(
       elapsedTimeSeconds: wallClockSeconds,
       fallbackOptimizer: "greedy",
       params
+    }),
+    attainment: buildPopulationAttainmentMetricsForParams(params, {
+      totalPopulation: solution.totalPopulation,
+      baselinePopulation: 0,
+      elapsedSeconds: wallClockSeconds
     }),
     wallClockSeconds
   };

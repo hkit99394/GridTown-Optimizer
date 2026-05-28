@@ -121,6 +121,10 @@ function getErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : "Unknown solver error.";
 }
 
+function getProgressEntryLatestElapsedMs(entry: SolveProgressLogEntry | null): number {
+  return entry?.lastElapsedMs ?? entry?.elapsedMs ?? 0;
+}
+
 export function settleSuccessfulSolve(solution: Solution, context: SolveSettlementContext): SolveSettlement {
   if (context.cancelRequested && !solution.stoppedByUser) {
     solution = {
@@ -443,7 +447,7 @@ export class SolveJobManager {
       const snapshot = job.handle?.getLatestSnapshot() ?? null;
       if (!snapshot) {
         if (!lastEntry || lastEntry.hasFeasibleSolution) return;
-        if (elapsedMs - lastEntry.elapsedMs < this.progressLogIntervalMs) return;
+        if (elapsedMs - getProgressEntryLatestElapsedMs(lastEntry) < this.progressLogIntervalMs) return;
         job.progressLogWriter.appendPendingSample({
           elapsedMs,
           note: "Still searching for the first feasible solution."
@@ -454,7 +458,8 @@ export class SolveJobManager {
       const shouldAppendImmediately = progressLogSolutionSampleChanged(lastEntry, snapshot);
 
       const shouldAppendHeartbeat =
-        !shouldAppendImmediately && (!lastEntry || elapsedMs - lastEntry.elapsedMs >= this.progressLogIntervalMs);
+        !shouldAppendImmediately &&
+        (!lastEntry || elapsedMs - getProgressEntryLatestElapsedMs(lastEntry) >= this.progressLogIntervalMs);
 
       if (!shouldAppendImmediately && !shouldAppendHeartbeat) return;
 

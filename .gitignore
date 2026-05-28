@@ -19,6 +19,10 @@ yarn-debug.log*
 yarn-error.log*
 *.log
 artifacts/solve-progress/
+artifacts/tmp-*/
+artifacts/**/tmp-*/
+artifacts/local-*/
+artifacts/**/local-*/
 
 # macOS
 .DS_Store

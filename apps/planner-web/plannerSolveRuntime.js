@@ -298,6 +298,63 @@
   }
 
   /**
+   * @param {unknown} summary
+   * @returns {unknown}
+   */
+  function progressSummaryStablePayload(summary) {
+    if (!summary || typeof summary !== "object") return summary ?? null;
+    const summaryRecord = /** @type {JsonObject} */ (summary);
+    const {
+      elapsedTimeSeconds: _elapsedTimeSeconds,
+      timeSinceImprovementSeconds: _timeSinceImprovementSeconds,
+      ...rest
+    } = summaryRecord;
+    return rest;
+  }
+
+  /**
+   * @param {ProgressLogEntry | undefined} lastEntry
+   * @param {ProgressLogEntry} entry
+   * @returns {boolean}
+   */
+  function entriesShareStableProgressSegment(lastEntry, entry) {
+    if (!lastEntry) return false;
+    return (
+      lastEntry.source === entry.source &&
+      lastEntry.optimizer === entry.optimizer &&
+      lastEntry.activeOptimizer === entry.activeOptimizer &&
+      lastEntry.hasFeasibleSolution === entry.hasFeasibleSolution &&
+      lastEntry.totalPopulation === entry.totalPopulation &&
+      lastEntry.cpSatStatus === entry.cpSatStatus &&
+      (lastEntry.lnsStopReason ?? null) === (entry.lnsStopReason ?? null) &&
+      (lastEntry.lnsNeighborhoodStatus ?? null) === (entry.lnsNeighborhoodStatus ?? null) &&
+      (lastEntry.lnsNeighborhoodImprovement ?? null) === (entry.lnsNeighborhoodImprovement ?? null) &&
+      (lastEntry.lnsNeighborhoodsCompleted ?? null) === (entry.lnsNeighborhoodsCompleted ?? null) &&
+      JSON.stringify(progressSummaryStablePayload(lastEntry.progressSummary)) ===
+        JSON.stringify(progressSummaryStablePayload(entry.progressSummary)) &&
+      lastEntry.bestPopulationUpperBound === entry.bestPopulationUpperBound &&
+      lastEntry.populationGapUpperBound === entry.populationGapUpperBound &&
+      lastEntry.lastImprovementAtSeconds === entry.lastImprovementAtSeconds &&
+      JSON.stringify(lastEntry.autoStage ?? null) === JSON.stringify(entry.autoStage ?? null)
+    );
+  }
+
+  /**
+   * @param {ProgressLogEntry} firstEntry
+   * @param {ProgressLogEntry} latestEntry
+   * @returns {ProgressLogEntry}
+   */
+  function compactProgressLogEntry(firstEntry, latestEntry) {
+    return {
+      ...latestEntry,
+      capturedAt: firstEntry.capturedAt,
+      elapsedMs: firstEntry.elapsedMs,
+      lastCapturedAt: latestEntry.lastCapturedAt ?? latestEntry.capturedAt,
+      lastElapsedMs: latestEntry.lastElapsedMs ?? latestEntry.elapsedMs
+    };
+  }
+
+  /**
    * @param {ProgressLogEntry[] | null | undefined} logEntries
    * @param {JsonObject} payload
    * @param {ProgressEntryOptions} [options]
@@ -312,6 +369,8 @@
     if (
       lastEntry &&
       lastEntry.elapsedMs === entry.elapsedMs &&
+      (lastEntry.lastElapsedMs ?? null) === (entry.lastElapsedMs ?? null) &&
+      (lastEntry.lastCapturedAt ?? null) === (entry.lastCapturedAt ?? null) &&
       lastEntry.source === entry.source &&
       lastEntry.optimizer === entry.optimizer &&
       lastEntry.activeOptimizer === entry.activeOptimizer &&
@@ -331,6 +390,11 @@
       JSON.stringify(lastEntry.autoStage ?? null) === JSON.stringify(entry.autoStage ?? null)
     ) {
       nextEntries[nextEntries.length - 1] = entry;
+      return nextEntries;
+    }
+
+    if (entriesShareStableProgressSegment(lastEntry, entry)) {
+      nextEntries[nextEntries.length - 1] = compactProgressLogEntry(lastEntry, entry);
       return nextEntries;
     }
 

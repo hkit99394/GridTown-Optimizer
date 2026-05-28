@@ -139,6 +139,10 @@ function loadPlannerResultProgressModule(options = {}) {
   return loadBrowserModule("apps/planner-web/plannerResultProgress.js", options).PlannerResultProgress;
 }
 
+function loadPlannerResultAvailabilityModule(options = {}) {
+  return loadBrowserModule("apps/planner-web/plannerResultAvailability.js", options).PlannerResultAvailability;
+}
+
 function loadPlannerResultRenderingModule(options = {}) {
   return loadBrowserModule("apps/planner-web/plannerResultRendering.js", options).PlannerResultRendering;
 }
@@ -149,6 +153,7 @@ function loadPlannerResultsModule(options = {}) {
     window: {
       PlannerHeatmaps: loadPlannerHeatmapsModule(),
       PlannerManualLayout: loadPlannerManualLayoutModule(),
+      PlannerResultAvailability: loadPlannerResultAvailabilityModule(options),
       PlannerResultProgress: loadPlannerResultProgressModule(options),
       PlannerResultRendering: loadPlannerResultRenderingModule(options),
       ...(options.window ?? {})
@@ -177,6 +182,7 @@ module.exports = {
   loadPlannerExpansionModule,
   loadPlannerPersistenceModule,
   loadPlannerPersistenceValidationModule,
+  loadPlannerResultAvailabilityModule,
   loadPlannerResultProgressModule,
   loadPlannerResultRenderingModule,
   loadPlannerRequestBuilderModule,

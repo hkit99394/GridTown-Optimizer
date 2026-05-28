@@ -2,6 +2,7 @@ import { performance } from "node:perf_hooks";
 
 import {
   buildDecisionTraceFromSolution,
+  computePopulationCapacityUpperBound,
   buildTimeToQualityScorecard,
   serializeDecisionTraceJsonl,
   summarizeDecisionTraceReason
@@ -35,6 +36,7 @@ import {
   buildPortfolioEfficiencySignals,
   buildSummaries
 } from "./crossModeSignals.js";
+import { buildPopulationAttainmentMetrics } from "./populationAttainment.js";
 
 export { DEFAULT_CROSS_MODE_BENCHMARK_CORPUS } from "./crossModeCorpus.js";
 export { formatCrossModeBenchmarkSuite } from "./crossModeFormatting.js";
@@ -94,7 +96,13 @@ import type {
 
 type CrossModeBenchmarkModeResultDraft = Omit<
   CrossModeBenchmarkModeResult,
-  "scoreDeltaToBest" | "scoreRatioToBest" | "winVsAuto" | "scoreDeltaVsAuto" | "rank" | "budgetAllocationSignal"
+  | "scoreDeltaToBest"
+  | "scoreRatioToBest"
+  | "winVsAuto"
+  | "scoreDeltaVsAuto"
+  | "rank"
+  | "budgetAllocationSignal"
+  | "attainment"
 >;
 
 interface CrossModeBenchmarkTraceArtifacts {
@@ -602,6 +610,7 @@ async function runCrossModeBenchmarkCase(
   const solve = options.solve ?? defaultCrossModeSolve;
   const rawResults: CrossModeBenchmarkModeResultDraft[] = [];
   const problemSizeBand = inferProblemSizeBand(benchmarkCase);
+  const populationCapacityUpperBound = computePopulationCapacityUpperBound(benchmarkCase.params);
   const budgetAblationPolicyName = options.budgetAblationPolicy?.name;
   const budgetAblationPolicyApplied = budgetAblationPolicyApplies(
     options.budgetAblationPolicy,
@@ -644,6 +653,12 @@ async function runCrossModeBenchmarkCase(
     });
     const workerCpuBudgetSecondsValue = workerCpuBudgetSeconds(mode, params.cpSat ?? {}, budgetSeconds);
     const observedWorkerCpuSecondsValue = observedCpSatWorkerCpuSeconds(solution);
+    const telemetryAttainment = buildPopulationAttainmentMetrics({
+      totalPopulation: solution.totalPopulation,
+      capacityUpperBound: populationCapacityUpperBound,
+      baselinePopulation: 0,
+      elapsedSeconds: wallClockSeconds
+    });
     const telemetry = buildCrossModeRunTelemetry({
       benchmarkCase,
       mode,
@@ -661,7 +676,8 @@ async function runCrossModeBenchmarkCase(
         : {}),
       wallClockSeconds,
       workerCpuBudgetSeconds: workerCpuBudgetSecondsValue,
-      observedWorkerCpuSeconds: observedWorkerCpuSecondsValue
+      observedWorkerCpuSeconds: observedWorkerCpuSecondsValue,
+      attainment: telemetryAttainment
     });
 
     rawResults.push({
@@ -725,6 +741,12 @@ async function runCrossModeBenchmarkCase(
       winVsAuto,
       rank: 0,
       scoreDeltaVsAuto: result.mode === "auto" ? 0 : scoreDeltaVsAuto,
+      attainment: buildPopulationAttainmentMetrics({
+        totalPopulation: result.totalPopulation,
+        capacityUpperBound: populationCapacityUpperBound,
+        baselinePopulation: autoScore !== null && result.mode !== "auto" ? autoScore : 0,
+        elapsedSeconds: result.wallClockSeconds
+      }),
       budgetAllocationSignal: buildCrossModeBudgetAllocationSignal(result, {
         scoreDeltaVsAuto: result.mode === "auto" ? 0 : scoreDeltaVsAuto,
         autoBestScoreAtMs: autoResult?.timeToQuality.bestScoreAtMs ?? null
@@ -741,6 +763,7 @@ async function runCrossModeBenchmarkCase(
     workflowTags: [...(benchmarkCase.workflowTags ?? [])],
     gridRows: benchmarkCase.grid.length,
     gridCols: benchmarkCase.grid[0]?.length ?? 0,
+    populationCapacityUpperBound,
     budgetSeconds,
     seed,
     bestScore,

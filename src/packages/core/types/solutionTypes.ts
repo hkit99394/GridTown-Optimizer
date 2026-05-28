@@ -152,6 +152,10 @@ export interface PlannerExplainabilityMap {
 export interface SolveProgressLogEntry {
   capturedAt: string;
   elapsedMs: number;
+  /** Latest sample time covered by this entry when unchanged progress snapshots are compacted. */
+  lastCapturedAt?: string;
+  /** Latest elapsed time covered by this entry when unchanged progress snapshots are compacted. */
+  lastElapsedMs?: number;
   source: "live-snapshot" | "final-result";
   optimizer: OptimizerName | null;
   activeOptimizer?: AutoStageOptimizerName | null;

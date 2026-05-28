@@ -338,20 +338,6 @@ function gateExample(sourceArtifact, caseResult, label) {
   return example;
 }
 
-function mergeCounts(target, source) {
-  target.selected += source.selected;
-  target.improved += source.improved;
-  target.regressed += source.regressed;
-  target.neutral += source.neutral;
-  target.unknown += source.unknown;
-  if (source.bestDelta !== null) {
-    target.bestDelta = target.bestDelta === null ? source.bestDelta : Math.max(target.bestDelta, source.bestDelta);
-  }
-  if (source.worstDelta !== null) {
-    target.worstDelta = target.worstDelta === null ? source.worstDelta : Math.min(target.worstDelta, source.worstDelta);
-  }
-}
-
 function addGroupedCount(group, key, label) {
   group[key] ??= emptyCounts();
   addLabel(group[key], label);

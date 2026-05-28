@@ -24,6 +24,7 @@ const {
   evaluateLayout,
   validateLayoutConstraints,
   validateSolution,
+  computePopulationCapacityUpperBound,
   buildPlannerExplainabilityMap,
   GreedyAttemptState,
   computeRoadAnchorReachableEmptyFrontier,
@@ -196,6 +197,41 @@ function testPlannerExplainabilityMapSummarizesOpportunityAndRisk() {
   assert.equal(map.maxResidentialOpportunity, 30);
   assert.ok(map.maxConnectivityDisconnectedCells > 0);
   assert.equal(typeof map.roadAnchorReachableCellCount, "number");
+}
+
+function testPopulationCapacityUpperBoundUsesFiniteResidentialCapacity() {
+  assert.equal(
+    computePopulationCapacityUpperBound({
+      residentialTypes: [
+        { w: 2, h: 2, min: 10, max: 100, avail: 2 },
+        { w: 2, h: 3, min: 20, max: 250, avail: 1 }
+      ],
+      availableBuildings: { residentials: 2 }
+    }),
+    350
+  );
+  assert.equal(
+    computePopulationCapacityUpperBound({
+      residentialTypes: [
+        { w: 2, h: 2, min: 10, max: 100, avail: 2 },
+        { w: 2, h: 3, min: 20, max: 250, avail: 1 }
+      ]
+    }),
+    450
+  );
+  assert.equal(computePopulationCapacityUpperBound({ maxResidentials: 3, maxPop: 40 }), 120);
+  assert.equal(
+    computePopulationCapacityUpperBound({
+      availableBuildings: { residentials: 2 },
+      residentialSettings: {
+        "2x2": { min: 10, max: 60 },
+        "2x3": { min: 20, max: 90 }
+      }
+    }),
+    180
+  );
+  assert.equal(computePopulationCapacityUpperBound({ maxPop: 40 }), null);
+  assert.equal(computePopulationCapacityUpperBound({ availableBuildings: { residentials: 0 }, maxPop: 40 }), 0);
 }
 
 function testRoadProbePreservesEdgeBorderConnectivity() {
@@ -728,6 +764,7 @@ process.stdin.on("end", () => {
 
 async function runCoreOptimizerTests() {
   testOptimizerRegistry();
+  testPopulationCapacityUpperBoundUsesFiniteResidentialCapacity();
   testValidateSolutionRejectsMalformedRoadSetKey();
   testValidateSolutionRejectsMalformedGridEvenWhenLayoutAvoidsBadCells();
   testValidationApisRejectMalformedPlacementGeometryWithoutThrowing();
@@ -745,6 +782,7 @@ module.exports = {
   testBuildingGeometryHelpersParity,
   testBuildingGeometryCachesParity,
   testPlannerExplainabilityMapSummarizesOpportunityAndRisk,
+  testPopulationCapacityUpperBoundUsesFiniteResidentialCapacity,
   testRoadProbePreservesEdgeBorderConnectivity,
   testRoadProbeScratchRepeatability,
   testRoadProbeScratchWorkspaceResetsBetweenCalls,

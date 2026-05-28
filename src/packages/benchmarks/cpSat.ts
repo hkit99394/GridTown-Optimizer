@@ -15,6 +15,10 @@ import {
   safePopulationRate,
   selectBenchmarkCasesByName
 } from "./benchmarkOptions.js";
+import {
+  buildPopulationAttainmentMetricsForParams,
+  formatPopulationAttainmentMetrics
+} from "./populationAttainment.js";
 
 import type {
   CpSatAsyncOptions,
@@ -26,6 +30,7 @@ import type {
   SolverParams,
   SolverProgressSummary
 } from "../core/index.js";
+import type { PopulationAttainmentMetrics } from "./benchmarkOptions.js";
 
 export interface CpSatBenchmarkCase {
   name: string;
@@ -78,6 +83,7 @@ export interface CpSatBenchmarkCaseResult {
   populationPerObservedCpuSecond: number | null;
   progressTimeline: CpSatBenchmarkProgressSample[];
   progressSummary: SolverProgressSummary;
+  attainment: PopulationAttainmentMetrics;
   wallClockSeconds: number;
 }
 
@@ -336,6 +342,11 @@ async function runCpSatBenchmarkCase(
       fallbackOptimizer: "cp-sat",
       params
     }),
+    attainment: buildPopulationAttainmentMetricsForParams(params, {
+      totalPopulation: solution.totalPopulation,
+      baselinePopulation: 0,
+      elapsedSeconds: wallClockSeconds
+    }),
     wallClockSeconds
   };
 }
@@ -429,6 +440,7 @@ export function formatCpSatBenchmarkSuite(result: CpSatBenchmarkSuiteResult): st
       );
       lines.push(`  model-size=${formatModelSize(benchmark.cpSatTelemetry.modelSize)}`);
     }
+    lines.push(`  attainment=${formatPopulationAttainmentMetrics(benchmark.attainment)}`);
     lines.push(`  progress-summary=${formatSolverProgressSummary(benchmark.progressSummary)}`);
     lines.push(`  cpu-plan=${formatCpuPlan(benchmark.cpSatCpuPlan)}`);
     lines.push(

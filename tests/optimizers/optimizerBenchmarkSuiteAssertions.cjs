@@ -244,6 +244,7 @@ function testLnsBenchmarkCorpusHelpers() {
     assert.equal(result.results[0].cpSatOptions.randomSeed, 29);
     assert.equal(result.results[0].greedyOptions.randomSeed, 31);
     assert(result.results[0].wallClockSeconds >= 0);
+    assert.equal(result.results[0].attainment.populationCapacityUpperBound, 110);
     assert.equal(DEFAULT_LNS_BENCHMARK_CORPUS[0].grid[0][0], 1);
 
     assert.equal(observedParams.optimizer, "lns");
@@ -258,6 +259,7 @@ function testLnsBenchmarkCorpusHelpers() {
     const snapshot = createLnsBenchmarkSnapshot(result);
     assert.equal(Object.hasOwn(snapshot.results[0], "wallClockSeconds"), false);
     assert.match(formatLnsBenchmarkSuite(result), /=== LNS Benchmark Suite ===/);
+    assert.match(formatLnsBenchmarkSuite(result), /attainment=cap=/);
   } finally {
     lnsModule.solveLns = originalSolveLns;
   }
@@ -889,8 +891,10 @@ async function maybeTestCpSatBenchmarkSuite() {
   assert.equal(typeof result.results[0].cpSatTelemetry?.solveWallTimeSeconds, "number");
   assert.equal(typeof result.results[0].cpSatTelemetry?.modelSize?.variableCount, "number");
   assert.equal(typeof result.results[0].cpSatTelemetry?.modelSize?.constraintCount, "number");
+  assert.equal(typeof result.results[0].attainment.populationCapacityUpperBound, "number");
   assert(result.results[0].progressTimeline.length > 0);
   assert.match(formatCpSatBenchmarkSuite(result), /model-size=vars=/);
+  assert.match(formatCpSatBenchmarkSuite(result), /attainment=cap=/);
 
   const withoutTimeline = await runCpSatBenchmarkSuite(DEFAULT_CP_SAT_BENCHMARK_CORPUS, {
     names: ["compact-service-single"],

@@ -159,7 +159,7 @@ Owns:
 - compatibility entry from the historical `dist/webServer.js` path
 - creating the HTTP server in `src/apps/planner-server/webServer.ts`
 - binding `createPlannerRequestHandler`
-- wiring the progress-log root and solve-concurrency cap
+- wiring the progress-log root, progress-log cadence, and solve-concurrency cap
 
 ### `src/apps/planner-server/http/requestHandler.ts`
 
@@ -257,6 +257,7 @@ Owns:
 
 - progress-log document schema
 - pending, live-snapshot, and final-result samples
+- compacted unchanged live-snapshot segments with `lastCapturedAt` and `lastElapsedMs`
 - final solution serialization for long-running solve recovery/review
 - CP-SAT/LNS/Auto progress field normalization for persisted logs
 

@@ -1,5 +1,6 @@
 const { runPlannerResultsExplainabilityTests } = require("./plannerResultsExplainabilityTests.cjs");
 const { runPlannerResultsHeatmapTests } = require("./plannerResultsHeatmapTests.cjs");
+const { runPlannerResultsInspectorTests } = require("./plannerResultsInspectorTests.cjs");
 const { runPlannerResultsLayoutEditorTests } = require("./plannerResultsLayoutEditorTests.cjs");
 const { runPlannerResultsStatusDiagnosticsTests } = require("./plannerResultsStatusDiagnosticsTests.cjs");
 
@@ -8,6 +9,7 @@ async function runPlannerResultsTests() {
   runPlannerResultsStatusDiagnosticsTests();
   runPlannerResultsHeatmapTests();
   runPlannerResultsExplainabilityTests();
+  runPlannerResultsInspectorTests();
 }
 
 module.exports = {

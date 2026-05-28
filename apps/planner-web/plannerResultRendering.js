@@ -210,6 +210,82 @@
     }
 
     /**
+     * @param {unknown} population
+     * @param {JsonObject | null | undefined} type
+     */
+    function getResidentialPossibleImprovement(population, type) {
+      const currentPopulation = Number(population);
+      const maxPopulation = Number(type?.max);
+      if (!Number.isFinite(currentPopulation) || !Number.isFinite(maxPopulation)) return null;
+      const possibleImprovement = maxPopulation - currentPopulation;
+      if (possibleImprovement <= 0) return null;
+      return {
+        possibleImprovement,
+        maxPopulation
+      };
+    }
+
+    /**
+     * @param {ResultSolution | null | undefined} solution
+     * @param {ResultPlacement} placement
+     * @returns {BonusCoverageEntry[]}
+     */
+    function getResidentialServiceCoverage(solution, placement) {
+      if (!solution) return [];
+      return (solution.services ?? []).flatMap((service, index) => {
+        let covered = false;
+        for (let r = placement.r; r < placement.r + placement.rows && !covered; r += 1) {
+          for (let c = placement.c; c < placement.c + placement.cols; c += 1) {
+            if (isCellInsideServiceEffect(service, r, c)) {
+              covered = true;
+              break;
+            }
+          }
+        }
+        if (!covered) return [];
+        const bonus = Number(solution.servicePopulationIncreases?.[index] ?? 0);
+        return [
+          {
+            id: `S${index + 1}`,
+            name: lookupServiceName(solution.serviceTypeIndices?.[index] ?? -1),
+            bonus: Number.isFinite(bonus) ? bonus : 0
+          }
+        ];
+      });
+    }
+
+    /**
+     * @param {BonusCoverageEntry[]} coverage
+     */
+    function formatResidentialServiceCoverage(coverage) {
+      if (coverage.length === 0) return "no service coverage";
+      return `services ${coverage.map((entry) => `${entry.name} (${entry.id} +${entry.bonus})`).join(", ")}`;
+    }
+
+    /**
+     * @param {unknown} population
+     * @param {JsonObject | null | undefined} type
+     * @param {BonusCoverageEntry[]} coverage
+     */
+    function formatResidentialPopulationBreakdown(population, type, coverage) {
+      const currentPopulation = Number(population);
+      const basePopulation = Number(type?.min);
+      const maxPopulation = Number(type?.max);
+      const serviceBonus = coverage.reduce((sum, entry) => sum + entry.bonus, 0);
+      const coverageText = formatResidentialServiceCoverage(coverage);
+      const possibleImprovement = getResidentialPossibleImprovement(population, type)?.possibleImprovement ?? null;
+      const possibleImprovementText = possibleImprovement ? `, possible improvement +${possibleImprovement}` : "";
+      if (!Number.isFinite(currentPopulation) || !Number.isFinite(basePopulation)) {
+        return `${population ?? 0} population, type range ${type?.min ?? 0}-${type?.max ?? 0}${possibleImprovementText}, ${coverageText}`;
+      }
+      const capText =
+        Number.isFinite(maxPopulation) && basePopulation + serviceBonus > maxPopulation
+          ? `, capped at ${maxPopulation}`
+          : "";
+      return `${currentPopulation} population = ${basePopulation} base + ${serviceBonus} service bonus${capText}, type range ${type?.min ?? 0}-${type?.max ?? 0}${possibleImprovementText}, ${coverageText}`;
+    }
+
+    /**
      * @param {ResultSolution | null | undefined} [solution]
      */
     function renderSelectedBuildingDetail(solution = state.result?.solution) {
@@ -299,13 +375,21 @@
       const name = isService ? lookupServiceName(typeIndex) : lookupResidentialName(typeIndex);
       const buildingId = `${isService ? "S" : "R"}${selected.index + 1}`;
       const availability = getTypeAvailabilitySummary(selected.kind, typeIndex, solution);
+      const residentialPopulation = solution.populations?.[selected.index] ?? 0;
+      const residentialServiceCoverage = isService ? [] : getResidentialServiceCoverage(solution, placement);
+      const residentialPossibleImprovement = isService
+        ? null
+        : getResidentialPossibleImprovement(residentialPopulation, type);
+      const residentialPossibleImprovementSummary = residentialPossibleImprovement
+        ? ` Possible improvement: +${residentialPossibleImprovement.possibleImprovement} to max ${residentialPossibleImprovement.maxPopulation}.`
+        : "";
 
       elements.selectedBuildingTitle.textContent = name;
       elements.selectedBuildingSummary.textContent = isService
         ? `${buildingId} is a service placement covering ${placement.rows}x${placement.cols} with range ${placement.range}.`
         : pendingManualValidation
           ? `${buildingId} is a residential placement with population pending validation.`
-          : `${buildingId} is a residential placement contributing ${solution.populations?.[selected.index] ?? 0} population.`;
+          : `${buildingId} is a residential placement contributing ${residentialPopulation} population.${residentialPossibleImprovementSummary}`;
       elements.selectedBuildingId.textContent = buildingId;
       elements.selectedBuildingCategory.textContent = isService ? "Service" : "Residential";
       elements.selectedBuildingPosition.textContent = `Row ${placement.r}, Col ${placement.c}`;
@@ -316,7 +400,7 @@
           : `+${solution.servicePopulationIncreases?.[selected.index] ?? 0} population, range ${placement.range}, type bonus ${type?.bonus ?? 0}`
         : pendingManualValidation
           ? `Population pending validation, type range ${type?.min ?? 0}-${type?.max ?? 0}`
-          : `${solution.populations?.[selected.index] ?? 0} population, type range ${type?.min ?? 0}-${type?.max ?? 0}`;
+          : formatResidentialPopulationBreakdown(residentialPopulation, type, residentialServiceCoverage);
       elements.selectedBuildingAvailability.textContent = `${availability.remaining} left of ${availability.totalAvailable} for this type`;
       elements.selectedBuildingFacts.hidden = false;
     }

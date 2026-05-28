@@ -18,6 +18,7 @@
     "apps/planner-web/plannerPersistence.js",
     "apps/planner-web/plannerPersistenceValidation.js",
     "apps/planner-web/plannerRequestBuilder.js",
+    "apps/planner-web/plannerResultAvailability.js",
     "apps/planner-web/plannerResultRendering.js",
     "apps/planner-web/plannerResultProgress.js",
     "apps/planner-web/plannerResults.js",

@@ -24,6 +24,7 @@ function testGreedyBenchmarkSuite() {
   assert.equal(result.results[0].name, "cap-sweep-mixed");
   assert.equal(result.results[0].greedyOptions.profile, true);
   assert(result.results[0].wallClockSeconds >= 0);
+  assert.equal(typeof result.results[0].attainment.populationCapacityUpperBound, "number");
   assert(result.results[0].greedyProfile);
   assert(result.results[0].greedyProfile.counters.precompute.serviceCandidates > 0);
   assert(result.results[0].greedyProfile.counters.attempts.serviceCaps > 0);
@@ -59,6 +60,7 @@ function testGreedyBenchmarkSuite() {
   assert.equal(snapshot.results[0].progressSummary.elapsedTimeSeconds, null);
   assert.equal(Object.hasOwn(snapshot.results[0].greedyProfile.phases[0], "elapsedMs"), false);
   assert.match(formatGreedyBenchmarkSuite(result), /cap-sweep-mixed/);
+  assert.match(formatGreedyBenchmarkSuite(result), /attainment=cap=/);
   assert.match(formatGreedyBenchmarkSuite(result), /pop-cache=/);
   assert.match(formatGreedyBenchmarkSuite(result), /local-service=/);
   assert.match(formatGreedyBenchmarkSuite(result), /phases=/);

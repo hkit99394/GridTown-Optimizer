@@ -34,6 +34,7 @@ async function testStaticPlannerModules(handler) {
     ["/plannerExpansion.js", /CityBuilderExpansion/],
     ["/plannerHeatmaps.js", /PlannerHeatmaps/],
     ["/plannerManualLayout.js", /PlannerManualLayout/],
+    ["/plannerResultAvailability.js", /PlannerResultAvailability/],
     ["/plannerResultProgress.js", /PlannerResultProgress/],
     ["/plannerResultRendering.js", /PlannerResultRendering/],
     ["/plannerResults.js", /CityBuilderResults/],

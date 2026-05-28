@@ -12,6 +12,7 @@ import type {
   SolverProgressSummary,
   SolverTimeToQualityScorecard
 } from "../core/index.js";
+import type { PopulationAttainmentMetrics } from "./benchmarkOptions.js";
 import type { CrossModeBenchmarkRunTelemetry } from "./crossModeTelemetry.js";
 
 export type CrossModeBenchmarkMode = OptimizerName | "cp-sat-portfolio";
@@ -123,6 +124,7 @@ export interface CrossModeBenchmarkModeResult {
   observedWorkerCpuSeconds: number | null;
   populationPerWorkerCpuBudgetSecond: number | null;
   populationPerObservedCpuSecond: number | null;
+  attainment: PopulationAttainmentMetrics;
   roadCount: number;
   roadSemantics: CrossModeRoadSemanticsSummary;
   serviceCount: number;
@@ -165,6 +167,7 @@ export interface CrossModeBenchmarkCaseScorecard {
   workflowTags: CrossModeWorkflowTag[];
   gridRows: number;
   gridCols: number;
+  populationCapacityUpperBound: number | null;
   budgetSeconds: number;
   seed: number;
   bestScore: number | null;
@@ -180,6 +183,8 @@ export interface CrossModeBenchmarkModeSummary {
   bestPopulation: number;
   worstPopulation: number;
   populationStdDev: number;
+  meanCapacityUtilization: number | null;
+  meanGapClosedPerSecond: number | null;
   meanWallClockSeconds: number;
   winRateVsAuto: number | null;
   meanScoreDeltaVsAuto: number | null;

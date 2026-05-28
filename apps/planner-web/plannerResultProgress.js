@@ -33,6 +33,36 @@
     }
 
     /**
+     * @param {unknown} value
+     * @returns {number}
+     */
+    function normalizeProgressLogElapsedMs(value) {
+      const numericValue = Number(value);
+      if (!Number.isFinite(numericValue)) return 0;
+      return Math.max(0, Math.round(numericValue));
+    }
+
+    /**
+     * @param {JsonObject} entry
+     * @returns {{ startMs: number, endMs: number }}
+     */
+    function getProgressLogElapsedRange(entry) {
+      const startMs = normalizeProgressLogElapsedMs(entry.elapsedMs);
+      const endMs = Math.max(startMs, normalizeProgressLogElapsedMs(entry.lastElapsedMs ?? startMs));
+      return { startMs, endMs };
+    }
+
+    /**
+     * @param {JsonObject} entry
+     * @returns {string}
+     */
+    function formatProgressLogStamp(entry) {
+      const { startMs, endMs } = getProgressLogElapsedRange(entry);
+      if (endMs <= startMs) return formatElapsedTime(startMs);
+      return `${formatElapsedTime(startMs)} - ${formatElapsedTime(endMs)}`;
+    }
+
+    /**
      * @param {JsonObject | null | undefined} summary
      * @returns {string[]}
      */
@@ -117,22 +147,26 @@
       }
 
       progressSummary.textContent = liveSnapshot
-        ? `Recorded ${entries.length} performance sample${entries.length === 1 ? "" : "s"} so far. A new row is added whenever the live snapshot refreshes.`
-        : `Recorded ${entries.length} performance sample${entries.length === 1 ? "" : "s"} for this solve, including the final result.`;
+        ? `Recorded ${entries.length} performance segment${entries.length === 1 ? "" : "s"} so far.`
+        : `Recorded ${entries.length} performance segment${entries.length === 1 ? "" : "s"} for this solve, including the final result.`;
 
       entries.forEach((entry) => {
         const item = document.createElement("li");
         const stamp = document.createElement("strong");
         stamp.className = "progress-log-stamp";
-        stamp.textContent = formatElapsedTime(entry.elapsedMs ?? 0);
+        stamp.textContent = formatProgressLogStamp(entry);
 
         const detail = document.createElement("span");
         detail.className = "progress-log-detail";
 
         const parts = [];
+        const elapsedRange = getProgressLogElapsedRange(entry);
         const sourceLabel = entry.source === "final-result" ? "Final" : "Snapshot";
         const optimizerLabel = entry.optimizer ? getOptimizerLabel(entry.optimizer) : "Solver";
         parts.push(`${sourceLabel} ${optimizerLabel}`);
+        if (elapsedRange.endMs > elapsedRange.startMs) {
+          parts.push(`held ${formatElapsedTime(elapsedRange.endMs - elapsedRange.startMs)}`);
+        }
         const summaryParts = formatProgressSummaryParts(entry.progressSummary);
         if (summaryParts.length > 0) {
           parts.push(...summaryParts);

@@ -1,4 +1,4 @@
-/** @param {Window & { CityBuilderResults?: unknown, PlannerHeatmaps?: any, PlannerManualLayout?: any, PlannerResultProgress?: any, PlannerResultRendering?: any }} globalObject */ (function attachPlannerResults(
+/** @param {Window & { CityBuilderResults?: unknown, PlannerHeatmaps?: any, PlannerManualLayout?: any, PlannerResultAvailability?: any, PlannerResultProgress?: any, PlannerResultRendering?: any }} globalObject */ (function attachPlannerResults(
   globalObject
 ) {
   /**
@@ -26,7 +26,7 @@
    */
 
   const resultsGlobal =
-    /** @type {Window & { CityBuilderResults?: unknown, PlannerHeatmaps?: any, PlannerManualLayout?: any, PlannerResultProgress?: any, PlannerResultRendering?: any }} */
+    /** @type {Window & { CityBuilderResults?: unknown, PlannerHeatmaps?: any, PlannerManualLayout?: any, PlannerResultAvailability?: any, PlannerResultProgress?: any, PlannerResultRendering?: any }} */
     (globalObject);
 
   /** @param {ResultsOptions} options */ function createPlannerResultsController(options) {
@@ -77,11 +77,11 @@
       cloneJson,
       pendingManualLayoutError: PENDING_MANUAL_LAYOUT_ERROR
     });
-    if (!resultsGlobal.PlannerResultRendering?.createPlannerResultAvailabilityHelpers) {
-      throw new Error("Planner result rendering helpers are not loaded.");
+    if (!resultsGlobal.PlannerResultAvailability?.createPlannerResultAvailabilityHelpers) {
+      throw new Error("Planner result availability helpers are not loaded.");
     }
-    const { countPlacementsByType, getTypeAvailabilitySummary } =
-      resultsGlobal.PlannerResultRendering.createPlannerResultAvailabilityHelpers({
+    const { countPlacementsByType, getTypeTotalAvailable, getTypeAvailabilitySummary } =
+      resultsGlobal.PlannerResultAvailability.createPlannerResultAvailabilityHelpers({
         state
       });
     if (!resultsGlobal.PlannerHeatmaps?.createPlannerHeatmapHelpers) {
@@ -139,6 +139,7 @@
         getPlannerExplainabilityCell,
         getSelectedMapCell,
         getSelectedMapPlacement,
+        getTypeTotalAvailable,
         getTypeAvailabilitySummary,
         hasPendingManualValidation,
         hidesBuildingOverlayForMode: heatmapHidesBuildingOverlayForMode,

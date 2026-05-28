@@ -210,6 +210,7 @@ Available scripts from [package.json](./package.json):
 - `npm run quality`
 - `npm run security:audit`
 - `npm run web`
+- `npm run web:awake`
 - `npm run solve`
 - `npm run solve:auto`
 - `npm run solve:greedy`
@@ -241,6 +242,14 @@ npm run web
 
 Then open [http://localhost:4173](http://localhost:4173).
 
+For long solver runs on macOS, prefer:
+
+```bash
+npm run web:awake
+```
+
+That runs the same local server under `caffeinate` so the backend solver and progress log keep running while the screen is locked. The browser UI may stop polling while locked, but the server-side solve continues and writes progress under `artifacts/solve-progress/`.
+
 The planner now includes:
 
 - an interactive grid editor
@@ -265,6 +274,8 @@ Notes:
 
 - `LNS` and `CP-SAT` need the Python OR-Tools backend
 - stopping a background solve preserves the best feasible result when one exists
+- background solve progress is polled every 2 seconds by default and compacted into unchanged 10 second segments in the persisted log
+- tune progress logging with `PROGRESS_LOG_POLL_INTERVAL_SECONDS` and `PROGRESS_LOG_INTERVAL_SECONDS`, for example `PROGRESS_LOG_POLL_INTERVAL_SECONDS=1 PROGRESS_LOG_INTERVAL_SECONDS=5 npm run web:awake`
 - the displayed output can be reused as the default seed or hint only when the current model fingerprint still matches and the layout has been validated
 
 ## Library Usage
@@ -909,5 +920,6 @@ Every explicit road component must contain at least one row-0-or-column-0 road c
 - `auto` generates per-stage seeds; use `solution.autoStage.generatedSeeds` to inspect the actual Greedy, LNS, and CP-SAT stage seeds.
 - In the web planner, stopping `CP-SAT` or `LNS` early preserves the best feasible result found so far when one exists.
 - In the web planner, stopping `auto` preserves the best incumbent found so far.
+- For long web-planner runs on macOS, use `npm run web:awake` so macOS does not sleep the backend solver when the screen locks.
 - `LNS` currently uses CP-SAT as the neighborhood repair engine.
 - The example CLI prints validation output and an ASCII map for quick inspection.

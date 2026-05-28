@@ -1,4 +1,5 @@
 import { formatSolverProgressSummary } from "../core/index.js";
+import { formatPopulationAttainmentMetrics } from "./populationAttainment.js";
 
 import type {
   GreedyProfilePhaseSummary,
@@ -82,6 +83,7 @@ export function formatGreedyBenchmarkSuite(result: GreedyBenchmarkSuiteResult): 
     lines.push(
       `  population=${benchmark.totalPopulation} wall=${benchmark.wallClockSeconds.toFixed(3)}s roads=${benchmark.roadCount} services=${benchmark.serviceCount} residentials=${benchmark.residentialCount}`
     );
+    lines.push(`  attainment=${formatPopulationAttainmentMetrics(benchmark.attainment)}`);
     lines.push(`  progress=${formatSolverProgressSummary(benchmark.progressSummary)}`);
     if (counters) {
       const roadOpportunityCounterfactualCount =

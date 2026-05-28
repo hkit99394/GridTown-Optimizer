@@ -21,67 +21,6 @@
    */
 
   /**
-   * @param {MaybeJson} type
-   * @param {boolean} isService
-   */
-  function getTypeTotalAvailable(type, isService) {
-    const fallback = isService ? 1 : 0;
-    const rawAvailable = type?.avail ?? fallback;
-    const parsedAvailable = Number(rawAvailable);
-    return Number.isFinite(parsedAvailable) ? Math.max(0, Math.floor(parsedAvailable)) : fallback;
-  }
-
-  /**
-   * @param {{ state: RenderingState }} options
-   */
-  function createPlannerResultAvailabilityHelpers(options) {
-    const { state } = options;
-
-    /**
-     * @param {unknown} typeIndices
-     * @param {number} typeCount
-     */
-    function countPlacementsByType(typeIndices, typeCount) {
-      const counts = Array.from({ length: Math.max(0, typeCount) }, () => 0);
-      if (!Array.isArray(typeIndices)) return counts;
-      typeIndices.forEach((typeIndex) => {
-        if (Number.isInteger(typeIndex) && typeIndex >= 0 && typeIndex < counts.length) {
-          counts[typeIndex] += 1;
-        }
-      });
-      return counts;
-    }
-
-    /**
-     * @param {string} kind
-     * @param {number} typeIndex
-     * @param {ResultSolution | null | undefined} solution
-     */
-    function getTypeAvailabilitySummary(kind, typeIndex, solution) {
-      const isService = kind === "service";
-      const types = isService
-        ? (state.resultContext?.params?.serviceTypes ?? [])
-        : (state.resultContext?.params?.residentialTypes ?? []);
-      const usedCounts = countPlacementsByType(
-        isService ? solution?.serviceTypeIndices : solution?.residentialTypeIndices,
-        types.length
-      );
-      const totalAvailable = getTypeTotalAvailable(types[typeIndex], isService);
-      const used = usedCounts[typeIndex] ?? 0;
-      return {
-        totalAvailable,
-        used,
-        remaining: Math.max(0, totalAvailable - used)
-      };
-    }
-
-    return Object.freeze({
-      countPlacementsByType,
-      getTypeAvailabilitySummary
-    });
-  }
-
-  /**
    * @param {object} options
    * @param {RenderingState} options.state
    * @param {JsonObject} options.elements
@@ -94,6 +33,7 @@
    * @param {(row: number, col: number) => JsonObject | null} options.helpers.getPlannerExplainabilityCell
    * @param {(grid?: MaybeGrid) => ResultCell | null} options.helpers.getSelectedMapCell
    * @param {(solution: ResultSolution | null | undefined, selection?: ResultSelection | null | undefined) => MaybeSelectedResultPlacement} options.helpers.getSelectedMapPlacement
+   * @param {(type: MaybeJson, isService: boolean) => number} options.helpers.getTypeTotalAvailable
    * @param {(kind: string, typeIndex: number, solution: ResultSolution | null | undefined) => TypeAvailabilitySummary} options.helpers.getTypeAvailabilitySummary
    * @param {() => boolean} options.helpers.hasPendingManualValidation
    * @param {(placement: ResultPlacement, row: number, col: number) => boolean} options.helpers.isCellInsidePlacement
@@ -117,6 +57,7 @@
       getPlannerExplainabilityCell,
       getSelectedMapCell,
       getSelectedMapPlacement,
+      getTypeTotalAvailable,
       getTypeAvailabilitySummary,
       hasPendingManualValidation,
       isCellInsidePlacement,
@@ -919,7 +860,6 @@
     (globalObject);
 
   renderingGlobal.PlannerResultRendering = Object.freeze({
-    createPlannerResultAvailabilityHelpers,
     createPlannerResultRenderingHelpers
   });
 })(window);

@@ -5,8 +5,8 @@ const path = require("node:path");
 const repoRoot = path.resolve(__dirname, "..");
 const defaultSourceFileBudget = 900;
 
-const sourceRoots = ["src", "apps", "python"];
-const sourceExtensions = new Set([".ts", ".js", ".css", ".html", ".py"]);
+const sourceRoots = ["src", "apps", "python", "scripts"];
+const sourceExtensions = new Set([".ts", ".js", ".mjs", ".css", ".html", ".py"]);
 
 const temporaryOversizedBudgets = new Map();
 

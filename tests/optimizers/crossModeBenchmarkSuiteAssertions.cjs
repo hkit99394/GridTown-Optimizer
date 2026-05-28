@@ -2,6 +2,7 @@ const assert = require("node:assert/strict");
 
 const {
   buildCrossModeBenchmarkTelemetryManifest,
+  buildPopulationAttainmentMetrics,
   DEFAULT_CROSS_MODE_PRODUCT_WORKFLOW_CORPUS,
   formatCrossModeBenchmarkDecisionTraceJsonl,
   formatCrossModeBenchmarkSuite,
@@ -19,6 +20,33 @@ const { buildMockSolution } = require("../helpers/solverFixtures.cjs");
 const { buildCpSatTelemetry, buildCrossModeBenchmarkCase } = require("./crossModeBenchmarkTestHelpers.cjs");
 
 async function testCrossModeBenchmarkSuiteAssertions() {
+  assert.deepEqual(
+    buildPopulationAttainmentMetrics({
+      totalPopulation: 9400,
+      capacityUpperBound: 10000,
+      baselinePopulation: 9300,
+      elapsedSeconds: 2
+    }),
+    {
+      populationCapacityUpperBound: 10000,
+      populationGapToCapacity: 600,
+      capacityUtilization: 0.94,
+      gapClosedVsZero: 0.94,
+      baselinePopulation: 9300,
+      gapClosedVsBaseline: 0.143,
+      gapClosedPerSecond: 0.071
+    }
+  );
+  assert.equal(
+    buildPopulationAttainmentMetrics({
+      totalPopulation: 10100,
+      capacityUpperBound: 10000,
+      baselinePopulation: 10000,
+      elapsedSeconds: 1
+    }).gapClosedVsBaseline,
+    null
+  );
+
   const benchmarkCase = buildCrossModeBenchmarkCase();
   const result = await runCrossModeBenchmarkSuite([benchmarkCase], {
     modes: ["greedy"],
@@ -48,6 +76,9 @@ async function testCrossModeBenchmarkSuiteAssertions() {
   assert.equal(result.cases[0].results[0].winVsAuto, "no-auto");
   assert.equal(result.cases[0].results[0].scoreDeltaVsAuto, null);
   assert.equal(result.cases[0].results[0].progressSummary.activeStage, "greedy");
+  assert.equal(result.cases[0].populationCapacityUpperBound, 1);
+  assert.equal(result.cases[0].results[0].attainment.populationCapacityUpperBound, 1);
+  assert.equal(result.cases[0].results[0].attainment.capacityUtilization, 1);
   assert.equal(typeof result.cases[0].results[0].budgetAllocationSignal.budgetUtilizationRatio, "number");
   assert.equal(result.cases[0].results[0].budgetAllocationSignal.scoreDeltaVsAuto, null);
   assert.equal(result.cases[0].results[0].telemetry.schemaVersion, 1);
@@ -56,6 +87,7 @@ async function testCrossModeBenchmarkSuiteAssertions() {
   assert.equal(result.cases[0].results[0].telemetry.budgetSeconds, 3);
   assert.equal(result.cases[0].results[0].telemetry.seed, 5);
   assert.equal(result.cases[0].results[0].telemetry.solverParams.greedy.timeLimitSeconds, 3);
+  assert.equal(result.cases[0].results[0].telemetry.score.attainment.populationCapacityUpperBound, 1);
   assert.equal(typeof result.cases[0].results[0].telemetry.timing.wallClockSeconds, "number");
   assert.equal(result.cases[0].results[0].telemetry.cpu.workerCpuBudgetSeconds, 3);
   assert.equal(result.modeSummaries[0].mode, "greedy");
@@ -126,6 +158,8 @@ async function testCrossModeBenchmarkSuiteAssertions() {
   const mockedLns = mocked.cases[0].results.find((entry) => entry.mode === "lns");
   const mockedPortfolio = mocked.cases[0].results.find((entry) => entry.mode === "cp-sat-portfolio");
   assert.equal(mockedGreedy.roadSemantics.status, "anchor-connected");
+  assert.equal(mockedGreedy.attainment.baselinePopulation, mockedAuto.totalPopulation);
+  assert.equal(mockedGreedy.attainment.gapClosedVsBaseline, null);
   assert.equal(mockedGreedy.roadSemantics.anchorRoadCount, 1);
   assert.equal(mockedGreedy.roadSemantics.anchorConnectedRoadRatio, 1);
   assert.equal(mockedGreedy.roadSemantics.roadAdjacentBuildingCount, 1);
@@ -326,6 +360,7 @@ async function testCrossModeBenchmarkSuiteAssertions() {
   assert.match(formatted, /Equal wall-clock budgets: 3s per mode/);
   assert.match(formatted, /progress=current=/);
   assert.match(formatted, /quality=first-feasible=/);
+  assert.match(formatted, /attainment=cap=/);
   assert.match(formatted, /road-semantics=/);
   assert.match(formatted, /budget-signal=/);
   const mockedFormatted = formatCrossModeBenchmarkSuite(mocked);

@@ -20,6 +20,10 @@ import {
 import { normalizeCpSatBenchmarkOptions } from "./cpSat.js";
 import { normalizeGreedyBenchmarkOptions } from "./greedy.js";
 import { GENERATED_LNS_PRESSURE_CASES } from "./lnsPressureCases.js";
+import {
+  buildPopulationAttainmentMetricsForParams,
+  formatPopulationAttainmentMetrics
+} from "./populationAttainment.js";
 
 import type {
   CpSatOptions,
@@ -34,6 +38,7 @@ import type {
   SolverParams,
   SolverProgressSummary
 } from "../core/index.js";
+import type { PopulationAttainmentMetrics } from "./benchmarkOptions.js";
 
 export interface LnsBenchmarkCase {
   name: string;
@@ -98,6 +103,7 @@ export interface LnsBenchmarkCaseResult {
   greedyProfile: GreedyProfile | null;
   lnsTelemetry: LnsTelemetry | null;
   progressSummary: SolverProgressSummary;
+  attainment: PopulationAttainmentMetrics;
   wallClockSeconds: number;
 }
 
@@ -233,6 +239,11 @@ function runLnsBenchmarkCase(
       fallbackOptimizer: "lns",
       params
     }),
+    attainment: buildPopulationAttainmentMetricsForParams(params, {
+      totalPopulation: solution.totalPopulation,
+      baselinePopulation: 0,
+      elapsedSeconds: wallClockSeconds
+    }),
     wallClockSeconds
   };
 }
@@ -272,6 +283,7 @@ export function formatLnsBenchmarkSuite(result: LnsBenchmarkSuiteResult): string
     lines.push(
       `  population=${benchmark.totalPopulation} wall=${benchmark.wallClockSeconds.toFixed(3)}s roads=${benchmark.roadCount} services=${benchmark.serviceCount} residentials=${benchmark.residentialCount} stopped=${benchmark.stoppedByUser}`
     );
+    lines.push(`  attainment=${formatPopulationAttainmentMetrics(benchmark.attainment)}`);
     lines.push(`  progress=${formatSolverProgressSummary(benchmark.progressSummary)}`);
     lines.push(
       `  lns=iterations:${benchmark.lnsOptions.iterations} no-improve:${benchmark.lnsOptions.maxNoImprovementIterations} window:${benchmark.lnsOptions.neighborhoodRows}x${benchmark.lnsOptions.neighborhoodCols} repair:${benchmark.lnsOptions.repairTimeLimitSeconds}s seed-limit:${formatSeconds(benchmark.lnsTelemetry?.seedTimeLimitSeconds)}`

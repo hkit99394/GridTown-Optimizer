@@ -7,6 +7,7 @@ import {
 } from "./benchmarkOptions.js";
 import { MODE_LABELS } from "./crossModeLabels.js";
 import { compareModeResults } from "./crossModeResultOrder.js";
+import { formatPopulationAttainmentMetrics } from "./populationAttainment.js";
 
 import type {
   CrossModeBenchmarkBudgetPolicySignal,
@@ -112,12 +113,13 @@ export function formatCrossModeBenchmarkSuite(result: CrossModeBenchmarkSuiteRes
     lines.push(`- ${scorecard.name}: ${scorecard.description}`);
     const workflowTags = scorecard.workflowTags.length ? scorecard.workflowTags.join(",") : "none";
     lines.push(
-      `  band=${scorecard.problemSizeBand} split=${scorecard.split} workflow=${workflowTags} budget=${scorecard.budgetSeconds}s seed=${scorecard.seed} best=${scorecard.bestScore ?? "n/a"} winner=${scorecard.winnerModes.map((mode) => MODE_LABELS[mode]).join(", ") || "n/a"} grid=${scorecard.gridRows}x${scorecard.gridCols}`
+      `  band=${scorecard.problemSizeBand} split=${scorecard.split} workflow=${workflowTags} budget=${scorecard.budgetSeconds}s seed=${scorecard.seed} best=${scorecard.bestScore ?? "n/a"} capacity-bound=${scorecard.populationCapacityUpperBound ?? "n/a"} winner=${scorecard.winnerModes.map((mode) => MODE_LABELS[mode]).join(", ") || "n/a"} grid=${scorecard.gridRows}x${scorecard.gridCols}`
     );
     for (const benchmark of [...scorecard.results].sort(compareModeResults)) {
       lines.push(
         `  ${benchmark.label}: rank=${benchmark.rank} score=${benchmark.totalPopulation} delta=${formatScoreDelta(benchmark.scoreDeltaToBest)} win-vs-auto=${benchmark.winVsAuto} auto-delta=${formatScoreDeltaVsAuto(benchmark.scoreDeltaVsAuto)} wall=${benchmark.wallClockSeconds.toFixed(3)}s cpu-budget=${benchmark.workerCpuBudgetSeconds}s observed-cpu=${formatSeconds(benchmark.observedWorkerCpuSeconds)} pop/cpu-budget=${benchmark.populationPerWorkerCpuBudgetSecond === null ? "n/a" : benchmark.populationPerWorkerCpuBudgetSecond.toFixed(3)} roads=${benchmark.roadCount} services=${benchmark.serviceCount} residentials=${benchmark.residentialCount}`
       );
+      lines.push(`    attainment=${formatPopulationAttainmentMetrics(benchmark.attainment)}`);
       lines.push(`    progress=${formatSolverProgressSummary(benchmark.progressSummary)}`);
       lines.push(
         `    quality=${formatTimeToQualityScorecard(benchmark.timeToQuality)} trace-events=${benchmark.decisionTrace.length}`
@@ -136,7 +138,7 @@ export function formatCrossModeBenchmarkSuite(result: CrossModeBenchmarkSuiteRes
   lines.push("Mode summaries:");
   for (const summary of result.modeSummaries) {
     lines.push(
-      `- ${summary.label}: runs=${summary.runs} mean=${summary.meanPopulation.toFixed(1)} best=${summary.bestPopulation} worst=${summary.worstPopulation} seed-stddev=${summary.populationStdDev.toFixed(1)} win-rate-vs-auto=${summary.winRateVsAuto === null ? "n/a" : summary.winRateVsAuto.toFixed(3)}`
+      `- ${summary.label}: runs=${summary.runs} mean=${summary.meanPopulation.toFixed(1)} best=${summary.bestPopulation} worst=${summary.worstPopulation} seed-stddev=${summary.populationStdDev.toFixed(1)} util-mean=${summary.meanCapacityUtilization === null ? "n/a" : formatRatio(summary.meanCapacityUtilization)} closed/s-mean=${summary.meanGapClosedPerSecond === null ? "n/a" : summary.meanGapClosedPerSecond.toFixed(3)} win-rate-vs-auto=${summary.winRateVsAuto === null ? "n/a" : summary.winRateVsAuto.toFixed(3)}`
     );
   }
 

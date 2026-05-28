@@ -112,6 +112,7 @@ function summarizeMode(
   results: readonly CrossModeBenchmarkModeResult[]
 ): CrossModeBenchmarkModeSummary {
   const populations = results.map((result) => result.totalPopulation);
+  const attainment = results.map((result) => result.attainment);
   const comparable = results.filter((result) => result.winVsAuto !== "baseline" && result.winVsAuto !== "no-auto");
   const wins = countBenchmarkMatches(comparable, (result) => result.winVsAuto === "win");
   const ties = countBenchmarkMatches(comparable, (result) => result.winVsAuto === "tie");
@@ -126,10 +127,22 @@ function summarizeMode(
     bestPopulation: populations.length ? Math.max(...populations) : 0,
     worstPopulation: populations.length ? Math.min(...populations) : 0,
     populationStdDev: standardDeviation(populations),
+    meanCapacityUtilization: meanNullableAttainmentValue(attainment, "capacityUtilization"),
+    meanGapClosedPerSecond: meanNullableAttainmentValue(attainment, "gapClosedPerSecond"),
     meanWallClockSeconds: meanBenchmarkValue(results.map((result) => result.wallClockSeconds)),
     winRateVsAuto: comparable.length ? (wins + ties * 0.5) / comparable.length : null,
     meanScoreDeltaVsAuto: deltas.length ? meanBenchmarkValue(deltas) : null
   };
+}
+
+function meanNullableAttainmentValue(
+  values: readonly CrossModeBenchmarkModeResult["attainment"][],
+  key: keyof CrossModeBenchmarkModeResult["attainment"]
+): number | null {
+  const finiteValues = values
+    .map((value) => value[key])
+    .filter((value): value is number => typeof value === "number" && Number.isFinite(value));
+  return finiteValues.length ? meanBenchmarkValue(finiteValues) : null;
 }
 
 export function buildSummaries(cases: readonly CrossModeBenchmarkCaseScorecard[]): {

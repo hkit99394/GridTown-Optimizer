@@ -214,6 +214,14 @@ function isProgressLogEntry(value: unknown): value is SolveProgressLogEntry {
   if (!isRecord(value)) return false;
   if (!isProgressLogDateString(value.capturedAt)) return false;
   if (!isNonNegativeFiniteNumber(value.elapsedMs)) return false;
+  if ("lastCapturedAt" in value && value.lastCapturedAt !== undefined) {
+    if (!isProgressLogDateString(value.lastCapturedAt)) return false;
+  }
+  if ("lastElapsedMs" in value && value.lastElapsedMs !== undefined) {
+    if (!isNonNegativeFiniteNumber(value.lastElapsedMs) || Number(value.lastElapsedMs) < Number(value.elapsedMs)) {
+      return false;
+    }
+  }
   if (value.source !== "live-snapshot" && value.source !== "final-result") return false;
   if (value.optimizer !== null && !isOptimizerName(value.optimizer)) return false;
   if ("activeOptimizer" in value && value.activeOptimizer !== null && !isOptimizerName(value.activeOptimizer)) {
@@ -538,10 +546,22 @@ function buildProgressEntry(
   };
 }
 
+function progressSummaryStablePayload(summary: unknown): unknown {
+  if (!isRecord(summary)) return summary ?? null;
+  const {
+    elapsedTimeSeconds: _elapsedTimeSeconds,
+    timeSinceImprovementSeconds: _timeSinceImprovementSeconds,
+    ...rest
+  } = summary;
+  return rest;
+}
+
 function entriesMatch(left: SolveProgressLogEntry | undefined, right: SolveProgressLogEntry): boolean {
   if (!left) return false;
   return (
     left.elapsedMs === right.elapsedMs &&
+    (left.lastElapsedMs ?? null) === (right.lastElapsedMs ?? null) &&
+    (left.lastCapturedAt ?? null) === (right.lastCapturedAt ?? null) &&
     left.source === right.source &&
     left.optimizer === right.optimizer &&
     (left.activeOptimizer ?? null) === (right.activeOptimizer ?? null) &&
@@ -561,6 +581,46 @@ function entriesMatch(left: SolveProgressLogEntry | undefined, right: SolveProgr
     progressLogPayloadsEqual(left.autoStage, right.autoStage) &&
     (left.note ?? null) === (right.note ?? null)
   );
+}
+
+function entriesShareStableProgressSegment(
+  left: SolveProgressLogEntry | undefined,
+  right: SolveProgressLogEntry
+): boolean {
+  if (!left) return false;
+  return (
+    left.source === right.source &&
+    left.optimizer === right.optimizer &&
+    (left.activeOptimizer ?? null) === (right.activeOptimizer ?? null) &&
+    left.hasFeasibleSolution === right.hasFeasibleSolution &&
+    left.totalPopulation === right.totalPopulation &&
+    left.cpSatStatus === right.cpSatStatus &&
+    (left.lnsStopReason ?? null) === (right.lnsStopReason ?? null) &&
+    (left.lnsNeighborhoodStatus ?? null) === (right.lnsNeighborhoodStatus ?? null) &&
+    (left.lnsNeighborhoodImprovement ?? null) === (right.lnsNeighborhoodImprovement ?? null) &&
+    (left.lnsNeighborhoodsCompleted ?? null) === (right.lnsNeighborhoodsCompleted ?? null) &&
+    progressLogPayloadsEqual(
+      progressSummaryStablePayload(left.progressSummary),
+      progressSummaryStablePayload(right.progressSummary)
+    ) &&
+    left.bestPopulationUpperBound === right.bestPopulationUpperBound &&
+    left.populationGapUpperBound === right.populationGapUpperBound &&
+    left.lastImprovementAtSeconds === right.lastImprovementAtSeconds &&
+    progressLogPayloadsEqual(left.autoStage, right.autoStage)
+  );
+}
+
+function compactProgressLogEntry(
+  firstEntry: SolveProgressLogEntry,
+  latestEntry: SolveProgressLogEntry
+): SolveProgressLogEntry {
+  return {
+    ...latestEntry,
+    capturedAt: firstEntry.capturedAt,
+    elapsedMs: firstEntry.elapsedMs,
+    lastCapturedAt: latestEntry.lastCapturedAt ?? latestEntry.capturedAt,
+    lastElapsedMs: latestEntry.lastElapsedMs ?? latestEntry.elapsedMs
+  };
 }
 
 export class SolveProgressLogWriter {
@@ -679,10 +739,12 @@ export class SolveProgressLogWriter {
     const lastEntry = this.document.entries[this.document.entries.length - 1];
     if (entriesMatch(lastEntry, entry)) {
       this.document.entries[this.document.entries.length - 1] = entry;
+    } else if (entriesShareStableProgressSegment(lastEntry, entry)) {
+      this.document.entries[this.document.entries.length - 1] = compactProgressLogEntry(lastEntry, entry);
     } else {
       this.document.entries.push(entry);
     }
-    this.document.updatedAt = entry.capturedAt;
+    this.document.updatedAt = entry.lastCapturedAt ?? entry.capturedAt;
   }
 
   finishWithSolutionSample(

@@ -26,6 +26,16 @@ export interface BenchmarkSuiteMetadata {
   selectedCaseNames: string[];
 }
 
+export interface PopulationAttainmentMetrics {
+  populationCapacityUpperBound: number | null;
+  populationGapToCapacity: number | null;
+  capacityUtilization: number | null;
+  gapClosedVsZero: number | null;
+  baselinePopulation: number | null;
+  gapClosedVsBaseline: number | null;
+  gapClosedPerSecond: number | null;
+}
+
 export interface BenchmarkVariantResultMetrics<TName extends string = string> {
   variantName: TName;
   seed: number | null;
@@ -35,6 +45,7 @@ export interface BenchmarkVariantResultMetrics<TName extends string = string> {
   wallClockDeltaVsBaselineSeconds: number;
   timeToBestWallClockSeconds?: number | null;
   timeToBestWallClockDeltaVsBaselineSeconds?: number | null;
+  attainment?: PopulationAttainmentMetrics;
 }
 
 export interface BenchmarkVariantCaseMetrics<
@@ -61,6 +72,12 @@ export interface BenchmarkVariantSummaryMetrics<TName extends string = string> {
   meanWallClockDeltaVsBaselineSeconds: number;
   meanTimeToBestWallClockSeconds?: number | null;
   meanTimeToBestWallClockDeltaVsBaselineSeconds?: number | null;
+  meanPopulationCapacityUpperBound?: number | null;
+  meanPopulationGapToCapacity?: number | null;
+  meanCapacityUtilization?: number | null;
+  meanGapClosedVsZero?: number | null;
+  meanGapClosedVsBaseline?: number | null;
+  meanGapClosedPerSecond?: number | null;
   improvedCaseCount: number;
   regressedCaseCount: number;
   unchangedCaseCount: number;
@@ -102,6 +119,7 @@ export type BenchmarkVariantSummarySnapshot<TSummary extends BenchmarkVariantSum
   | "meanWallClockDeltaVsBaselineSeconds"
   | "meanTimeToBestWallClockSeconds"
   | "meanTimeToBestWallClockDeltaVsBaselineSeconds"
+  | "meanGapClosedPerSecond"
 >;
 
 export type BenchmarkOptionsWithDefaults<TOptions extends object, TDefaults extends Partial<TOptions>> = TOptions & {
@@ -324,6 +342,7 @@ export function summarizeBenchmarkVariantMetrics<
   const results = cases.map((entry) => findBenchmarkVariantResult(variantName, entry, missingResultMessage));
   const populations = results.map((entry) => entry.totalPopulation);
   const populationDeltas = results.map((entry) => entry.populationDeltaVsBaseline);
+  const attainment = results.map((entry) => entry.attainment);
   const improvedCaseCount = countBenchmarkMatches(results, (entry) => entry.populationDeltaVsBaseline > 0);
   const regressedCaseCount = countBenchmarkMatches(results, (entry) => entry.populationDeltaVsBaseline < 0);
   const unchangedCaseCount = countBenchmarkMatches(results, (entry) => entry.populationDeltaVsBaseline === 0);
@@ -356,6 +375,14 @@ export function summarizeBenchmarkVariantMetrics<
     meanWallClockDeltaVsBaselineSeconds: meanBenchmarkValue(
       results.map((entry) => entry.wallClockDeltaVsBaselineSeconds)
     ),
+    meanPopulationCapacityUpperBound: meanNullableBenchmarkValue(
+      attainment.map((entry) => entry?.populationCapacityUpperBound)
+    ),
+    meanPopulationGapToCapacity: meanNullableBenchmarkValue(attainment.map((entry) => entry?.populationGapToCapacity)),
+    meanCapacityUtilization: meanNullableBenchmarkValue(attainment.map((entry) => entry?.capacityUtilization)),
+    meanGapClosedVsZero: meanNullableBenchmarkValue(attainment.map((entry) => entry?.gapClosedVsZero)),
+    meanGapClosedVsBaseline: meanNullableBenchmarkValue(attainment.map((entry) => entry?.gapClosedVsBaseline)),
+    meanGapClosedPerSecond: meanNullableBenchmarkValue(attainment.map((entry) => entry?.gapClosedPerSecond)),
     improvedCaseCount,
     regressedCaseCount,
     unchangedCaseCount,
@@ -407,6 +434,7 @@ export function snapshotBenchmarkVariantSummary<TSummary extends BenchmarkVarian
     meanWallClockDeltaVsBaselineSeconds: _meanWallClockDeltaVsBaselineSeconds,
     meanTimeToBestWallClockSeconds: _meanTimeToBestWallClockSeconds,
     meanTimeToBestWallClockDeltaVsBaselineSeconds: _meanTimeToBestWallClockDeltaVsBaselineSeconds,
+    meanGapClosedPerSecond: _meanGapClosedPerSecond,
     ...snapshot
   } = summary;
   return snapshot;

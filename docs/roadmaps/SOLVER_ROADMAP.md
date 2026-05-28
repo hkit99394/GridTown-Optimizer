@@ -50,6 +50,27 @@ Completed details live in [SOLVER_ROADMAP_DELIVERED.md](SOLVER_ROADMAP_DELIVERED
 
 There is no ungated default-path solver change active after the current May 2026 evidence tranche. Learned LNS remains diagnostics-only, and short-budget Auto keeps the existing default policy. The active `features/service-master-shortlist` branch is a gated Greedy research track only; it must not change default `auto` behavior.
 
+### Delivered benchmark instrumentation: capacity-normalized effort metrics
+
+Benchmark scorecards should report population progress against a cheap optimistic upper bound in addition to solver-vs-solver deltas. The bound is not a proof of attainability: it represents the best population implied by residential max values and finite residential availability before geometry, road access, service placement, and boost feasibility are enforced.
+
+Delivered first pass:
+
+1. `computePopulationCapacityUpperBound(params)` centralizes the optimistic capacity bound. For typed residential settings, it expands finite `residentialTypes[*].avail` slots, sorts by `max`, and applies `availableBuildings.residentials` / `maxResidentials` when present. For legacy settings, it returns a bound only when both finite residential count and max population are available. It returns `null` when no meaningful finite bound exists.
+2. Benchmark helpers now report `populationCapacityUpperBound`, `populationGapToCapacity`, `capacityUtilization`, `gapClosedVsZero`, `gapClosedVsBaseline`, and `gapClosedPerSecond`.
+3. Cross-mode scorecards, cross-mode telemetry, Greedy/LNS/CP-SAT benchmark outputs, and Greedy deterministic ablation artifacts carry the metrics. Solver behavior is unchanged.
+4. Time-aware marginal value uses the raw remaining room before rounding display fields:
+
+   ```text
+   remainingRoomBeforeImprovement = populationCapacityUpperBound - previousBest
+   gapClosedByImprovement = improvement / remainingRoomBeforeImprovement
+   gapClosedPerSecond = gapClosedByImprovement / elapsedSeconds
+   ```
+
+   Example: `+100` at `0 / 10000` closes `1.0%` of the original room, while `+100` at `9400 / 10000` closes `16.7%` of the remaining room.
+
+Future behavior tuning remains gated. Consider an explicit tuning knob only after evidence exists, for example `gapClosureEffortRatio` or `targetGapClosedPerSecond`, so high-utilization improvements can justify more time without silently changing default `auto` behavior.
+
 ### Active gated track: service-master shortlist
 
 Near-term goal: improve the opt-in Greedy `serviceMasterDecomposition` candidate pool before collecting promotion evidence. The branch now replaces the prior plain top-N pool with a deterministic shortlist that keeps legacy ranked coverage first, then adds bounded diversity across service type, footprint geometry, placement region, and likely residential payoff.
@@ -362,4 +383,5 @@ Any default-path solver change must include:
 - Tiny saturated cases are smoke tests, not promotion evidence.
 - Dynamic programming is a bounded exact subroutine for tiny windows and oracles, not a replacement for Greedy/LNS/CP-SAT.
 - CPU parallelism must be measured against both wall-clock and CPU-second cost.
+- Population upper bounds are optimistic benchmark context, not proven optima; do not use unreachable gaps as promotion blockers without exact proof or stronger feasibility bounds.
 - Distributed solving should wait until hosting requires durable jobs or single-machine policy is no longer the bottleneck.

@@ -29,6 +29,7 @@
     "typecheck:js": "tsc -p tsconfig.checkjs.json && tsc -p tsconfig.checkjs.browser.json",
     "security:audit": "npm audit --audit-level=high",
     "quality": "npm test && npm run experiment-registry:check && npm run security:audit",
+    "smoke:web-solve": "npm run build && node scripts/planner-solve-flow-smoke.mjs",
     "start": "node dist/cli.js",
     "web": "npm run build && node dist/webServer.js",
     "web:awake": "npm run build && caffeinate -i -m -s node dist/webServer.js",

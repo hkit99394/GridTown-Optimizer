@@ -199,6 +199,7 @@ module.exports = {
   createFakeDomElement,
   loadPlannerDefaultsModule,
   loadPlannerExpansionModule,
+  loadPlannerManualLayoutModule,
   loadPlannerOnboardingModule,
   loadPlannerPersistenceModule,
   loadPlannerPersistenceValidationModule,

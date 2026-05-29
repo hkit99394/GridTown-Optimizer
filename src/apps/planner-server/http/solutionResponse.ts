@@ -275,6 +275,9 @@ function addPlacementCellsForCleanup(
   occupiedCells: Set<string>,
   placement: BuildingPlacementForRoadMaterialization
 ): boolean {
+  const gridRows = grid.length;
+  const gridCols = grid[0]?.length ?? 0;
+  if (placement.r > gridRows - placement.rows || placement.c > gridCols - placement.cols) return false;
   for (let rowOffset = 0; rowOffset < placement.rows; rowOffset += 1) {
     for (let colOffset = 0; colOffset < placement.cols; colOffset += 1) {
       const row = placement.r + rowOffset;

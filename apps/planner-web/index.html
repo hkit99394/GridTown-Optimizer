@@ -4,6 +4,28 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>City Builder Planner | Operations Cockpit</title>
+    <script>
+      (() => {
+        const isPlannerV2 = window.location.pathname === "/v2" || window.location.pathname === "/v2/";
+        if (!isPlannerV2) return;
+        document.documentElement.dataset.plannerVersion = "v2";
+
+        const stylesheet = document.createElement("link");
+        stylesheet.rel = "stylesheet";
+        stylesheet.href = "/plannerV2.css";
+        document.head.append(stylesheet);
+
+        window.addEventListener(
+          "DOMContentLoaded",
+          () => {
+            const script = document.createElement("script");
+            script.src = "/plannerV2.js";
+            document.body.append(script);
+          },
+          { once: true }
+        );
+      })();
+    </script>
     <link rel="stylesheet" href="/styles.css" />
     <link rel="stylesheet" href="/plannerWorkflow.css" />
     <link rel="stylesheet" href="/results.css" />

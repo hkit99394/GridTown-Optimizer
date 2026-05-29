@@ -91,6 +91,24 @@ Initial audit on 2026-05-29: the evidence framework is ready for middle-run work
 5. **Artifact policy:** keep summaries, telemetry manifests, registry drafts, and the registry index in git; move large raw JSON bundles, replay labels, trace dumps, and temporary solve logs to external or release storage.
 6. **Decision closeout:** record the exact command, commit, hardware, split metadata, artifact location, result summary, blockers, and default-path decision before changing runtime defaults.
 
+## Middle-Run Backlog
+
+These items make the evidence system current enough that solver candidates can be judged without rebuilding the framework. They are not default-path solver changes.
+
+| ID  | Status  | Work Item                       | Deliverable                                                                                 | Done When                                                                                                                                          |
+| --- | ------- | ------------------------------- | ------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| M1  | Done    | Evidence readiness audit        | Confirmed evidence gate, registry, product-corpus split checks, and artifact policy posture | `npm run quality:evidence` passes, registry checks pass, and product-corpus scorecard smoke runs without creating promotion claims.                |
+| M2  | Done    | Middle-run operating checklist  | Checklist above                                                                             | Baseline freshness, corpus coverage, same-slice controls, promotion matrix, artifact policy, and decision closeout are written in the active plan. |
+| M3  | Done    | Product-corpus freshness smoke  | Small current scorecard smoke over product workflow cases                                   | Current corpus list is checked and at least one development workflow smoke runs across `auto`, `greedy`, `lns`, and `cp-sat`.                      |
+| M4  | Pending | Corpus coverage audit           | Coverage table for development, protected holdout, fresh holdout, workflow tags, and gaps   | Every promotion-relevant workflow family has an owner status: covered, weak coverage, missing, or not applicable.                                  |
+| M5  | Pending | Baseline-repeat control runbook | Copy-paste commands for same-slice baseline-repeat controls                                 | Candidate reviewers can run baseline-repeat on the same cases, budgets, seeds, hardware, and command shape before broad scorecard interpretation.  |
+| M6  | Pending | Baseline scorecard refresh plan | Commands and storage plan for product-corpus baseline refresh                               | The plan names smoke, development, protected holdout, fresh holdout, and full promotion-matrix commands plus artifact locations.                   |
+| M7  | Pending | Evaluator-validity replay check | Current replay/evaluator-validity summary for product workflows                             | Product workflow scorecards report final-layout validity and replay compatibility clearly enough to block invalid promotion claims.                |
+| M8  | Pending | CPU and time-to-best review     | Summary of CPU-cost, wall-clock, first-feasible, and time-to-best fields in scorecards      | Promotion reviewers can compare population gains against CPU cost and time-to-best without inspecting raw JSON bundles.                            |
+| M9  | Pending | Candidate intake template       | Template for a new solver candidate evidence request                                        | New candidates must name trigger, hypothesis, modes, cases, budgets, seeds, expected signal, blockers, and artifact policy before implementation.  |
+| M10 | Pending | Decision closeout template      | Template for promote, keep-baseline, diagnostics-only, or blocked decisions                 | Each decision records command, commit, hardware, split metadata, summary metrics, artifact index, blockers, and runtime-default status.            |
+| M11 | Pending | Artifact storage handoff        | Durable external/release storage convention for large raw bundles                           | Large scorecards, replay labels, trace dumps, and solve logs have a durable location while registry entries remain the git-tracked index.          |
+
 ## Closed Evidence Tracks
 
 These summaries preserve the decision boundary. Detailed artifacts and intermediate investigation notes are in [SOLVER_ROADMAP_HISTORY_2026-05.md](SOLVER_ROADMAP_HISTORY_2026-05.md).

@@ -7,9 +7,12 @@ import { contentTypeFor, sendText } from "./transport.js";
 const STATIC_FILES: Record<string, string> = {
   "/": "index.html",
   "/index.html": "index.html",
+  "/v2": "index.html",
+  "/v2/": "index.html",
   "/styles.css": "styles.css",
   "/plannerWorkflow.css": "plannerWorkflow.css",
   "/results.css": "results.css",
+  "/plannerV2.css": "plannerV2.css",
   "/plannerShell.js": "plannerShell.js",
   "/plannerShared.js": "plannerShared.js",
   "/plannerDefaults.js": "plannerDefaults.js",
@@ -27,6 +30,7 @@ const STATIC_FILES: Record<string, string> = {
   "/plannerResults.js": "plannerResults.js",
   "/plannerRequestBuilder.js": "plannerRequestBuilder.js",
   "/plannerWorkbench.js": "plannerWorkbench.js",
+  "/plannerV2.js": "plannerV2.js",
   "/app.js": "app.js"
 };
 

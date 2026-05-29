@@ -38,9 +38,13 @@ async function testCpSatReadinessRoute(handler) {
 async function testStaticPlannerModules(handler) {
   /** @type {Array<[string, RegExp]>} */
   const expectedStaticAssets = [
+    ["/", /City Builder Planner/],
+    ["/v2", /data-planner-version = "v2"|plannerV2\.css|plannerV2\.js/],
+    ["/v2/", /data-planner-version = "v2"|plannerV2\.css|plannerV2\.js/],
     ["/styles.css", /page-shell/],
     ["/plannerWorkflow.css", /workflow-steps/],
     ["/results.css", /result-details-body/],
+    ["/plannerV2.css", /v2-state-rail/],
     ["/plannerShell.js", /CityBuilderShell/],
     ["/plannerShared.js", /CityBuilderShared/],
     ["/plannerDefaults.js", /CityBuilderDefaults/],
@@ -58,6 +62,7 @@ async function testStaticPlannerModules(handler) {
     ["/plannerResults.js", /CityBuilderResults/],
     ["/plannerRequestBuilder.js", /CityBuilderRequestBuilder/],
     ["/plannerWorkbench.js", /CityBuilderWorkbench/],
+    ["/plannerV2.js", /initPlannerV2/],
     ["/app.js", /const state =/]
   ];
 

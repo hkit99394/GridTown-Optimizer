@@ -561,6 +561,70 @@
     }
 
     /**
+     * @param {ResultPlacement} placement
+     * @returns {boolean}
+     */
+    function hasRenderablePlacementGeometry(placement) {
+      return (
+        Number.isSafeInteger(placement?.r) &&
+        Number.isSafeInteger(placement?.c) &&
+        Number.isSafeInteger(placement?.rows) &&
+        Number.isSafeInteger(placement?.cols) &&
+        placement.rows > 0 &&
+        placement.cols > 0
+      );
+    }
+
+    /**
+     * @param {ResultPlacement} placement
+     * @param {number} rows
+     * @param {number} cols
+     * @param {(row: number, col: number) => void} visit
+     */
+    function forEachPlacementCellWithinGrid(placement, rows, cols, visit) {
+      if (!hasRenderablePlacementGeometry(placement)) return;
+      const rowEnd = placement.r + placement.rows;
+      const colEnd = placement.c + placement.cols;
+      if (!Number.isSafeInteger(rowEnd) || !Number.isSafeInteger(colEnd)) return;
+
+      const rowStart = Math.max(0, placement.r);
+      const clippedRowEnd = Math.min(rows, rowEnd);
+      const colStart = Math.max(0, placement.c);
+      const clippedColEnd = Math.min(cols, colEnd);
+      for (let row = rowStart; row < clippedRowEnd; row += 1) {
+        for (let col = colStart; col < clippedColEnd; col += 1) {
+          visit(row, col);
+        }
+      }
+    }
+
+    /**
+     * @param {ResultPlacement} placement
+     * @param {number} rows
+     * @param {number} cols
+     * @returns {ResultPlacement | null}
+     */
+    function clipPlacementToGrid(placement, rows, cols) {
+      if (!hasRenderablePlacementGeometry(placement)) return null;
+      const rowEnd = placement.r + placement.rows;
+      const colEnd = placement.c + placement.cols;
+      if (!Number.isSafeInteger(rowEnd) || !Number.isSafeInteger(colEnd)) return null;
+
+      const rowStart = Math.max(0, placement.r);
+      const clippedRowEnd = Math.min(rows, rowEnd);
+      const colStart = Math.max(0, placement.c);
+      const clippedColEnd = Math.min(cols, colEnd);
+      if (rowStart >= clippedRowEnd || colStart >= clippedColEnd) return null;
+      return {
+        ...placement,
+        r: rowStart,
+        c: colStart,
+        rows: clippedRowEnd - rowStart,
+        cols: clippedColEnd - colStart
+      };
+    }
+
+    /**
      * @param {PlannerGrid} grid
      * @param {ResultSolution} solution
      */
@@ -575,23 +639,15 @@
       }
 
       for (const service of solution.services) {
-        for (let dr = 0; dr < service.rows; dr += 1) {
-          for (let dc = 0; dc < service.cols; dc += 1) {
-            const row = service.r + dr;
-            const col = service.c + dc;
-            if (matrix[row]?.[col]) matrix[row][col] = "service";
-          }
-        }
+        forEachPlacementCellWithinGrid(service, matrix.length, matrix[0]?.length ?? 0, (row, col) => {
+          matrix[row][col] = "service";
+        });
       }
 
       for (const residential of solution.residentials) {
-        for (let dr = 0; dr < residential.rows; dr += 1) {
-          for (let dc = 0; dc < residential.cols; dc += 1) {
-            const row = residential.r + dr;
-            const col = residential.c + dc;
-            if (matrix[row]?.[col]) matrix[row][col] = "residential";
-          }
-        }
+        forEachPlacementCellWithinGrid(residential, matrix.length, matrix[0]?.length ?? 0, (row, col) => {
+          matrix[row][col] = "residential";
+        });
       }
 
       return matrix;
@@ -632,13 +688,9 @@
       solution.services.forEach((service, index) => {
         const name = lookupServiceName(solution.serviceTypeIndices[index] ?? -1);
         const hoverLabel = `${name} (S${index + 1})`;
-        for (let dr = 0; dr < service.rows; dr += 1) {
-          for (let dc = 0; dc < service.cols; dc += 1) {
-            const row = service.r + dr;
-            const col = service.c + dc;
-            if (labels[row]?.[col] !== undefined) labels[row][col] = hoverLabel;
-          }
-        }
+        forEachPlacementCellWithinGrid(service, rows, cols, (row, col) => {
+          labels[row][col] = hoverLabel;
+        });
       });
 
       solution.residentials.forEach((residential, index) => {
@@ -648,13 +700,9 @@
           !pendingManualValidation && population != null
             ? `${name} (R${index + 1}, pop ${population})`
             : `${name} (R${index + 1})`;
-        for (let dr = 0; dr < residential.rows; dr += 1) {
-          for (let dc = 0; dc < residential.cols; dc += 1) {
-            const row = residential.r + dr;
-            const col = residential.c + dc;
-            if (labels[row]?.[col] !== undefined) labels[row][col] = hoverLabel;
-          }
-        }
+        forEachPlacementCellWithinGrid(residential, rows, cols, (row, col) => {
+          labels[row][col] = hoverLabel;
+        });
       });
 
       return labels;
@@ -723,13 +771,18 @@
       if (!solution) return;
 
       const layout = readMatrixLayout(elements.resultMapGrid);
+      const grid = state.resultContext?.grid ?? state.grid ?? [];
+      const rows = grid.length;
+      const cols = grid[0]?.length ?? Number(elements.resultMapGrid.dataset.cols ?? 0);
       solution.services.forEach((service, index) => {
+        const clippedPlacement = clipPlacementToGrid(service, rows, cols);
+        if (!clippedPlacement) return;
         const label = lookupServiceName(solution.serviceTypeIndices[index] ?? -1);
         elements.resultOverlay.append(
           createBuildingOverlay(
             "service",
             index,
-            service,
+            clippedPlacement,
             layout,
             label,
             state.selectedMapBuilding?.kind === "service" && state.selectedMapBuilding?.index === index
@@ -737,12 +790,14 @@
         );
       });
       solution.residentials.forEach((residential, index) => {
+        const clippedPlacement = clipPlacementToGrid(residential, rows, cols);
+        if (!clippedPlacement) return;
         const label = lookupResidentialName(solution.residentialTypeIndices[index] ?? -1);
         elements.resultOverlay.append(
           createBuildingOverlay(
             "residential",
             index,
-            residential,
+            clippedPlacement,
             layout,
             label,
             state.selectedMapBuilding?.kind === "residential" && state.selectedMapBuilding?.index === index

@@ -6,6 +6,7 @@ const { buildManualLayoutResponse, buildSolveResponse } = require("../../dist/ap
 const {
   createFakeDomElement,
   loadPlannerExpansionModule,
+  loadPlannerManualLayoutModule,
   loadPlannerPersistenceModule,
   loadPlannerResultRenderingModule,
   loadPlannerRequestBuilderModule,
@@ -24,6 +25,7 @@ module.exports = {
   buildSolveResponse,
   createFakeDomElement,
   loadPlannerExpansionModule,
+  loadPlannerManualLayoutModule,
   loadPlannerPersistenceModule,
   loadPlannerResultRenderingModule,
   loadPlannerRequestBuilderModule,

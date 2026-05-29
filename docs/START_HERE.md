@@ -35,7 +35,13 @@ export CITY_BUILDER_CP_SAT_PYTHON=/path/to/python
 
 ## Local Quality Gates
 
-Fast PR gate:
+PR hygiene gate:
+
+```bash
+npm run quality:pr
+```
+
+Fast component gate:
 
 ```bash
 npm run quality:fast

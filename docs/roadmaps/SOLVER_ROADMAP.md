@@ -78,6 +78,19 @@ Middle run: improve evidence quality before changing behavior. Keep product-corp
 
 Long run: promote only candidates that beat the current `auto` posture on protected equal-budget evidence. Service-master, learned guidance, portfolio, external solver, GPU, and distributed-worker work should stay opt-in or diagnostics-only until they clear the promotion gates below.
 
+## Middle-Run Evidence Checklist
+
+Use this checklist before treating any solver branch as a default-path candidate.
+
+Initial audit on 2026-05-29: the evidence framework is ready for middle-run work. The product workflow corpus has explicit development and holdout coverage, `quality:evidence` covers registry/artifact/product-corpus contracts, and the artifact policy separates durable summaries/manifests from large raw evidence bundles. No default-path promotion candidate is active.
+
+1. **Baseline freshness:** run `npm run quality:evidence` and a current product-corpus scorecard smoke before interpreting candidate results.
+2. **Corpus coverage:** confirm development, protected holdout, fresh holdout, workflow tags, evaluator-validity replay, CPU cost, and time-to-best fields are present for the candidate's comparison family.
+3. **Same-slice controls:** run baseline-repeat controls on the same cases, budgets, seeds, hardware, and command shape before broad scorecard interpretation.
+4. **Promotion matrix:** for real candidates, report `auto`, `greedy`, `lns`, and `cp-sat` at 1s, 5s, 30s, and 120s with seeds `7,19,37`; include portfolio only when CPU-normalized efficiency is part of the claim.
+5. **Artifact policy:** keep summaries, telemetry manifests, registry drafts, and the registry index in git; move large raw JSON bundles, replay labels, trace dumps, and temporary solve logs to external or release storage.
+6. **Decision closeout:** record the exact command, commit, hardware, split metadata, artifact location, result summary, blockers, and default-path decision before changing runtime defaults.
+
 ## Closed Evidence Tracks
 
 These summaries preserve the decision boundary. Detailed artifacts and intermediate investigation notes are in [SOLVER_ROADMAP_HISTORY_2026-05.md](SOLVER_ROADMAP_HISTORY_2026-05.md).

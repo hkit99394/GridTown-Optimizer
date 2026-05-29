@@ -548,6 +548,10 @@
       const { hintMismatch = "error", includeWarmStartHint = true, includeLnsSeed = true } = options;
       const optimizer = normalizeRequestOptimizer(state.optimizer);
       const autoWallClockLimitSeconds = readOptionalInteger(state.auto?.wallClockLimitSeconds ?? "", 1);
+      const autoContinueAfterPopulationCapSeconds = readOptionalInteger(
+        state.auto?.continueAfterPopulationCapSeconds ?? "",
+        0
+      );
       const timeLimitSeconds = readOptionalInteger(state.cpSat.timeLimitSeconds, 1);
       const noImprovementTimeoutSeconds = readOptionalInteger(state.cpSat.noImprovementTimeoutSeconds, 1);
       const cpSatRandomSeed = readOptionalInteger(state.cpSat.randomSeed, 0);
@@ -559,10 +563,15 @@
         optimizer,
         serviceTypes: state.serviceTypes.map((entry, index) => parseServiceCatalogEntry(entry, index)),
         residentialTypes: state.residentialTypes.map((entry, index) => parseResidentialCatalogEntry(entry, index)),
-        ...(autoWallClockLimitSeconds !== undefined
+        ...(autoWallClockLimitSeconds !== undefined || autoContinueAfterPopulationCapSeconds !== undefined
           ? {
               auto: {
-                wallClockLimitSeconds: autoWallClockLimitSeconds
+                ...(autoWallClockLimitSeconds !== undefined
+                  ? { wallClockLimitSeconds: autoWallClockLimitSeconds }
+                  : {}),
+                ...(autoContinueAfterPopulationCapSeconds !== undefined
+                  ? { continueAfterPopulationCapSeconds: autoContinueAfterPopulationCapSeconds }
+                  : {})
               }
             }
           : {})

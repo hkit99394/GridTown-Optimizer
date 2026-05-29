@@ -134,7 +134,8 @@ const state = /** @type {JsonObject} */ ({
     useDisplayedSeed: true
   },
   auto: {
-    wallClockLimitSeconds: ""
+    wallClockLimitSeconds: "",
+    continueAfterPopulationCapSeconds: ""
   },
   isPainting: false,
   isSolving: false,
@@ -186,6 +187,8 @@ const elements = /** @type {JsonObject} */ ({
   cpSatReadinessStatus: document.querySelector("#cpSatReadinessStatus"),
   autoPanel: document.querySelector("#autoPanel"),
   autoWallClockLimitSeconds: document.querySelector("#autoWallClockLimitSeconds"),
+  autoContinueAfterPopulationCapSeconds: document.querySelector("#autoContinueAfterPopulationCapSeconds"),
+  autoPopulationCapGracePresetButton: document.querySelector("#autoPopulationCapGracePresetButton"),
   greedyPanel: document.querySelector("#greedyPanel"),
   lnsPanel: document.querySelector("#lnsPanel"),
   cpSatPanel: document.querySelector("#cpSatPanel"),
@@ -710,6 +713,20 @@ function init() {
     elements.autoWallClockLimitSeconds.addEventListener("input", () => {
       state.auto.wallClockLimitSeconds = elements.autoWallClockLimitSeconds.value;
       requestBuilderController.updatePayloadPreview();
+    });
+  }
+  if (elements.autoContinueAfterPopulationCapSeconds) {
+    elements.autoContinueAfterPopulationCapSeconds.addEventListener("input", () => {
+      state.auto.continueAfterPopulationCapSeconds = elements.autoContinueAfterPopulationCapSeconds.value;
+      requestBuilderController.updatePayloadPreview();
+    });
+  }
+  if (elements.autoPopulationCapGracePresetButton) {
+    elements.autoPopulationCapGracePresetButton.addEventListener("click", () => {
+      state.auto.continueAfterPopulationCapSeconds = "300";
+      workbenchController.syncSolverFields();
+      requestBuilderController.updatePayloadPreview();
+      shellController.setSolveState("Auto will keep exploring for 5 minutes after the population cap is reached.");
     });
   }
 

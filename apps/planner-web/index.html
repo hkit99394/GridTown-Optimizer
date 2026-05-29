@@ -515,11 +515,6 @@
 
               <div class="solver-panels">
                 <section id="autoPanel" class="solver-panel">
-                  <div class="notice info">
-                    Auto is the recommended quality path. It uses a capped fast Greedy seed stage, then LNS repairs
-                    neighborhoods and bounded CP-SAT polishes the incumbent. Auto owns the stage tuning; switch to a
-                    standalone mode only when you want direct control over that solver.
-                  </div>
                   <details class="expert-panel advanced-only">
                     <summary>Auto tuning</summary>
                     <div class="form-grid">
@@ -533,14 +528,25 @@
                           placeholder="Blank = unlimited"
                         />
                       </label>
+                      <label class="field">
+                        <span>After population cap (seconds)</span>
+                        <input
+                          id="autoContinueAfterPopulationCapSeconds"
+                          type="number"
+                          min="0"
+                          step="1"
+                          placeholder="0 = stop at cap"
+                        />
+                      </label>
+                    </div>
+                    <div class="actions-row compact-actions">
+                      <button id="autoPopulationCapGracePresetButton" type="button" class="button ghost">
+                        Set 5 min after cap
+                      </button>
                     </div>
                   </details>
                 </section>
                 <section id="greedyPanel" class="solver-panel">
-                  <div class="notice info">
-                    Greedy is the heavy standalone heuristic / advanced inspection mode. Use Auto when you want the fast
-                    seed stage plus LNS and bounded CP-SAT follow-on improvement.
-                  </div>
                   <details class="expert-panel advanced-only">
                     <summary>Greedy tuning</summary>
                     <div class="form-grid two-up">
@@ -613,11 +619,6 @@
                 </section>
 
                 <section id="lnsPanel" class="solver-panel" hidden>
-                  <div class="solver-callout">
-                    LNS is the manual improvement mode. It starts from a greedy or displayed seed, then repairs one
-                    neighborhood at a time with CP-SAT. Configure the Python OR-Tools backend with
-                    <code>npm run setup:cp-sat</code> or <code>CITY_BUILDER_CP_SAT_PYTHON</code>.
-                  </div>
                   <details class="expert-panel advanced-only">
                     <summary>LNS tuning</summary>
                     <div class="form-grid two-up">

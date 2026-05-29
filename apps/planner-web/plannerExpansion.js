@@ -117,6 +117,23 @@
       return "0";
     }
 
+    /**
+     * @param {number | null | undefined} value
+     * @returns {string}
+     */
+    function formatPopulation(value) {
+      return Number(value ?? 0).toLocaleString();
+    }
+
+    /**
+     * @param {number} winningDelta
+     * @param {number} losingDelta
+     * @returns {string}
+     */
+    function formatExpansionMargin(winningDelta, losingDelta) {
+      return formatSignedPopulationDelta(winningDelta - losingDelta);
+    }
+
     function readExpansionCandidateFlags() {
       const hasServiceCandidate = Boolean(String(state.expansionAdvice.nextServiceText ?? "").trim());
       const hasResidentialCandidate = Boolean(String(state.expansionAdvice.nextResidentialText ?? "").trim());
@@ -490,47 +507,53 @@
           serviceDelta != null &&
           residentialDelta != null
         ) {
-          detail =
-            `Baseline reaches ${baselinePopulation.toLocaleString()}, ${serviceScenario.candidateName} reaches ` +
-            `${Number(servicePopulation).toLocaleString()} (${formatSignedPopulationDelta(serviceDelta)}), ` +
-            `${residentialScenario.candidateName} reaches ${Number(residentialPopulation).toLocaleString()} ` +
-            `(${formatSignedPopulationDelta(residentialDelta)}).`;
-
           if (serviceDelta <= 0 && residentialDelta <= 0) {
             winner = "Remain current layout";
             detail =
-              `Neither typed addition improves the current ${getOptimizerLabel(baselineScenario.request.params.optimizer)} baseline ` +
-              `of ${baselinePopulation.toLocaleString()}.`;
+              `Hold the current layout: neither typed addition improves the ${getOptimizerLabel(baselineScenario.request.params.optimizer)} ` +
+              `baseline of ${formatPopulation(baselinePopulation)}. ${serviceScenario.candidateName} reaches ` +
+              `${formatPopulation(servicePopulation)} (${formatSignedPopulationDelta(serviceDelta)}); ` +
+              `${residentialScenario.candidateName} reaches ${formatPopulation(residentialPopulation)} ` +
+              `(${formatSignedPopulationDelta(residentialDelta)}).`;
           } else if (serviceDelta > residentialDelta) {
             winner = `Add ${serviceScenario.candidateName}`;
+            detail =
+              `${serviceScenario.candidateName} is the stronger next expansion: ` +
+              `${formatSignedPopulationDelta(serviceDelta)} versus ${formatSignedPopulationDelta(residentialDelta)} ` +
+              `for ${residentialScenario.candidateName}, a ${formatExpansionMargin(serviceDelta, residentialDelta)} ` +
+              `population margin over the residential option.`;
           } else if (residentialDelta > serviceDelta) {
             winner = `Add ${residentialScenario.candidateName}`;
+            detail =
+              `${residentialScenario.candidateName} is the stronger next expansion: ` +
+              `${formatSignedPopulationDelta(residentialDelta)} versus ${formatSignedPopulationDelta(serviceDelta)} ` +
+              `for ${serviceScenario.candidateName}, a ${formatExpansionMargin(residentialDelta, serviceDelta)} ` +
+              `population margin over the service option.`;
           } else {
             winner = "Tie";
             detail =
-              `Both additions improve the current ${getOptimizerLabel(baselineScenario.request.params.optimizer)} baseline by ` +
-              `${formatSignedPopulationDelta(serviceDelta)}.`;
+              `Both additions tie on population at ${formatSignedPopulationDelta(serviceDelta)} over the current ` +
+              `${getOptimizerLabel(baselineScenario.request.params.optimizer)} baseline of ${formatPopulation(baselinePopulation)}; ` +
+              `choose based on footprint, availability, or the expansion path you want to preserve.`;
           }
         } else if (serviceScenario && serviceDelta != null) {
           winner = serviceDelta > 0 ? `Add ${serviceScenario.candidateName}` : "Remain current layout";
           detail =
             serviceDelta > 0
-              ? `${serviceScenario.candidateName} raises the current ${getOptimizerLabel(baselineScenario.request.params.optimizer)} baseline from ` +
-                `${baselinePopulation.toLocaleString()} to ${Number(servicePopulation).toLocaleString()} ` +
+              ? `Add ${serviceScenario.candidateName} next: it raises the current ${getOptimizerLabel(baselineScenario.request.params.optimizer)} ` +
+                `baseline from ${formatPopulation(baselinePopulation)} to ${formatPopulation(servicePopulation)} ` +
                 `(${formatSignedPopulationDelta(serviceDelta)}).`
-              : `${serviceScenario.candidateName} reaches ${Number(servicePopulation).toLocaleString()} ` +
-                `(${formatSignedPopulationDelta(serviceDelta)}), so keeping the current layout is still better than the baseline ` +
-                `of ${baselinePopulation.toLocaleString()}.`;
+              : `Hold the current layout: ${serviceScenario.candidateName} reaches ${formatPopulation(servicePopulation)} ` +
+                `(${formatSignedPopulationDelta(serviceDelta)}) against the baseline of ${formatPopulation(baselinePopulation)}.`;
         } else if (residentialScenario && residentialDelta != null) {
           winner = residentialDelta > 0 ? `Add ${residentialScenario.candidateName}` : "Remain current layout";
           detail =
             residentialDelta > 0
-              ? `${residentialScenario.candidateName} raises the current ${getOptimizerLabel(baselineScenario.request.params.optimizer)} baseline from ` +
-                `${baselinePopulation.toLocaleString()} to ${Number(residentialPopulation).toLocaleString()} ` +
+              ? `Add ${residentialScenario.candidateName} next: it raises the current ${getOptimizerLabel(baselineScenario.request.params.optimizer)} ` +
+                `baseline from ${formatPopulation(baselinePopulation)} to ${formatPopulation(residentialPopulation)} ` +
                 `(${formatSignedPopulationDelta(residentialDelta)}).`
-              : `${residentialScenario.candidateName} reaches ${Number(residentialPopulation).toLocaleString()} ` +
-                `(${formatSignedPopulationDelta(residentialDelta)}), so keeping the current layout is still better than the baseline ` +
-                `of ${baselinePopulation.toLocaleString()}.`;
+              : `Hold the current layout: ${residentialScenario.candidateName} reaches ${formatPopulation(residentialPopulation)} ` +
+                `(${formatSignedPopulationDelta(residentialDelta)}) against the baseline of ${formatPopulation(baselinePopulation)}.`;
         }
 
         state.expansionAdvice.isRunning = false;

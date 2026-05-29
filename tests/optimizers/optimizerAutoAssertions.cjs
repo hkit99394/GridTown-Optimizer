@@ -211,6 +211,78 @@ function testAutoStopsAfterLnsReachesPopulationCapacity() {
   }
 }
 
+function testAutoContinuesAfterPopulationCapacityWhenGraceConfigured() {
+  const solverModule = require("../../dist/packages/solvers/greedy/solver.js");
+  const lnsModule = require("../../dist/packages/solvers/lns/solver.js");
+  const cpSatModule = require("../../dist/packages/solvers/cp-sat/solver.js");
+  const originalSolveGreedy = solverModule.solveGreedy;
+  const originalSolveLns = lnsModule.solveLns;
+  const originalSolveCpSat = cpSatModule.solveCpSat;
+  const originalNow = Date.now;
+  let now = 1_000;
+  let lnsCalled = false;
+  let cpSatCalled = false;
+  let capturedCpSatTimeLimitSeconds = null;
+
+  Date.now = () => now;
+  solverModule.solveGreedy = () =>
+    buildMockSolution({
+      optimizer: "greedy",
+      totalPopulation: 100,
+      residentials: [{ r: 0, c: 0, rows: 1, cols: 1 }]
+    });
+  lnsModule.solveLns = () => {
+    lnsCalled = true;
+    now += 3_000;
+    return buildMockSolution({
+      optimizer: "lns",
+      totalPopulation: 100,
+      residentials: [{ r: 0, c: 0, rows: 1, cols: 1 }]
+    });
+  };
+  cpSatModule.solveCpSat = (_grid, params) => {
+    cpSatCalled = true;
+    capturedCpSatTimeLimitSeconds = params.cpSat.timeLimitSeconds;
+    now += 3_000;
+    return buildMockSolution({
+      optimizer: "cp-sat",
+      totalPopulation: 100,
+      cpSatStatus: "FEASIBLE",
+      residentials: [{ r: 0, c: 0, rows: 1, cols: 1 }]
+    });
+  };
+
+  try {
+    const solution = solveAuto(
+      [
+        [1, 1],
+        [1, 1]
+      ],
+      {
+        optimizer: "auto",
+        residentialTypes: [{ w: 1, h: 1, min: 100, max: 100, avail: 1 }],
+        availableBuildings: { residentials: 1, services: 0 },
+        auto: { wallClockLimitSeconds: 20, continueAfterPopulationCapSeconds: 5 },
+        cpSat: { timeLimitSeconds: 30, noImprovementTimeoutSeconds: 30 }
+      }
+    );
+
+    assert.equal(lnsCalled, true);
+    assert.equal(cpSatCalled, true);
+    assert.equal(solution.totalPopulation, 100);
+    assert.equal(solution.activeOptimizer, "cp-sat");
+    assert.equal(solution.autoStage.activeStage, "cp-sat");
+    assert.equal(solution.autoStage.stopReason, "population-cap-reached");
+    assert.equal(solution.autoStage.generatedSeeds.length, 3);
+    assert.equal(capturedCpSatTimeLimitSeconds <= 2.1, true);
+  } finally {
+    Date.now = originalNow;
+    solverModule.solveGreedy = originalSolveGreedy;
+    lnsModule.solveLns = originalSolveLns;
+    cpSatModule.solveCpSat = originalSolveCpSat;
+  }
+}
+
 function testAutoPreservesUserWarmStartMetadata() {
   const solverModule = require("../../dist/packages/solvers/greedy/solver.js");
   const lnsModule = require("../../dist/packages/solvers/lns/solver.js");
@@ -1123,6 +1195,7 @@ async function runAutoOptimizerTests() {
   await maybeTestAutoOptimizer();
   testAutoStopsAfterGreedyReachesPopulationCapacity();
   testAutoStopsAfterLnsReachesPopulationCapacity();
+  testAutoContinuesAfterPopulationCapacityWhenGraceConfigured();
   testAutoPreservesUserWarmStartMetadata();
   testAutoDirectRuntimeRejectsMalformedOptionValues();
   await testAutoAsyncStageErrorKeepsIncumbentWithExplicitStopReason();

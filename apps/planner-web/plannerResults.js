@@ -53,6 +53,9 @@
       "placement-opportunity": "Placement opportunity",
       "connectivity-risk": "Connectivity risk"
     };
+    const STOP_REASON_LABELS = /** @type {Record<string, string>} */ ({
+      "population-cap-reached": "Population cap reached"
+    });
     if (!resultsGlobal.PlannerManualLayout?.createPlannerManualLayoutModel) {
       throw new Error("Planner manual-layout helpers are not loaded.");
     }
@@ -168,6 +171,18 @@
     }
     function isLayoutEditBusy() {
       return Boolean(state.isSolving || state.layoutEditor.isApplying);
+    }
+    /** @param {unknown} value @returns {string} */ function formatStopReasonLabel(value) {
+      const text = String(value ?? "");
+      return STOP_REASON_LABELS[text] ?? text;
+    }
+    /** @param {JsonObject} stats @returns {string | null} */ function formatAutoStageStatus(stats) {
+      if (stats.optimizer !== "auto" || !stats.activeOptimizer) return null;
+      const activeStageStatus = `Auto -> ${getOptimizerLabel(stats.activeOptimizer)}`;
+      const stopReason = stats.autoStage?.stopReason;
+      return stopReason === "population-cap-reached"
+        ? `${formatStopReasonLabel(stopReason)} (${activeStageStatus})`
+        : activeStageStatus;
     }
     /** @param {string} message */ function setLayoutEditorStatus(message) {
       state.layoutEditor.status = message;
@@ -671,10 +686,7 @@
       elements.resultResidentialCount.textContent = String(stats.residentialCount);
       elements.resultElapsed.textContent = formatElapsedTime(state.resultElapsedMs);
       const cpSatSeedStatus = manualLayout ? "" : formatCpSatSeedStatus(solution, stats);
-      const autoStageStatus =
-        stats.optimizer === "auto" && stats.activeOptimizer
-          ? `Auto -> ${getOptimizerLabel(stats.activeOptimizer)}`
-          : null;
+      const autoStageStatus = formatAutoStageStatus(stats);
       elements.resultSolverStatus.textContent = manualLayout
         ? pendingManualValidation
           ? "manual edit (pending validation)"

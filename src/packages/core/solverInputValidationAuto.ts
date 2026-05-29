@@ -43,6 +43,14 @@ export function assertValidAutoOptions(params: SolverParams): void {
   );
   requireOptionalFiniteNumberInRange(
     auto,
+    "continueAfterPopulationCapSeconds",
+    "Auto option auto.continueAfterPopulationCapSeconds",
+    0,
+    AUTO_MAX_WALL_CLOCK_LIMIT_SECONDS,
+    true
+  );
+  requireOptionalFiniteNumberInRange(
+    auto,
     "cpSatStageTimeLimitSeconds",
     "Auto option auto.cpSatStageTimeLimitSeconds",
     0,

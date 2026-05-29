@@ -788,6 +788,154 @@ async function testPlannerExpansionOmitsStaleComparisonHint() {
   assert.equal(capturedStartRequest.params.cpSat.warmStartHint, undefined);
 }
 
+async function testPlannerExpansionGivesRankedNextAdditionGuidance() {
+  const plannerShared = loadPlannerSharedModule();
+  const grid = [
+    [1, 1, 1, 1],
+    [1, 1, 1, 1],
+    [1, 1, 1, 1],
+    [1, 1, 1, 1]
+  ];
+  const requestPopulationById = new Map();
+  const comparisonPopulations = [130, 115];
+  const plannerExpansion = loadPlannerExpansionModule(async (url, options = {}) => {
+    const urlText = String(url);
+    if (urlText === "/api/solve/start") {
+      const body = JSON.parse(String(options.body));
+      requestPopulationById.set(body.requestId, comparisonPopulations.shift());
+      return {
+        ok: true,
+        async json() {
+          return { ok: true, requestId: body.requestId };
+        }
+      };
+    }
+    if (urlText.startsWith("/api/solve/status")) {
+      const requestId = new URLSearchParams(urlText.split("?")[1] ?? "").get("requestId");
+      const totalPopulation = requestPopulationById.get(requestId) ?? 0;
+      return {
+        ok: true,
+        async json() {
+          return {
+            ok: true,
+            jobStatus: "completed",
+            stats: { totalPopulation },
+            solution: { totalPopulation }
+          };
+        }
+      };
+    }
+    throw new Error(`Unexpected fetch URL ${urlText}`);
+  });
+  const elements = {
+    expansionAdviceStatus: createFakeDomElement(),
+    expansionAdviceMetrics: createFakeDomElement(),
+    expansionAdviceWinner: createFakeDomElement(),
+    expansionAdviceBaseline: createFakeDomElement(),
+    expansionAdviceServiceOutcome: createFakeDomElement(),
+    expansionAdviceResidentialOutcome: createFakeDomElement()
+  };
+  const state = {
+    isSolving: false,
+    optimizer: "auto",
+    grid,
+    serviceTypes: [],
+    residentialTypes: [],
+    availableBuildings: {
+      services: "0",
+      residentials: "1"
+    },
+    greedy: {},
+    cpSat: {
+      useDisplayedHint: false
+    },
+    lns: {
+      useDisplayedSeed: false
+    },
+    result: {
+      stats: {
+        totalPopulation: 100,
+        serviceCount: 0,
+        residentialCount: 1
+      },
+      solution: {
+        totalPopulation: 100,
+        services: [],
+        residentials: [{}]
+      }
+    },
+    resultContext: {
+      grid,
+      params: {
+        optimizer: "auto",
+        serviceTypes: [],
+        residentialTypes: [],
+        availableBuildings: { services: 0, residentials: 1 }
+      }
+    },
+    expansionAdvice: {
+      nextServiceText: "Clinic, 30, 1x1, 3x3",
+      nextResidentialText: "Homes, 10/25, 1x1",
+      isRunning: false,
+      status: "",
+      result: null,
+      error: ""
+    }
+  };
+  let requestIdCounter = 0;
+  const controller = plannerExpansion.createExpansionAdviceController({
+    state,
+    elements,
+    constants: {
+      COMPARISON_PROGRESS_HINT_INTERVAL_MS: 1,
+      SOLVE_STATUS_POLL_INTERVAL_MS: 1
+    },
+    helpers: {
+      buildCpSatContinuationModelInput: plannerShared.buildCpSatContinuationModelInput,
+      cloneJson: plannerShared.cloneJson,
+      computeCpSatModelFingerprint: plannerShared.computeCpSatModelFingerprint,
+      createSolveRequestId() {
+        requestIdCounter += 1;
+        return `expansion-guidance-${requestIdCounter}`;
+      },
+      async delay() {},
+      parseResidentialCatalogEntry: plannerShared.parseResidentialCatalogEntry,
+      parseServiceCatalogEntry: plannerShared.parseServiceCatalogEntry
+    },
+    callbacks: {
+      buildSolveRequest() {
+        return {
+          grid: plannerShared.cloneGrid(grid),
+          params: {
+            optimizer: state.optimizer,
+            greedy: {},
+            cpSat: {},
+            lns: {}
+          }
+        };
+      },
+      getDisplayedLayoutCheckpoint() {
+        return null;
+      },
+      getDisplayedLayoutSourceLabel() {
+        return "Displayed layout";
+      },
+      getOptimizerLabel(value) {
+        return value === "auto" ? "Auto" : String(value);
+      },
+      syncActionAvailability() {}
+    }
+  });
+
+  await controller.compareExpansionOptions();
+
+  assert.equal(elements.expansionAdviceWinner.textContent, "Add Clinic");
+  assert.match(elements.expansionAdviceStatus.textContent, /stronger next expansion/);
+  assert.match(elements.expansionAdviceStatus.textContent, /population margin over the residential option/);
+  assert.equal(elements.expansionAdviceServiceOutcome.textContent, "130 (+30)");
+  assert.equal(elements.expansionAdviceResidentialOutcome.textContent, "115 (+15)");
+}
+
 function testPlannerRequestBuilderTreatsBlankAutoCapAsUnlimited() {
   const plannerShared = loadPlannerSharedModule();
   const plannerRequestBuilder = loadPlannerRequestBuilderModule();
@@ -801,7 +949,8 @@ function testPlannerRequestBuilderTreatsBlankAutoCapAsUnlimited() {
   const state = {
     optimizer: "auto",
     auto: {
-      wallClockLimitSeconds: ""
+      wallClockLimitSeconds: "",
+      continueAfterPopulationCapSeconds: ""
     },
     grid,
     serviceTypes: [],
@@ -872,6 +1021,15 @@ function testPlannerRequestBuilderTreatsBlankAutoCapAsUnlimited() {
   });
   assert.equal(unlimitedRequest.params.auto, undefined);
 
+  state.auto.continueAfterPopulationCapSeconds = "300";
+  const capGraceRequest = controller.buildSolveRequest({
+    hintMismatch: "ignore",
+    includeWarmStartHint: false,
+    includeLnsSeed: false
+  });
+  assert.equal(capGraceRequest.params.auto.wallClockLimitSeconds, undefined);
+  assert.equal(capGraceRequest.params.auto.continueAfterPopulationCapSeconds, 300);
+
   state.auto.wallClockLimitSeconds = "90";
   const cappedRequest = controller.buildSolveRequest({
     hintMismatch: "ignore",
@@ -879,6 +1037,7 @@ function testPlannerRequestBuilderTreatsBlankAutoCapAsUnlimited() {
     includeLnsSeed: false
   });
   assert.equal(cappedRequest.params.auto.wallClockLimitSeconds, 90);
+  assert.equal(cappedRequest.params.auto.continueAfterPopulationCapSeconds, 300);
 }
 
 function testPlannerRequestBuilderLeavesStandaloneGreedyTimeLimitUnset() {
@@ -977,7 +1136,8 @@ function testPlannerRequestBuilderKeepsAutoPayloadMinimal() {
   const state = {
     optimizer: "auto",
     auto: {
-      wallClockLimitSeconds: ""
+      wallClockLimitSeconds: "",
+      continueAfterPopulationCapSeconds: ""
     },
     grid: [
       [1, 1, 1, 1],
@@ -1253,6 +1413,7 @@ async function runPlannerContinuationTests() {
   testPlannerPersistenceBlocksImportedValidLayoutContinuationUntilRevalidated();
   testPlannerRequestBuilderIncludesHintAndSeedForAuto();
   await testPlannerExpansionOmitsStaleComparisonHint();
+  await testPlannerExpansionGivesRankedNextAdditionGuidance();
   testPlannerRequestBuilderTreatsBlankAutoCapAsUnlimited();
   testPlannerRequestBuilderLeavesStandaloneGreedyTimeLimitUnset();
   testPlannerRequestBuilderKeepsAutoPayloadMinimal();

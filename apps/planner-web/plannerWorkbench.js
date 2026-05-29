@@ -167,9 +167,9 @@
         };
       }
       state.auto = {
-        ...(state.auto ?? { wallClockLimitSeconds: "" }),
-        wallClockLimitSeconds:
-          params.auto?.wallClockLimitSeconds != null ? String(params.auto.wallClockLimitSeconds) : ""
+        ...state.auto,
+        wallClockLimitSeconds: String(params.auto?.wallClockLimitSeconds ?? ""),
+        continueAfterPopulationCapSeconds: String(params.auto?.continueAfterPopulationCapSeconds ?? "")
       };
 
       if (!preserveCpSatRuntime && params.cpSat) {
@@ -492,6 +492,9 @@
 
       if (elements.autoWallClockLimitSeconds) {
         elements.autoWallClockLimitSeconds.value = state.auto?.wallClockLimitSeconds ?? "";
+      }
+      if (elements.autoContinueAfterPopulationCapSeconds) {
+        elements.autoContinueAfterPopulationCapSeconds.value = state.auto?.continueAfterPopulationCapSeconds ?? "";
       }
 
       elements.greedyLocalSearch.checked = state.greedy.localSearch;

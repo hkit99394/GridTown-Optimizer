@@ -43,8 +43,10 @@ function sumTop(values: readonly number[], limit: number | null): number {
 /**
  * Cheap optimistic population capacity bound from configured residential capacity.
  *
- * This is benchmark context only: it ignores geometry, road access, service reach,
- * and boost feasibility. CP-SAT proof bounds remain separate telemetry.
+ * This ignores geometry, road access, service reach, and boost feasibility.
+ * It is safe as a runtime terminal hint only after a feasible validated
+ * incumbent reaches it, because no higher configured residential population
+ * remains available. CP-SAT proof bounds remain separate telemetry.
  */
 export function computePopulationCapacityUpperBound(params: SolverParams): number | null {
   const maxResidentials = finiteNonNegativeInteger(getBuildingLimits(params).maxResidentials);
@@ -60,4 +62,13 @@ export function computePopulationCapacityUpperBound(params: SolverParams): numbe
   if (maxResidentials === null) return null;
   const slotMax = legacyResidentialSlotMax(params);
   return slotMax === null ? null : slotMax * maxResidentials;
+}
+
+export function reachesPopulationCapacityUpperBound(
+  params: SolverParams,
+  totalPopulation: number | null | undefined
+): boolean {
+  if (typeof totalPopulation !== "number" || !Number.isFinite(totalPopulation)) return false;
+  const capacityUpperBound = computePopulationCapacityUpperBound(params);
+  return capacityUpperBound !== null && totalPopulation >= capacityUpperBound;
 }

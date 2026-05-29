@@ -1,6 +1,10 @@
 import { randomInt } from "node:crypto";
 
-import { assertValidSolveInputs, materializeValidLnsSeedSolution } from "../../core/index.js";
+import {
+  assertValidSolveInputs,
+  materializeValidLnsSeedSolution,
+  reachesPopulationCapacityUpperBound
+} from "../../core/index.js";
 import { solveCpSat } from "../cp-sat/solver.js";
 import { solveLns } from "../lns/solver.js";
 import { solveGreedy } from "../greedy/solver.js";
@@ -527,6 +531,10 @@ function shouldStopAfterAutoCpSatStage(cpSatSolution: Solution | null, incumbent
   );
 }
 
+function shouldStopAfterPopulationCapacityReached(params: SolverParams, incumbent: Solution | null): boolean {
+  return Boolean(incumbent && reachesPopulationCapacityUpperBound(params, incumbent.totalPopulation));
+}
+
 function finalizeCompletedAutoPlan(incumbent: Solution | null, state: AutoRuntimeState): Solution {
   if (!state.stopReason) {
     state.stopReason = "completed-plan";
@@ -573,6 +581,11 @@ function createAutoPlanStepper(
           nextStage = null;
           return;
         }
+        if (shouldStopAfterPopulationCapacityReached(params, incumbent)) {
+          state.stopReason = "population-cap-reached";
+          nextStage = null;
+          return;
+        }
         cycleIndex = 1;
         cycleStart = incumbent;
         nextStage = "lns";
@@ -586,12 +599,23 @@ function createAutoPlanStepper(
       }
 
       if (request.stage === "lns") {
+        if (shouldStopAfterPopulationCapacityReached(params, incumbent)) {
+          state.stopReason = "population-cap-reached";
+          nextStage = null;
+          return;
+        }
         nextStage = "cp-sat";
         return;
       }
 
       if (shouldStopAfterAutoCpSatStage(stageSolution, incumbent)) {
         state.stopReason = "optimal";
+        nextStage = null;
+        return;
+      }
+
+      if (shouldStopAfterPopulationCapacityReached(params, incumbent)) {
+        state.stopReason = "population-cap-reached";
         nextStage = null;
         return;
       }

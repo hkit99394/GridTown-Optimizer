@@ -19,6 +19,7 @@ import {
 import { NO_TYPE_INDEX } from "../../core/index.js";
 import { writeSolutionSnapshot } from "../../core/index.js";
 import { assertValidLnsOptions, assertValidSolveInputs, materializeValidLnsSeedSolution } from "../../core/index.js";
+import { reachesPopulationCapacityUpperBound } from "../../core/index.js";
 import { solveGreedy } from "../greedy/solver.js";
 
 import type {
@@ -566,6 +567,9 @@ export function solveLns(G: Grid, params: SolverParams): Solution {
   if (shouldStop(options.stopFilePath)) {
     return finish("cancelled", true);
   }
+  if (reachesPopulationCapacityUpperBound(params, incumbent.totalPopulation)) {
+    return finish("population-cap-reached");
+  }
   if (deadlineAtMs !== null && performance.now() >= deadlineAtMs) {
     return finish("wall-clock-limit");
   }
@@ -676,6 +680,9 @@ export function solveLns(G: Grid, params: SolverParams): Solution {
             );
             stagnantIterations = 0;
             lastImprovementAtMs = performance.now();
+            if (reachesPopulationCapacityUpperBound(params, incumbent.totalPopulation)) {
+              return finish("population-cap-reached");
+            }
             writeRunningSnapshot();
             continue;
           }
@@ -723,6 +730,9 @@ export function solveLns(G: Grid, params: SolverParams): Solution {
         );
         stagnantIterations = 0;
         lastImprovementAtMs = performance.now();
+        if (reachesPopulationCapacityUpperBound(params, incumbent.totalPopulation)) {
+          return finish("population-cap-reached");
+        }
         writeRunningSnapshot();
         continue;
       }

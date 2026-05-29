@@ -17,6 +17,7 @@ export type AutoSolveStopReason =
   | "completed-plan"
   | "weak-cycle-limit"
   | "optimal"
+  | "population-cap-reached"
   | "cancelled"
   | "wall-clock-cap"
   | "stage-error";

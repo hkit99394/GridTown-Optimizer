@@ -86,6 +86,7 @@ In this project it:
 - improves it with `LNS`
 - follows with bounded `CP-SAT` polishing
 - keeps alternating bounded `LNS` and `CP-SAT` while meaningful improvement continues
+- stops early with `population-cap-reached` when the feasible incumbent reaches the configured residential population capacity
 
 Use this when overall answer quality matters more than keeping the run purely standalone or heuristic.
 

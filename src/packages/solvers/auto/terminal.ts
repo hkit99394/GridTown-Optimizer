@@ -20,6 +20,9 @@ export function describeAutoStopReason(stopReason: AutoSolveStopReason | null | 
   if (stopReason === "weak-cycle-limit") {
     return "Auto stopped after two consecutive weak LNS -> CP-SAT cycles.";
   }
+  if (stopReason === "population-cap-reached") {
+    return "Auto stopped after a feasible incumbent reached the configured population capacity cap.";
+  }
   if (stopReason === "wall-clock-cap") {
     return "Auto stopped at the global wall-clock safety cap and kept the best incumbent found so far.";
   }

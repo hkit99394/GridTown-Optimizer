@@ -333,6 +333,7 @@ export type LnsStopReason =
   | "iteration-limit"
   | "stale-iteration-limit"
   | "stale-time-limit"
+  | "population-cap-reached"
   | "wall-clock-limit"
   | "no-neighborhoods"
   | "cancelled";

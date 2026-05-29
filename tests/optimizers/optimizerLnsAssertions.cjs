@@ -509,7 +509,7 @@ function testLnsTelemetryRecordsRepairPolicyAndOutcomes() {
     assert.equal(solution.totalPopulation, 10);
     assert.deepEqual(seenRepairBudgets, [2, 3]);
     assert.equal(solution.lnsTelemetry.seedSource, "hint");
-    assert.equal(solution.lnsTelemetry.stopReason, "iteration-limit");
+    assert.equal(solution.lnsTelemetry.stopReason, "population-cap-reached");
     assert.equal(solution.lnsTelemetry.seedTimeLimitSeconds, null);
     assert.equal(solution.lnsTelemetry.outcomes.length, 2);
     assert.equal(solution.lnsTelemetry.outcomes[0].phase, "focused");
@@ -587,6 +587,7 @@ function testLnsSmallWindowDpRepairImprovesWithoutCpSat() {
     assert.equal(cpSatCalls, 0);
     assert.equal(solution.totalPopulation, 10);
     assert.equal(validation.valid, true);
+    assert.equal(solution.lnsTelemetry.stopReason, "population-cap-reached");
     assert.equal(outcome.status, "improved");
     assert.equal(outcome.repairBackend, "small-window-dp");
     assert.equal(outcome.smallWindowDp.status, "optimal");

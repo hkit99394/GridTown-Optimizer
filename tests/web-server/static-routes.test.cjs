@@ -38,13 +38,18 @@ async function testCpSatReadinessRoute(handler) {
 async function testStaticPlannerModules(handler) {
   /** @type {Array<[string, RegExp]>} */
   const expectedStaticAssets = [
-    ["/", /City Builder Planner/],
+    ["/", /plannerV21\.css|plannerV21\.js/],
+    ["/legacy", /City Builder Planner/],
+    ["/legacy/", /City Builder Planner/],
     ["/v2", /data-planner-version = "v2"|plannerV2\.css|plannerV2\.js/],
     ["/v2/", /data-planner-version = "v2"|plannerV2\.css|plannerV2\.js/],
+    ["/v2.1", /data-planner-version = "v2\.1"|plannerV21\.css|plannerV21\.js/],
+    ["/v2.1/", /data-planner-version = "v2\.1"|plannerV21\.css|plannerV21\.js/],
     ["/styles.css", /page-shell/],
     ["/plannerWorkflow.css", /workflow-steps/],
     ["/results.css", /result-details-body/],
     ["/plannerV2.css", /v2-state-rail/],
+    ["/plannerV21.css", /v21-result-action-bar/],
     ["/plannerShell.js", /CityBuilderShell/],
     ["/plannerShared.js", /CityBuilderShared/],
     ["/plannerDefaults.js", /CityBuilderDefaults/],
@@ -63,6 +68,7 @@ async function testStaticPlannerModules(handler) {
     ["/plannerRequestBuilder.js", /CityBuilderRequestBuilder/],
     ["/plannerWorkbench.js", /CityBuilderWorkbench/],
     ["/plannerV2.js", /initPlannerV2/],
+    ["/plannerV21.js", /initPlannerV21/],
     ["/app.js", /const state =/]
   ];
 

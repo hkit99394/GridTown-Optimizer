@@ -28,7 +28,7 @@
 
     const currentLink = document.createElement("a");
     currentLink.href = "/";
-    currentLink.textContent = "Open current UI";
+    currentLink.textContent = "Open default UI";
 
     switcher.append(previewBadge, currentLink);
     title.append(switcher);

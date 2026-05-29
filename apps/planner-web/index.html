@@ -6,20 +6,26 @@
     <title>City Builder Planner | Operations Cockpit</title>
     <script>
       (() => {
-        const isPlannerV2 = window.location.pathname === "/v2" || window.location.pathname === "/v2/";
-        if (!isPlannerV2) return;
-        document.documentElement.dataset.plannerVersion = "v2";
+        const pathname = window.location.pathname.replace(/\/$/, "") || "/";
+        const plannerPreview =
+          pathname === "/" || pathname === "/index.html" || pathname === "/v2.1"
+            ? { script: "/plannerV21.js", stylesheet: "/plannerV21.css", version: "v2.1" }
+            : pathname === "/v2"
+              ? { script: "/plannerV2.js", stylesheet: "/plannerV2.css", version: "v2" }
+              : null;
+        if (!plannerPreview) return;
+        document.documentElement.dataset.plannerVersion = plannerPreview.version;
 
         const stylesheet = document.createElement("link");
         stylesheet.rel = "stylesheet";
-        stylesheet.href = "/plannerV2.css";
+        stylesheet.href = plannerPreview.stylesheet;
         document.head.append(stylesheet);
 
         window.addEventListener(
           "DOMContentLoaded",
           () => {
             const script = document.createElement("script");
-            script.src = "/plannerV2.js";
+            script.src = plannerPreview.script;
             document.body.append(script);
           },
           { once: true }
@@ -40,7 +46,7 @@
 
       <main class="cockpit-grid">
         <div class="primary-stack">
-          <section id="gridStage" class="stage module module-grid">
+          <section id="gridStage" class="stage module module-grid" data-planner-slot="stage-grid">
             <div class="module-head">
               <div>
                 <p class="eyebrow">Grid control</p>
@@ -99,7 +105,7 @@
             </div>
           </section>
 
-          <section id="catalogStage" class="stage module module-catalog">
+          <section id="catalogStage" class="stage module module-catalog" data-planner-slot="stage-catalog">
             <div class="module-head">
               <div>
                 <p class="eyebrow">Catalog control</p>
@@ -110,7 +116,7 @@
               </p>
             </div>
 
-            <div class="module-body">
+            <div class="module-body" data-planner-slot="catalog-body">
               <details class="payload-preview import-preview">
                 <summary>Import catalog tables</summary>
                 <div class="import-preview-body">
@@ -133,7 +139,7 @@
                 </div>
               </details>
 
-              <div class="catalog-grid">
+              <div class="catalog-grid" data-planner-slot="catalog-grid">
                 <section class="drawer-card catalog-section">
                   <div class="drawer-head">
                     <div>
@@ -161,7 +167,7 @@
             </div>
           </section>
 
-          <section id="resultStage" class="stage module module-results">
+          <section id="resultStage" class="stage module module-results" data-planner-slot="stage-result">
             <div class="module-head">
               <div>
                 <p class="eyebrow">Output bay</p>
@@ -170,8 +176,8 @@
               <span id="resultBadge" class="result-badge idle">Waiting</span>
             </div>
 
-            <div class="module-body">
-              <section class="drawer-card result-storage-panel">
+            <div class="module-body" data-planner-slot="result-body">
+              <section class="drawer-card result-storage-panel" data-planner-slot="layout-storage">
                 <div class="drawer-head">
                   <div>
                     <p class="eyebrow">Save</p>
@@ -205,12 +211,29 @@
                 <p id="layoutStorageStatus" class="status-text" aria-live="polite"></p>
               </section>
 
-              <div id="resultsEmpty" class="empty-state">
+              <div id="resultsEmpty" class="empty-state" data-planner-slot="result-empty">
                 Run the solver, or display a saved output layout, to inspect total population, validation, placements,
                 and the solved layout map.
               </div>
 
-              <div id="resultsContent" hidden>
+              <section
+                id="v21ResultActions"
+                class="v21-result-action-bar"
+                data-planner-slot="result-actions"
+                aria-label="Result actions"
+                hidden
+              >
+                <button type="button" class="button secondary" data-v21-action="save-layout">Save layout</button>
+                <button type="button" class="button ghost" data-v21-action="export-layouts">Export</button>
+                <button type="button" class="button ghost" data-v21-action="compare-expansion">
+                  Compare next addition
+                </button>
+                <p class="status-text" data-v21-action-status>
+                  Run Auto or load a saved layout to enable result actions.
+                </p>
+              </section>
+
+              <div id="resultsContent" data-planner-slot="result-content" hidden>
                 <div class="metric-strip result-metrics">
                   <article class="metric-card">
                     <span class="metric-label">Population</span>
@@ -238,9 +261,9 @@
                   </article>
                 </div>
 
-                <div id="validationNotice" class="notice"></div>
+                <div id="validationNotice" class="notice" data-planner-slot="validation-notice"></div>
 
-                <div class="result-columns">
+                <div class="result-columns" data-planner-slot="result-columns">
                   <details class="result-block result-details">
                     <summary class="result-details-summary">
                       <div class="drawer-head">
@@ -264,7 +287,7 @@
                     </div>
                   </details>
 
-                  <section class="result-block">
+                  <section class="result-block" data-planner-slot="result-map">
                     <div class="drawer-head">
                       <div>
                         <p class="eyebrow">Availability</p>
@@ -429,7 +452,7 @@
           </section>
         </div>
 
-        <aside id="controlStage" class="stage module module-control">
+        <aside id="controlStage" class="stage module module-control" data-planner-slot="stage-control">
           <div class="module-head">
             <div>
               <p class="eyebrow">Control stack</p>
@@ -440,8 +463,8 @@
             </p>
           </div>
 
-          <div class="module-body">
-            <section class="drawer-card happy-path-card">
+          <div class="module-body" data-planner-slot="control-body">
+            <section class="drawer-card happy-path-card" data-planner-slot="guide-card">
               <div class="drawer-head">
                 <div>
                   <p class="eyebrow">Happy path</p>
@@ -457,7 +480,7 @@
               </ol>
             </section>
 
-            <section class="drawer-card summary-card">
+            <section class="drawer-card summary-card" data-planner-slot="overview-card">
               <div class="drawer-head">
                 <div>
                   <p class="eyebrow">Overview</p>
@@ -488,7 +511,7 @@
               </div>
             </section>
 
-            <section class="drawer-card control-card">
+            <section class="drawer-card control-card" data-planner-slot="solver-options">
               <div class="drawer-head">
                 <div>
                   <p class="eyebrow">Solver</p>
@@ -502,7 +525,7 @@
                 stays available as the heavy heuristic / advanced inspection mode.
               </div>
 
-              <div id="runtimePresetButtons" class="runtime-preset-grid">
+              <div id="runtimePresetButtons" class="runtime-preset-grid" data-planner-slot="runtime-presets">
                 <button type="button" class="button secondary compact" data-runtime-preset="heavy-greedy">
                   Heavy Greedy
                 </button>
@@ -776,7 +799,7 @@
               </div>
             </section>
 
-            <section class="drawer-card control-card" hidden>
+            <section class="drawer-card control-card" data-planner-slot="global-limits" hidden>
               <div class="drawer-head">
                 <div>
                   <p class="eyebrow">Limits</p>
@@ -796,7 +819,7 @@
               </div>
             </section>
 
-            <section class="drawer-card storage-card">
+            <section class="drawer-card storage-card" data-planner-slot="input-library">
               <div class="drawer-head">
                 <div>
                   <p class="eyebrow">Library</p>
@@ -828,12 +851,12 @@
               </p>
             </section>
 
-            <details class="payload-preview advanced-only">
+            <details class="payload-preview advanced-only" data-planner-slot="payload-preview">
               <summary>Payload preview</summary>
               <pre id="payloadPreview"></pre>
             </details>
 
-            <section class="drawer-card launch-card">
+            <section class="drawer-card launch-card" data-planner-slot="run-rail">
               <div class="drawer-head">
                 <div>
                   <p class="eyebrow">Launch</p>
@@ -852,7 +875,7 @@
               </div>
             </section>
 
-            <section class="drawer-card result-storage-panel">
+            <section class="drawer-card result-storage-panel" data-planner-slot="expansion-panel">
               <div class="drawer-head">
                 <div>
                   <p class="eyebrow">Decision</p>

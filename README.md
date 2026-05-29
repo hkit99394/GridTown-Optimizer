@@ -187,7 +187,7 @@ npm test
 
 ## Quality Gates
 
-The fast PR gate includes the TypeScript build, Prettier formatting check, ESLint for browser/test JavaScript, JS typechecks, BDD acceptance, route smoke tests, and the planner solve-flow smoke:
+The fast PR gate includes the TypeScript build, Prettier formatting check, ESLint for browser/test JavaScript, JS typechecks, BDD acceptance, route smoke tests, the planner happy-path UI smoke, and the planner solve-flow smoke:
 
 ```bash
 npm run quality:fast
@@ -232,6 +232,7 @@ Available scripts from [package.json](./package.json):
 - `npm run quality:solver`
 - `npm run quality:evidence`
 - `npm run security:audit`
+- `npm run smoke:planner-happy-path`
 - `npm run smoke:web-solve`
 - `npm run web`
 - `npm run web:awake`

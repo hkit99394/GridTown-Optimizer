@@ -64,6 +64,24 @@ function loadPlannerSharedModule() {
   }).CityBuilderShared;
 }
 
+function loadPlannerDefaultsModule() {
+  return loadBrowserModule("apps/planner-web/plannerDefaults.js").CityBuilderDefaults;
+}
+
+function loadPlannerSamplePresetsModule() {
+  return loadBrowserModule("apps/planner-web/plannerSamplePresets.js").CityBuilderSamplePresets;
+}
+
+function loadPlannerOnboardingModule(options = {}) {
+  return loadBrowserModule("apps/planner-web/plannerOnboarding.js", {
+    ...options,
+    window: {
+      CityBuilderSamplePresets: loadPlannerSamplePresetsModule(),
+      ...(options.window ?? {})
+    }
+  }).CityBuilderOnboarding;
+}
+
 function loadPlannerRequestBuilderModule(crypto = undefined) {
   return loadBrowserModule("apps/planner-web/plannerRequestBuilder.js", {
     window: {
@@ -179,7 +197,9 @@ function loadPlannerPersistenceModule(localStorage = undefined) {
 
 module.exports = {
   createFakeDomElement,
+  loadPlannerDefaultsModule,
   loadPlannerExpansionModule,
+  loadPlannerOnboardingModule,
   loadPlannerPersistenceModule,
   loadPlannerPersistenceValidationModule,
   loadPlannerResultAvailabilityModule,
@@ -187,6 +207,7 @@ module.exports = {
   loadPlannerResultRenderingModule,
   loadPlannerRequestBuilderModule,
   loadPlannerResultsModule,
+  loadPlannerSamplePresetsModule,
   loadPlannerSharedModule,
   loadPlannerShellModule,
   loadPlannerSolveRuntimeModule,

@@ -3,6 +3,7 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import { SolveJobManager } from "../../../packages/runtime/index.js";
 import {
   handleCancelSolve,
+  handleCpSatReadiness,
   handleImmediateSolve,
   handleLayoutEvaluate,
   handlePlannerHealth,
@@ -23,6 +24,7 @@ export function createPlannerRequestHandler(options: PlannerRequestHandlerOption
   const solveJobManager = options.solveJobManager ?? new SolveJobManager();
   const routeHandlers: PlannerRouteHandler[] = [
     handlePlannerHealth,
+    handleCpSatReadiness,
     (req, res) => handleImmediateSolve(req, res, solveJobManager),
     handleLayoutEvaluate,
     (req, res) => handleStartSolve(req, res, solveJobManager),

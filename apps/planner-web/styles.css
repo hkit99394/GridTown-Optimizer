@@ -136,14 +136,6 @@ a {
   letter-spacing: 0;
 }
 
-.hero-copy {
-  max-width: 780px;
-  margin: 8px 0 0;
-  color: var(--muted);
-  font-size: 0.98rem;
-  line-height: 1.45;
-}
-
 .eyebrow {
   margin: 0 0 10px;
   color: var(--accent-2);
@@ -153,8 +145,6 @@ a {
   text-transform: uppercase;
 }
 
-.command-strip,
-.jump-row,
 .actions-row,
 .solver-feedback,
 .map-legend,
@@ -165,12 +155,6 @@ a {
   gap: 10px;
 }
 
-.command-strip {
-  margin-top: 12px;
-}
-
-.command-chip,
-.jump-link,
 .legend-chip,
 .result-badge {
   display: inline-flex;
@@ -185,34 +169,6 @@ a {
   font-weight: 700;
 }
 
-.jump-row {
-  margin-top: 12px;
-}
-
-.jump-link {
-  min-height: 40px;
-  color: var(--muted);
-  transition:
-    transform 140ms ease,
-    border-color 140ms ease,
-    color 140ms ease,
-    background-color 140ms ease;
-}
-
-.jump-link:hover {
-  transform: translateY(-1px);
-  color: var(--ink);
-  border-color: rgba(15, 102, 80, 0.24);
-  background: rgba(255, 255, 255, 0.98);
-}
-
-.telemetry-panel {
-  display: grid;
-  grid-template-columns: minmax(180px, 0.72fr) minmax(0, 2.4fr);
-  gap: 10px;
-}
-
-.telemetry-card,
 .drawer-card,
 details.payload-preview,
 .result-block,
@@ -223,66 +179,14 @@ details.payload-preview,
   box-shadow: 0 14px 36px rgba(16, 25, 29, 0.06);
 }
 
-.telemetry-card {
-  padding: 12px;
-}
-
-.telemetry-status {
-  min-height: 0;
-  display: grid;
-  align-content: start;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(245, 249, 247, 0.94)),
-    linear-gradient(135deg, rgba(15, 102, 80, 0.08), rgba(154, 93, 31, 0.06));
-}
-
-.telemetry-status strong {
-  display: block;
-  margin-top: 2px;
-  font-size: clamp(1.25rem, 2vw, 1.6rem);
-  line-height: 1;
-  letter-spacing: 0;
-}
-
-.telemetry-status p:last-child {
-  margin: 8px 0 0;
-  color: var(--muted);
-  line-height: 1.4;
-}
-
-.telemetry-grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 10px;
-}
-
-.telemetry-card.accent {
-  background: linear-gradient(145deg, rgba(221, 235, 221, 0.96), rgba(255, 247, 234, 0.96));
-}
-
-.telemetry-label,
 .metric-label,
 .paint-label,
-.field > span,
-.telemetry-card .eyebrow {
+.field > span {
   color: var(--muted);
   font-size: 0.72rem;
   font-weight: 800;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-}
-
-.telemetry-card strong {
-  display: block;
-  margin-top: 6px;
-  font-size: 0.98rem;
-  line-height: 1.15;
-}
-
-.telemetry-card p {
-  margin: 6px 0 0;
-  color: var(--muted);
-  line-height: 1.38;
 }
 
 .cockpit-grid {

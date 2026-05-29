@@ -68,6 +68,16 @@ Allowed near-term work is maintenance, diagnostics, or explicitly gated experime
 - Use capacity-normalized metrics to explain scorecards, not to tune defaults without separate protected equal-budget evidence.
 - Reopen Auto policy only with a fresh reproducible outside-envelope failure or a candidate that first clears same-slice baseline-repeat controls.
 
+## Planning Horizon
+
+Ultimate goal: make `auto` the consistently best default solver path for planner users: fast first feasible layouts, stronger final population under fixed budgets, exact evaluator-valid results, and reliable long-running solve workflows.
+
+Short run: protect the current default path and make the planner happy path obvious. The 0-4 week slice covers the Auto-first planner flow, Advanced-mode solver tuning, sample problem presets, CP-SAT readiness messaging, split quality-gate scripts, and a tighter artifact policy.
+
+Middle run: improve evidence quality before changing behavior. Keep product-corpus, protected holdout, fresh holdout, evaluator-validity, CPU-cost, and time-to-best scorecards current enough that candidate solver changes can be judged without rebuilding the evidence framework each time.
+
+Long run: promote only candidates that beat the current `auto` posture on protected equal-budget evidence. Service-master, learned guidance, portfolio, external solver, GPU, and distributed-worker work should stay opt-in or diagnostics-only until they clear the promotion gates below.
+
 ## Closed Evidence Tracks
 
 These summaries preserve the decision boundary. Detailed artifacts and intermediate investigation notes are in [SOLVER_ROADMAP_HISTORY_2026-05.md](SOLVER_ROADMAP_HISTORY_2026-05.md).

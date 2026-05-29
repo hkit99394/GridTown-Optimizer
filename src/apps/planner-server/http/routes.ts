@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import type { IncomingMessage, ServerResponse } from "node:http";
 
 import { assertValidLayoutEvaluateInputs, assertValidSolveInputs } from "../../../packages/core/index.js";
+import { checkCpSatReadiness } from "../../../packages/solvers/cp-sat/solver.js";
 import {
   getOptimizerAdapter,
   resolveOptimizerName,
@@ -249,6 +250,14 @@ export function handlePlannerHealth(req: IncomingMessage, res: ServerResponse<In
   if (!route) return false;
 
   sendJson(res, 200, { ok: true }, route.headOnly);
+  return true;
+}
+
+export function handleCpSatReadiness(req: IncomingMessage, res: ServerResponse<IncomingMessage>): boolean {
+  const route = matchGetOrHeadRoute(req, "/api/cp-sat/readiness");
+  if (!route) return false;
+
+  sendJson(res, 200, { ok: true, cpSat: checkCpSatReadiness() }, route.headOnly);
   return true;
 }
 

@@ -5,61 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>City Builder Planner | Operations Cockpit</title>
     <link rel="stylesheet" href="/styles.css" />
+    <link rel="stylesheet" href="/plannerWorkflow.css" />
     <link rel="stylesheet" href="/results.css" />
   </head>
   <body>
     <div class="page-shell cockpit-shell">
       <header class="cockpit-header">
         <div class="cockpit-title">
-          <p class="eyebrow">Operations Cockpit</p>
           <h1>City Builder Planner</h1>
-          <p class="hero-copy">
-            Edit the sector map, tune the catalogs, and launch solver runs from the same workbench.
-          </p>
-          <div class="command-strip" aria-label="Planner capabilities">
-            <span class="command-chip">Grid editor</span>
-            <span class="command-chip">Catalog intake</span>
-            <span class="command-chip">Solver runtime</span>
-            <span class="command-chip">Saved states</span>
-          </div>
-          <nav class="jump-row" aria-label="Planner sections">
-            <a class="jump-link" href="#gridStage">Grid bay</a>
-            <a class="jump-link" href="#catalogStage">Catalog bay</a>
-            <a class="jump-link" href="#controlStage">Control stack</a>
-            <a class="jump-link" href="#resultStage">Output bay</a>
-          </nav>
         </div>
-
-        <aside class="telemetry-panel">
-          <section class="telemetry-card telemetry-status">
-            <p class="eyebrow">System state</p>
-            <strong>Ready</strong>
-            <p>Rows, catalogs, solver parameters, and saved layouts stay synchronized.</p>
-          </section>
-
-          <section class="telemetry-grid" aria-label="Planner telemetry">
-            <article class="telemetry-card">
-              <span class="telemetry-label">Input</span>
-              <strong>Grid + catalog</strong>
-              <p>Resize, paint, and import inventory tables.</p>
-            </article>
-            <article class="telemetry-card">
-              <span class="telemetry-label">Solver</span>
-              <strong>Greedy / CP-SAT</strong>
-              <p>Pick strategies, tune caps, and stop runs.</p>
-            </article>
-            <article class="telemetry-card">
-              <span class="telemetry-label">Output</span>
-              <strong>Metrics + map</strong>
-              <p>Inspect validation, placements, and maps.</p>
-            </article>
-            <article class="telemetry-card accent">
-              <span class="telemetry-label">Hinting</span>
-              <strong>Layout reuse</strong>
-              <p>Reuse saved layouts as solver hints.</p>
-            </article>
-          </section>
-        </aside>
       </header>
 
       <main class="cockpit-grid">
@@ -90,6 +44,18 @@
                   <button id="fillAllowedButton" type="button" class="button ghost">All allowed</button>
                   <button id="clearGridButton" type="button" class="button ghost">All blocked</button>
                   <button id="sampleGridButton" type="button" class="button ghost">Sample mask</button>
+                </div>
+
+                <div id="sampleProblemButtons" class="sample-preset-grid" aria-label="Sample problem presets">
+                  <button type="button" class="button secondary compact" data-sample-problem="starter">
+                    Starter sample
+                  </button>
+                  <button type="button" class="button secondary compact" data-sample-problem="open-small">
+                    Open 8 x 8
+                  </button>
+                  <button type="button" class="button secondary compact" data-sample-problem="corridor">
+                    Corridor pressure
+                  </button>
                 </div>
 
                 <div class="signal-band">
@@ -453,6 +419,22 @@
           </div>
 
           <div class="module-body">
+            <section class="drawer-card happy-path-card">
+              <div class="drawer-head">
+                <div>
+                  <p class="eyebrow">Happy path</p>
+                  <h3>Planner flow</h3>
+                </div>
+              </div>
+              <ol class="workflow-steps" aria-label="Happy path planner flow">
+                <li><a href="#gridStage">Input grid/catalog</a></li>
+                <li><a href="#controlStage">Run recommended Auto</a></li>
+                <li><a href="#resultStage">Inspect validated layout</a></li>
+                <li><a href="#resultStage">Save/export result</a></li>
+                <li><a href="#controlStage">Compare next expansion</a></li>
+              </ol>
+            </section>
+
             <section class="drawer-card summary-card">
               <div class="drawer-head">
                 <div>
@@ -517,7 +499,14 @@
                 Presets keep Greedy, LNS, and bounded CP-SAT one click away. Auto remains the recommended quality path.
               </p>
 
-              <div class="segmented segmented-wide" id="solverToggle" role="group" aria-label="Optimizer">
+              <label class="advanced-toggle">
+                <input id="advancedModeToggle" type="checkbox" />
+                <span>Advanced mode</span>
+              </label>
+
+              <p id="cpSatReadinessStatus" class="status-text" aria-live="polite">Checking CP-SAT readiness...</p>
+
+              <div class="segmented segmented-wide advanced-only" id="solverToggle" role="group" aria-label="Optimizer">
                 <button type="button" data-optimizer="auto">Auto</button>
                 <button type="button" data-optimizer="greedy">Greedy</button>
                 <button type="button" data-optimizer="lns">LNS</button>
@@ -531,84 +520,96 @@
                     neighborhoods and bounded CP-SAT polishes the incumbent. Auto owns the stage tuning; switch to a
                     standalone mode only when you want direct control over that solver.
                   </div>
-                  <div class="form-grid">
-                    <label class="field">
-                      <span>Global cap (seconds, optional)</span>
-                      <input
-                        id="autoWallClockLimitSeconds"
-                        type="number"
-                        min="1"
-                        step="1"
-                        placeholder="Blank = unlimited"
-                      />
-                    </label>
-                  </div>
+                  <details class="expert-panel advanced-only">
+                    <summary>Auto tuning</summary>
+                    <div class="form-grid">
+                      <label class="field">
+                        <span>Global cap (seconds, optional)</span>
+                        <input
+                          id="autoWallClockLimitSeconds"
+                          type="number"
+                          min="1"
+                          step="1"
+                          placeholder="Blank = unlimited"
+                        />
+                      </label>
+                    </div>
+                  </details>
                 </section>
                 <section id="greedyPanel" class="solver-panel">
                   <div class="notice info">
                     Greedy is the heavy standalone heuristic / advanced inspection mode. Use Auto when you want the fast
                     seed stage plus LNS and bounded CP-SAT follow-on improvement.
                   </div>
-                  <div class="form-grid two-up">
-                    <label class="check-field">
-                      <input id="greedyLocalSearch" type="checkbox" />
-                      <span>Enable local search</span>
-                    </label>
-                    <label class="check-field">
-                      <input id="greedyExhaustiveServiceSearch" type="checkbox" />
-                      <span>Try exhaustive service search</span>
-                    </label>
-                    <label class="check-field">
-                      <input id="greedyProfile" type="checkbox" />
-                      <span>Collect phase profile</span>
-                    </label>
-                    <label class="check-field">
-                      <input id="greedyDensityTieBreaker" type="checkbox" />
-                      <span>Prefer center-density ties</span>
-                    </label>
-                    <label class="check-field">
-                      <input id="greedyDiagnostics" type="checkbox" />
-                      <span>Show why-not-placed diagnostics</span>
-                    </label>
-                    <label class="field">
-                      <span>Restarts</span>
-                      <input id="greedyRestarts" type="number" min="1" step="1" />
-                    </label>
-                    <label class="field">
-                      <span>Random seed</span>
-                      <input id="greedyRandomSeed" type="number" min="0" step="1" placeholder="Blank = random" />
-                    </label>
-                    <label class="field">
-                      <span>Time limit (seconds, optional)</span>
-                      <input
-                        id="greedyTimeLimitSeconds"
-                        type="number"
-                        min="1"
-                        step="1"
-                        placeholder="Blank = unlimited"
-                      />
-                    </label>
-                    <label class="field">
-                      <span>Density tolerance (%)</span>
-                      <input id="greedyDensityTieBreakerTolerancePercent" type="number" min="0" max="100" step="0.5" />
-                    </label>
-                    <label class="field">
-                      <span>Refine passes</span>
-                      <input id="greedyServiceRefineIterations" type="number" min="0" step="1" />
-                    </label>
-                    <label class="field">
-                      <span>Candidate limit</span>
-                      <input id="greedyServiceRefineCandidateLimit" type="number" min="1" step="1" />
-                    </label>
-                    <label class="field">
-                      <span>Exact pool limit</span>
-                      <input id="greedyServiceExactPoolLimit" type="number" min="1" step="1" />
-                    </label>
-                    <label class="field">
-                      <span>Exact max combinations</span>
-                      <input id="greedyServiceExactMaxCombinations" type="number" min="1" step="1" />
-                    </label>
-                  </div>
+                  <details class="expert-panel advanced-only">
+                    <summary>Greedy tuning</summary>
+                    <div class="form-grid two-up">
+                      <label class="check-field">
+                        <input id="greedyLocalSearch" type="checkbox" />
+                        <span>Enable local search</span>
+                      </label>
+                      <label class="check-field">
+                        <input id="greedyExhaustiveServiceSearch" type="checkbox" />
+                        <span>Try exhaustive service search</span>
+                      </label>
+                      <label class="check-field">
+                        <input id="greedyProfile" type="checkbox" />
+                        <span>Collect phase profile</span>
+                      </label>
+                      <label class="check-field">
+                        <input id="greedyDensityTieBreaker" type="checkbox" />
+                        <span>Prefer center-density ties</span>
+                      </label>
+                      <label class="check-field">
+                        <input id="greedyDiagnostics" type="checkbox" />
+                        <span>Show why-not-placed diagnostics</span>
+                      </label>
+                      <label class="field">
+                        <span>Restarts</span>
+                        <input id="greedyRestarts" type="number" min="1" step="1" />
+                      </label>
+                      <label class="field">
+                        <span>Random seed</span>
+                        <input id="greedyRandomSeed" type="number" min="0" step="1" placeholder="Blank = random" />
+                      </label>
+                      <label class="field">
+                        <span>Time limit (seconds, optional)</span>
+                        <input
+                          id="greedyTimeLimitSeconds"
+                          type="number"
+                          min="1"
+                          step="1"
+                          placeholder="Blank = unlimited"
+                        />
+                      </label>
+                      <label class="field">
+                        <span>Density tolerance (%)</span>
+                        <input
+                          id="greedyDensityTieBreakerTolerancePercent"
+                          type="number"
+                          min="0"
+                          max="100"
+                          step="0.5"
+                        />
+                      </label>
+                      <label class="field">
+                        <span>Refine passes</span>
+                        <input id="greedyServiceRefineIterations" type="number" min="0" step="1" />
+                      </label>
+                      <label class="field">
+                        <span>Candidate limit</span>
+                        <input id="greedyServiceRefineCandidateLimit" type="number" min="1" step="1" />
+                      </label>
+                      <label class="field">
+                        <span>Exact pool limit</span>
+                        <input id="greedyServiceExactPoolLimit" type="number" min="1" step="1" />
+                      </label>
+                      <label class="field">
+                        <span>Exact max combinations</span>
+                        <input id="greedyServiceExactMaxCombinations" type="number" min="1" step="1" />
+                      </label>
+                    </div>
+                  </details>
                 </section>
 
                 <section id="lnsPanel" class="solver-panel" hidden>
@@ -617,37 +618,40 @@
                     neighborhood at a time with CP-SAT. Configure the Python OR-Tools backend with
                     <code>npm run setup:cp-sat</code> or <code>CITY_BUILDER_CP_SAT_PYTHON</code>.
                   </div>
-                  <div class="form-grid two-up">
-                    <label class="field">
-                      <span>Iterations</span>
-                      <input id="lnsIterations" type="number" min="1" step="1" />
-                    </label>
-                    <label class="field">
-                      <span>Max stalled neighborhoods</span>
-                      <input id="lnsMaxNoImprovementIterations" type="number" min="1" step="1" />
-                    </label>
-                    <label class="field">
-                      <span>Neighborhood rows</span>
-                      <input id="lnsNeighborhoodRows" type="number" min="1" step="1" />
-                    </label>
-                    <label class="field">
-                      <span>Neighborhood cols</span>
-                      <input id="lnsNeighborhoodCols" type="number" min="1" step="1" />
-                    </label>
-                    <label class="field">
-                      <span>Repair time limit (seconds)</span>
-                      <input id="lnsRepairTimeLimitSeconds" type="number" min="1" step="1" />
-                    </label>
-                  </div>
-                  <div class="actions-row compact-actions">
-                    <p id="lnsSeedStatus" class="status-text" aria-live="polite">
-                      No displayed output is available to use as an LNS seed.
-                    </p>
-                    <label class="auto-use-toggle">
-                      <input id="lnsUseDisplayedSeed" type="checkbox" />
-                      <span>Use displayed output as default seed</span>
-                    </label>
-                  </div>
+                  <details class="expert-panel advanced-only">
+                    <summary>LNS tuning</summary>
+                    <div class="form-grid two-up">
+                      <label class="field">
+                        <span>Iterations</span>
+                        <input id="lnsIterations" type="number" min="1" step="1" />
+                      </label>
+                      <label class="field">
+                        <span>Max stalled neighborhoods</span>
+                        <input id="lnsMaxNoImprovementIterations" type="number" min="1" step="1" />
+                      </label>
+                      <label class="field">
+                        <span>Neighborhood rows</span>
+                        <input id="lnsNeighborhoodRows" type="number" min="1" step="1" />
+                      </label>
+                      <label class="field">
+                        <span>Neighborhood cols</span>
+                        <input id="lnsNeighborhoodCols" type="number" min="1" step="1" />
+                      </label>
+                      <label class="field">
+                        <span>Repair time limit (seconds)</span>
+                        <input id="lnsRepairTimeLimitSeconds" type="number" min="1" step="1" />
+                      </label>
+                    </div>
+                    <div class="actions-row compact-actions">
+                      <p id="lnsSeedStatus" class="status-text" aria-live="polite">
+                        No displayed output is available to use as an LNS seed.
+                      </p>
+                      <label class="auto-use-toggle">
+                        <input id="lnsUseDisplayedSeed" type="checkbox" />
+                        <span>Use displayed output as default seed</span>
+                      </label>
+                    </div>
+                  </details>
                 </section>
 
                 <section id="cpSatPanel" class="solver-panel" hidden>
@@ -656,92 +660,95 @@
                     <code>npm run setup:cp-sat</code> first. Leave the time limit blank to let it run until it finishes
                     or you stop it manually.
                   </div>
-                  <div class="form-grid two-up">
-                    <label class="field">
-                      <span>Time limit (seconds, optional)</span>
-                      <input
-                        id="cpSatTimeLimitSeconds"
-                        type="number"
-                        min="1"
-                        step="1"
-                        placeholder="Blank = no preset cap"
-                      />
-                    </label>
-                    <label class="field">
-                      <span>Random seed</span>
-                      <input
-                        id="cpSatRandomSeed"
-                        type="number"
-                        min="0"
-                        step="1"
-                        placeholder="Blank = auto-fill on solve"
-                      />
-                    </label>
-                    <label class="field">
-                      <span>Workers</span>
-                      <input id="cpSatNumWorkers" type="number" min="1" step="1" />
-                    </label>
-                    <label class="field">
-                      <span>No-improvement cutoff (seconds)</span>
-                      <input
-                        id="cpSatNoImprovementTimeoutSeconds"
-                        type="number"
-                        min="1"
-                        step="1"
-                        placeholder="Blank = disabled"
-                      />
-                    </label>
-                    <label class="check-field">
-                      <input id="cpSatLogSearchProgress" type="checkbox" />
-                      <span>Log search progress</span>
-                    </label>
-                  </div>
-                  <div class="notice info">
-                    Portfolio CP-SAT launches multiple exact paths. Add a CP-SAT or per-worker time limit for a bounded
-                    run, or leave both blank to run until all paths finish or you stop them. Internal worker lanes are
-                    capped at eight total.
-                  </div>
-                  <div class="form-grid two-up">
-                    <label class="check-field">
-                      <input id="cpSatPortfolioEnabled" type="checkbox" />
-                      <span>Run portfolio search</span>
-                    </label>
-                    <label class="check-field">
-                      <input id="cpSatPortfolioRandomizeSearch" type="checkbox" />
-                      <span>Randomize worker search</span>
-                    </label>
-                    <label class="field">
-                      <span>Portfolio workers</span>
-                      <input id="cpSatPortfolioWorkerCount" type="number" min="1" max="4" step="1" />
-                    </label>
-                    <label class="field">
-                      <span>Per-worker limit (seconds)</span>
-                      <input
-                        id="cpSatPortfolioPerWorkerTimeLimitSeconds"
-                        type="number"
-                        min="1"
-                        step="1"
-                        placeholder="Blank = CP-SAT limit or unlimited"
-                      />
-                    </label>
-                    <label class="field">
-                      <span>CP-SAT workers per path</span>
-                      <input id="cpSatPortfolioPerWorkerNumWorkers" type="number" min="1" max="4" step="1" />
-                    </label>
-                    <label class="field">
-                      <span>Explicit worker seeds (optional)</span>
-                      <input id="cpSatPortfolioRandomSeeds" type="text" placeholder="11, 29, 47" />
-                    </label>
-                  </div>
-                  <div class="actions-row compact-actions">
-                    <p id="cpSatHintStatus" class="status-text" aria-live="polite">
-                      No displayed output is available to use as a CP-SAT hint.
-                    </p>
-                    <label class="auto-use-toggle">
-                      <input id="cpSatUseDisplayedHint" type="checkbox" />
-                      <span>Use displayed output as default hint</span>
-                    </label>
-                  </div>
+                  <details class="expert-panel advanced-only">
+                    <summary>CP-SAT tuning</summary>
+                    <div class="form-grid two-up">
+                      <label class="field">
+                        <span>Time limit (seconds, optional)</span>
+                        <input
+                          id="cpSatTimeLimitSeconds"
+                          type="number"
+                          min="1"
+                          step="1"
+                          placeholder="Blank = no preset cap"
+                        />
+                      </label>
+                      <label class="field">
+                        <span>Random seed</span>
+                        <input
+                          id="cpSatRandomSeed"
+                          type="number"
+                          min="0"
+                          step="1"
+                          placeholder="Blank = auto-fill on solve"
+                        />
+                      </label>
+                      <label class="field">
+                        <span>Workers</span>
+                        <input id="cpSatNumWorkers" type="number" min="1" step="1" />
+                      </label>
+                      <label class="field">
+                        <span>No-improvement cutoff (seconds)</span>
+                        <input
+                          id="cpSatNoImprovementTimeoutSeconds"
+                          type="number"
+                          min="1"
+                          step="1"
+                          placeholder="Blank = disabled"
+                        />
+                      </label>
+                      <label class="check-field">
+                        <input id="cpSatLogSearchProgress" type="checkbox" />
+                        <span>Log search progress</span>
+                      </label>
+                    </div>
+                    <div class="notice info">
+                      Portfolio CP-SAT launches multiple exact paths. Add a CP-SAT or per-worker time limit for a
+                      bounded run, or leave both blank to run until all paths finish or you stop them. Internal worker
+                      lanes are capped at eight total.
+                    </div>
+                    <div class="form-grid two-up">
+                      <label class="check-field">
+                        <input id="cpSatPortfolioEnabled" type="checkbox" />
+                        <span>Run portfolio search</span>
+                      </label>
+                      <label class="check-field">
+                        <input id="cpSatPortfolioRandomizeSearch" type="checkbox" />
+                        <span>Randomize worker search</span>
+                      </label>
+                      <label class="field">
+                        <span>Portfolio workers</span>
+                        <input id="cpSatPortfolioWorkerCount" type="number" min="1" max="4" step="1" />
+                      </label>
+                      <label class="field">
+                        <span>Per-worker limit (seconds)</span>
+                        <input
+                          id="cpSatPortfolioPerWorkerTimeLimitSeconds"
+                          type="number"
+                          min="1"
+                          step="1"
+                          placeholder="Blank = CP-SAT limit or unlimited"
+                        />
+                      </label>
+                      <label class="field">
+                        <span>CP-SAT workers per path</span>
+                        <input id="cpSatPortfolioPerWorkerNumWorkers" type="number" min="1" max="4" step="1" />
+                      </label>
+                      <label class="field">
+                        <span>Explicit worker seeds (optional)</span>
+                        <input id="cpSatPortfolioRandomSeeds" type="text" placeholder="11, 29, 47" />
+                      </label>
+                    </div>
+                    <div class="actions-row compact-actions">
+                      <p id="cpSatHintStatus" class="status-text" aria-live="polite">
+                        No displayed output is available to use as a CP-SAT hint.
+                      </p>
+                      <label class="auto-use-toggle">
+                        <input id="cpSatUseDisplayedHint" type="checkbox" />
+                        <span>Use displayed output as default hint</span>
+                      </label>
+                    </div>
+                  </details>
                 </section>
               </div>
             </section>
@@ -798,7 +805,7 @@
               </p>
             </section>
 
-            <details class="payload-preview">
+            <details class="payload-preview advanced-only">
               <summary>Payload preview</summary>
               <pre id="payloadPreview"></pre>
             </details>
@@ -872,6 +879,9 @@
 
     <script src="/plannerShell.js" defer></script>
     <script src="/plannerShared.js" defer></script>
+    <script src="/plannerDefaults.js" defer></script>
+    <script src="/plannerSamplePresets.js" defer></script>
+    <script src="/plannerOnboarding.js" defer></script>
     <script src="/plannerPersistenceValidation.js" defer></script>
     <script src="/plannerPersistence.js" defer></script>
     <script src="/plannerSolveRuntime.js" defer></script>

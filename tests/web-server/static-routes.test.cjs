@@ -21,13 +21,31 @@ async function testHealthRoute(handler) {
  * @param {RouteTestHandler} handler
  * @returns {Promise<void>}
  */
+async function testCpSatReadinessRoute(handler) {
+  const result = await invoke(handler, { method: "GET", url: "/api/cp-sat/readiness" });
+  assert.equal(result.statusCode, 200);
+  assert.equal(result.payload.ok, true);
+  assert.equal(typeof result.payload.cpSat.ready, "boolean");
+  assert.equal(typeof result.payload.cpSat.pythonExecutable, "string");
+  assert.equal(result.payload.cpSat.setupCommand, "npm run setup:cp-sat");
+  assert.match(result.payload.cpSat.message, /CP-SAT/);
+}
+
+/**
+ * @param {RouteTestHandler} handler
+ * @returns {Promise<void>}
+ */
 async function testStaticPlannerModules(handler) {
   /** @type {Array<[string, RegExp]>} */
   const expectedStaticAssets = [
     ["/styles.css", /page-shell/],
+    ["/plannerWorkflow.css", /workflow-steps/],
     ["/results.css", /result-details-body/],
     ["/plannerShell.js", /CityBuilderShell/],
     ["/plannerShared.js", /CityBuilderShared/],
+    ["/plannerDefaults.js", /CityBuilderDefaults/],
+    ["/plannerSamplePresets.js", /CityBuilderSamplePresets/],
+    ["/plannerOnboarding.js", /CityBuilderOnboarding/],
     ["/plannerPersistenceValidation.js", /CityBuilderPersistenceValidation/],
     ["/plannerPersistence.js", /CityBuilderPersistence/],
     ["/plannerSolveRuntime.js", /CityBuilderSolveRuntime/],
@@ -76,6 +94,7 @@ async function testMethodNotAllowed(handler) {
 async function main() {
   const { handler } = createRouteTestHandler();
   await testHealthRoute(handler);
+  await testCpSatReadinessRoute(handler);
   await testStaticPlannerModules(handler);
   await testUnexpectedStaticServerErrorsReturnInternalServerError();
   await testMethodNotAllowed(handler);

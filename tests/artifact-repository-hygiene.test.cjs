@@ -5,9 +5,9 @@ const path = require("node:path");
 
 const repoRoot = path.resolve(__dirname, "..");
 
-const trackedArtifactMaxBytes = 800 * 1024 * 1024;
-const trackedArtifactFileMaxBytes = 15 * 1024 * 1024;
-const trackedArtifactFileCountMax = 1700;
+const trackedArtifactMaxBytes = 780 * 1024 * 1024;
+const trackedArtifactFileMaxBytes = 14 * 1024 * 1024;
+const trackedArtifactFileCountMax = 1600;
 const blockedTrackedArtifactPatterns = [/^artifacts\/solve-progress\//, /^artifacts\/tmp-[^/]*(?:\/|$)/];
 
 function gitLsFiles(paths) {

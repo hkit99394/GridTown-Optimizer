@@ -13,6 +13,7 @@ This project now includes:
 
 Core reference docs:
 
+- [START_HERE.md](./docs/START_HERE.md): shortest path through the planner and local quality gates
 - [SPEC.md](./docs/requirements/SPEC.md): formal problem statement
 - [Requirement.md](./docs/requirements/Requirement.md): product-level summary
 - [ALGORITHM.md](./docs/design/ALGORITHM.md): heuristic design notes
@@ -21,6 +22,7 @@ Core reference docs:
 - [SOLVER_ROADMAP.md](./docs/roadmaps/SOLVER_ROADMAP.md): overall solver roadmap
 - [SOLVER_ABLATION_DECISIONS.md](./docs/decisions/SOLVER_ABLATION_DECISIONS.md): deterministic ablation gate decisions before model training
 - [CP_SAT_ROADMAP.md](./docs/roadmaps/CP_SAT_ROADMAP.md): CP-SAT-specific roadmap
+- [ARTIFACT_POLICY.md](./docs/ARTIFACT_POLICY.md): what evidence stays in git and what moves to external storage
 
 ## Problem Summary
 
@@ -185,7 +187,25 @@ npm test
 
 ## Quality Gates
 
-The default test gate includes the TypeScript build, Prettier formatting check, ESLint for browser/test JavaScript, code-hygiene checks, file-size budget checks, route/API tests, and optimizer regression suites:
+The fast PR gate includes the TypeScript build, Prettier formatting check, ESLint for browser/test JavaScript, JS typechecks, BDD acceptance, route smoke tests, and the planner solve-flow smoke:
+
+```bash
+npm run quality:fast
+```
+
+The solver gate runs optimizer suites:
+
+```bash
+npm run quality:solver
+```
+
+The evidence gate runs benchmark-script, artifact, registry, and product-corpus checks:
+
+```bash
+npm run quality:evidence
+```
+
+The default local test gate runs all of the above plus miscellaneous API, hygiene, file-budget, and planner persistence checks:
 
 ```bash
 npm test
@@ -197,7 +217,7 @@ For the broader release-quality gate, run:
 npm run quality
 ```
 
-That adds the experiment registry check and a high-severity npm dependency audit. The audit contacts the npm registry.
+That adds a high-severity npm dependency audit. The audit contacts the npm registry.
 
 ## CLI Commands
 
@@ -208,7 +228,11 @@ Available scripts from [package.json](./package.json):
 - `npm run format:check`
 - `npm run lint`
 - `npm run quality`
+- `npm run quality:fast`
+- `npm run quality:solver`
+- `npm run quality:evidence`
 - `npm run security:audit`
+- `npm run smoke:web-solve`
 - `npm run web`
 - `npm run web:awake`
 - `npm run solve`

@@ -448,6 +448,17 @@ async function testBackgroundSolveRejectsImmediateSolveAtCapacity() {
     assert.equal(startResult.statusCode, 202);
     await startBackgroundSolveDeferred.promise;
 
+    const activeResult = await invoke(handler, {
+      method: "GET",
+      url: "/api/solve/active"
+    });
+    assert.equal(activeResult.statusCode, 200);
+    assert.equal(activeResult.payload.ok, true);
+    assert.equal(activeResult.payload.active, true);
+    assert.equal(activeResult.payload.requestId, requestId);
+    assert.equal(activeResult.payload.optimizer, "greedy");
+    assert.deepEqual(activeResult.payload.input.grid, solvePayload.grid);
+
     const immediateResult = await invoke(handler, {
       method: "POST",
       url: "/api/solve",
@@ -457,7 +468,88 @@ async function testBackgroundSolveRejectsImmediateSolveAtCapacity() {
     assert.equal(immediateResult.statusCode, 429);
     assert.equal(immediateResult.payload.ok, false);
     assert.match(immediateResult.payload.error, /Another solve is already running/);
+    assert.equal(immediateResult.payload.activeSolve.requestId, requestId);
+    assert.equal(immediateResult.payload.activeSolve.jobStatus, "running");
     assert.equal(startBackgroundSolveCalls, 1);
+
+    handlePromiseDeferred.resolve(backgroundSolution);
+    await waitForSolve(handler, requestId);
+  } finally {
+    handlePromiseDeferred.resolve(backgroundSolution);
+    optimizerRegistry.getOptimizerAdapter = originalGetOptimizerAdapter;
+  }
+}
+
+async function testActiveSolveIgnoresExpansionComparisonJobs() {
+  const { handler } = createRouteTestHandler({
+    progressLogRootPrefix: "planner-route-comparison-active-",
+    maxRunningSolves: 1
+  });
+  const solvePayload = buildTinySolvePayload();
+  const backgroundSolution = solve(solvePayload.grid, solvePayload.params);
+  const originalGetOptimizerAdapter = optimizerRegistry.getOptimizerAdapter;
+  const startBackgroundSolveDeferred = createDeferred();
+  const handlePromiseDeferred = createDeferred();
+
+  optimizerRegistry.getOptimizerAdapter = (_params) => ({
+    name: "greedy",
+    solve() {
+      return backgroundSolution;
+    },
+    startBackgroundSolve() {
+      startBackgroundSolveDeferred.resolve();
+      return {
+        promise: handlePromiseDeferred.promise,
+        cancel() {},
+        getLatestSnapshot() {
+          return null;
+        },
+        getLatestSnapshotState() {
+          return {
+            hasFeasibleSolution: false,
+            totalPopulation: null
+          };
+        }
+      };
+    }
+  });
+
+  try {
+    const requestId = "expansion-comparison-running";
+    const startResult = await invoke(handler, {
+      method: "POST",
+      url: "/api/solve/start",
+      json: {
+        ...solvePayload,
+        requestId,
+        clientRole: "expansion-comparison"
+      }
+    });
+    assert.equal(startResult.statusCode, 202);
+    assert.equal(startResult.payload.clientRole, "expansion-comparison");
+    await startBackgroundSolveDeferred.promise;
+
+    const activeResult = await invoke(handler, {
+      method: "GET",
+      url: "/api/solve/active"
+    });
+    assert.equal(activeResult.statusCode, 200);
+    assert.equal(activeResult.payload.ok, true);
+    assert.equal(activeResult.payload.active, true);
+    assert.equal(activeResult.payload.requestId, requestId);
+    assert.equal(activeResult.payload.clientRole, "expansion-comparison");
+
+    const capacityResult = await invoke(handler, {
+      method: "POST",
+      url: "/api/solve/start",
+      json: {
+        ...solvePayload,
+        requestId: "primary-while-comparison-running"
+      }
+    });
+    assert.equal(capacityResult.statusCode, 429);
+    assert.equal(capacityResult.payload.activeSolve.requestId, requestId);
+    assert.equal(capacityResult.payload.activeSolve.clientRole, "expansion-comparison");
 
     handlePromiseDeferred.resolve(backgroundSolution);
     await waitForSolve(handler, requestId);
@@ -543,6 +635,7 @@ async function main() {
   await testImmediateSolveRecoversLatestSnapshotAfterBackendFailure(handler);
   await testImmediateSolveCancelsOnDisconnect(handler);
   await testBackgroundSolveRejectsImmediateSolveAtCapacity();
+  await testActiveSolveIgnoresExpansionComparisonJobs();
   await testImmediateSolveRejectsBackgroundSolveAtCapacity();
 
   console.log("Web server solve route tests passed.");

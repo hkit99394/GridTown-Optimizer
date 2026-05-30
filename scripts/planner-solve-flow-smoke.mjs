@@ -136,13 +136,13 @@ async function runSmoke() {
 
     assert.notEqual(finalStatus, null, `Solve did not complete within ${SOLVE_TIMEOUT_MS}ms.`);
     assert.equal(finalStatus.payload.validation.valid, true, finalStatus.payload.validation.errors.join("\n"));
-    assert.equal(finalStatus.payload.validation.populationValidation.mode, "reported-invariants");
+    assert.equal(finalStatus.payload.validation.populationValidation.mode, "full-recompute");
     assert.equal(finalStatus.payload.solution.residentials.length, 1);
     assert.equal(finalStatus.payload.stats.totalPopulation > 0, true);
 
     const recheck = await fetchJson(baseUrl, `/api/solve/status?${new URLSearchParams({ requestId }).toString()}`);
     assert.equal(recheck.payload.jobStatus, "completed");
-    assert.equal(recheck.payload.validation.populationValidation.mode, "reported-invariants");
+    assert.equal(recheck.payload.validation.populationValidation.mode, "full-recompute");
 
     console.log(
       JSON.stringify({

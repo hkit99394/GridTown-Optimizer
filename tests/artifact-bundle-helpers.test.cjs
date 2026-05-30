@@ -1,6 +1,7 @@
 const assert = require("node:assert/strict");
 const childProcess = require("node:child_process");
 const fs = require("node:fs");
+const os = require("node:os");
 const path = require("node:path");
 
 const {
@@ -13,6 +14,7 @@ const {
 const repoRoot = path.join(__dirname, "..");
 const tempRoot = path.join(repoRoot, "artifacts", `tmp-artifact-bundle-helpers-${process.pid}`);
 const relativeTempRoot = path.relative(repoRoot, tempRoot).split(path.sep).join(path.posix.sep);
+let symlinkTarget = null;
 
 fs.rmSync(tempRoot, { recursive: true, force: true });
 
@@ -51,6 +53,20 @@ try {
   writeTextArtifact(forced.absoluteArtifactPath("existing.txt"), "new", { force: true });
   assert.equal(fs.readFileSync(forced.absoluteArtifactPath("existing.txt"), "utf8"), "new");
 
+  symlinkTarget = fs.mkdtempSync(path.join(os.tmpdir(), `artifact-bundle-escape-${process.pid}-`));
+  const symlinkDir = `${relativeTempRoot}/symlink-escape`;
+  fs.symlinkSync(symlinkTarget, path.join(repoRoot, symlinkDir), "dir");
+  assert.throws(
+    () => prepareArtifactBundleDirectory(symlinkDir, "--artifact-dir", { force: true }),
+    /--artifact-dir must not use symbolic links under artifacts\//
+  );
+  fs.rmSync(path.join(repoRoot, symlinkDir), { recursive: true, force: true });
+  fs.symlinkSync(path.join(symlinkTarget, "missing"), path.join(repoRoot, symlinkDir), "dir");
+  assert.throws(
+    () => prepareArtifactBundleDirectory(`${symlinkDir}/nested`, "--artifact-dir", { force: true }),
+    /--artifact-dir must not use symbolic links under artifacts\//
+  );
+
   const cliArtifactDir = `${relativeTempRoot}/cli-scorecard`;
   const absoluteCliArtifactDir = path.join(repoRoot, cliArtifactDir);
   fs.mkdirSync(absoluteCliArtifactDir, { recursive: true });
@@ -80,6 +96,7 @@ try {
   assert.equal(fs.existsSync(path.join(repoRoot, manifest.artifactPaths.scorecardJson)), true);
 } finally {
   fs.rmSync(tempRoot, { recursive: true, force: true });
+  if (symlinkTarget) fs.rmSync(symlinkTarget, { recursive: true, force: true });
 }
 
 console.log("Artifact bundle helper tests passed.");

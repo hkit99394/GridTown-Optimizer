@@ -231,12 +231,31 @@ export function requireCandidateKeys(
 ): void {
   const value = parent[key];
   if (value === undefined) return;
-  const keyPattern = new RegExp(`^${kind}:-?\\d+:\\d+:\\d+:[1-9]\\d*:[1-9]\\d*$`);
   requireValidationArray(value, path).forEach((entry, index) => {
-    if (typeof entry !== "string" || !keyPattern.test(entry)) {
+    if (!isValidCandidateKey(entry, kind)) {
       throw new SolverInputError(`${path}[${index}] must be a ${kind} candidate key.`);
     }
   });
+}
+
+function isSafeIntegerAtLeast(value: string, minimum: number): boolean {
+  if (!/^(0|-?[1-9]\d*)$/.test(value)) return false;
+  const numericValue = Number(value);
+  return Number.isSafeInteger(numericValue) && numericValue >= minimum;
+}
+
+function isValidCandidateKey(value: unknown, kind: "service" | "residential"): value is string {
+  if (typeof value !== "string") return false;
+  const [candidateKind, typeIndex, r, c, rows, cols, extra] = value.split(":");
+  return (
+    extra === undefined &&
+    candidateKind === kind &&
+    isSafeIntegerAtLeast(typeIndex ?? "", NO_TYPE_INDEX) &&
+    isSafeIntegerAtLeast(r ?? "", 0) &&
+    isSafeIntegerAtLeast(c ?? "", 0) &&
+    isSafeIntegerAtLeast(rows ?? "", 1) &&
+    isSafeIntegerAtLeast(cols ?? "", 1)
+  );
 }
 
 export function assertValidCpSatWarmStartService(value: unknown, path: string, requireTypedMetadata: boolean): void {
@@ -307,8 +326,65 @@ export function assertValidCpSatWarmStartSolution(value: unknown, path: string):
   requireOptionalIntegerForValidation(solution, "totalPopulation", `${path}.totalPopulation`);
 }
 
+function requireValidationIntegerArray(value: unknown, path: string, minimum = 0): number[] {
+  return requireValidationArray(value, path).map((entry, index) =>
+    requireValidationIntegerValue(entry, `${path}[${index}]`, minimum)
+  );
+}
+
+function assertValidSetBackedSolutionPayload(value: unknown, path: string): asserts value is Solution {
+  const solution = requireValidationRecord(value, path);
+  if (!(solution.roads instanceof Set)) {
+    throw new SolverInputError(`${path}.roads must be a Set of road keys.`);
+  }
+  for (const [index, roadKey] of [...solution.roads].entries()) {
+    if (!isRoadKey(roadKey)) {
+      throw new SolverInputError(`${path}.roads[${index}] must be a road key like "r,c".`);
+    }
+  }
+
+  const services = requireValidationArray(solution.services, `${path}.services`);
+  services.forEach((service, index) => assertValidSerializedServicePlacement(service, `${path}.services[${index}]`));
+  const serviceTypeIndices = requireValidationIntegerArray(
+    solution.serviceTypeIndices,
+    `${path}.serviceTypeIndices`,
+    NO_TYPE_INDEX
+  );
+  if (serviceTypeIndices.length !== services.length) {
+    throw new SolverInputError(`${path}.serviceTypeIndices must match ${path}.services length.`);
+  }
+  const servicePopulationIncreases = requireValidationIntegerArray(
+    solution.servicePopulationIncreases,
+    `${path}.servicePopulationIncreases`
+  );
+  if (servicePopulationIncreases.length !== services.length) {
+    throw new SolverInputError(`${path}.servicePopulationIncreases must match ${path}.services length.`);
+  }
+
+  const residentials = requireValidationArray(solution.residentials, `${path}.residentials`);
+  residentials.forEach((residential, index) =>
+    assertValidSerializedResidentialPlacement(residential, `${path}.residentials[${index}]`)
+  );
+  const residentialTypeIndices = requireValidationIntegerArray(
+    solution.residentialTypeIndices,
+    `${path}.residentialTypeIndices`,
+    NO_TYPE_INDEX
+  );
+  if (residentialTypeIndices.length !== residentials.length) {
+    throw new SolverInputError(`${path}.residentialTypeIndices must match ${path}.residentials length.`);
+  }
+  const populations = requireValidationIntegerArray(solution.populations, `${path}.populations`);
+  if (populations.length !== residentials.length) {
+    throw new SolverInputError(`${path}.populations must match ${path}.residentials length.`);
+  }
+  requireValidationInteger(solution, "totalPopulation", `${path}.totalPopulation`);
+}
+
 export function assertValidCpSatWarmStartHint(value: unknown, path: string): void {
-  if (isRecord(value) && value.roads instanceof Set) return;
+  if (isRecord(value) && value.roads instanceof Set) {
+    assertValidSetBackedSolutionPayload(value, path);
+    return;
+  }
 
   const hint = requireValidationRecord(value, path);
   requireOptionalString(hint, "sourceName", `${path}.sourceName`);
@@ -345,6 +421,7 @@ export function assertValidCpSatWarmStartHint(value: unknown, path: string): voi
 
 export function materializeCpSatWarmStartReusableSolution(value: unknown, path: string): Solution | null {
   if (isRecord(value) && value.roads instanceof Set) {
+    assertValidSetBackedSolutionPayload(value, path);
     return value as unknown as Solution;
   }
   if (!isRecord(value) || value.solution === undefined) return null;

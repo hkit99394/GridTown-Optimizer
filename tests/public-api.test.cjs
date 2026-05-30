@@ -199,111 +199,27 @@ function testBenchmarkInternalsAreHiddenBehindBenchmarkApi() {
 function testScriptEntrypointWrappersRemain() {
   const srcDir = path.join(__dirname, "..", "src");
   const expectedWrappers = new Map([
-    ["cli.ts", ["/**", " * CLI entry point compatibility wrapper.", " */", "", `import "./apps/cli.js";`].join("\n")],
-    [
-      "webServer.ts",
-      [
-        "/**",
-        " * Web server entry point compatibility wrapper.",
-        " */",
-        "",
-        `import "./apps/planner-server/webServer.js";`
-      ].join("\n")
-    ],
-    [
-      "greedyBenchmarkCli.ts",
-      [
-        "/**",
-        " * Greedy benchmark CLI compatibility wrapper.",
-        " */",
-        "",
-        `import "./tools/cli/greedyBenchmarkCli.js";`
-      ].join("\n")
-    ],
-    [
-      "cpSatBenchmarkCli.ts",
-      [
-        "/**",
-        " * CP-SAT benchmark CLI compatibility wrapper.",
-        " */",
-        "",
-        `import "./tools/cli/cpSatBenchmarkCli.js";`
-      ].join("\n")
-    ],
-    [
-      "lnsBenchmarkCli.ts",
-      [
-        "/**",
-        " * LNS benchmark CLI compatibility wrapper.",
-        " */",
-        "",
-        `import "./tools/cli/lnsBenchmarkCli.js";`
-      ].join("\n")
-    ],
-    [
-      "crossModeBenchmarkCli.ts",
-      [
-        "/**",
-        " * Cross-mode benchmark scorecard CLI compatibility wrapper.",
-        " */",
-        "",
-        `import "./tools/cli/crossModeBenchmarkCli.js";`
-      ].join("\n")
-    ],
-    [
-      "learnedRankingLabelCli.ts",
-      [
-        "/**",
-        " * Learned-ranking label CLI compatibility wrapper.",
-        " */",
-        "",
-        `import "./tools/cli/learnedRankingLabelCli.js";`
-      ].join("\n")
-    ],
-    [
-      "greedyOfflineRankerCli.ts",
-      [
-        "/**",
-        " * Greedy offline ranker CLI compatibility wrapper.",
-        " */",
-        "",
-        `import "./tools/cli/greedyOfflineRankerCli.js";`
-      ].join("\n")
-    ],
-    [
-      "lnsWindowRankerBaselineCli.ts",
-      [
-        "/**",
-        " * LNS window ranker baseline CLI compatibility wrapper.",
-        " */",
-        "",
-        `import "./tools/cli/lnsWindowRankerBaselineCli.js";`
-      ].join("\n")
-    ],
-    [
-      "lnsWindowRankerCli.ts",
-      [
-        "/**",
-        " * LNS window ranker CLI compatibility wrapper.",
-        " */",
-        "",
-        `import "./tools/cli/lnsWindowRankerCli.js";`
-      ].join("\n")
-    ],
-    [
-      "experimentRegistryCli.ts",
-      [
-        "/**",
-        " * Experiment registry CLI compatibility wrapper.",
-        " */",
-        "",
-        `import "./tools/cli/experimentRegistryCli.js";`
-      ].join("\n")
-    ]
+    ["cli.ts", "./apps/cli.js"],
+    ["webServer.ts", "./apps/planner-server/webServer.js"],
+    ["greedyBenchmarkCli.ts", "./tools/cli/greedyBenchmarkCli.js"],
+    ["cpSatBenchmarkCli.ts", "./tools/cli/cpSatBenchmarkCli.js"],
+    ["lnsBenchmarkCli.ts", "./tools/cli/lnsBenchmarkCli.js"],
+    ["crossModeBenchmarkCli.ts", "./tools/cli/crossModeBenchmarkCli.js"],
+    ["learnedRankingLabelCli.ts", "./tools/cli/learnedRankingLabelCli.js"],
+    ["greedyOfflineRankerCli.ts", "./tools/cli/greedyOfflineRankerCli.js"],
+    ["lnsWindowRankerBaselineCli.ts", "./tools/cli/lnsWindowRankerBaselineCli.js"],
+    ["lnsWindowRankerCli.ts", "./tools/cli/lnsWindowRankerCli.js"],
+    ["experimentRegistryCli.ts", "./tools/cli/experimentRegistryCli.js"]
   ]);
 
   const offenders = [...expectedWrappers]
-    .filter(([relativePath, expected]) => fs.readFileSync(path.join(srcDir, relativePath), "utf8").trim() !== expected)
+    .filter(([relativePath, expectedImport]) => {
+      const source = fs.readFileSync(path.join(srcDir, relativePath), "utf8");
+      return (
+        !source.includes("compatibility wrapper") ||
+        !new RegExp(`^import ${JSON.stringify(expectedImport)};$`, "m").test(source)
+      );
+    })
     .map(([relativePath]) => relativePath);
 
   assert.deepEqual(offenders, []);

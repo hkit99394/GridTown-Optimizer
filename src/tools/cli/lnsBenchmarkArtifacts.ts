@@ -1,6 +1,3 @@
-import fs from "node:fs";
-import path from "node:path";
-
 import {
   buildLnsWindowRankerOnlineAblationRegistryEntryDraft,
   buildLnsWindowRankerOnlineAblationTelemetryManifest,
@@ -22,11 +19,12 @@ import type {
   runLnsWindowRankerOnlineAblation
 } from "../../benchmarkApi.js";
 import {
-  assertArtifactPathNotObsolete,
   completeAppendableRegistryEntry,
   defaultCliReplayCommand,
   normalizeRepoRelativePath,
   prepareArtifactBundleDirectory,
+  readJsonRepoInputArtifact,
+  resolveRepoInputArtifactPath,
   writeJsonArtifact,
   writeTextArtifact
 } from "./artifactBundleHelpers.js";
@@ -109,9 +107,7 @@ export function readWindowRankerModel(
   modelPath: string,
   label: "--window-ranker-model" | "--window-ranker-suppression-model" = "--window-ranker-model"
 ): LnsWindowRankerRuntimeModel {
-  const repoRelativePath = normalizeRepoRelativePath(modelPath, label);
-  assertArtifactPathNotObsolete(repoRelativePath, label);
-  const parsed = JSON.parse(fs.readFileSync(path.resolve(process.cwd(), repoRelativePath), "utf8"));
+  const parsed = readJsonRepoInputArtifact(modelPath, label).value;
   const candidate =
     isRecord(parsed) && isRecord(parsed.model) && isRecord(parsed.model.weights) ? parsed.model : parsed;
   if (!isRecord(candidate) || !isRecord(candidate.weights)) {
@@ -121,8 +117,10 @@ export function readWindowRankerModel(
 }
 
 export function readWindowRankerOnlineScorecard(scorecardPath: string): LnsWindowRankerOnlineAblationSnapshot {
-  const repoRelativePath = normalizeRepoRelativePath(scorecardPath, "--window-replay-online-scorecard");
-  return JSON.parse(fs.readFileSync(path.resolve(process.cwd(), repoRelativePath), "utf8"));
+  return readJsonRepoInputArtifact<LnsWindowRankerOnlineAblationSnapshot>(
+    scorecardPath,
+    "--window-replay-online-scorecard"
+  ).value;
 }
 
 function defaultWindowRankerOnlineArtifactCommand(argv: readonly string[]): string {
@@ -263,13 +261,14 @@ function prepareWindowRankerOnlineArtifactBundle(
       registryEntryDraftJson: artifacts.absoluteArtifactPath("registry-entry-draft.json")
     },
     command: defaultWindowRankerOnlineArtifactCommand(argv),
-    modelPath: normalizeRepoRelativePath(args.windowRankerModelPath, "--window-ranker-model"),
+    modelPath: resolveRepoInputArtifactPath(args.windowRankerModelPath, "--window-ranker-model", { mustExist: true }),
     ...(args.windowRankerSuppressionModelPath === undefined
       ? {}
       : {
-          suppressionModelPath: normalizeRepoRelativePath(
+          suppressionModelPath: resolveRepoInputArtifactPath(
             args.windowRankerSuppressionModelPath,
-            "--window-ranker-suppression-model"
+            "--window-ranker-suppression-model",
+            { mustExist: true }
           )
         })
   };

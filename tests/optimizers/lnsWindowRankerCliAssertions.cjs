@@ -12,6 +12,8 @@ function testLnsWindowRankerCliArtifacts() {
   const artifactDir = `${tempRoot}/bundle`;
   const labelsPath = `${tempRoot}/inputs/labels.json`;
   const supplementalReplayPath = `${tempRoot}/inputs/supplemental-replay.json`;
+  const absoluteLabelsPath = path.join(repoRoot, labelsPath);
+  const absoluteSupplementalReplayPath = path.join(repoRoot, supplementalReplayPath);
   const absoluteTempRoot = path.join(repoRoot, tempRoot);
   fs.rmSync(absoluteTempRoot, { recursive: true, force: true });
   fs.mkdirSync(path.dirname(path.join(repoRoot, labelsPath)), { recursive: true });
@@ -25,7 +27,7 @@ function testLnsWindowRankerCliArtifacts() {
       process.execPath,
       [
         cliPath,
-        `--labels=${labelsPath}`,
+        `--labels=${absoluteLabelsPath}`,
         `--artifact-dir=${artifactDir}`,
         "--top-k=2",
         "--epochs=4",
@@ -64,6 +66,29 @@ function testLnsWindowRankerCliArtifacts() {
     assert.equal(modelArtifact.training.baselineTieBreak, true);
     assert.equal(modelArtifact.training.allowWeakSeedReplayLabels, false);
     assert.equal(modelArtifact.training.excludeFeatureIdenticalRepeatabilityConflicts, true);
+
+    const absoluteInputArtifactResult = childProcess.spawnSync(
+      process.execPath,
+      [
+        cliPath,
+        `--labels=${absoluteLabelsPath}`,
+        `--supplemental-replay-labels=${absoluteSupplementalReplayPath}`,
+        "--supplemental-replay-calibration",
+        `--artifact-dir=${tempRoot}/absolute-input-bundle`,
+        "--top-k=1",
+        "--epochs=1",
+        "--json"
+      ],
+      {
+        cwd: repoRoot,
+        encoding: "utf8"
+      }
+    );
+    assert.equal(
+      absoluteInputArtifactResult.status,
+      0,
+      absoluteInputArtifactResult.stderr || absoluteInputArtifactResult.stdout
+    );
 
     const supplementalResult = childProcess.spawnSync(
       process.execPath,
@@ -140,6 +165,44 @@ function testLnsWindowRankerCliArtifacts() {
     assert.notEqual(registryGuard.status, 0);
     assert.match(registryGuard.stderr, /--labels=<path> is required/);
 
+    const obsoleteLabelsDir = `${tempRoot}/obsolete-labels`;
+    const obsoleteLabelsPath = `${obsoleteLabelsDir}/labels.json`;
+    fs.mkdirSync(path.join(repoRoot, obsoleteLabelsDir), { recursive: true });
+    fs.writeFileSync(path.join(repoRoot, `${obsoleteLabelsDir}/OBSOLETE.md`), "Obsolete labels.\n");
+    fs.writeFileSync(path.join(repoRoot, obsoleteLabelsPath), `${JSON.stringify(buildFixture(), null, 2)}\n`);
+    const obsoleteLabelsGuard = childProcess.spawnSync(
+      process.execPath,
+      [cliPath, `--labels=${obsoleteLabelsPath}`, "--json"],
+      {
+        cwd: repoRoot,
+        encoding: "utf8"
+      }
+    );
+    assert.notEqual(obsoleteLabelsGuard.status, 0);
+    assert.match(obsoleteLabelsGuard.stderr, /--labels points to obsolete artifact bundle/);
+
+    const obsoleteSupplementalPath = `${obsoleteLabelsDir}/supplemental-replay.json`;
+    fs.writeFileSync(
+      path.join(repoRoot, obsoleteSupplementalPath),
+      `${JSON.stringify(cloneFixtureWithRollForwardTargets().lns.splits[0].replay, null, 2)}\n`
+    );
+    const obsoleteSupplementalGuard = childProcess.spawnSync(
+      process.execPath,
+      [
+        cliPath,
+        `--labels=${labelsPath}`,
+        `--supplemental-replay-labels=${obsoleteSupplementalPath}`,
+        "--supplemental-replay-calibration",
+        "--json"
+      ],
+      {
+        cwd: repoRoot,
+        encoding: "utf8"
+      }
+    );
+    assert.notEqual(obsoleteSupplementalGuard.status, 0);
+    assert.match(obsoleteSupplementalGuard.stderr, /--supplemental-replay-labels points to obsolete artifact bundle/);
+
     const obsoleteDir = `${tempRoot}/obsolete-model`;
     const obsoleteModelPath = `${obsoleteDir}/model.json`;
     fs.mkdirSync(path.join(repoRoot, obsoleteDir), { recursive: true });
@@ -164,6 +227,29 @@ function testLnsWindowRankerCliArtifacts() {
     );
     assert.notEqual(obsoleteModelGuard.status, 0);
     assert.match(obsoleteModelGuard.stderr, /--model points to obsolete artifact bundle/);
+
+    const normalModelPath = `${tempRoot}/inputs/model.json`;
+    fs.writeFileSync(
+      path.join(repoRoot, normalModelPath),
+      `${JSON.stringify({ modelType: "lns-window-linear-pairwise-ranker", featureSchemaVersion: 2, weights: {} })}\n`
+    );
+    fs.writeFileSync(path.join(repoRoot, `${obsoleteDir}/scorecard.json`), "{}\n");
+    const obsoleteScorecardGuard = childProcess.spawnSync(
+      process.execPath,
+      [
+        cliPath,
+        `--labels=${labelsPath}`,
+        "--gap-diagnostics",
+        `--model=${normalModelPath}`,
+        `--online-scorecard=${obsoleteDir}/scorecard.json`
+      ],
+      {
+        cwd: repoRoot,
+        encoding: "utf8"
+      }
+    );
+    assert.notEqual(obsoleteScorecardGuard.status, 0);
+    assert.match(obsoleteScorecardGuard.stderr, /--online-scorecard points to obsolete artifact bundle/);
   } finally {
     fs.rmSync(absoluteTempRoot, { recursive: true, force: true });
   }

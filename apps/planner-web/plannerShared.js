@@ -48,6 +48,30 @@
   }
 
   /**
+   * @param {JsonObject} params
+   * @returns {{ maxServices: unknown, maxResidentials: unknown }}
+   */
+  function getBuildingLimits(params) {
+    return {
+      maxServices: params?.availableBuildings?.services ?? params?.maxServices,
+      maxResidentials: params?.availableBuildings?.residentials ?? params?.maxResidentials
+    };
+  }
+
+  /**
+   * @param {JsonObject} params
+   * @returns {JsonObject[] | undefined}
+   */
+  function canonicalServiceTypes(params) {
+    return Array.isArray(params.serviceTypes)
+      ? params.serviceTypes.map((serviceType) => ({
+          ...cloneJson(serviceType),
+          allowRotation: serviceType.allowRotation ?? true
+        }))
+      : undefined;
+  }
+
+  /**
    * @returns {string}
    */
   function createSavedEntryId() {
@@ -142,16 +166,21 @@
    */
   function buildCpSatContinuationModelInput(request) {
     const params = request?.params ?? {};
+    const serviceTypes = canonicalServiceTypes(params);
+    const residentialTypes = Array.isArray(params.residentialTypes) ? cloneJson(params.residentialTypes) : undefined;
+    const buildingLimits = getBuildingLimits(params);
+    const usesResidentialTypes = Boolean(residentialTypes?.length);
     const modelParams = {
       optimizer: "cp-sat",
-      ...(Array.isArray(params.serviceTypes) ? { serviceTypes: cloneJson(params.serviceTypes) } : {}),
-      ...(Array.isArray(params.residentialTypes) ? { residentialTypes: cloneJson(params.residentialTypes) } : {}),
-      ...(params.residentialSettings ? { residentialSettings: cloneJson(params.residentialSettings) } : {}),
-      ...(params.basePop != null ? { basePop: params.basePop } : {}),
-      ...(params.maxPop != null ? { maxPop: params.maxPop } : {}),
-      ...(params.availableBuildings ? { availableBuildings: cloneJson(params.availableBuildings) } : {}),
-      ...(params.maxServices != null ? { maxServices: params.maxServices } : {}),
-      ...(params.maxResidentials != null ? { maxResidentials: params.maxResidentials } : {})
+      ...(serviceTypes ? { serviceTypes } : {}),
+      ...(residentialTypes ? { residentialTypes } : {}),
+      ...(!usesResidentialTypes && params.residentialSettings
+        ? { residentialSettings: cloneJson(params.residentialSettings) }
+        : {}),
+      ...(!usesResidentialTypes && params.basePop != null ? { basePop: params.basePop } : {}),
+      ...(!usesResidentialTypes && params.maxPop != null ? { maxPop: params.maxPop } : {}),
+      ...(buildingLimits.maxServices != null ? { maxServices: buildingLimits.maxServices } : {}),
+      ...(buildingLimits.maxResidentials != null ? { maxResidentials: buildingLimits.maxResidentials } : {})
     };
 
     return {

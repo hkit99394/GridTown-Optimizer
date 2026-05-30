@@ -1,6 +1,7 @@
 import { cloneBenchmarkGrid, cloneBenchmarkSolverParams, selectBenchmarkCasesByName } from "./benchmarkOptions.js";
 import { DEFAULT_CP_SAT_BENCHMARK_CORPUS } from "./cpSat.js";
 import { DEFAULT_CROSS_MODE_BENCHMARK_CORPUS } from "./crossMode.js";
+import { compareModeResults } from "./crossModeResultOrder.js";
 import { DEFAULT_GREEDY_BENCHMARK_CORPUS } from "./greedy.js";
 import { DEFAULT_LNS_BENCHMARK_CORPUS } from "./lns.js";
 import { materializeValidLnsSeedSolution } from "../core/index.js";
@@ -623,8 +624,10 @@ function bestScore(scorecards: readonly CrossModeBenchmarkCaseScorecard[]): Repl
   for (const scorecard of scorecards) {
     if (scorecard.bestScore === null) continue;
     const bestResult =
-      scorecard.results.find((entry) => entry.rank === 1) ??
-      scorecard.results.find((entry) => entry.totalPopulation === scorecard.bestScore);
+      [...scorecard.results.filter((entry) => entry.rank === 1)].sort(compareModeResults)[0] ??
+      [...scorecard.results.filter((entry) => entry.totalPopulation === scorecard.bestScore)].sort(
+        compareModeResults
+      )[0];
     if (bestResult === undefined) continue;
     if (best === null || scorecard.bestScore > best.score) {
       best = {
@@ -760,7 +763,7 @@ export function buildCrossModeProductWorkflowEvidenceSummary(
     workflowTagCounts: tagCounts,
     promotionCoverage: buildPromotionCoverage(result),
     caseMetrics: result.cases.map((scorecard) => {
-      const bestResult = scorecard.results.find((entry) => entry.rank === 1) ?? null;
+      const bestResult = [...scorecard.results.filter((entry) => entry.rank === 1)].sort(compareModeResults)[0] ?? null;
       const autoResult = scorecard.results.find((entry) => entry.mode === "auto") ?? null;
       const firstFeasibleMs = nullableMin(scorecard.results.map((entry) => entry.timeToQuality.firstFeasibleAtMs));
       const bestScoreMs = nullableMin(scorecard.results.map((entry) => entry.timeToQuality.bestScoreAtMs));

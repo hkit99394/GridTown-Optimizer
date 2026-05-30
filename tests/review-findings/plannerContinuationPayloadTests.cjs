@@ -5,6 +5,35 @@ const {
   loadPlannerExpansionModule,
   loadPlannerSharedModule
 } = require("./helpers.cjs");
+const {
+  buildCpSatContinuationModelInput: buildCoreCpSatContinuationModelInput
+} = require("../../dist/packages/core/cpSatContinuation.js");
+
+function testPlannerSharedCpSatContinuationFingerprintMatchesCoreCanonicalization() {
+  const plannerShared = loadPlannerSharedModule();
+  const request = {
+    grid: [
+      [1, 1],
+      [1, 1]
+    ],
+    params: {
+      optimizer: "auto",
+      serviceTypes: [{ name: "Clinic", rows: 1, cols: 1, range: 1, bonus: 5, avail: 1 }],
+      residentialTypes: [{ name: "Homes", w: 1, h: 1, min: 10, max: 20, avail: 1 }],
+      residentialSettings: { "1x1": { min: 1, max: 2 } },
+      basePop: 1,
+      maxPop: 2,
+      availableBuildings: { services: 0, residentials: 1 },
+      maxServices: 9,
+      maxResidentials: 9
+    }
+  };
+
+  assert.deepEqual(
+    JSON.parse(JSON.stringify(plannerShared.buildCpSatContinuationModelInput(request))),
+    JSON.parse(JSON.stringify(buildCoreCpSatContinuationModelInput(request)))
+  );
+}
 
 async function testPlannerExpansionUsesSharedContinuationPayloadContract() {
   const plannerShared = loadPlannerSharedModule();
@@ -125,6 +154,7 @@ async function testPlannerExpansionUsesSharedContinuationPayloadContract() {
   await controller.compareExpansionOptions();
 
   assert.ok(capturedStartRequest);
+  assert.equal(capturedStartRequest.clientRole, "expansion-comparison");
   const warmStartHint = capturedStartRequest.params.cpSat.warmStartHint;
   const seedHint = capturedStartRequest.params.lns.seedHint;
   assert.equal(warmStartHint.sourceName, "Displayed layout (comparison baseline)");
@@ -140,8 +170,114 @@ async function testPlannerExpansionUsesSharedContinuationPayloadContract() {
   assert.ok(seedHint.solution);
 }
 
+async function testPlannerExpansionTreatsStoppedComparisonAsCancelled() {
+  const plannerShared = loadPlannerSharedModule();
+  const grid = [
+    [1, 1],
+    [1, 1]
+  ];
+  const plannerExpansion = loadPlannerExpansionModule(async (url, options = {}) => {
+    if (String(url) === "/api/solve/start") {
+      const body = JSON.parse(String(options.body));
+      assert.equal(body.clientRole, "expansion-comparison");
+      return {
+        ok: true,
+        async json() {
+          return { ok: true, requestId: body.requestId };
+        }
+      };
+    }
+    return {
+      ok: true,
+      async json() {
+        return {
+          ok: true,
+          jobStatus: "stopped",
+          cancelRequested: true,
+          stats: { totalPopulation: 140 },
+          solution: { totalPopulation: 140 }
+        };
+      }
+    };
+  });
+  const state = {
+    isSolving: false,
+    activeSolveRequestId: "",
+    isStopping: false,
+    optimizer: "auto",
+    grid,
+    serviceTypes: [],
+    residentialTypes: [],
+    availableBuildings: { services: "0", residentials: "1" },
+    greedy: {},
+    cpSat: { useDisplayedHint: false },
+    lns: { useDisplayedSeed: false },
+    result: {
+      stats: { totalPopulation: 100, serviceCount: 0, residentialCount: 1 },
+      solution: { totalPopulation: 100, services: [], residentials: [{}] }
+    },
+    resultContext: {
+      grid,
+      params: {
+        optimizer: "auto",
+        serviceTypes: [],
+        residentialTypes: [],
+        availableBuildings: { services: 0, residentials: 1 }
+      }
+    },
+    expansionAdvice: {
+      nextServiceText: "Clinic, 30, 1x1, 3x3",
+      nextResidentialText: "",
+      isRunning: false,
+      status: "",
+      result: null,
+      error: ""
+    }
+  };
+  const controller = plannerExpansion.createExpansionAdviceController({
+    state,
+    elements: {
+      expansionAdviceStatus: createFakeDomElement(),
+      expansionAdviceMetrics: createFakeDomElement(),
+      expansionAdviceWinner: createFakeDomElement(),
+      expansionAdviceBaseline: createFakeDomElement(),
+      expansionAdviceServiceOutcome: createFakeDomElement(),
+      expansionAdviceResidentialOutcome: createFakeDomElement()
+    },
+    constants: { COMPARISON_PROGRESS_HINT_INTERVAL_MS: 1, SOLVE_STATUS_POLL_INTERVAL_MS: 1 },
+    helpers: {
+      buildCpSatContinuationModelInput: plannerShared.buildCpSatContinuationModelInput,
+      cloneJson: plannerShared.cloneJson,
+      computeCpSatModelFingerprint: plannerShared.computeCpSatModelFingerprint,
+      createSolveRequestId: () => "expansion-cancelled",
+      delay: async () => {},
+      parseResidentialCatalogEntry: plannerShared.parseResidentialCatalogEntry,
+      parseServiceCatalogEntry: plannerShared.parseServiceCatalogEntry
+    },
+    callbacks: {
+      buildSolveRequest: () => ({
+        grid: plannerShared.cloneGrid(grid),
+        params: { optimizer: "auto", cpSat: {}, lns: {} }
+      }),
+      getDisplayedLayoutCheckpoint: () => null,
+      getDisplayedLayoutSourceLabel: () => "Displayed layout",
+      getOptimizerLabel: () => "Auto",
+      syncActionAvailability() {}
+    }
+  });
+
+  await controller.compareExpansionOptions();
+
+  assert.equal(state.expansionAdvice.result, null);
+  assert.match(state.expansionAdvice.error, /Candidate comparison was stopped/);
+  assert.equal(state.activeSolveRequestId, "");
+  assert.equal(state.isSolving, false);
+}
+
 async function runPlannerContinuationPayloadTests() {
+  testPlannerSharedCpSatContinuationFingerprintMatchesCoreCanonicalization();
   await testPlannerExpansionUsesSharedContinuationPayloadContract();
+  await testPlannerExpansionTreatsStoppedComparisonAsCancelled();
 }
 
 module.exports = {

@@ -1,6 +1,3 @@
-import fs from "node:fs";
-import path from "node:path";
-
 import {
   buildLnsWindowRankerBaselineRegistryEntryDraft,
   buildLnsWindowRankerBaselineTelemetryManifest,
@@ -21,6 +18,8 @@ import {
   defaultCliReplayCommand,
   normalizeRepoRelativePath,
   prepareArtifactBundleDirectory,
+  readJsonRepoInputArtifact,
+  resolveRepoInputArtifactPath,
   writeJsonArtifact,
   writeTextArtifact
 } from "./artifactBundleHelpers.js";
@@ -182,9 +181,7 @@ function parseArgs(argv: string[]): ParsedLnsWindowRankerArgs {
 }
 
 function readLabelSnapshot(labelsPath: string): LearnedRankingLabelSnapshot {
-  const repoRelativePath = normalizeRepoRelativePath(labelsPath, "--labels");
-  const parsed = JSON.parse(fs.readFileSync(path.resolve(process.cwd(), repoRelativePath), "utf8"));
-  return parsed as LearnedRankingLabelSnapshot;
+  return readJsonRepoInputArtifact<LearnedRankingLabelSnapshot>(labelsPath, "--labels").value;
 }
 
 function defaultBaselineArtifactCommand(argv: readonly string[]): string {
@@ -238,7 +235,7 @@ function writeLnsWindowRankerArtifactBundle(
     command,
     git: resolveExperimentRegistryGitMetadata(),
     hardware: captureExperimentRegistryHardwareMetadata(),
-    inputArtifacts: [normalizeRepoRelativePath(labelsPath, "--labels")],
+    inputArtifacts: [resolveRepoInputArtifactPath(labelsPath, "--labels", { mustExist: true })],
     outputArtifacts: [experimentJson, experimentText, modelJson, telemetryManifestJson]
   });
   const registryEntryDraft = buildLnsWindowRankerBaselineRegistryEntryDraft(result, labelSnapshot, {

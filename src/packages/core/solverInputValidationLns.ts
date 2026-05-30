@@ -1,4 +1,5 @@
 import { isLnsWindowRankerFeatureName, lnsWindowRankerRuntimeModelValidationError } from "./lnsWindowRankerSchema.js";
+import { LNS_ADAPTIVE_OPERATOR_NAMES, LNS_NEIGHBORHOOD_ANCHOR_POLICIES } from "./types.js";
 import type { SolverParams } from "./types.js";
 
 import {
@@ -18,25 +19,6 @@ const LNS_MAX_SMALL_WINDOW_DP_MUTABLE_CELLS = 24;
 const LNS_MAX_SMALL_WINDOW_DP_CANDIDATES = 64;
 const LNS_MAX_SMALL_WINDOW_DP_STATES = 1_000_000;
 const LNS_MAX_WINDOW_RANKER_SCORE_DELTA = 1_000_000;
-const LNS_NEIGHBORHOOD_ANCHOR_POLICIES = [
-  "ranked",
-  "sliding-only",
-  "weak-service-first",
-  "residential-opportunity-first",
-  "frontier-congestion-first",
-  "placed-buildings-first"
-] as const;
-const LNS_ADAPTIVE_OPERATORS = [
-  "weak-service",
-  "residential-headroom",
-  "frontier-congestion",
-  "gate-choke",
-  "service-overlap",
-  "random-exploration",
-  "placed-buildings",
-  "sliding"
-] as const;
-
 function assertValidWindowRankerAllowedTransitions(windowRanker: Record<string, unknown>): void {
   const value = windowRanker.allowedTransitions;
   if (value === undefined) return;
@@ -44,7 +26,7 @@ function assertValidWindowRankerAllowedTransitions(windowRanker: Record<string, 
     throw new SolverInputError("LNS option lns.windowRanker.allowedTransitions must be an array of strings.");
   }
 
-  const operators = new Set<string>(LNS_ADAPTIVE_OPERATORS);
+  const operators = new Set<string>(LNS_ADAPTIVE_OPERATOR_NAMES);
   for (const transition of value) {
     const [baselineOperator, selectedOperator, extra] = transition.split("->");
     if (

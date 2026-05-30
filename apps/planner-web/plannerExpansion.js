@@ -20,6 +20,8 @@
   /**
    * @typedef {object} ExpansionState
    * @property {boolean} isSolving
+   * @property {string} activeSolveRequestId
+   * @property {boolean} isStopping
    * @property {string} optimizer
    * @property {JsonObject | null} result
    * @property {JsonObject | null} resultContext
@@ -371,46 +373,66 @@
      */
     async function runComparisonSolve(request, candidateName) {
       const requestId = `${createSolveRequestId()}-compare`;
-      const startResponse = await fetch("/api/solve/start", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          ...request,
-          requestId
-        })
-      });
-      const startPayload = await startResponse.json();
-      if (!startResponse.ok || !startPayload.ok) {
-        throw new Error(startPayload.error || "Failed to start the candidate comparison.");
-      }
+      state.isSolving = true;
+      state.isStopping = false;
+      state.activeSolveRequestId = requestId;
+      globalObject.sessionStorage?.setItem("city-builder.activeComparisonRequestId", requestId);
+      syncActionAvailability();
 
-      let nextProgressHintAt = Date.now() + COMPARISON_PROGRESS_HINT_INTERVAL_MS;
-      while (true) {
-        const response = await fetch(`/api/solve/status?${new URLSearchParams({ requestId }).toString()}`, {
-          cache: "no-store"
+      try {
+        const startResponse = await fetch("/api/solve/start", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            ...request,
+            requestId,
+            clientRole: "expansion-comparison"
+          })
         });
-        const payload = await response.json();
-        if (!response.ok || !payload.ok) {
-          throw new Error(payload.error || "Failed to read candidate comparison status.");
+        const startPayload = await startResponse.json();
+        if (!startResponse.ok || !startPayload.ok) {
+          throw new Error(startPayload.error || "Failed to start the candidate comparison.");
         }
 
-        if (payload.jobStatus === "running") {
-          if (Date.now() >= nextProgressHintAt) {
-            state.expansionAdvice.status = buildExpansionProgressMessage(candidateName, payload);
-            renderExpansionAdvice();
-            nextProgressHintAt = Date.now() + COMPARISON_PROGRESS_HINT_INTERVAL_MS;
+        let nextProgressHintAt = Date.now() + COMPARISON_PROGRESS_HINT_INTERVAL_MS;
+        while (true) {
+          const response = await fetch(`/api/solve/status?${new URLSearchParams({ requestId }).toString()}`, {
+            cache: "no-store"
+          });
+          const payload = await response.json();
+          if (!response.ok || !payload.ok) {
+            throw new Error(payload.error || "Failed to read candidate comparison status.");
           }
-          await delay(SOLVE_STATUS_POLL_INTERVAL_MS);
-          continue;
-        }
 
-        if (payload.solution) {
-          return payload;
-        }
+          if (payload.jobStatus === "running") {
+            if (Date.now() >= nextProgressHintAt) {
+              state.expansionAdvice.status = buildExpansionProgressMessage(candidateName, payload);
+              renderExpansionAdvice();
+              nextProgressHintAt = Date.now() + COMPARISON_PROGRESS_HINT_INTERVAL_MS;
+            }
+            await delay(SOLVE_STATUS_POLL_INTERVAL_MS);
+            continue;
+          }
 
-        throw new Error(payload.error || "Candidate comparison failed.");
+          if (payload.cancelRequested || payload.jobStatus === "stopped") {
+            throw new Error(payload.error || "Candidate comparison was stopped.");
+          }
+          if (payload.solution) {
+            return payload;
+          }
+
+          throw new Error(payload.error || "Candidate comparison was stopped.");
+        }
+      } finally {
+        if (state.activeSolveRequestId === requestId) {
+          state.activeSolveRequestId = "";
+          state.isStopping = false;
+          state.isSolving = false;
+          globalObject.sessionStorage?.removeItem("city-builder.activeComparisonRequestId");
+          syncActionAvailability();
+        }
       }
     }
 

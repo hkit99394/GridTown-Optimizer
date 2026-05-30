@@ -1,6 +1,3 @@
-import fs from "node:fs";
-import path from "node:path";
-
 import {
   buildLnsWindowRankerRegistryEntryDraft,
   buildLnsWindowRankerTelemetryManifest,
@@ -26,11 +23,12 @@ import {
 import { runCliMain } from "../../apps/cliEntrypoint.js";
 import { writeCliJsonOrText } from "../../apps/cliOutput.js";
 import {
-  assertArtifactPathNotObsolete,
   completeAppendableRegistryEntry,
   defaultCliReplayCommand,
   normalizeRepoRelativePath,
   prepareArtifactBundleDirectory,
+  readJsonRepoInputArtifact,
+  resolveRepoInputArtifactPath,
   writeJsonArtifact,
   writeTextArtifact
 } from "./artifactBundleHelpers.js";
@@ -370,28 +368,19 @@ function parseArgs(argv: string[]): ParsedLnsWindowRankerArgs {
 }
 
 function readLabelSnapshot(labelsPath: string): LearnedRankingLabelSnapshot {
-  const repoRelativePath = normalizeRepoRelativePath(labelsPath, "--labels");
-  const parsed = JSON.parse(fs.readFileSync(path.resolve(process.cwd(), repoRelativePath), "utf8"));
-  return parsed as LearnedRankingLabelSnapshot;
+  return readJsonRepoInputArtifact<LearnedRankingLabelSnapshot>(labelsPath, "--labels").value;
 }
 
 function readRankerModel(modelPath: string): LnsWindowRankerModel {
-  const repoRelativePath = normalizeRepoRelativePath(modelPath, "--model");
-  assertArtifactPathNotObsolete(repoRelativePath, "--model");
-  const parsed = JSON.parse(fs.readFileSync(path.resolve(process.cwd(), repoRelativePath), "utf8"));
-  return parsed as LnsWindowRankerModel;
+  return readJsonRepoInputArtifact<LnsWindowRankerModel>(modelPath, "--model").value;
 }
 
 function readOnlineScorecard(scorecardPath: string): LnsWindowRankerOnlineAblationSnapshot {
-  const repoRelativePath = normalizeRepoRelativePath(scorecardPath, "--online-scorecard");
-  const parsed = JSON.parse(fs.readFileSync(path.resolve(process.cwd(), repoRelativePath), "utf8"));
-  return parsed as LnsWindowRankerOnlineAblationSnapshot;
+  return readJsonRepoInputArtifact<LnsWindowRankerOnlineAblationSnapshot>(scorecardPath, "--online-scorecard").value;
 }
 
 function readSupplementalReplaySnapshot(replayPath: string): LnsWindowReplaySnapshot {
-  const repoRelativePath = normalizeRepoRelativePath(replayPath, "--supplemental-replay-labels");
-  const parsed = JSON.parse(fs.readFileSync(path.resolve(process.cwd(), repoRelativePath), "utf8"));
-  return parsed as LnsWindowReplaySnapshot;
+  return readJsonRepoInputArtifact<LnsWindowReplaySnapshot>(replayPath, "--supplemental-replay-labels").value;
 }
 
 function defaultRankerArtifactCommand(argv: readonly string[]): string {
@@ -440,9 +429,9 @@ function writeLnsWindowRankerArtifactBundle(
   const command = defaultRankerArtifactCommand(argv);
   const labelSnapshot = readLabelSnapshot(labelsPath);
   const inputArtifacts = [
-    normalizeRepoRelativePath(labelsPath, "--labels"),
+    resolveRepoInputArtifactPath(labelsPath, "--labels", { mustExist: true }),
     ...args.supplementalReplayLabelPaths.map((replayPath) =>
-      normalizeRepoRelativePath(replayPath, "--supplemental-replay-labels")
+      resolveRepoInputArtifactPath(replayPath, "--supplemental-replay-labels", { mustExist: true })
     )
   ];
   const telemetryManifest = buildLnsWindowRankerTelemetryManifest(result, {
@@ -521,11 +510,11 @@ function writeLnsWindowRankerGapArtifactBundle(
   const registryEntryDraftJson = artifacts.artifactPath("registry-entry-draft.json");
   const command = defaultRankerArtifactCommand(argv);
   const inputArtifacts = [
-    normalizeRepoRelativePath(labelsPath, "--labels"),
-    normalizeRepoRelativePath(modelPath, "--model"),
-    normalizeRepoRelativePath(onlineScorecardPath, "--online-scorecard"),
+    resolveRepoInputArtifactPath(labelsPath, "--labels", { mustExist: true }),
+    resolveRepoInputArtifactPath(modelPath, "--model", { mustExist: true }),
+    resolveRepoInputArtifactPath(onlineScorecardPath, "--online-scorecard", { mustExist: true }),
     ...args.supplementalReplayLabelPaths.map((replayPath) =>
-      normalizeRepoRelativePath(replayPath, "--supplemental-replay-labels")
+      resolveRepoInputArtifactPath(replayPath, "--supplemental-replay-labels", { mustExist: true })
     )
   ];
   const telemetryManifest = buildLnsWindowRankerGapDiagnosticsTelemetryManifest(result, {

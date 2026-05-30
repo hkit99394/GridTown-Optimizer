@@ -14,6 +14,15 @@ export type LnsNeighborhoodAnchorPolicy =
   | "frontier-congestion-first"
   | "placed-buildings-first";
 
+export const LNS_NEIGHBORHOOD_ANCHOR_POLICIES = Object.freeze([
+  "ranked",
+  "sliding-only",
+  "weak-service-first",
+  "residential-opportunity-first",
+  "frontier-congestion-first",
+  "placed-buildings-first"
+] as const satisfies readonly LnsNeighborhoodAnchorPolicy[]);
+
 export interface LnsOptions {
   /** Number of neighborhood-repair attempts to run after the greedy seed. */
   iterations?: number;

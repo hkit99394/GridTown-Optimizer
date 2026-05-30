@@ -2,13 +2,15 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 
 import { SolveJobManager } from "../../../packages/runtime/index.js";
 import {
+  handleActiveSolve,
   handleCancelSolve,
   handleCpSatReadiness,
   handleImmediateSolve,
   handleLayoutEvaluate,
   handlePlannerHealth,
   handleSolveStatus,
-  handleStartSolve
+  handleStartSolve,
+  PLANNER_API_ROUTE_METHODS
 } from "./routes.js";
 import { servePlannerStatic } from "./static.js";
 import { getErrorMessage, getErrorStatusCode, sendJson } from "./transport.js";
@@ -29,6 +31,7 @@ export function createPlannerRequestHandler(options: PlannerRequestHandlerOption
     handleLayoutEvaluate,
     (req, res) => handleStartSolve(req, res, solveJobManager),
     (req, res) => handleSolveStatus(req, res, solveJobManager),
+    (req, res) => handleActiveSolve(req, res, solveJobManager),
     (req, res) => handleCancelSolve(req, res, solveJobManager)
   ];
 
@@ -40,8 +43,19 @@ export function createPlannerRequestHandler(options: PlannerRequestHandlerOption
 
       const method = req.method ?? "GET";
       const url = new URL(req.url ?? "/", "http://localhost");
+      const allowedApiMethods = PLANNER_API_ROUTE_METHODS.get(url.pathname);
+      if (url.pathname.startsWith("/api/")) {
+        if (allowedApiMethods) {
+          sendJson(res, 405, { ok: false, error: "Method not allowed." }, method === "HEAD", {
+            Allow: allowedApiMethods.join(", ")
+          });
+          return;
+        }
+        sendJson(res, 404, { ok: false, error: "Unknown API route." }, method === "HEAD");
+        return;
+      }
       if (method !== "GET" && method !== "HEAD") {
-        sendJson(res, 405, { ok: false, error: "Method not allowed." });
+        sendJson(res, 405, { ok: false, error: "Method not allowed." }, false, { Allow: "GET, HEAD" });
         return;
       }
       await servePlannerStatic(options.webRoot, url.pathname, method, res);

@@ -106,6 +106,23 @@ async function testMethodNotAllowed(handler) {
   assert.equal(result.statusCode, 405);
   assert.equal(result.payload.ok, false);
   assert.equal(result.payload.error, "Method not allowed.");
+  assert.equal(result.headers.Allow, "POST");
+}
+
+/**
+ * @param {RouteTestHandler} handler
+ * @returns {Promise<void>}
+ */
+async function testUnknownApiRoutesReturnJsonNotFound(handler) {
+  const getResult = await invoke(handler, { method: "GET", url: "/api/typo" });
+  assert.equal(getResult.statusCode, 404);
+  assert.equal(getResult.payload.ok, false);
+  assert.equal(getResult.payload.error, "Unknown API route.");
+
+  const postResult = await invoke(handler, { method: "POST", url: "/api/typo", json: {} });
+  assert.equal(postResult.statusCode, 404);
+  assert.equal(postResult.payload.ok, false);
+  assert.equal(postResult.payload.error, "Unknown API route.");
 }
 
 async function main() {
@@ -115,6 +132,7 @@ async function main() {
   await testStaticPlannerModules(handler);
   await testUnexpectedStaticServerErrorsReturnInternalServerError();
   await testMethodNotAllowed(handler);
+  await testUnknownApiRoutesReturnJsonNotFound(handler);
 
   console.log("Web server static route tests passed.");
 }

@@ -75,6 +75,20 @@ async function testCrossModeBenchmarkSuiteAssertions() {
   assert.equal(result.cases[0].results[0].mode, "greedy");
   assert.equal(result.cases[0].results[0].winVsAuto, "no-auto");
   assert.equal(result.cases[0].results[0].scoreDeltaVsAuto, null);
+  const tiedPopulationResult = await runCrossModeBenchmarkSuite([benchmarkCase], {
+    modes: ["greedy", "lns"],
+    budgetsSeconds: [3],
+    seeds: [5],
+    solve: async (_grid, params, context) => {
+      await delay(context.mode === "greedy" ? 30 : 1);
+      return buildMockSolution({ optimizer: params.optimizer, totalPopulation: 42 });
+    }
+  });
+  const tiedGreedy = tiedPopulationResult.cases[0].results.find((entry) => entry.mode === "greedy");
+  const tiedLns = tiedPopulationResult.cases[0].results.find((entry) => entry.mode === "lns");
+  assert.equal(tiedGreedy.rank, 1);
+  assert.equal(tiedLns.rank, 1);
+  assert.deepEqual(tiedPopulationResult.cases[0].winnerModes, ["greedy", "lns"]);
   assert.equal(result.cases[0].results[0].progressSummary.activeStage, "greedy");
   assert.equal(result.cases[0].populationCapacityUpperBound, 1);
   assert.equal(result.cases[0].results[0].attainment.populationCapacityUpperBound, 1);

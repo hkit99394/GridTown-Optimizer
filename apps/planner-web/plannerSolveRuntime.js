@@ -366,30 +366,13 @@
     const nextEntries = Array.isArray(logEntries) ? logEntries.slice() : [];
     const lastEntry = nextEntries[nextEntries.length - 1];
 
-    if (
-      lastEntry &&
-      lastEntry.elapsedMs === entry.elapsedMs &&
-      (lastEntry.lastElapsedMs ?? null) === (entry.lastElapsedMs ?? null) &&
-      (lastEntry.lastCapturedAt ?? null) === (entry.lastCapturedAt ?? null) &&
-      lastEntry.source === entry.source &&
-      lastEntry.optimizer === entry.optimizer &&
-      lastEntry.activeOptimizer === entry.activeOptimizer &&
-      lastEntry.hasFeasibleSolution === entry.hasFeasibleSolution &&
-      lastEntry.totalPopulation === entry.totalPopulation &&
-      lastEntry.cpSatStatus === entry.cpSatStatus &&
-      (lastEntry.lnsStopReason ?? null) === (entry.lnsStopReason ?? null) &&
-      (lastEntry.lnsNeighborhoodStatus ?? null) === (entry.lnsNeighborhoodStatus ?? null) &&
-      (lastEntry.lnsNeighborhoodImprovement ?? null) === (entry.lnsNeighborhoodImprovement ?? null) &&
-      (lastEntry.lnsNeighborhoodsCompleted ?? null) === (entry.lnsNeighborhoodsCompleted ?? null) &&
-      JSON.stringify(lastEntry.progressSummary ?? null) === JSON.stringify(entry.progressSummary ?? null) &&
-      lastEntry.bestPopulationUpperBound === entry.bestPopulationUpperBound &&
-      lastEntry.populationGapUpperBound === entry.populationGapUpperBound &&
-      lastEntry.solveWallTimeSeconds === entry.solveWallTimeSeconds &&
-      lastEntry.lastImprovementAtSeconds === entry.lastImprovementAtSeconds &&
-      lastEntry.secondsSinceLastImprovement === entry.secondsSinceLastImprovement &&
-      JSON.stringify(lastEntry.autoStage ?? null) === JSON.stringify(entry.autoStage ?? null)
-    ) {
+    if (lastEntry && JSON.stringify(lastEntry) === JSON.stringify(entry)) {
       nextEntries[nextEntries.length - 1] = entry;
+      return nextEntries;
+    }
+
+    if (payload?.progressEntry && typeof payload.progressEntry === "object") {
+      nextEntries.push(entry);
       return nextEntries;
     }
 
@@ -466,10 +449,10 @@
       renderSolveTimer();
     }
 
-    function startSolveTimer() {
+    function startSolveTimer(elapsedMs = 0) {
       clearSolveTimerTicker();
-      state.solveTimerStartedAt = Date.now();
-      state.solveTimerElapsedMs = 0;
+      state.solveTimerElapsedMs = normalizeElapsedMs(elapsedMs);
+      state.solveTimerStartedAt = Date.now() - state.solveTimerElapsedMs;
       state.solveTimerFrozen = false;
       renderSolveTimer();
       state.solveTimerHandle = globalObject.setInterval(syncSolveTimer, 250);
@@ -506,6 +489,15 @@
         state.layoutEditor.mode = "inspect";
         state.layoutEditor.pendingPlacement = null;
       }
+    }
+
+    function setActiveSolveRequestId(/** @type {string} */ requestId) {
+      state.activeSolveRequestId = requestId;
+    }
+
+    function readPayloadElapsedMs(/** @type {JsonObject | null | undefined} */ payload) {
+      const entry = payload?.progressEntry;
+      return normalizeProgressElapsedMs(payload?.elapsedMs ?? entry?.lastElapsedMs ?? entry?.elapsedMs);
     }
 
     /**
@@ -681,18 +673,125 @@
       }
     }
 
+    /**
+     * @param {JsonObject} payload
+     */
+    function applyTerminalSolvePayload(payload) {
+      const terminalElapsedMs = Math.max(state.solveTimerElapsedMs, readPayloadElapsedMs(payload));
+      pauseSolveTimer();
+      state.solveTimerElapsedMs = Math.max(state.solveTimerElapsedMs, terminalElapsedMs);
+      renderSolveTimer();
+      state.solveProgressLog = appendSolveProgressLog(state.solveProgressLog, payload, {
+        elapsedMs: state.solveTimerElapsedMs,
+        fallbackOptimizer: state.optimizer,
+        source: "final-result"
+      });
+      state.result = {
+        ...payload,
+        progressLog: state.solveProgressLog.slice()
+      };
+      state.resultIsLiveSnapshot = false;
+      state.resultError = "";
+      clearManualEditState({ resetMode: true });
+      state.selectedMapCell = null;
+      setResultElapsed(state.solveTimerElapsedMs);
+      const stoppedByUser = Boolean(payload.solution?.stoppedByUser || payload.stats?.stoppedByUser);
+      setSolveState(
+        payload.message
+          ? payload.message
+          : stoppedByUser
+            ? `Stopped early. Showing the best ${getOptimizerLabel(payload.stats.optimizer)} result found${payload.stats.cpSatStatus ? ` (${payload.stats.cpSatStatus})` : ""}.`
+            : payload.stats.optimizer === "auto"
+              ? `Solved with Auto${payload.stats.activeOptimizer ? ` (final ${getOptimizerLabel(payload.stats.activeOptimizer)} stage)` : ""}.`
+              : `Solved with ${getOptimizerLabel(payload.stats.optimizer)}${payload.stats.cpSatStatus ? ` (${payload.stats.cpSatStatus})` : ""}.`
+      );
+    }
+
+    async function completeSolveRequest(/** @type {string} */ requestId) {
+      const payload = await waitForSolveResult(requestId);
+      applyTerminalSolvePayload(payload);
+    }
+
+    async function cancelActiveSolve(/** @type {string} */ requestId) {
+      await fetch("/api/solve/cancel", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ requestId })
+      }).catch(() => undefined);
+    }
+
+    async function resumeActiveSolveFromPayload(/** @type {JsonObject} */ activePayload) {
+      const requestId = typeof activePayload?.requestId === "string" ? activePayload.requestId.trim() : "";
+      if (!requestId) return;
+      if (activePayload?.clientRole === "expansion-comparison") {
+        if (globalObject.sessionStorage?.getItem("city-builder.activeComparisonRequestId")?.trim() === requestId)
+          await cancelActiveSolve(requestId);
+        return;
+      }
+
+      state.isSolving = true;
+      state.isStopping = Boolean(activePayload.cancelRequested);
+      setActiveSolveRequestId(requestId);
+      state.resultError = "";
+      state.solveProgressLog = [];
+      if (activePayload.input) {
+        state.resultContext = activePayload.input;
+      }
+      if (typeof activePayload.optimizer === "string" && activePayload.optimizer) {
+        state.optimizer = activePayload.optimizer;
+      }
+      const elapsedMs = readPayloadElapsedMs(activePayload);
+      state.solveProgressLog = appendSolveProgressLog(state.solveProgressLog, activePayload, {
+        elapsedMs,
+        fallbackOptimizer: state.optimizer,
+        source: "live-snapshot"
+      });
+      startSolveTimer(elapsedMs);
+      setSolveState(
+        state.isStopping
+          ? buildSolveProgressMessage(activePayload)
+          : `Reconnected to the running ${getOptimizerLabel(state.optimizer)} solve...`
+      );
+      await completeSolveRequest(requestId);
+    }
+
+    async function resumeActiveSolve() {
+      if (state.isSolving) return;
+      try {
+        const response = await fetch("/api/solve/active", { cache: "no-store" });
+        const payload = await response.json();
+        if (!response.ok || !payload.ok || !payload.active) {
+          state.activeSolveRequestId = "";
+          return;
+        }
+        await resumeActiveSolveFromPayload(payload);
+      } catch (error) {
+        state.result = null;
+        state.resultIsLiveSnapshot = false;
+        state.resultError = error instanceof Error ? error.message : "Failed to reconnect to the running solve.";
+        pauseSolveTimer();
+        setResultElapsed(state.solveTimerElapsedMs);
+        setSolveState("Unable to reconnect to the running solver.");
+      } finally {
+        state.isSolving = false;
+        state.isStopping = false;
+        state.activeSolveRequestId = "";
+        setSolveState(elements.solveStatus.textContent);
+        renderResults();
+      }
+    }
+
     async function runSolve() {
       if (state.layoutEditor.isApplying) {
         setSolveState("Wait for layout validation to finish before starting a new solve.");
         return;
       }
+      const previousResultElapsedMs = state.resultElapsedMs;
       state.isSolving = true;
       state.isStopping = false;
-      state.activeSolveRequestId = createSolveRequestId();
+      setActiveSolveRequestId(createSolveRequestId());
       state.resultIsLiveSnapshot = false;
       state.resultError = "";
-      state.solveProgressLog = [];
-      clearManualEditState({ resetMode: true });
       clearExpansionAdvice();
       try {
         startSolveTimer();
@@ -700,7 +799,6 @@
           ensureCpSatRandomSeed();
         }
         const request = buildSolveRequest();
-        state.resultContext = request;
         if (state.optimizer === "cp-sat") {
           const timeLimitSeconds = request.params.cpSat?.timeLimitSeconds;
           const noImprovementTimeoutSeconds = request.params.cpSat?.noImprovementTimeoutSeconds;
@@ -740,44 +838,36 @@
         });
         const startPayload = await startResponse.json();
         if (!startResponse.ok || !startPayload.ok) {
+          const activeSolve = startPayload.activeSolve;
+          if (startResponse.status === 429 && activeSolve?.clientRole === "expansion-comparison") {
+            throw new Error("An expansion comparison is already running in another tab.");
+          }
+          if (startResponse.status === 429 && activeSolve?.requestId) {
+            await resumeActiveSolveFromPayload(activeSolve);
+            return;
+          }
           throw new Error(startPayload.error || "Failed to start the solver.");
         }
-        const payload = await waitForSolveResult(state.activeSolveRequestId);
-
-        state.solveProgressLog = appendSolveProgressLog(state.solveProgressLog, payload, {
-          elapsedMs: state.solveTimerElapsedMs,
-          fallbackOptimizer: state.optimizer,
-          source: "final-result"
-        });
-        state.result = {
-          ...payload,
-          progressLog: state.solveProgressLog.slice()
-        };
-        state.resultIsLiveSnapshot = false;
-        state.resultError = "";
-        clearManualEditState({ resetMode: true });
-        state.selectedMapCell = null;
-        pauseSolveTimer();
-        setResultElapsed(state.solveTimerElapsedMs);
-        const stoppedByUser = Boolean(payload.solution?.stoppedByUser || payload.stats?.stoppedByUser);
-        setSolveState(
-          payload.message
-            ? payload.message
-            : stoppedByUser
-              ? `Stopped early. Showing the best ${getOptimizerLabel(payload.stats.optimizer)} result found${payload.stats.cpSatStatus ? ` (${payload.stats.cpSatStatus})` : ""}.`
-              : payload.stats.optimizer === "auto"
-                ? `Solved with Auto${payload.stats.activeOptimizer ? ` (final ${getOptimizerLabel(payload.stats.activeOptimizer)} stage)` : ""}.`
-                : `Solved with ${getOptimizerLabel(payload.stats.optimizer)}${payload.stats.cpSatStatus ? ` (${payload.stats.cpSatStatus})` : ""}.`
-        );
-      } catch (error) {
-        state.result = null;
-        state.resultIsLiveSnapshot = false;
-        state.resultError = error instanceof Error ? error.message : "Unknown solve error.";
         state.solveProgressLog = [];
-        clearManualEditState();
+        clearManualEditState({ resetMode: true });
+        state.resultContext = request;
+        await completeSolveRequest(state.activeSolveRequestId);
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : "Unknown solve error.";
+        const keepPriorResult = /already running|expansion comparison/.test(errorMessage);
+        state.resultError = keepPriorResult ? "" : errorMessage;
+        if (!keepPriorResult) {
+          state.result = null;
+          state.resultIsLiveSnapshot = false;
+          state.solveProgressLog = [];
+          clearManualEditState();
+        }
+        if (keepPriorResult) state.solveTimerStartedAt = Date.now() - previousResultElapsedMs;
         pauseSolveTimer();
         setResultElapsed(state.solveTimerElapsedMs);
-        setSolveState(/stopped/i.test(state.resultError) ? "Solver stopped." : "Solver run failed.");
+        setSolveState(
+          keepPriorResult ? errorMessage : /stopped/i.test(errorMessage) ? "Solver stopped." : "Solver run failed."
+        );
       } finally {
         state.isSolving = false;
         state.isStopping = false;
@@ -790,6 +880,7 @@
     return {
       pauseSolveTimer,
       requestStopSolve,
+      resumeActiveSolve,
       resetSolveTimer,
       runSolve,
       setResultElapsed

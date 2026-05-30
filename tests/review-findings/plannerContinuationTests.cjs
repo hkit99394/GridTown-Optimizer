@@ -795,6 +795,7 @@ async function testPlannerExpansionOmitsStaleComparisonHint() {
   await controller.compareExpansionOptions();
 
   assert.ok(capturedStartRequest);
+  assert.equal(capturedStartRequest.clientRole, "expansion-comparison");
   assert.equal(capturedStartRequest.params.cpSat.warmStartHint, undefined);
 }
 
@@ -812,6 +813,7 @@ async function testPlannerExpansionGivesRankedNextAdditionGuidance() {
     const urlText = String(url);
     if (urlText === "/api/solve/start") {
       const body = JSON.parse(String(options.body));
+      assert.equal(body.clientRole, "expansion-comparison");
       requestPopulationById.set(body.requestId, comparisonPopulations.shift());
       return {
         ok: true,

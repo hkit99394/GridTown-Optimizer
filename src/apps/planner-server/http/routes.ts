@@ -18,6 +18,7 @@ import {
   isLayoutEvaluateRequest,
   isSolveRequest,
   materializeSerializedSolution,
+  resolveSolveRequestClientRole,
   sanitizeSolveRequest
 } from "./contracts.js";
 import { buildCompactSolveResponse, buildManualLayoutResponse, buildSolveResponse } from "./solutionResponse.js";
@@ -26,20 +27,65 @@ import { monitorClientDisconnect, readValidatedJsonBody, sendJson } from "./tran
 import type { CancelSolveRequest, LayoutEvaluateRequest, SolveRequest } from "./contracts.js";
 import type { SerializedSolution, Solution } from "../../../packages/core/index.js";
 
+export const PLANNER_API_ROUTE_METHODS: ReadonlyMap<string, readonly string[]> = new Map([
+  ["/api/health", ["GET", "HEAD"]],
+  ["/api/cp-sat/readiness", ["GET", "HEAD"]],
+  ["/api/solve", ["POST"]],
+  ["/api/layout/evaluate", ["POST"]],
+  ["/api/solve/start", ["POST"]],
+  ["/api/solve/status", ["GET", "HEAD"]],
+  ["/api/solve/active", ["GET", "HEAD"]],
+  ["/api/solve/cancel", ["POST"]]
+]);
+
 function buildSolveJobResponseBase(job: {
   requestId: string;
+  clientRole?: string;
   optimizer: string;
   status: string;
   cancelRequested: boolean;
   progressLogFilePath: string;
+  createdAt?: number;
+  finishedAt?: number;
 }) {
+  const elapsedMs =
+    job.createdAt === undefined ? undefined : Math.max(0, (job.finishedAt ?? Date.now()) - job.createdAt);
   return {
     ok: true,
     requestId: job.requestId,
+    clientRole: job.clientRole,
     optimizer: job.optimizer,
     jobStatus: job.status,
     cancelRequested: job.cancelRequested,
+    ...(elapsedMs === undefined ? {} : { elapsedMs }),
     progressLogFilePath: job.progressLogFilePath
+  };
+}
+
+function buildSolveJobInput(job: Pick<SolveJob, "grid" | "params">) {
+  return {
+    grid: job.grid,
+    params: job.params
+  };
+}
+
+function buildActiveSolveResponse(job: SolveJob) {
+  const progressEntry = job.progressLogWriter.getLastEntry();
+  const snapshotState = job.handle?.getLatestSnapshotState() ?? {
+    hasFeasibleSolution: false,
+    totalPopulation: null
+  };
+
+  return {
+    ...buildSolveJobResponseBase(job),
+    active: true,
+    input: buildSolveJobInput(job),
+    hasFeasibleSolution: snapshotState.hasFeasibleSolution,
+    bestTotalPopulation: snapshotState.totalPopulation,
+    activeOptimizer: snapshotState.activeOptimizer ?? null,
+    autoStage: snapshotState.autoStage ?? null,
+    ...(progressEntry ? { progressEntry } : {}),
+    ...(job.message ? { message: job.message } : {})
   };
 }
 
@@ -72,11 +118,13 @@ function buildProgressLogStatusResponseBase(progressLog: SolveProgressLogReadRes
   };
 }
 
-function sendSolveCapacityFull(res: ServerResponse<IncomingMessage>): void {
+function sendSolveCapacityFull(res: ServerResponse<IncomingMessage>, solveJobManager: SolveJobManager): void {
+  const activeJob = solveJobManager.getActiveRunningJob();
   sendJson(res, 429, {
     ok: false,
     error:
-      "Another solve is already running. Stop the running solve or wait for it to finish before starting a new one."
+      "Another solve is already running. Stop the running solve or wait for it to finish before starting a new one.",
+    ...(activeJob ? { activeSolve: buildActiveSolveResponse(activeJob) } : {})
   });
 }
 
@@ -132,9 +180,7 @@ function sendRecoveredProgressLogStatus(
           "Recovered progress log finalResult.solution"
         );
         const solution = materializeSerializedSolution(document.finalResult.solution);
-        compactResponse = buildCompactSolveResponse(document.input.grid, document.input.params, solution, {
-          validationMode: "lightweight"
-        });
+        compactResponse = buildCompactSolveResponse(document.input.grid, document.input.params, solution);
       } catch (error) {
         sendJson(
           res,
@@ -261,6 +307,29 @@ export function handleCpSatReadiness(req: IncomingMessage, res: ServerResponse<I
   return true;
 }
 
+export function handleActiveSolve(
+  req: IncomingMessage,
+  res: ServerResponse<IncomingMessage>,
+  solveJobManager: SolveJobManager
+): boolean {
+  const route = matchGetOrHeadRoute(req, "/api/solve/active");
+  if (!route) return false;
+
+  const activeJob = solveJobManager.getActiveRunningJob();
+  sendJson(
+    res,
+    200,
+    activeJob
+      ? buildActiveSolveResponse(activeJob)
+      : {
+          ok: true,
+          active: false
+        },
+    route.headOnly
+  );
+  return true;
+}
+
 export async function handleImmediateSolve(
   req: IncomingMessage,
   res: ServerResponse<IncomingMessage>,
@@ -273,7 +342,7 @@ export async function handleImmediateSolve(
 
   const solveLease = solveJobManager.tryAcquireImmediateSolve();
   if (!solveLease) {
-    sendSolveCapacityFull(res);
+    sendSolveCapacityFull(res, solveJobManager);
     return true;
   }
 
@@ -361,14 +430,16 @@ export async function handleStartSolve(
     return true;
   }
   if (!solveJobManager.canStartSolve()) {
-    sendSolveCapacityFull(res);
+    sendSolveCapacityFull(res, solveJobManager);
     return true;
   }
 
-  const job = solveJobManager.start(payload.grid, payload.params, requestId);
+  const clientRole = resolveSolveRequestClientRole(payload);
+  const job = solveJobManager.start(payload.grid, payload.params, requestId, { clientRole });
   sendJson(res, 202, {
     ok: true,
     requestId,
+    clientRole,
     optimizer: resolveOptimizerName(payload.params),
     jobStatus: "running",
     progressLogFilePath: job.progressLogFilePath
@@ -431,7 +502,7 @@ export function handleSolveStatus(
         ...buildSolveJobResponseBase(job),
         ...(job.message ? { message: job.message } : {}),
         ...(progressEntry ? { progressEntry } : {}),
-        ...buildCompactSolveResponse(job.grid, job.params, job.solution, { validationMode: "lightweight" })
+        ...buildCompactSolveResponse(job.grid, job.params, job.solution)
       },
       route.headOnly
     );

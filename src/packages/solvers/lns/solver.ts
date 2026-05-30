@@ -16,7 +16,7 @@ import {
   selectLnsWindowRankerCandidate,
   type NormalizedLnsWindowRankerOptions
 } from "./windowScorer.js";
-import { NO_TYPE_INDEX } from "../../core/index.js";
+import { LNS_ADAPTIVE_OPERATOR_NAMES, LNS_NEIGHBORHOOD_ANCHOR_POLICIES, NO_TYPE_INDEX } from "../../core/index.js";
 import { writeSolutionSnapshot } from "../../core/index.js";
 import { assertValidLnsOptions, assertValidSolveInputs, materializeValidLnsSeedSolution } from "../../core/index.js";
 import { reachesPopulationCapacityUpperBound } from "../../core/index.js";
@@ -93,24 +93,7 @@ const DEFAULT_LNS_SMALL_WINDOW_DP_MAX_CANDIDATES = 28;
 const DEFAULT_LNS_SMALL_WINDOW_DP_MAX_STATES = 50_000;
 const LNS_OPERATOR_MIN_WEIGHT = 0.25;
 const LNS_OPERATOR_MAX_WEIGHT = 8;
-const LNS_ADAPTIVE_OPERATORS: LnsAdaptiveOperatorName[] = [
-  "weak-service",
-  "residential-headroom",
-  "frontier-congestion",
-  "gate-choke",
-  "service-overlap",
-  "random-exploration",
-  "placed-buildings",
-  "sliding"
-];
-const LNS_NEIGHBORHOOD_ANCHOR_POLICIES = new Set<LnsNeighborhoodAnchorPolicy>([
-  "ranked",
-  "sliding-only",
-  "weak-service-first",
-  "residential-opportunity-first",
-  "frontier-congestion-first",
-  "placed-buildings-first"
-]);
+const LNS_NEIGHBORHOOD_ANCHOR_POLICY_SET = new Set<LnsNeighborhoodAnchorPolicy>(LNS_NEIGHBORHOOD_ANCHOR_POLICIES);
 
 function positiveIntegerOrDefault(value: unknown, fallback: number): number {
   return typeof value === "number" && Number.isInteger(value) && value > 0 ? value : fallback;
@@ -129,7 +112,7 @@ function booleanOrDefault(value: unknown, fallback: boolean): boolean {
 }
 
 function lnsNeighborhoodAnchorPolicyOrDefault(value: unknown): LnsNeighborhoodAnchorPolicy {
-  return typeof value === "string" && LNS_NEIGHBORHOOD_ANCHOR_POLICIES.has(value as LnsNeighborhoodAnchorPolicy)
+  return typeof value === "string" && LNS_NEIGHBORHOOD_ANCHOR_POLICY_SET.has(value as LnsNeighborhoodAnchorPolicy)
     ? (value as LnsNeighborhoodAnchorPolicy)
     : "ranked";
 }
@@ -162,7 +145,7 @@ function clampOperatorWeight(weight: number): number {
 
 function buildInitialOperatorSummaries(): Map<LnsAdaptiveOperatorName, LnsOperatorSummary> {
   return new Map(
-    LNS_ADAPTIVE_OPERATORS.map((operator) => [
+    LNS_ADAPTIVE_OPERATOR_NAMES.map((operator) => [
       operator,
       {
         operator,

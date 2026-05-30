@@ -743,6 +743,8 @@ function init() {
   elements.stopSolveButton.addEventListener("click", () => {
     solveRuntimeController.requestStopSolve();
   });
+
+  void solveRuntimeController.resumeActiveSolve();
 }
 
 init();

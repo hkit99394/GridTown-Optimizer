@@ -23,6 +23,9 @@ artifacts/tmp-*/
 artifacts/**/tmp-*/
 artifacts/local-*/
 artifacts/**/local-*/
+artifacts/**/raw/
+artifacts/**/external-raw/
+release-assets/
 
 # macOS
 .DS_Store

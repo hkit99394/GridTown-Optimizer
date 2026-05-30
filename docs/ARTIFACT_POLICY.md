@@ -15,7 +15,7 @@ Use artifacts to make solver decisions reproducible without turning the reposito
 - Repeated trace dumps, replay labels, and scorecard matrices that are useful for audit but not for code review.
 - Temporary solve progress logs and scratch artifact directories.
 
-Use release assets, external object storage, or another durable artifact store for large raw bundles. Keep the registry entry as the durable index, with enough metadata to recover the external bundle when needed.
+Use release assets, external object storage, or another durable artifact store for large raw bundles. Keep the registry entry as the durable index, with enough metadata to recover the external bundle when needed. The current handoff convention is in [MIDDLE_RUN_ARTIFACT_STORAGE_HANDOFF.md](roadmaps/MIDDLE_RUN_ARTIFACT_STORAGE_HANDOFF.md).
 
 ## Registry Rules
 

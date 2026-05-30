@@ -37,6 +37,7 @@
 
   /**
    * @typedef {object} PlannerShellState
+   * @property {string | null | undefined} optimizer
    * @property {boolean} isSolving
    * @property {string | null | undefined} activeSolveRequestId
    * @property {boolean} isStopping
@@ -58,6 +59,31 @@
    * @property {ShellElements} elements
    * @property {PlannerShellCallbacks} callbacks
    */
+
+  /**
+   * @typedef {object} PlannerShellViewState
+   * @property {string} plannerVersion
+   * @property {string} primaryCtaLabel
+   * @property {object} resultActions
+   * @property {boolean} resultActions.saveDisabled
+   * @property {boolean} resultActions.exportDisabled
+   * @property {boolean} resultActions.compareDisabled
+   * @property {string} resultActions.statusText
+   */
+
+  /**
+   * @typedef {object} PlannerShellViewContract
+   * @property {(state: PlannerShellViewState) => void} sync
+   */
+
+  /** @type {PlannerShellViewContract[]} */
+  const viewContracts = [];
+  /** @type {{ syncActionAvailability: () => void } | null} */
+  let activeShellController = null;
+
+  function getPlannerVersion() {
+    return String(globalObject.document?.documentElement?.dataset?.plannerVersion ?? "");
+  }
 
   /**
    * @param {PlannerShellOptions} options
@@ -104,6 +130,40 @@
       return "Greedy";
     }
 
+    function getIdleSolveButtonLabel() {
+      if (getPlannerVersion() !== "v2.1") return "Run solver";
+      return `Run ${getOptimizerLabel(state.optimizer ?? "auto")}`;
+    }
+
+    /**
+     * @param {object} flags
+     * @param {boolean} flags.editorBusy
+     * @param {boolean} flags.editableResult
+     * @param {boolean} flags.manualLayoutNeedsValidation
+     * @param {boolean} flags.hasAnyCandidate
+     * @returns {string}
+     */
+    function getResultActionsStatusText(flags) {
+      if (flags.editorBusy) return "Planner is busy. Result actions will unlock when the current work finishes.";
+      if (!flags.editableResult) return "Run Auto or load a saved layout to enable result actions.";
+      if (flags.manualLayoutNeedsValidation) {
+        return "Save or export is available. Validate the edited layout before comparing expansion options.";
+      }
+      if (!flags.hasAnyCandidate) {
+        return "Result is ready to save or export. Enter an expansion candidate to compare next additions.";
+      }
+      return "Validated layout is ready for save, export, or expansion comparison.";
+    }
+
+    /**
+     * @param {PlannerShellViewState} viewState
+     */
+    function syncViewContracts(viewState) {
+      for (const contract of viewContracts) {
+        contract.sync(viewState);
+      }
+    }
+
     function syncActionAvailability() {
       const { hasAnyCandidate } = readExpansionCandidateFlags();
       const selectedBuildingActive = Boolean(hasSelectedBuilding());
@@ -114,7 +174,7 @@
       const editorControlsDisabled = editorBusy || !editableResult;
 
       elements.solveButton.disabled = editorBusy;
-      elements.solveButton.textContent = state.isSolving ? "Solving..." : "Run solver";
+      elements.solveButton.textContent = state.isSolving ? "Solving..." : getIdleSolveButtonLabel();
       elements.stopSolveButton.disabled = !(state.isSolving && state.activeSolveRequestId && !state.isStopping);
       elements.loadConfigButton.disabled = editorBusy;
       elements.loadLayoutButton.disabled = editorBusy;
@@ -144,6 +204,22 @@
       }
       setActionButtonsDisabled(elements.remainingServiceList, "button[data-action]", editorControlsDisabled);
       setActionButtonsDisabled(elements.remainingResidentialList, "button[data-action]", editorControlsDisabled);
+
+      syncViewContracts({
+        plannerVersion: getPlannerVersion(),
+        primaryCtaLabel: elements.solveButton.textContent ?? "",
+        resultActions: {
+          saveDisabled: elements.saveLayoutButton.disabled,
+          exportDisabled: editorBusy || !editableResult,
+          compareDisabled: elements.compareExpansionButton.disabled,
+          statusText: getResultActionsStatusText({
+            editorBusy,
+            editableResult,
+            manualLayoutNeedsValidation,
+            hasAnyCandidate
+          })
+        }
+      });
     }
 
     /**
@@ -154,15 +230,34 @@
       syncActionAvailability();
     }
 
-    return {
+    const controller = {
       getOptimizerLabel,
       setSolveState,
       syncActionAvailability
+    };
+    activeShellController = controller;
+    return controller;
+  }
+
+  /**
+   * @param {PlannerShellViewContract} contract
+   * @returns {() => void}
+   */
+  function registerViewContract(contract) {
+    if (!contract || typeof contract.sync !== "function") return () => {};
+    viewContracts.push(contract);
+    activeShellController?.syncActionAvailability();
+    return () => {
+      const index = viewContracts.indexOf(contract);
+      if (index >= 0) viewContracts.splice(index, 1);
+      activeShellController?.syncActionAvailability();
     };
   }
 
   const plannerShellGlobal = /** @type {Window & { CityBuilderShell?: unknown }} */ (globalObject);
   plannerShellGlobal.CityBuilderShell = Object.freeze({
-    createPlannerShellController
+    createPlannerShellController,
+    registerViewContract,
+    syncActiveShell: () => activeShellController?.syncActionAvailability()
   });
 })(window);

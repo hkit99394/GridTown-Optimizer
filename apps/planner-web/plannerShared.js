@@ -8,6 +8,7 @@
    * @typedef {{ r: number, c: number, rows: number, cols: number, range?: number, [key: string]: any }} CandidatePlacement
    * @typedef {JsonObject & { populations?: number[], residentials?: CandidatePlacement[], residentialTypeIndices?: number[], roads?: string[], servicePopulationIncreases?: number[], services?: CandidatePlacement[], serviceTypeIndices?: number[] }} CheckpointSolution
    * @typedef {{ kind: "services" | "residentials", rows: JsonObject[] }} CatalogImportBlock
+   * @typedef {{ hintConflictLimit?: number, includeSolution?: boolean, sourceName?: string }} ContinuationPayloadBuildOptions
    */
 
   const CP_SAT_PORTFOLIO_CAPABILITY_LIMITS = Object.freeze({
@@ -165,6 +166,28 @@
    */
   function computeCpSatModelFingerprint(modelInput) {
     return `fnv1a:${hashString(stableStringify(modelInput))}`;
+  }
+
+  /**
+   * @param {JsonObject} checkpoint
+   * @param {ContinuationPayloadBuildOptions} [options]
+   * @returns {JsonObject}
+   */
+  function buildCpSatContinuationPayload(checkpoint, options = {}) {
+    const objectiveCutoff = checkpoint.resumePolicy?.objectiveCutoff ?? {};
+    return {
+      sourceName: options.sourceName ?? "",
+      modelFingerprint: checkpoint.compatibility.modelFingerprint,
+      roadKeys: cloneJson(checkpoint.hint.roadKeys ?? []),
+      serviceCandidateKeys: cloneJson(checkpoint.hint.serviceCandidateKeys ?? []),
+      residentialCandidateKeys: cloneJson(checkpoint.hint.residentialCandidateKeys ?? []),
+      ...(objectiveCutoff.value != null ? { objectiveLowerBound: objectiveCutoff.value } : {}),
+      preferStrictImprove: Boolean(objectiveCutoff.preferStrictImprove),
+      repairHint: Boolean(checkpoint.resumePolicy?.repairHint),
+      fixVariablesToHintedValue: Boolean(checkpoint.resumePolicy?.fixVariablesToHintedValue),
+      hintConflictLimit: options.hintConflictLimit ?? 20,
+      ...(options.includeSolution ? { solution: cloneJson(checkpoint.hint.solution) } : {})
+    };
   }
 
   /**
@@ -652,6 +675,7 @@
   sharedGlobal.CityBuilderShared = Object.freeze({
     CP_SAT_PORTFOLIO_CAPABILITY_LIMITS,
     buildCpSatContinuationModelInput,
+    buildCpSatContinuationPayload,
     buildCpSatWarmStartCheckpoint,
     buildResidentialCandidateKey,
     buildServiceCandidateKey,

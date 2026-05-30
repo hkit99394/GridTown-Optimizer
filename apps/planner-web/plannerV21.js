@@ -41,6 +41,22 @@
     element.dataset.v21Slot = slot;
   }
 
+  function getPlannerShell() {
+    return window.CityBuilderShell;
+  }
+
+  function scheduleShellSync() {
+    const shell = getPlannerShell();
+    if (!shell || typeof shell.syncActiveShell !== "function") return;
+    window.requestAnimationFrame(() => shell.syncActiveShell());
+  }
+
+  function setupShellSyncTriggers() {
+    for (const target of [find("#solverToggle"), find("#runtimePresetButtons")]) {
+      target?.addEventListener("click", scheduleShellSync);
+    }
+  }
+
   function addPreviewSwitcher() {
     const title = find(".cockpit-title");
     if (!title || title.querySelector(".v21-version-switcher")) return;
@@ -125,8 +141,7 @@
         "Auto is the default quality path. Keep it selected for the first run, then compare specialist optimizers only when you need deeper inspection.";
     }
 
-    const solveButton = find("#solveButton");
-    if (solveButton) solveButton.textContent = "Run Auto";
+    scheduleShellSync();
   }
 
   function setupGuidedSteps() {
@@ -313,19 +328,6 @@
     if (presetStatus) details.append(presetStatus);
   }
 
-  function syncRunButtonLabel() {
-    const solveButton = find("#solveButton");
-    const summaryOptimizer = find("#summaryOptimizer");
-    if (!solveButton || !summaryOptimizer) return;
-
-    const sync = () => {
-      const optimizer = summaryOptimizer.textContent?.trim() || "Auto";
-      solveButton.textContent = optimizer.toLowerCase() === "auto" ? "Run Auto" : `Run ${optimizer}`;
-    };
-    new MutationObserver(sync).observe(summaryOptimizer, { childList: true, subtree: true });
-    sync();
-  }
-
   function compactCatalogEditor() {
     const catalogStage = bySlot("stage-catalog");
     const catalogBody = bySlot("catalog-body");
@@ -400,23 +402,19 @@
       find("#expansionNextService")?.focus();
     });
 
-    const sync = () => {
-      const ready = hasDisplayedResult();
-      if (saveButton.disabled !== !ready) saveButton.disabled = !ready;
-      if (exportButton.disabled !== !ready) exportButton.disabled = !ready;
-      if (compareButton.disabled !== !ready) compareButton.disabled = !ready;
-      const statusText = ready
-        ? "Validated layout is ready for save, export, or expansion comparison."
-        : "Run Auto or load a saved layout to enable result actions.";
-      if (status.textContent !== statusText) status.textContent = statusText;
+    const sync = (shellState) => {
+      if (shellState?.plannerVersion !== "v2.1" || !shellState.resultActions) return;
+      const { saveDisabled, exportDisabled, compareDisabled, statusText } = shellState.resultActions;
+      if (saveButton.disabled !== Boolean(saveDisabled)) saveButton.disabled = Boolean(saveDisabled);
+      if (exportButton.disabled !== Boolean(exportDisabled)) exportButton.disabled = Boolean(exportDisabled);
+      if (compareButton.disabled !== Boolean(compareDisabled)) compareButton.disabled = Boolean(compareDisabled);
+      if (typeof statusText === "string" && status.textContent !== statusText) status.textContent = statusText;
     };
-    new MutationObserver(sync).observe(document.body, {
-      attributes: true,
-      attributeFilter: ["hidden", "disabled"],
-      childList: true,
-      subtree: true
-    });
-    sync();
+    const shell = getPlannerShell();
+    if (shell && typeof shell.registerViewContract === "function") {
+      shell.registerViewContract({ sync });
+    }
+    scheduleShellSync();
   }
 
   function simplifyResultMapTools() {
@@ -556,7 +554,7 @@
     addRunReadiness();
     tuckOptimizerPresets();
     compactCpSatReadiness();
-    syncRunButtonLabel();
+    setupShellSyncTriggers();
     compactCatalogEditor();
     restructureResults();
     addExpansionDatalists();

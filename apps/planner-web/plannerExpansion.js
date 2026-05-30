@@ -1,5 +1,5 @@
 /**
- * @param {Window & { CityBuilderExpansion?: unknown }} globalObject
+ * @param {Window & { CityBuilderExpansion?: unknown, CityBuilderShared?: { buildCpSatContinuationPayload?: (checkpoint: Record<string, any>, options?: Record<string, any>) => Record<string, any> } }} globalObject
  */
 (function attachPlannerExpansion(globalObject) {
   /**
@@ -43,6 +43,7 @@
   /**
    * @typedef {object} ExpansionHelpers
    * @property {(request: JsonObject) => JsonObject} buildCpSatContinuationModelInput
+   * @property {(checkpoint: JsonObject, options?: JsonObject) => JsonObject} [buildCpSatContinuationPayload]
    * @property {<T>(value: T) => T} cloneJson
    * @property {(modelInput: JsonObject) => string} computeCpSatModelFingerprint
    * @property {() => string} createSolveRequestId
@@ -84,6 +85,7 @@
     const { COMPARISON_PROGRESS_HINT_INTERVAL_MS, SOLVE_STATUS_POLL_INTERVAL_MS } = constants;
     const {
       buildCpSatContinuationModelInput,
+      buildCpSatContinuationPayload: helperBuildCpSatContinuationPayload,
       cloneJson,
       computeCpSatModelFingerprint,
       createSolveRequestId,
@@ -98,6 +100,16 @@
       getOptimizerLabel,
       syncActionAvailability
     } = callbacks;
+    const expansionGlobal =
+      /** @type {Window & { CityBuilderShared?: { buildCpSatContinuationPayload?: (checkpoint: JsonObject, options?: JsonObject) => JsonObject } }} */ (
+        globalObject
+      );
+    const maybeBuildCpSatContinuationPayload =
+      helperBuildCpSatContinuationPayload ?? expansionGlobal.CityBuilderShared?.buildCpSatContinuationPayload;
+    if (typeof maybeBuildCpSatContinuationPayload !== "function") {
+      throw new Error("CityBuilderShared.buildCpSatContinuationPayload must load before plannerExpansion.js.");
+    }
+    const buildCpSatContinuationPayload = maybeBuildCpSatContinuationPayload;
 
     function clearExpansionAdvice() {
       state.expansionAdvice.isRunning = false;
@@ -194,20 +206,17 @@
 
     /**
      * @param {JsonObject} request
+     * @param {boolean} includeSolution
      * @returns {JsonObject | null}
      */
-    function buildComparisonDisplayedLayoutCheckpointPayload(request) {
+    function buildComparisonDisplayedLayoutCheckpointPayload(request, includeSolution) {
       const checkpoint = getDisplayedLayoutCheckpoint();
       if (!checkpoint || !checkpointMatchesComparisonRequest(checkpoint, request)) return null;
-      return {
+      return buildCpSatContinuationPayload(checkpoint, {
         sourceName: `${getDisplayedLayoutSourceLabel()} (comparison baseline)`,
-        modelFingerprint: checkpoint.compatibility.modelFingerprint,
-        roadKeys: cloneJson(checkpoint.hint.roadKeys),
-        serviceCandidateKeys: cloneJson(checkpoint.hint.serviceCandidateKeys),
-        residentialCandidateKeys: cloneJson(checkpoint.hint.residentialCandidateKeys),
-        solution: cloneJson(checkpoint.hint.solution),
-        hintConflictLimit: 20
-      };
+        hintConflictLimit: 20,
+        includeSolution
+      });
     }
 
     /**
@@ -225,31 +234,38 @@
         return request;
       }
 
-      const payload = buildComparisonDisplayedLayoutCheckpointPayload(request);
-      if (!payload) return request;
-
       if (request.params.optimizer === "cp-sat") {
+        const payload = buildComparisonDisplayedLayoutCheckpointPayload(request, false);
+        if (!payload) return request;
         request.params.cpSat = {
           ...(request.params.cpSat ?? {}),
           warmStartHint: cloneJson(payload)
         };
       } else if (request.params.optimizer === "lns") {
+        const payload = buildComparisonDisplayedLayoutCheckpointPayload(request, true);
+        if (!payload) return request;
         request.params.lns = {
           ...(request.params.lns ?? {}),
           seedHint: cloneJson(payload)
         };
       } else if (request.params.optimizer === "auto") {
         if (state.cpSat.useDisplayedHint) {
-          request.params.cpSat = {
-            ...(request.params.cpSat ?? {}),
-            warmStartHint: cloneJson(payload)
-          };
+          const payload = buildComparisonDisplayedLayoutCheckpointPayload(request, false);
+          if (payload) {
+            request.params.cpSat = {
+              ...(request.params.cpSat ?? {}),
+              warmStartHint: cloneJson(payload)
+            };
+          }
         }
         if (state.lns.useDisplayedSeed) {
-          request.params.lns = {
-            ...(request.params.lns ?? {}),
-            seedHint: cloneJson(payload)
-          };
+          const payload = buildComparisonDisplayedLayoutCheckpointPayload(request, true);
+          if (payload) {
+            request.params.lns = {
+              ...(request.params.lns ?? {}),
+              seedHint: cloneJson(payload)
+            };
+          }
         }
       }
 

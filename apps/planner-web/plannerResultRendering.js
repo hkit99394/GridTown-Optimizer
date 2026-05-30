@@ -1,5 +1,5 @@
 /**
- * @param {Window & { PlannerResultRendering?: unknown }} globalObject
+ * @param {Window & { PlannerResultDiagnostics?: any, PlannerResultRendering?: unknown }} globalObject
  */
 (function attachPlannerResultRendering(globalObject) {
   /**
@@ -19,6 +19,9 @@
    * @typedef {{ cellSize: number, gap: number, paddingX: number, paddingY: number }} MatrixLayout
    * @typedef {{ result?: JsonObject | null, resultContext?: JsonObject | null, grid: PlannerGrid, resultExplainabilityMode: string, resultHeatmapEnabled: boolean, selectedMapBuilding: ResultSelection | null, selectedMapCell: ResultCell | null, isSolving: boolean, layoutEditor: JsonObject }} RenderingState
    */
+  const renderingBootstrapGlobal =
+    /** @type {Window & { PlannerResultDiagnostics?: any }} */
+    (globalObject);
 
   /**
    * @param {object} options
@@ -68,30 +71,16 @@
       lookupServiceName
     } = helpers;
     const { applyMatrixLayout, getOptimizerLabel } = callbacks;
-    const diagnosticReasonOrder = [
-      "blocked-footprint",
-      "no-road-path",
-      "no-service-coverage",
-      "base-only",
-      "availability-cap",
-      "lower-score-no-improvement"
-    ];
-    const diagnosticReasonLabels = /** @type {Record<string, string>} */ ({
-      "blocked-footprint": "Blocked footprint",
-      "no-road-path": "No road path",
-      "no-service-coverage": "No service coverage",
-      "base-only": "Base population only",
-      "availability-cap": "Availability cap",
-      "lower-score-no-improvement": "Lower score / no improvement"
-    });
+    if (!renderingBootstrapGlobal.PlannerResultDiagnostics?.createPlannerResultDiagnosticsHelpers) {
+      throw new Error("Planner result diagnostics helpers are not loaded.");
+    }
 
-    /**
-     * @param {MaybeGrid} grid
-     * @param {ResultSolution | null | undefined} solution
-     * @param {number} row
-     * @param {number} col
-     */
-    function getSolvedCellKind(grid, solution, row, col) {
+    function getSolvedCellKind(
+      /** @type {MaybeGrid} */ grid,
+      /** @type {ResultSolution | null | undefined} */ solution,
+      /** @type {number} */ row,
+      /** @type {number} */ col
+    ) {
       if (grid?.[row]?.[col] !== 1) return "blocked";
       if (findBuildingAtCell(solution, row, col)?.kind === "service") return "service";
       if (findBuildingAtCell(solution, row, col)?.kind === "residential") return "residential";
@@ -99,13 +88,11 @@
       return "empty";
     }
 
-    /**
-     * @param {ResultSolution | null | undefined} solution
-     * @param {number} row
-     * @param {number} col
-     * @returns {BonusCoverageEntry[]}
-     */
-    function getCellBonusCoverage(solution, row, col) {
+    function getCellBonusCoverage(
+      /** @type {ResultSolution | null | undefined} */ solution,
+      /** @type {number} */ row,
+      /** @type {number} */ col
+    ) {
       const grid = state.resultContext?.grid ?? state.grid;
       if (!grid?.length || grid[row]?.[col] !== 1 || !solution) return [];
 
@@ -122,10 +109,7 @@
       });
     }
 
-    /**
-     * @param {JsonObject | null | undefined} cell
-     */
-    function formatCellExplainability(cell) {
+    function formatCellExplainability(/** @type {JsonObject | null | undefined} */ cell) {
       if (!cell) return "";
       const parts = [];
       if (cell.serviceValue > 0) {
@@ -150,11 +134,10 @@
       return parts.join("; ");
     }
 
-    /**
-     * @param {unknown} population
-     * @param {JsonObject | null | undefined} type
-     */
-    function getResidentialPossibleImprovement(population, type) {
+    function getResidentialPossibleImprovement(
+      /** @type {unknown} */ population,
+      /** @type {JsonObject | null | undefined} */ type
+    ) {
       const currentPopulation = Number(population);
       const maxPopulation = Number(type?.max);
       if (!Number.isFinite(currentPopulation) || !Number.isFinite(maxPopulation)) return null;
@@ -166,12 +149,10 @@
       };
     }
 
-    /**
-     * @param {ResultSolution | null | undefined} solution
-     * @param {ResultPlacement} placement
-     * @returns {BonusCoverageEntry[]}
-     */
-    function getResidentialServiceCoverage(solution, placement) {
+    function getResidentialServiceCoverage(
+      /** @type {ResultSolution | null | undefined} */ solution,
+      /** @type {ResultPlacement} */ placement
+    ) {
       if (!solution) return [];
       return (solution.services ?? []).flatMap((service, index) => {
         let covered = false;
@@ -195,20 +176,16 @@
       });
     }
 
-    /**
-     * @param {BonusCoverageEntry[]} coverage
-     */
-    function formatResidentialServiceCoverage(coverage) {
+    function formatResidentialServiceCoverage(/** @type {BonusCoverageEntry[]} */ coverage) {
       if (coverage.length === 0) return "no service coverage";
       return `services ${coverage.map((entry) => `${entry.name} (${entry.id} +${entry.bonus})`).join(", ")}`;
     }
 
-    /**
-     * @param {unknown} population
-     * @param {JsonObject | null | undefined} type
-     * @param {BonusCoverageEntry[]} coverage
-     */
-    function formatResidentialPopulationBreakdown(population, type, coverage) {
+    function formatResidentialPopulationBreakdown(
+      /** @type {unknown} */ population,
+      /** @type {JsonObject | null | undefined} */ type,
+      /** @type {BonusCoverageEntry[]} */ coverage
+    ) {
       const currentPopulation = Number(population);
       const basePopulation = Number(type?.min);
       const maxPopulation = Number(type?.max);
@@ -401,111 +378,51 @@
     }
 
     /**
-     * @param {unknown} value
+     * @param {ResultSolution} solution
+     * @param {boolean} pendingManualValidation
      */
-    function formatDiagnosticCount(value) {
-      return Number(value ?? 0).toLocaleString();
+    function renderPlacementSummaries(solution, pendingManualValidation) {
+      elements.serviceResultList.innerHTML = "";
+      if (solution.services.length === 0) {
+        elements.serviceResultList.innerHTML = "<li>No service buildings were placed.</li>";
+      } else {
+        solution.services.forEach((service, index) => {
+          const item = document.createElement("li");
+          const typeLabel = lookupServiceName(solution.serviceTypeIndices[index] ?? -1);
+          item.textContent =
+            `${typeLabel} (S${index + 1}) at (${service.r}, ${service.c}) ` +
+            `${service.rows}x${service.cols}, range ${service.range}, ` +
+            (pendingManualValidation
+              ? "effect pending validation"
+              : `+${solution.servicePopulationIncreases[index] ?? 0}`);
+          elements.serviceResultList.append(item);
+        });
+      }
+
+      elements.residentialResultList.innerHTML = "";
+      if (solution.residentials.length === 0) {
+        elements.residentialResultList.innerHTML = "<li>No residential buildings were placed.</li>";
+      } else {
+        solution.residentials.forEach((residential, index) => {
+          const item = document.createElement("li");
+          const typeLabel = lookupResidentialName(solution.residentialTypeIndices[index] ?? -1);
+          item.textContent =
+            `${typeLabel} (R${index + 1}) at (${residential.r}, ${residential.c}) ` +
+            `${residential.rows}x${residential.cols}, ` +
+            (pendingManualValidation ? "population pending validation" : `pop ${solution.populations[index] ?? 0}`);
+          elements.residentialResultList.append(item);
+        });
+      }
     }
 
-    /**
-     * @param {JsonObject} example
-     */
-    function formatDiagnosticExample(example) {
-      const idPrefix = example.kind === "service" ? "S" : "R";
-      const typeName =
-        example.typeName ||
-        (example.kind === "service" ? lookupServiceName(example.typeIndex) : lookupResidentialName(example.typeIndex));
-      const parts = [
-        `${typeName || `${idPrefix} type ${Number(example.typeIndex ?? -1) + 1}`} at (${example.r}, ${example.c})`,
-        `${example.rows}x${example.cols}`
-      ];
-      if (typeof example.score === "number" && Number.isFinite(example.score)) {
-        parts.push(`score ${formatDiagnosticCount(example.score)}`);
-      }
-      if (typeof example.population === "number" && Number.isFinite(example.population)) {
-        parts.push(`pop ${formatDiagnosticCount(example.population)}`);
-      }
-      if (typeof example.basePopulation === "number" && Number.isFinite(example.basePopulation)) {
-        parts.push(`base ${formatDiagnosticCount(example.basePopulation)}`);
-      }
-      return parts.join(", ");
-    }
-
-    /**
-     * @param {MaybeElement} listElement
-     * @param {MaybeJson} report
-     * @param {string} emptyLabel
-     */
-    function renderDiagnosticKindReport(listElement, report, emptyLabel) {
-      if (!listElement) return;
-      listElement.innerHTML = "";
-
-      const reasonEntries = diagnosticReasonOrder
-        .map((reason) => ({
-          reason,
-          count: Number(report?.reasonCounts?.[reason] ?? 0),
-          examples: Array.isArray(report?.examplesByReason?.[reason]) ? report.examplesByReason[reason] : []
-        }))
-        .filter((entry) => entry.count > 0);
-
-      if (reasonEntries.length === 0) {
-        listElement.innerHTML = `<li>${emptyLabel}</li>`;
-        return;
-      }
-
-      reasonEntries.forEach((entry) => {
-        const item = document.createElement("li");
-        const stamp = document.createElement("strong");
-        stamp.className = "progress-log-stamp";
-        stamp.textContent = `${diagnosticReasonLabels[entry.reason]}: ${formatDiagnosticCount(entry.count)}`;
-
-        const detail = document.createElement("span");
-        detail.className = "progress-log-detail";
-        const examples = entry.examples.map(formatDiagnosticExample);
-        detail.textContent =
-          examples.length > 0
-            ? `Examples: ${examples.join(" | ")}`
-            : "No bounded examples were captured for this reason.";
-
-        item.append(stamp, detail);
-        listElement.append(item);
+    const { renderGreedyDiagnostics } =
+      renderingBootstrapGlobal.PlannerResultDiagnostics.createPlannerResultDiagnosticsHelpers({
+        elements,
+        helpers: {
+          lookupResidentialName,
+          lookupServiceName
+        }
       });
-    }
-
-    /**
-     * @param {ResultSolution | null | undefined} solution
-     * @param {{ liveSnapshot?: boolean, manualLayout?: boolean }} [options]
-     */
-    function renderGreedyDiagnostics(solution, options = {}) {
-      if (!elements.greedyDiagnosticsBlock) return;
-      const diagnostics = solution?.greedyDiagnostics;
-      if (!diagnostics || options.manualLayout || options.liveSnapshot) {
-        elements.greedyDiagnosticsBlock.hidden = true;
-        return;
-      }
-
-      elements.greedyDiagnosticsBlock.hidden = false;
-      const serviceScanned = diagnostics.services?.candidatesScanned ?? 0;
-      const residentialScanned = diagnostics.residentials?.candidatesScanned ?? 0;
-      const truncated = diagnostics.services?.truncated || diagnostics.residentials?.truncated;
-      if (elements.greedyDiagnosticsSummary) {
-        elements.greedyDiagnosticsSummary.textContent =
-          `Scanned ${formatDiagnosticCount(serviceScanned)} unplaced service candidates and ` +
-          `${formatDiagnosticCount(residentialScanned)} unplaced residential candidates` +
-          `${truncated ? `, capped at ${formatDiagnosticCount(diagnostics.candidateLimit)} per category` : ""}.`;
-      }
-
-      renderDiagnosticKindReport(
-        elements.greedyDiagnosticsServiceList,
-        diagnostics.services,
-        "No service blockers were recorded."
-      );
-      renderDiagnosticKindReport(
-        elements.greedyDiagnosticsResidentialList,
-        diagnostics.residentials,
-        "No residential blockers were recorded."
-      );
-    }
 
     /**
      * @param {MaybeJson} solution
@@ -579,20 +496,32 @@
      * @param {ResultPlacement} placement
      * @param {number} rows
      * @param {number} cols
-     * @param {(row: number, col: number) => void} visit
      */
-    function forEachPlacementCellWithinGrid(placement, rows, cols, visit) {
-      if (!hasRenderablePlacementGeometry(placement)) return;
+    function getClippedPlacementBounds(placement, rows, cols) {
+      if (!hasRenderablePlacementGeometry(placement)) return null;
       const rowEnd = placement.r + placement.rows;
       const colEnd = placement.c + placement.cols;
-      if (!Number.isSafeInteger(rowEnd) || !Number.isSafeInteger(colEnd)) return;
+      if (!Number.isSafeInteger(rowEnd) || !Number.isSafeInteger(colEnd)) return null;
 
       const rowStart = Math.max(0, placement.r);
       const clippedRowEnd = Math.min(rows, rowEnd);
       const colStart = Math.max(0, placement.c);
       const clippedColEnd = Math.min(cols, colEnd);
-      for (let row = rowStart; row < clippedRowEnd; row += 1) {
-        for (let col = colStart; col < clippedColEnd; col += 1) {
+      if (rowStart >= clippedRowEnd || colStart >= clippedColEnd) return null;
+      return { rowStart, clippedRowEnd, colStart, clippedColEnd };
+    }
+
+    /**
+     * @param {ResultPlacement} placement
+     * @param {number} rows
+     * @param {number} cols
+     * @param {(row: number, col: number) => void} visit
+     */
+    function forEachPlacementCellWithinGrid(placement, rows, cols, visit) {
+      const bounds = getClippedPlacementBounds(placement, rows, cols);
+      if (!bounds) return;
+      for (let row = bounds.rowStart; row < bounds.clippedRowEnd; row += 1) {
+        for (let col = bounds.colStart; col < bounds.clippedColEnd; col += 1) {
           visit(row, col);
         }
       }
@@ -605,22 +534,14 @@
      * @returns {ResultPlacement | null}
      */
     function clipPlacementToGrid(placement, rows, cols) {
-      if (!hasRenderablePlacementGeometry(placement)) return null;
-      const rowEnd = placement.r + placement.rows;
-      const colEnd = placement.c + placement.cols;
-      if (!Number.isSafeInteger(rowEnd) || !Number.isSafeInteger(colEnd)) return null;
-
-      const rowStart = Math.max(0, placement.r);
-      const clippedRowEnd = Math.min(rows, rowEnd);
-      const colStart = Math.max(0, placement.c);
-      const clippedColEnd = Math.min(cols, colEnd);
-      if (rowStart >= clippedRowEnd || colStart >= clippedColEnd) return null;
+      const bounds = getClippedPlacementBounds(placement, rows, cols);
+      if (!bounds) return null;
       return {
         ...placement,
-        r: rowStart,
-        c: colStart,
-        rows: clippedRowEnd - rowStart,
-        cols: clippedColEnd - colStart
+        r: bounds.rowStart,
+        c: bounds.colStart,
+        rows: bounds.clippedRowEnd - bounds.rowStart,
+        cols: bounds.clippedColEnd - bounds.colStart
       };
     }
 
@@ -904,6 +825,7 @@
       hidesBuildingOverlayForMode,
       refreshResultOverlay,
       renderGreedyDiagnostics,
+      renderPlacementSummaries,
       renderRemainingAvailability,
       renderSelectedBuildingDetail,
       renderSolvedMap

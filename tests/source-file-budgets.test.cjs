@@ -8,11 +8,6 @@ const defaultSourceFileBudget = 900;
 const sourceRoots = ["src", "apps", "python", "scripts"];
 const sourceExtensions = new Set([".ts", ".js", ".mjs", ".css", ".html", ".py"]);
 
-const temporaryOversizedBudgets = new Map([
-  ["apps/planner-web/index.html", 960],
-  ["apps/planner-web/plannerResultRendering.js", 930]
-]);
-
 function listFiles(dir, predicate) {
   return fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
     const entryPath = path.join(dir, entry.name);
@@ -34,11 +29,10 @@ function testSourceFilesStayWithinLineBudgets() {
     )
     .map((filePath) => {
       const relativePath = path.relative(repoRoot, filePath);
-      const maxLines = temporaryOversizedBudgets.get(relativePath) ?? defaultSourceFileBudget;
       return {
         relativePath,
         lineCount: countLines(filePath),
-        maxLines
+        maxLines: defaultSourceFileBudget
       };
     })
     .filter(({ lineCount, maxLines }) => lineCount > maxLines);

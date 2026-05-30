@@ -97,6 +97,9 @@ function loadPlannerRequestBuilderModule(crypto = undefined) {
 
 function loadPlannerExpansionModule(fetch) {
   return loadBrowserModule("apps/planner-web/plannerExpansion.js", {
+    window: {
+      CityBuilderShared: loadPlannerSharedModule()
+    },
     context: {
       Error,
       fetch,
@@ -112,7 +115,8 @@ function loadPlannerWorkbenchModule() {
   }
   return loadBrowserModule("apps/planner-web/plannerWorkbench.js", {
     window: {
-      CityBuilderShared: loadPlannerSharedModule()
+      CityBuilderShared: loadPlannerSharedModule(),
+      CityBuilderWorkbenchCatalog: loadPlannerWorkbenchCatalogModule()
     },
     context: {
       document: {
@@ -157,12 +161,30 @@ function loadPlannerResultProgressModule(options = {}) {
   return loadBrowserModule("apps/planner-web/plannerResultProgress.js", options).PlannerResultProgress;
 }
 
+function loadPlannerResultDiagnosticsModule(options = {}) {
+  return loadBrowserModule("apps/planner-web/plannerResultDiagnostics.js", options).PlannerResultDiagnostics;
+}
+
 function loadPlannerResultAvailabilityModule(options = {}) {
   return loadBrowserModule("apps/planner-web/plannerResultAvailability.js", options).PlannerResultAvailability;
 }
 
 function loadPlannerResultRenderingModule(options = {}) {
-  return loadBrowserModule("apps/planner-web/plannerResultRendering.js", options).PlannerResultRendering;
+  return loadBrowserModule("apps/planner-web/plannerResultRendering.js", {
+    ...options,
+    window: {
+      PlannerResultDiagnostics: loadPlannerResultDiagnosticsModule(options),
+      ...(options.window ?? {})
+    }
+  }).PlannerResultRendering;
+}
+
+function loadPlannerResultStatesModule(options = {}) {
+  return loadBrowserModule("apps/planner-web/plannerResultStates.js", options).PlannerResultStates;
+}
+
+function loadPlannerWorkbenchCatalogModule(options = {}) {
+  return loadBrowserModule("apps/planner-web/plannerWorkbenchCatalog.js", options).CityBuilderWorkbenchCatalog;
 }
 
 function loadPlannerResultsModule(options = {}) {
@@ -174,6 +196,7 @@ function loadPlannerResultsModule(options = {}) {
       PlannerResultAvailability: loadPlannerResultAvailabilityModule(options),
       PlannerResultProgress: loadPlannerResultProgressModule(options),
       PlannerResultRendering: loadPlannerResultRenderingModule(options),
+      PlannerResultStates: loadPlannerResultStatesModule(options),
       ...(options.window ?? {})
     }
   }).CityBuilderResults;
@@ -204,13 +227,16 @@ module.exports = {
   loadPlannerPersistenceModule,
   loadPlannerPersistenceValidationModule,
   loadPlannerResultAvailabilityModule,
+  loadPlannerResultDiagnosticsModule,
   loadPlannerResultProgressModule,
   loadPlannerResultRenderingModule,
+  loadPlannerResultStatesModule,
   loadPlannerRequestBuilderModule,
   loadPlannerResultsModule,
   loadPlannerSamplePresetsModule,
   loadPlannerSharedModule,
   loadPlannerShellModule,
   loadPlannerSolveRuntimeModule,
+  loadPlannerWorkbenchCatalogModule,
   loadPlannerWorkbenchModule
 };

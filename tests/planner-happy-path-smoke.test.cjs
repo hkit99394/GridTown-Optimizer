@@ -98,10 +98,15 @@ function testPlannerHappyPathMarkupContract() {
     "/plannerManualLayout.js",
     "/plannerResultAvailability.js",
     "/plannerResultProgress.js",
+    "/plannerResultDiagnostics.js",
     "/plannerResultRendering.js",
+    "/plannerResultStates.js",
     "/plannerResults.js",
     "/plannerRequestBuilder.js",
+    "/plannerWorkbenchCatalog.js",
     "/plannerWorkbench.js",
+    "/plannerStaticFragments.js",
+    "/plannerAppElements.js",
     "/app.js"
   ]);
 }

@@ -4,6 +4,7 @@ const { runPlannerSavedLayoutTests } = require("./review-findings/plannerSavedLa
 const { runPlannerResultsTests } = require("./review-findings/plannerResultsTests.cjs");
 const { runPlannerResponseTests } = require("./review-findings/plannerResponseTests.cjs");
 const { runPlannerContinuationTests } = require("./review-findings/plannerContinuationTests.cjs");
+const { runPlannerContinuationPayloadTests } = require("./review-findings/plannerContinuationPayloadTests.cjs");
 
 async function main() {
   await runSolverRegressionTests();
@@ -12,6 +13,7 @@ async function main() {
   await runPlannerResultsTests();
   await runPlannerResponseTests();
   await runPlannerContinuationTests();
+  await runPlannerContinuationPayloadTests();
   console.log("All review finding regression tests passed.");
 }
 

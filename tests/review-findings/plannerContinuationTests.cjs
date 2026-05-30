@@ -642,6 +642,16 @@ function testPlannerRequestBuilderIncludesHintAndSeedForAuto() {
   assert.equal(request.params.optimizer, "auto");
   assert.ok(request.params.cpSat.warmStartHint);
   assert.ok(request.params.lns.seedHint);
+  assert.equal(request.params.cpSat.warmStartHint.objectiveLowerBound, 10);
+  assert.equal(request.params.cpSat.warmStartHint.preferStrictImprove, false);
+  assert.equal(request.params.cpSat.warmStartHint.repairHint, true);
+  assert.equal(request.params.cpSat.warmStartHint.fixVariablesToHintedValue, false);
+  assert.equal(request.params.cpSat.warmStartHint.solution, undefined);
+  assert.equal(request.params.lns.seedHint.objectiveLowerBound, 10);
+  assert.equal(request.params.lns.seedHint.preferStrictImprove, false);
+  assert.equal(request.params.lns.seedHint.repairHint, true);
+  assert.equal(request.params.lns.seedHint.fixVariablesToHintedValue, false);
+  assert.ok(request.params.lns.seedHint.solution);
 
   state.availableBuildings.residentials = "2";
   const staleAutoRequest = controller.buildSolveRequest();

@@ -1,5 +1,5 @@
 /**
- * @param {Window & { CityBuilderRequestBuilder?: unknown, CityBuilderShared?: { CP_SAT_PORTFOLIO_CAPABILITY_LIMITS?: Record<string, number> }, crypto?: Crypto }} globalObject
+ * @param {Window & { CityBuilderRequestBuilder?: unknown, CityBuilderShared?: { CP_SAT_PORTFOLIO_CAPABILITY_LIMITS?: Record<string, number>, buildCpSatContinuationPayload?: (checkpoint: Record<string, any>, options?: Record<string, any>) => Record<string, any> }, crypto?: Crypto }} globalObject
  */
 (function attachPlannerRequestBuilder(globalObject) {
   /**
@@ -26,6 +26,7 @@
   /**
    * @typedef {object} RequestBuilderHelpers
    * @property {(request: JsonObject) => JsonObject} buildCpSatContinuationModelInput
+   * @property {(checkpoint: JsonObject, options?: JsonObject) => JsonObject} [buildCpSatContinuationPayload]
    * @property {(result: JsonObject, resultContext: JsonObject, elapsedMs: number) => JsonObject} buildCpSatWarmStartCheckpoint
    * @property {(value: any, fallback: number, min?: number) => number} clampInteger
    * @property {(grid: number[][]) => number[][]} cloneGrid
@@ -73,7 +74,7 @@
    */
 
   const requestBuilderGlobal =
-    /** @type {Window & { CityBuilderRequestBuilder?: unknown, CityBuilderShared?: { CP_SAT_PORTFOLIO_CAPABILITY_LIMITS?: Record<string, number> }, crypto?: Crypto }} */ (
+    /** @type {Window & { CityBuilderRequestBuilder?: unknown, CityBuilderShared?: { CP_SAT_PORTFOLIO_CAPABILITY_LIMITS?: Record<string, number>, buildCpSatContinuationPayload?: (checkpoint: JsonObject, options?: JsonObject) => JsonObject }, crypto?: Crypto }} */ (
       globalObject
     );
 
@@ -101,6 +102,7 @@
     const { state, elements, helpers } = options;
     const {
       buildCpSatContinuationModelInput,
+      buildCpSatContinuationPayload: helperBuildCpSatContinuationPayload,
       buildCpSatWarmStartCheckpoint,
       clampInteger,
       cloneGrid,
@@ -111,6 +113,12 @@
       parseResidentialCatalogEntry,
       parseServiceCatalogEntry
     } = helpers;
+    const maybeBuildCpSatContinuationPayload =
+      helperBuildCpSatContinuationPayload ?? requestBuilderGlobal.CityBuilderShared?.buildCpSatContinuationPayload;
+    if (typeof maybeBuildCpSatContinuationPayload !== "function") {
+      throw new Error("CityBuilderShared.buildCpSatContinuationPayload must load before plannerRequestBuilder.js.");
+    }
+    const buildCpSatContinuationPayload = maybeBuildCpSatContinuationPayload;
 
     function generateCpSatRandomSeed() {
       const cryptoObject = globalObject.crypto;
@@ -309,9 +317,9 @@
      * @param {number[][]} grid
      * @param {JsonObject} params
      * @param {ContinuationPayloadOptions} options
-     * @returns {{ checkpoint: JsonObject, sourceLabel: string, payload: JsonObject } | undefined}
+     * @returns {{ checkpoint: JsonObject, sourceLabel: string } | undefined}
      */
-    function buildDisplayedLayoutContinuationBasePayload(grid, params, options) {
+    function getDisplayedLayoutContinuationSource(grid, params, options) {
       const { optimizer, enabled, hintMismatch, mismatchMessage } = options;
       if ((params.optimizer !== optimizer && params.optimizer !== "auto") || !enabled) return undefined;
 
@@ -328,19 +336,7 @@
 
       return {
         checkpoint,
-        sourceLabel,
-        payload: {
-          sourceName: sourceLabel,
-          modelFingerprint: checkpoint.compatibility.modelFingerprint,
-          roadKeys: cloneJson(checkpoint.hint.roadKeys),
-          serviceCandidateKeys: cloneJson(checkpoint.hint.serviceCandidateKeys),
-          residentialCandidateKeys: cloneJson(checkpoint.hint.residentialCandidateKeys),
-          objectiveLowerBound: checkpoint.resumePolicy.objectiveCutoff.value,
-          preferStrictImprove: Boolean(checkpoint.resumePolicy.objectiveCutoff.preferStrictImprove),
-          repairHint: Boolean(checkpoint.resumePolicy.repairHint),
-          fixVariablesToHintedValue: Boolean(checkpoint.resumePolicy.fixVariablesToHintedValue),
-          hintConflictLimit: 20
-        }
+        sourceLabel
       };
     }
 
@@ -351,13 +347,17 @@
      * @returns {JsonObject | undefined}
      */
     function buildCpSatWarmStartHintPayload(grid, params, hintMismatch = "error") {
-      const continuation = buildDisplayedLayoutContinuationBasePayload(grid, params, {
+      const continuation = getDisplayedLayoutContinuationSource(grid, params, {
         optimizer: "cp-sat",
         enabled: state.cpSat.useDisplayedHint,
         hintMismatch,
         mismatchMessage: "Turn off default hinting or restore matching inputs first."
       });
-      return continuation?.payload;
+      if (!continuation) return undefined;
+      return buildCpSatContinuationPayload(continuation.checkpoint, {
+        sourceName: continuation.sourceLabel,
+        hintConflictLimit: 20
+      });
     }
 
     /**
@@ -367,7 +367,7 @@
      * @returns {JsonObject | undefined}
      */
     function buildLnsSeedPayload(grid, params, hintMismatch = "error") {
-      const continuation = buildDisplayedLayoutContinuationBasePayload(grid, params, {
+      const continuation = getDisplayedLayoutContinuationSource(grid, params, {
         optimizer: "lns",
         enabled: state.lns.useDisplayedSeed,
         hintMismatch,
@@ -375,10 +375,11 @@
       });
       if (!continuation) return undefined;
 
-      return {
-        ...continuation.payload,
-        solution: cloneJson(continuation.checkpoint.hint.solution)
-      };
+      return buildCpSatContinuationPayload(continuation.checkpoint, {
+        sourceName: continuation.sourceLabel,
+        hintConflictLimit: 20,
+        includeSolution: true
+      });
     }
 
     /**

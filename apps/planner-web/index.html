@@ -4,34 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>City Builder Planner | Operations Cockpit</title>
-    <script>
-      (() => {
-        const pathname = window.location.pathname.replace(/\/$/, "") || "/";
-        const plannerPreview =
-          pathname === "/" || pathname === "/index.html" || pathname === "/v2.1"
-            ? { script: "/plannerV21.js", stylesheet: "/plannerV21.css", version: "v2.1" }
-            : pathname === "/v2"
-              ? { script: "/plannerV2.js", stylesheet: "/plannerV2.css", version: "v2" }
-              : null;
-        if (!plannerPreview) return;
-        document.documentElement.dataset.plannerVersion = plannerPreview.version;
-
-        const stylesheet = document.createElement("link");
-        stylesheet.rel = "stylesheet";
-        stylesheet.href = plannerPreview.stylesheet;
-        document.head.append(stylesheet);
-
-        window.addEventListener(
-          "DOMContentLoaded",
-          () => {
-            const script = document.createElement("script");
-            script.src = plannerPreview.script;
-            document.body.append(script);
-          },
-          { once: true }
-        );
-      })();
-    </script>
+    <script src="/plannerPreviewBoot.js"></script>
     <link rel="stylesheet" href="/styles.css" />
     <link rel="stylesheet" href="/plannerWorkflow.css" />
     <link rel="stylesheet" href="/results.css" />
@@ -43,7 +16,6 @@
           <h1>City Builder Planner</h1>
         </div>
       </header>
-
       <main class="cockpit-grid">
         <div class="primary-stack">
           <section id="gridStage" class="stage module module-grid" data-planner-slot="stage-grid">
@@ -56,7 +28,6 @@
                 Resize the board, switch paint modes, and stamp allowed or blocked cells before launching a solve.
               </p>
             </div>
-
             <div class="module-body">
               <div class="command-panel">
                 <div class="toolbar-grid">
@@ -73,7 +44,6 @@
                   <button id="clearGridButton" type="button" class="button ghost">All blocked</button>
                   <button id="sampleGridButton" type="button" class="button ghost">Sample mask</button>
                 </div>
-
                 <div id="sampleProblemButtons" class="sample-preset-grid" aria-label="Sample problem presets">
                   <button type="button" class="button secondary compact" data-sample-problem="starter">
                     Starter sample
@@ -85,7 +55,6 @@
                     Corridor pressure
                   </button>
                 </div>
-
                 <div class="signal-band">
                   <div class="paint-copy">
                     <span class="paint-label">Paint mode</span>
@@ -98,13 +67,11 @@
                   </div>
                 </div>
               </div>
-
               <div class="grid-frame cockpit-frame">
                 <div id="gridEditor" class="grid-editor" aria-label="Grid editor"></div>
               </div>
             </div>
           </section>
-
           <section id="catalogStage" class="stage module module-catalog" data-planner-slot="stage-catalog">
             <div class="module-head">
               <div>
@@ -115,7 +82,6 @@
                 Paste both tables, then edit the service and residential inventories row by row without losing context.
               </p>
             </div>
-
             <div class="module-body" data-planner-slot="catalog-body">
               <details class="payload-preview import-preview">
                 <summary>Import catalog tables</summary>
@@ -138,7 +104,6 @@
                   </div>
                 </div>
               </details>
-
               <div class="catalog-grid" data-planner-slot="catalog-grid">
                 <section class="drawer-card catalog-section">
                   <div class="drawer-head">
@@ -150,7 +115,6 @@
                   </div>
                   <div id="serviceList"></div>
                 </section>
-
                 <section class="drawer-card catalog-section">
                   <div class="drawer-head">
                     <div>
@@ -166,7 +130,6 @@
               </div>
             </div>
           </section>
-
           <section id="resultStage" class="stage module module-results" data-planner-slot="stage-result">
             <div class="module-head">
               <div>
@@ -175,7 +138,6 @@
               </div>
               <span id="resultBadge" class="result-badge idle">Waiting</span>
             </div>
-
             <div class="module-body" data-planner-slot="result-body">
               <section class="drawer-card result-storage-panel" data-planner-slot="layout-storage">
                 <div class="drawer-head">
@@ -210,12 +172,10 @@
                 </div>
                 <p id="layoutStorageStatus" class="status-text" aria-live="polite"></p>
               </section>
-
               <div id="resultsEmpty" class="empty-state" data-planner-slot="result-empty">
                 Run the solver, or display a saved output layout, to inspect total population, validation, placements,
                 and the solved layout map.
               </div>
-
               <section
                 id="v21ResultActions"
                 class="v21-result-action-bar"
@@ -232,7 +192,6 @@
                   Run Auto or load a saved layout to enable result actions.
                 </p>
               </section>
-
               <div id="resultsContent" data-planner-slot="result-content" hidden>
                 <div class="metric-strip result-metrics">
                   <article class="metric-card">
@@ -260,9 +219,7 @@
                     <strong id="resultSolverStatus">n/a</strong>
                   </article>
                 </div>
-
                 <div id="validationNotice" class="notice" data-planner-slot="validation-notice"></div>
-
                 <div class="result-columns" data-planner-slot="result-columns">
                   <details class="result-block result-details">
                     <summary class="result-details-summary">
@@ -286,7 +243,6 @@
                       </div>
                     </div>
                   </details>
-
                   <section class="result-block" data-planner-slot="result-map">
                     <div class="drawer-head">
                       <div>
@@ -305,7 +261,6 @@
                       </div>
                     </div>
                   </section>
-
                   <details id="greedyDiagnosticsBlock" class="result-block result-details" hidden>
                     <summary class="result-details-summary">
                       <div class="drawer-head">
@@ -329,7 +284,6 @@
                       </div>
                     </div>
                   </details>
-
                   <section class="result-block">
                     <div class="drawer-head">
                       <div>
@@ -451,7 +405,6 @@
             </div>
           </section>
         </div>
-
         <aside id="controlStage" class="stage module module-control" data-planner-slot="stage-control">
           <div class="module-head">
             <div>
@@ -462,7 +415,6 @@
               Keep the current input intact while switching solver strategy, caps, or runtime hints.
             </p>
           </div>
-
           <div class="module-body" data-planner-slot="control-body">
             <section class="drawer-card happy-path-card" data-planner-slot="guide-card">
               <div class="drawer-head">
@@ -479,7 +431,6 @@
                 <li><a href="#controlStage">Compare next expansion</a></li>
               </ol>
             </section>
-
             <section class="drawer-card summary-card" data-planner-slot="overview-card">
               <div class="drawer-head">
                 <div>
@@ -510,7 +461,6 @@
                 </article>
               </div>
             </section>
-
             <section class="drawer-card control-card" data-planner-slot="solver-options">
               <div class="drawer-head">
                 <div>
@@ -518,13 +468,11 @@
                   <h3>Choose an optimizer</h3>
                 </div>
               </div>
-
               <div class="solver-callout">
                 Recommended quality path: use Auto when overall answer quality matters most. Auto starts with a capped
                 fast Greedy seed, then LNS and bounded CP-SAT spend the deeper improvement budget. Standalone Greedy
                 stays available as the heavy heuristic / advanced inspection mode.
               </div>
-
               <div id="runtimePresetButtons" class="runtime-preset-grid" data-planner-slot="runtime-presets">
                 <button type="button" class="button secondary compact" data-runtime-preset="heavy-greedy">
                   Heavy Greedy
@@ -539,25 +487,20 @@
                   Portfolio CP-SAT
                 </button>
               </div>
-
               <p id="runtimePresetStatus" class="status-text" aria-live="polite">
                 Presets keep Greedy, LNS, and bounded CP-SAT one click away. Auto remains the recommended quality path.
               </p>
-
               <label class="advanced-toggle">
                 <input id="advancedModeToggle" type="checkbox" />
                 <span>Advanced mode</span>
               </label>
-
               <p id="cpSatReadinessStatus" class="status-text" aria-live="polite">Checking CP-SAT readiness...</p>
-
               <div class="segmented segmented-wide advanced-only" id="solverToggle" role="group" aria-label="Optimizer">
                 <button type="button" data-optimizer="auto">Auto</button>
                 <button type="button" data-optimizer="greedy">Greedy</button>
                 <button type="button" data-optimizer="lns">LNS</button>
                 <button type="button" data-optimizer="cp-sat">CP-SAT</button>
               </div>
-
               <div class="solver-panels">
                 <section id="autoPanel" class="solver-panel">
                   <details class="expert-panel advanced-only">
@@ -662,7 +605,6 @@
                     </div>
                   </details>
                 </section>
-
                 <section id="lnsPanel" class="solver-panel" hidden>
                   <details class="expert-panel advanced-only">
                     <summary>LNS tuning</summary>
@@ -699,7 +641,6 @@
                     </div>
                   </details>
                 </section>
-
                 <section id="cpSatPanel" class="solver-panel" hidden>
                   <div class="solver-callout">
                     CP-SAT uses the Python OR-Tools backend. If the environment is not set up yet, use
@@ -798,27 +739,7 @@
                 </section>
               </div>
             </section>
-
-            <section class="drawer-card control-card" data-planner-slot="global-limits" hidden>
-              <div class="drawer-head">
-                <div>
-                  <p class="eyebrow">Limits</p>
-                  <h3>Global caps</h3>
-                </div>
-              </div>
-
-              <div class="form-grid two-up">
-                <label class="field">
-                  <span>Max services</span>
-                  <input id="maxServices" type="number" min="1" step="1" placeholder="Optional" />
-                </label>
-                <label class="field">
-                  <span>Max residentials</span>
-                  <input id="maxResidentials" type="number" min="1" step="1" placeholder="Optional" />
-                </label>
-              </div>
-            </section>
-
+            <div data-static-fragment="globalLimits"></div>
             <section class="drawer-card storage-card" data-planner-slot="input-library">
               <div class="drawer-head">
                 <div>
@@ -850,12 +771,10 @@
                 Saved inputs include the grid, catalogs, and solver settings.
               </p>
             </section>
-
             <details class="payload-preview advanced-only" data-planner-slot="payload-preview">
               <summary>Payload preview</summary>
               <pre id="payloadPreview"></pre>
             </details>
-
             <section class="drawer-card launch-card" data-planner-slot="run-rail">
               <div class="drawer-head">
                 <div>
@@ -874,7 +793,6 @@
                 </div>
               </div>
             </section>
-
             <section class="drawer-card result-storage-panel" data-planner-slot="expansion-panel">
               <div class="drawer-head">
                 <div>
@@ -922,7 +840,6 @@
         </aside>
       </main>
     </div>
-
     <script src="/plannerShell.js" defer></script>
     <script src="/plannerShared.js" defer></script>
     <script src="/plannerDefaults.js" defer></script>
@@ -936,10 +853,15 @@
     <script src="/plannerManualLayout.js" defer></script>
     <script src="/plannerResultAvailability.js" defer></script>
     <script src="/plannerResultProgress.js" defer></script>
+    <script src="/plannerResultDiagnostics.js" defer></script>
     <script src="/plannerResultRendering.js" defer></script>
+    <script src="/plannerResultStates.js" defer></script>
     <script src="/plannerResults.js" defer></script>
     <script src="/plannerRequestBuilder.js" defer></script>
+    <script src="/plannerWorkbenchCatalog.js" defer></script>
     <script src="/plannerWorkbench.js" defer></script>
+    <script src="/plannerStaticFragments.js" defer></script>
+    <script src="/plannerAppElements.js" defer></script>
     <script src="/app.js" defer></script>
   </body>
 </html>

@@ -128,6 +128,41 @@ async function maybeTestCpSatAllowsMultiAnchorComponentsInOptimization() {
   assert.deepEqual([...aligned.roads].sort(), ["0,1", "0,5"]);
 }
 
+async function maybeTestCpSatNoOverlap2dEncodingProducesValidSolution() {
+  const pythonExecutable = resolveCpSatPython();
+  if (!pythonExecutable) {
+    return;
+  }
+
+  const grid = [
+    [1, 1, 1, 1],
+    [1, 1, 1, 1],
+    [1, 1, 1, 1],
+    [1, 1, 1, 1]
+  ];
+  const params = {
+    optimizer: "cp-sat",
+    cpSat: {
+      pythonExecutable,
+      timeLimitSeconds: 5,
+      numWorkers: 1,
+      useNoOverlap2d: true
+    },
+    residentialTypes: [
+      { w: 2, h: 2, min: 10, max: 10, avail: 1 },
+      { w: 2, h: 2, min: 100, max: 100, avail: 1 }
+    ],
+    availableBuildings: { residentials: 2, services: 0 }
+  };
+
+  const solution = await solveCpSatAsync(grid, params);
+  const validation = validateSolution({ grid, solution, params });
+
+  assert.match(solution.cpSatStatus ?? "", /^(OPTIMAL|FEASIBLE)$/);
+  assert.equal(solution.totalPopulation, 110);
+  assert.equal(validation.valid, true);
+}
+
 function maybeTestCpSatSyncCompatibility() {
   const pythonExecutable = resolveCpSatPython();
   if (!pythonExecutable) {
@@ -423,6 +458,64 @@ print(json.dumps({
   const payload = JSON.parse(result.stdout);
   assert.equal(payload.max_tie_break_penalty, payload.cell_count + payload.service_candidate_count);
   assert.equal(payload.population_weight, payload.max_tie_break_penalty + 1);
+}
+
+function maybeTestCpSatNoOverlap2dModelEncodingHelpers() {
+  const pythonExecutable = resolveCpSatPython();
+  if (!pythonExecutable) {
+    return;
+  }
+
+  const scriptPath = path.resolve(__dirname, "../../python/cp_sat_solver.py");
+  const command = `
+import importlib.util
+import json
+
+spec = importlib.util.spec_from_file_location("cp_sat_solver", ${JSON.stringify(scriptPath)})
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+
+grid = [
+  [1, 1, 1],
+  [1, 1, 1],
+  [1, 1, 1],
+]
+base_params = {
+    "residentialTypes": [{"w": 1, "h": 1, "min": 10, "max": 10, "avail": 2}],
+    "availableBuildings": {"services": 0, "residentials": 2},
+}
+candidate_params = {
+    **base_params,
+    "cpSat": {"useNoOverlap2d": True},
+}
+
+baseline = module.build_model(grid, base_params).model.Proto()
+candidate = module.build_model(grid, candidate_params).model.Proto()
+
+def count_constraints(proto, field_name):
+    predicate_name = f"has_{field_name}"
+    return sum(1 for constraint in proto.constraints if getattr(constraint, predicate_name)())
+
+print(json.dumps({
+    "baseline_no_overlap_2d": count_constraints(baseline, "no_overlap_2d"),
+    "candidate_no_overlap_2d": count_constraints(candidate, "no_overlap_2d"),
+    "candidate_interval_count": count_constraints(candidate, "interval"),
+}))
+`;
+
+  const result = childProcess.spawnSync(pythonExecutable, ["-c", command], {
+    encoding: "utf8"
+  });
+  if (result.status !== 0) {
+    throw new Error(
+      result.stderr?.trim() || result.stdout?.trim() || "Failed to inspect CP-SAT NoOverlap2D model encoding."
+    );
+  }
+
+  const payload = JSON.parse(result.stdout);
+  assert.equal(payload.baseline_no_overlap_2d, 0);
+  assert.equal(payload.candidate_no_overlap_2d, 1);
+  assert(payload.candidate_interval_count > 0);
 }
 
 function maybeTestCpSatRuntimeOptionHelpers() {
@@ -818,6 +911,7 @@ module.exports = {
   maybeTestCpSatOptimizer,
   maybeTestCpSatUsesColumnZeroRoadAnchor,
   maybeTestCpSatAllowsMultiAnchorComponentsInOptimization,
+  maybeTestCpSatNoOverlap2dEncodingProducesValidSolution,
   maybeTestCpSatSyncCompatibility,
   testCpSatRejectsSemanticallyInvalidRawSolution,
   testCpSatNormalizesUnderReportedRawPopulation,
@@ -825,6 +919,7 @@ module.exports = {
   maybeTestCpSatBackendJsonContractSmoke,
   maybeTestCpSatBackendStreamingProtocol,
   maybeTestCpSatObjectivePolicyHelpers,
+  maybeTestCpSatNoOverlap2dModelEncodingHelpers,
   maybeTestCpSatRuntimeOptionHelpers,
   maybeTestCpSatWarmStartHelpers,
   maybeTestCpSatSnapshotResponseHelpers,

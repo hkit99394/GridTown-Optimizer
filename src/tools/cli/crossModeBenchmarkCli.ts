@@ -65,6 +65,7 @@ interface ParsedBenchmarkArgs {
   productRegister: boolean;
   productRegisterDryRun: boolean;
   productPromotionMatrix: boolean;
+  cpSatUseNoOverlap2d: boolean;
   forceArtifactDir: boolean;
   ablationRunId?: string;
   ablationDecision?: string;
@@ -106,6 +107,7 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
   let productRegister = false;
   let productRegisterDryRun = false;
   let productPromotionMatrix = false;
+  let cpSatUseNoOverlap2d = false;
   let forceArtifactDir = false;
   let ablationRunId: string | undefined;
   let ablationDecision: string | undefined;
@@ -192,6 +194,10 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
       productPromotionMatrix = true;
       continue;
     }
+    if (isCliFlag(arg, "--cp-sat-no-overlap2d")) {
+      cpSatUseNoOverlap2d = true;
+      continue;
+    }
     if (isCliFlag(arg, "--force-artifact-dir")) {
       forceArtifactDir = true;
       continue;
@@ -229,6 +235,7 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
     productRegister,
     productRegisterDryRun,
     productPromotionMatrix,
+    cpSatUseNoOverlap2d,
     forceArtifactDir,
     ablationRunId,
     ablationDecision,
@@ -326,7 +333,8 @@ export async function runCrossModeBenchmarkCli(): Promise<void> {
       policyNames: args.ablationPolicyNames,
       budgetSeconds: args.budgetSeconds,
       budgetsSeconds: args.budgetsSeconds,
-      seeds: args.seeds
+      seeds: args.seeds,
+      cpSat: args.cpSatUseNoOverlap2d ? { useNoOverlap2d: true } : undefined
     });
 
     if (args.artifactDir !== undefined) {
@@ -354,7 +362,8 @@ export async function runCrossModeBenchmarkCli(): Promise<void> {
     modes: args.productPromotionMatrix ? [...PRODUCT_WORKFLOW_PROMOTION_MODES] : args.modes,
     budgetSeconds: args.productPromotionMatrix ? undefined : args.budgetSeconds,
     budgetsSeconds: args.productPromotionMatrix ? [...PRODUCT_WORKFLOW_PROMOTION_BUDGETS_SECONDS] : args.budgetsSeconds,
-    seeds: args.productPromotionMatrix ? [...PRODUCT_WORKFLOW_PROMOTION_SEEDS] : args.seeds
+    seeds: args.productPromotionMatrix ? [...PRODUCT_WORKFLOW_PROMOTION_SEEDS] : args.seeds,
+    cpSat: args.cpSatUseNoOverlap2d ? { useNoOverlap2d: true } : undefined
   });
 
   if (args.artifactDir !== undefined) {

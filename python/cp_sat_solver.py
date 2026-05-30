@@ -207,6 +207,56 @@ def add_occupancy_constraints(model, cell_count, road_vars, service_vars, servic
         model.Add(sum(occupancy_terms[cell_id]) + road_vars[cell_id] <= 1)
 
 
+def add_no_overlap_2d_occupancy_constraints(
+    model,
+    id_to_cell,
+    road_vars,
+    service_vars,
+    service_candidates,
+    residential_vars,
+    residential_candidates,
+):
+    x_intervals = []
+    y_intervals = []
+
+    def add_optional_rectangle(name, present, r, c, rows, cols):
+        x_intervals.append(model.NewOptionalFixedSizeIntervalVar(c, cols, present, f"{name}_x"))
+        y_intervals.append(model.NewOptionalFixedSizeIntervalVar(r, rows, present, f"{name}_y"))
+
+    for cell_id, road_var in enumerate(road_vars):
+        r, c = id_to_cell[cell_id]
+        add_optional_rectangle(f"road_{cell_id}", road_var, r, c, 1, 1)
+
+    for candidate_index, variable in enumerate(service_vars):
+        candidate = service_candidates[candidate_index]
+        add_optional_rectangle(
+            f"service_{candidate_index}",
+            variable,
+            candidate["r"],
+            candidate["c"],
+            candidate["rows"],
+            candidate["cols"],
+        )
+
+    for candidate_index, variable in enumerate(residential_vars):
+        candidate = residential_candidates[candidate_index]
+        add_optional_rectangle(
+            f"residential_{candidate_index}",
+            variable,
+            candidate["r"],
+            candidate["c"],
+            candidate["rows"],
+            candidate["cols"],
+        )
+
+    model.AddNoOverlap2D(x_intervals, y_intervals)
+
+
+def use_no_overlap_2d_encoding(params) -> bool:
+    cp_sat_options = params.get("cpSat") or {}
+    return bool(cp_sat_options.get("useNoOverlap2d", False))
+
+
 def build_objective_policy(cell_count: int, service_candidate_count: int) -> ObjectivePolicy:
     max_tie_break_penalty = cell_count + service_candidate_count
     return ObjectivePolicy(
@@ -370,23 +420,36 @@ def build_cp_sat_candidate_bundle(grid, params, cell_to_id, placement_maps: Cand
 
 def add_cp_sat_layout_constraints(
     model,
+    params,
     cell_count,
     road_network,
+    id_to_cell,
     service_vars,
     service_candidates,
     residential_vars,
     residential_candidates,
     gate_access_analysis,
 ):
-    add_occupancy_constraints(
-        model,
-        cell_count,
-        road_network.road_vars,
-        service_vars,
-        service_candidates,
-        residential_vars,
-        residential_candidates,
-    )
+    if use_no_overlap_2d_encoding(params):
+        add_no_overlap_2d_occupancy_constraints(
+            model,
+            id_to_cell,
+            road_network.road_vars,
+            service_vars,
+            service_candidates,
+            residential_vars,
+            residential_candidates,
+        )
+    else:
+        add_occupancy_constraints(
+            model,
+            cell_count,
+            road_network.road_vars,
+            service_vars,
+            service_candidates,
+            residential_vars,
+            residential_candidates,
+        )
     add_border_access_constraints(
         model,
         road_network.road_vars,
@@ -455,8 +518,10 @@ def build_model(grid, params) -> BuiltCpSatModel:
 
     add_cp_sat_layout_constraints(
         model,
+        params,
         cell_count,
         road_network,
+        cell_index.id_to_cell,
         service_vars,
         candidates.service_candidates,
         residential_vars,

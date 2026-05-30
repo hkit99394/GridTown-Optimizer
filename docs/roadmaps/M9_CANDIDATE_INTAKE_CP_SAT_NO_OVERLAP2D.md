@@ -4,11 +4,13 @@ Date: 2026-05-30
 
 Owner: Solver roadmap
 
-Status: ready-to-implement
+Status: implemented and closed as diagnostics-only
 
 Candidate type: diagnostics
 
 Runtime default change proposed now: no
+
+Closeout: [M9_CP_SAT_NO_OVERLAP2D_CLOSEOUT.md](M9_CP_SAT_NO_OVERLAP2D_CLOSEOUT.md)
 
 ## Trigger
 
@@ -25,7 +27,7 @@ Observed problem:
 - Seed(s): `7,19,37`.
 - Mode(s): `cp-sat` first; `auto` only if CP-SAT movement could affect the default path.
 - Current behavior: CP-SAT is available as an exact backend, but geometry-native placement is not yet proven better than the current encoding on product workflow cases.
-- Artifact path(s): pending under `artifacts/candidate-evaluator-validity/<date>/cp-sat-no-overlap2d-*` and `artifacts/product-corpus/<date>/`.
+- Artifact path(s): temporary scorecard bundles were generated for the focused M9 slice and summarized in closeout; raw bundles are not kept in git.
 - Command(s): see Evidence Plan.
 
 Why this is worth investigating now:
@@ -173,6 +175,7 @@ npm run evidence:candidate-evaluator-validity -- \
   --decision=candidate-evaluator-validity \
   '--summary=CP-SAT NoOverlap2D preflight final-layout evaluator-validity run; no solver default changed.' \
   '--fresh-holdout-note=Uses L0 fresh holdout cases fresh-multi-anchor-service-island and fresh-typed-footprint-scarcity before promotion claims.' \
+  --cp-sat-no-overlap2d \
   --modes=cp-sat \
   --budgets=1,5 \
   --seeds=7,19,37 \
@@ -224,6 +227,31 @@ What result blocks the candidate:
 
 - Any final-layout evaluator invalidity, repeated CP-SAT setup instability, protected/fresh population regression, or CPU cost blowup without exactness value.
 
+## Closeout Summary
+
+Closeout date: 2026-05-30
+
+Decision:
+
+- Keep `cpSat.useNoOverlap2d` as an opt-in diagnostic only.
+- Do not promote it into default CP-SAT, Auto, LNS repair, or portfolio paths.
+
+Focused M9 evidence:
+
+- Rows: 48 candidate scorecard rows.
+- Evaluator-validity: 48 valid, 0 invalid, 0 population mismatches.
+- Baseline-repeat population stability: 48 ties.
+- Candidate population movement versus baseline: 44 ties, 3 improvements, 1 regression.
+- Repeatable blocker: `expansion-comparison-replay`, holdout, budget `1`, seed `37`, baseline `780`, baseline repeat `780`, candidate `710`, focused candidate rerun `710`.
+- Timing movement versus baseline repeat: median wall-clock `+2.9%`, median time-to-best `+26.9%`.
+- Model-size movement: median constraint-count delta `+359`.
+
+Why it closes diagnostics-only:
+
+- Layout validity passed, so the encoding is safe to keep behind an explicit flag.
+- A repeatable protected holdout population regression blocks promotion.
+- Aggregate time-to-best and model-size movement do not support the original hypothesis.
+
 ## Artifact Policy
 
 Artifact root:
@@ -257,7 +285,7 @@ Registry plan:
 
 - Trigger is real and current: yes.
 - Hypothesis is testable: yes.
-- Case list covers development and protected holdout: yes.
+- Case list covers development, protected holdout, and fresh holdout: yes.
 - Fresh holdout is present or explicitly planned: present through L0 for the first CP-SAT intake.
 - L0 smoke has passed for the first fresh pair.
 - Baseline-repeat control is same-slice: required before deltas.

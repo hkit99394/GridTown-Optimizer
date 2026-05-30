@@ -224,6 +224,7 @@ function summarizeCrossModeSolverParams(params: SolverParams): CrossModeBenchmar
       ["timeLimitSeconds", cpSat?.timeLimitSeconds],
       ["maxDeterministicTime", cpSat?.maxDeterministicTime],
       ["numWorkers", cpSat?.numWorkers],
+      ["useNoOverlap2d", cpSat?.useNoOverlap2d],
       ["randomSeed", cpSat?.randomSeed],
       ["randomizeSearch", cpSat?.randomizeSearch],
       ["relativeGapLimit", cpSat?.relativeGapLimit],

@@ -24,6 +24,7 @@ function testCandidateEvaluatorValidityScriptCreatesArtifacts() {
         "--run-id=candidate-evaluator-validity-test",
         "--decision=l0-automation-smoke",
         "--fresh-holdout-note=smoke nomination note",
+        "--cp-sat-no-overlap2d",
         "--modes=greedy",
         "--budgets=1",
         "--seeds=7",
@@ -40,6 +41,7 @@ function testCandidateEvaluatorValidityScriptCreatesArtifacts() {
     assert.equal(manifest.artifactDir, artifactDir);
     assert.equal(manifest.runId, "candidate-evaluator-validity-test");
     assert.equal(manifest.candidateId, "test-candidate");
+    assert.deepEqual(manifest.candidateOptions, { cpSatUseNoOverlap2d: true });
     assert.equal(manifest.rowCount, 2);
     assert.equal(manifest.validCount, 2);
     assert.equal(manifest.invalidCount, 0);
@@ -54,6 +56,7 @@ function testCandidateEvaluatorValidityScriptCreatesArtifacts() {
     const registryDraft = readJson(manifest.artifactPaths.registryEntryDraftJson);
     assert.equal(validity.schemaVersion, 1);
     assert.equal(validity.candidateId, "test-candidate");
+    assert.deepEqual(validity.candidateOptions, { cpSatUseNoOverlap2d: true });
     assert.deepEqual(validity.casesBySplit, {
       development: ["manual-layout-replay-warm-start"],
       holdout: ["expansion-comparison-replay"]
@@ -62,9 +65,11 @@ function testCandidateEvaluatorValidityScriptCreatesArtifacts() {
     assert.equal(validity.summary.validCount, 2);
     assert.equal(validity.summary.populationMismatchCount, 0);
     assert.equal(telemetry.source, "candidate-evaluator-validity");
+    assert.deepEqual(telemetry.candidateOptions, { cpSatUseNoOverlap2d: true });
     assert.equal(telemetry.suite.rowCount, 2);
     assert.equal(registryDraft.artifactType, "ablation-gate");
     assert.equal(registryDraft.decision, "l0-automation-smoke");
+    assert.deepEqual(registryDraft.model, { cpSatUseNoOverlap2d: true });
     assert.equal(registryDraft.splitStatus.protectedHoldout, true);
     assert.equal(registryDraft.splitStatus.freshHoldoutNote, "smoke nomination note");
     assert.deepEqual(registryDraft.seeds, [7]);

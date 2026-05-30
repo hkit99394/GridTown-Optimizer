@@ -27,6 +27,7 @@ function usage() {
     "  --decision=<text>           Registry draft decision. Default: candidate-evaluator-validity.",
     "  --summary=<text>            Registry draft summary.",
     "  --fresh-holdout-note=<text> Registry split note for fresh holdout nominations.",
+    "  --cp-sat-no-overlap2d       Run CP-SAT modes with the experimental NoOverlap2D occupancy encoding.",
     "  --force-artifact-dir        Reuse an existing artifact directory."
   ].join("\n");
 }
@@ -65,6 +66,7 @@ function parseArgs(argv) {
     budgets: [1],
     cases: undefined,
     decision: "candidate-evaluator-validity",
+    cpSatUseNoOverlap2d: false,
     forceArtifactDir: false,
     freshHoldoutNote: undefined,
     modes: ["auto", "greedy", "lns", "cp-sat"],
@@ -77,6 +79,10 @@ function parseArgs(argv) {
     }
     if (arg === "--force-artifact-dir") {
       args.forceArtifactDir = true;
+      continue;
+    }
+    if (arg === "--cp-sat-no-overlap2d") {
+      args.cpSatUseNoOverlap2d = true;
       continue;
     }
     const separator = arg.indexOf("=");
@@ -218,7 +224,7 @@ function buildRegistryEntry(validity, artifacts, options, command) {
       invalidRowCount: validity.summary.invalidCount,
       observedWallClockSeconds: validity.observedWallClockSeconds
     },
-    model: null,
+    model: validity.candidateOptions,
     decision: options.decision,
     summary:
       options.summary ??
@@ -264,6 +270,9 @@ async function main() {
         );
   const startedAt = performance.now();
   const rows = [];
+  const candidateOptions = {
+    cpSatUseNoOverlap2d: options.cpSatUseNoOverlap2d
+  };
 
   for (const benchmarkCase of corpus) {
     for (const budgetSeconds of options.budgets) {
@@ -271,6 +280,7 @@ async function main() {
         for (const mode of options.modes) {
           const params = benchmarkApi.buildCrossModeBenchmarkParams(benchmarkCase, mode, {
             budgetSeconds,
+            cpSat: options.cpSatUseNoOverlap2d ? { useNoOverlap2d: true } : undefined,
             seeds: [seed]
           });
           const rowStartedAt = performance.now();
@@ -315,6 +325,7 @@ async function main() {
     generatedAt,
     command,
     candidateId: options.candidateId,
+    candidateOptions,
     freshHoldoutNote: options.freshHoldoutNote ?? null,
     git: benchmarkApi.resolveExperimentRegistryGitMetadata(),
     hardware: benchmarkApi.captureExperimentRegistryHardwareMetadata(),
@@ -346,6 +357,7 @@ async function main() {
     generatedAt,
     command,
     candidateId: validity.candidateId,
+    candidateOptions: validity.candidateOptions,
     freshHoldoutNote: validity.freshHoldoutNote,
     git: validity.git,
     hardware: validity.hardware,
@@ -372,6 +384,7 @@ async function main() {
     },
     runId: registryEntryDraft.runId,
     candidateId: validity.candidateId,
+    candidateOptions: validity.candidateOptions,
     generatedAt,
     rowCount: validity.summary.rowCount,
     validCount: validity.summary.validCount,

@@ -24,6 +24,7 @@ const {
   maybeTestCpSatOptimizer,
   maybeTestCpSatUsesColumnZeroRoadAnchor,
   maybeTestCpSatAllowsMultiAnchorComponentsInOptimization,
+  maybeTestCpSatNoOverlap2dEncodingProducesValidSolution,
   maybeTestCpSatSyncCompatibility,
   testCpSatRejectsSemanticallyInvalidRawSolution,
   testCpSatNormalizesUnderReportedRawPopulation,
@@ -31,6 +32,7 @@ const {
   maybeTestCpSatBackendJsonContractSmoke,
   maybeTestCpSatBackendStreamingProtocol,
   maybeTestCpSatObjectivePolicyHelpers,
+  maybeTestCpSatNoOverlap2dModelEncodingHelpers,
   maybeTestCpSatRuntimeOptionHelpers,
   maybeTestCpSatWarmStartHelpers,
   maybeTestCpSatSnapshotResponseHelpers,
@@ -62,6 +64,7 @@ async function runCpSatOptimizerTests() {
   maybeTestCpSatBackendJsonContractSmoke();
   maybeTestCpSatBackendStreamingProtocol();
   maybeTestCpSatObjectivePolicyHelpers();
+  maybeTestCpSatNoOverlap2dModelEncodingHelpers();
   maybeTestCpSatRuntimeOptionHelpers();
   maybeTestCpSatWarmStartHelpers();
   maybeTestCpSatSnapshotResponseHelpers();
@@ -79,6 +82,7 @@ async function runCpSatOptimizerTests() {
   await maybeTestCpSatOptimizer();
   await maybeTestCpSatUsesColumnZeroRoadAnchor();
   await maybeTestCpSatAllowsMultiAnchorComponentsInOptimization();
+  await maybeTestCpSatNoOverlap2dEncodingProducesValidSolution();
   maybeTestCpSatSyncCompatibility();
   testCpSatRejectsSemanticallyInvalidRawSolution();
   testCpSatNormalizesUnderReportedRawPopulation();

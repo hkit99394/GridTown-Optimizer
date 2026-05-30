@@ -2,7 +2,7 @@
 
 Date: 2026-05-30
 
-Status: Satisfied for `cp-sat-no-overlap2d-preflight`
+Status: Satisfied for `cp-sat-no-overlap2d-preflight`; first candidate closed diagnostics-only
 
 ## Purpose
 
@@ -11,7 +11,7 @@ L0 is the small checkpoint between the middle-run evidence framework and the fir
 1. Fresh product holdout cases are nominated before candidate tuning starts.
 2. Candidate-specific final-layout evaluator validity has a runnable automation path.
 
-L0 does not promote solver behavior. It only decides whether a candidate is ready to leave intake and start implementation or benchmarking.
+L0 does not promote solver behavior. It only decides whether a candidate is ready to leave intake and start implementation or benchmarking. Candidate closeout still decides whether the candidate promotes, stays diagnostics-only, or is blocked.
 
 ## Fresh Holdout Nominations
 
@@ -81,7 +81,7 @@ L0 can close for a candidate when:
 
 ## Current Decision
 
-L0 is satisfied for `cp-sat-no-overlap2d-preflight`. The candidate may proceed to opt-in diagnostics implementation/preflight. Runtime defaults and promotion claims remain blocked until the candidate clears same-slice baseline-repeat controls, full evaluator validity, CPU/time-to-best review, and decision closeout.
+L0 is satisfied for `cp-sat-no-overlap2d-preflight`. The candidate did proceed to opt-in diagnostics and is now closed diagnostics-only in [M9_CP_SAT_NO_OVERLAP2D_CLOSEOUT.md](M9_CP_SAT_NO_OVERLAP2D_CLOSEOUT.md). Runtime defaults and promotion claims remain blocked for that candidate because the focused M9 slice found a repeatable protected holdout population regression.
 
 L0 smoke result on 2026-05-30:
 

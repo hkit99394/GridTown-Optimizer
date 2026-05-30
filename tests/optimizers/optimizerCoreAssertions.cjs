@@ -579,6 +579,14 @@ async function testDirectSolverEntrypointsValidateSharedInputs() {
     () =>
       solveCpSat(grid, {
         optimizer: "cp-sat",
+        cpSat: { useNoOverlap2d: "yes" }
+      }),
+    /Invalid solver input: CP-SAT experimental option cpSat\.useNoOverlap2d must be a boolean\./
+  );
+  assert.throws(
+    () =>
+      solveCpSat(grid, {
+        optimizer: "cp-sat",
         cpSat: {
           warmStartHint: {
             solution: {

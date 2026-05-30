@@ -223,8 +223,8 @@ Registry plan:
 
 - Trigger is real and current.
 - Hypothesis is testable.
-- Case list covers development and protected holdout.
-- Fresh holdout is present or explicitly planned.
+- Case list covers development, protected holdout, and candidate-relevant fresh holdout.
+- Fresh holdout is present for promotion-grade work or explicitly planned for diagnostics-only work.
 - Baseline-repeat control is same-slice.
 - Budgets and seeds match the promotion matrix or exceptions are justified.
 - Expected signal is measurable and has stop conditions.
@@ -240,11 +240,11 @@ Use these defaults unless the candidate explicitly justifies a narrower diagnost
 
 | Candidate Class           | Minimum First Slice                                                                  | Promotion-Grade Slice                                                                                                                     |
 | ------------------------- | ------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| Auto budget policy        | Product-corpus smoke plus same-slice `baseline,baseline-repeat,candidate` on `auto`. | Full product workflow corpus, `auto`, budgets `1,5,30,120`, seeds `7,19,37`, development plus protected holdout, fresh holdout plan.      |
-| Greedy seed or ranking    | Development split over `greedy` and `auto` when Auto can inherit the change.         | Development and protected holdout over `auto,greedy`, full promotion budgets and seeds, evaluator-validity rerun if final layouts change. |
-| LNS repair or seed policy | Focused rows with stage traces and baseline-repeat controls.                         | Full product workflow corpus over `auto,lns`, full promotion budgets and seeds, replay checks for replay workflow rows.                   |
-| CP-SAT tuning             | CP-SAT readiness check plus focused exact-pressure rows.                             | Product workflow development and protected holdout over `auto,cp-sat`, full promotion budgets and seeds, exact status/gap summary.        |
-| CP-SAT portfolio          | Single CP-SAT versus portfolio focused rows with CPU-budget metrics.                 | Portfolio efficiency signals showing wall-clock and CPU-normalized wins over single CP-SAT; no default change without CPU proof.          |
+| Auto budget policy        | Product-corpus smoke plus same-slice `baseline,baseline-repeat,candidate` on `auto`. | Full product workflow corpus, `auto`, budgets `1,5,30,120`, seeds `7,19,37`, development plus protected/fresh holdout.                    |
+| Greedy seed or ranking    | Development split over `greedy` and `auto` when Auto can inherit the change.         | Development, protected holdout, and fresh holdout over `auto,greedy`, full promotion budgets and seeds, evaluator-validity rerun.         |
+| LNS repair or seed policy | Focused rows with stage traces and baseline-repeat controls.                         | Full product workflow corpus over `auto,lns`, full promotion budgets and seeds, protected/fresh holdout coverage, replay checks.          |
+| CP-SAT tuning             | CP-SAT readiness check plus focused exact-pressure rows.                             | Product workflow development plus protected/fresh holdout over `auto,cp-sat`, full promotion budgets and seeds, exact status/gap summary. |
+| CP-SAT portfolio          | Single CP-SAT versus portfolio focused rows with CPU-budget metrics.                 | Portfolio efficiency signals over development plus protected/fresh holdout; no default change without CPU-normalized proof.               |
 | Learned guidance          | Offline or opt-in online diagnostic with leakage guard.                              | Protected and fresh online value coverage with inference overhead counted and no final-neutral override blockers.                         |
 
 ## Stop Conditions
@@ -263,7 +263,7 @@ Stop before broad sweeps when any of these is true:
 
 A completed intake makes a candidate ready to implement or benchmark. It does not make the candidate safe to promote.
 
-Promotion still requires the gates in `SOLVER_ROADMAP.md`: exact validation for final layouts, fixed seeds, promotion-matrix budgets, protected development and holdout scorecards, population or time-to-best lift, bounded regressions, CPU-budget efficiency, registered metadata, and an explicit decision closeout.
+Promotion still requires the gates in `SOLVER_ROADMAP.md`: exact validation for final layouts, candidate-specific evaluator validity, fixed seeds, promotion-matrix budgets, development/protected/fresh holdout scorecards or documented candidate-specific equivalents, population or time-to-best lift, bounded regressions, CPU-budget efficiency, registered metadata, and an explicit decision closeout.
 
 ## Decision
 

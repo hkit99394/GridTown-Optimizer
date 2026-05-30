@@ -259,6 +259,8 @@ export interface CpSatOptions {
   maxDeterministicTime?: number;
   /** CP-SAT worker count. Default 8. */
   numWorkers?: number;
+  /** Experimental occupancy encoding: replace per-cell occupancy constraints with a global NoOverlap2D constraint. */
+  useNoOverlap2d?: boolean;
   /** Fixed search seed for reproducibility. */
   randomSeed?: number;
   /** Enable randomized search decisions. Default false. */

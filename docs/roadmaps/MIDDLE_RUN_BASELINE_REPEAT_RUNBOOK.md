@@ -84,12 +84,12 @@ node dist/crossModeBenchmarkCli.js \
 
 Coverage:
 
-- 10 product workflow cases.
+- 12 product workflow cases.
 - 2 policies.
 - 1 mode.
 - 4 budgets.
 - 3 seeds.
-- 240 total Auto runs.
+- 288 total Auto runs.
 
 ## Candidate Same-Slice Control
 

@@ -4,7 +4,7 @@ Reviewed on 2026-05-30.
 
 Use this plan to refresh baseline product-workflow scorecards before interpreting solver candidates. It refreshes evidence only; it does not promote solver behavior.
 
-The current product workflow corpus has development and protected holdout splits. It does not yet have a separate fresh product holdout corpus, so this plan names the fresh-holdout storage convention and command shape, and treats execution as pending until fresh product cases are added or selected for a candidate.
+The current product workflow corpus has development and protected holdout splits. L0 has added the first two fresh product holdout cases inside the holdout split: `fresh-multi-anchor-service-island` and `fresh-typed-footprint-scarcity`. Treat them as a separate fresh refresh slice for candidate evidence even though the TypeScript split field remains `holdout`.
 
 ## Shared Setup
 
@@ -146,12 +146,12 @@ Coverage:
 
 ## Fresh Product Holdout Refresh
 
-Current status: not directly runnable against a separate fresh product holdout because the product workflow corpus only defines `development` and `holdout` splits today. When a candidate needs fresh product evidence, first add or nominate fresh product workflow cases, then run this command shape with those case names.
+Current status: runnable for the first L0 fresh product holdout pair. These cases are in the product workflow corpus as holdout cases, but they should be refreshed separately before candidate claims.
 
 ```bash
 FRESH_CASES=(
-  fresh-product-case-name-1
-  fresh-product-case-name-2
+  fresh-multi-anchor-service-island
+  fresh-typed-footprint-scarcity
 )
 
 ARTIFACT_DIR="${PRODUCT_ROOT}/baseline-fresh-holdout-1s-5s-30s-120s-seeds7-19-37-${RUN_STAMP}"
@@ -197,12 +197,12 @@ node dist/crossModeBenchmarkCli.js \
 
 Coverage:
 
-- 10 product workflow cases.
+- 12 product workflow cases.
 - 4 modes.
 - 4 budgets.
 - 3 seeds.
-- 120 case/budget/seed scorecards.
-- 480 mode runs.
+- 144 case/budget/seed scorecards.
+- 576 mode runs.
 
 ## Registry Closeout
 

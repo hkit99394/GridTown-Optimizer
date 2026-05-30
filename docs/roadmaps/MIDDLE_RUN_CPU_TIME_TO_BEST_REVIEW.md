@@ -35,9 +35,9 @@ Promotion reviewers should use these fields before opening raw trace bundles:
 | Product case summary              | `evidence-summary.json` `caseMetrics[]`                                             | Best-of-mode first feasible, time-to-best, Auto score, best score, best mode, and exact-gap context.   | Start here for current product posture before reading per-mode rows.                                  |
 | Fresh telemetry manifest          | Fresh product runs write `telemetry-manifest.json`                                  | Compact per-run timing, score, CPU, stage count, and stage telemetry.                                  | Required for new candidate evidence; the older 2026-04-30 bundle predates this standalone manifest.   |
 
-## Current Product Baseline Summary
+## Current Registered Product Baseline Summary
 
-The current product promotion artifact covers:
+The current registered 2026-04-30 product promotion artifact covers the pre-L0 10-case corpus. The next full refresh should cover 12 workflow cases, 144 case/budget/seed scorecards, and 576 mode runs after the two L0 fresh holdout cases.
 
 - 10 workflow cases, split into 5 development and 5 protected holdout cases.
 - 120 case/budget/seed scorecards.

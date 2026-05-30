@@ -18,6 +18,7 @@ function createFakeDomElement(overrides = {}) {
     parentElement: null,
     append() {},
     appendChild() {},
+    click() {},
     setAttribute() {},
     querySelectorAll() {
       return [];
@@ -202,16 +203,19 @@ function loadPlannerResultsModule(options = {}) {
   }).CityBuilderResults;
 }
 
-function loadPlannerPersistenceModule(localStorage = undefined) {
+function loadPlannerPersistenceModule(localStorage = undefined, browserApis = {}) {
+  const { URL: urlApi, createElement, Blob: BlobConstructor = globalThis.Blob } = browserApis;
   return loadBrowserModule("apps/planner-web/plannerPersistence.js", {
     window: {
       localStorage,
+      URL: urlApi,
       CityBuilderPersistenceValidation: loadPlannerPersistenceValidationModule()
     },
     context: {
+      Blob: BlobConstructor,
       document: {
         createElement() {
-          return createFakeDomElement();
+          return typeof createElement === "function" ? createElement() : createFakeDomElement();
         }
       }
     }

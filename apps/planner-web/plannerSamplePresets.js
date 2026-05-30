@@ -25,8 +25,8 @@
         label: "Open 8 x 8",
         grid: Array.from({ length: 8 }, () => Array(8).fill(1)),
         serviceTypes: [
-          { name: "Clinic", bonus: "80", size: "2x2", effective: "5x5", avail: "1" },
-          { name: "Park", bonus: "120", size: "2x3", effective: "6x6", avail: "1" }
+          { name: "Clinic", bonus: "80", size: "2x2", effective: "6x6", avail: "1" },
+          { name: "Park", bonus: "120", size: "2x3", effective: "6x7", avail: "1" }
         ],
         residentialTypes: [
           { name: "Townhouse", resident: "120/360", size: "2x2", avail: "4" },
@@ -47,8 +47,8 @@
           [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
         ],
         serviceTypes: [
-          { name: "Transit Hub", bonus: "210", size: "2x2", effective: "7x7", avail: "1" },
-          { name: "School", bonus: "130", size: "2x2", effective: "5x6", avail: "1" },
+          { name: "Transit Hub", bonus: "210", size: "2x2", effective: "8x8", avail: "1" },
+          { name: "School", bonus: "130", size: "2x2", effective: "6x6", avail: "1" },
           { name: "Market", bonus: "170", size: "3x2", effective: "7x6", avail: "1" }
         ],
         residentialTypes: [

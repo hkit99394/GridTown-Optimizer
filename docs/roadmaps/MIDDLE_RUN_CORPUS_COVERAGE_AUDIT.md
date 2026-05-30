@@ -1,0 +1,68 @@
+# Middle-Run Corpus Coverage Audit
+
+Reviewed on 2026-05-30.
+
+This audit covers the product-workflow corpus used before solver-default promotion discussions. It is a coverage document only; it does not promote any solver behavior.
+
+Primary sources:
+
+- `src/packages/benchmarks/crossModeProductWorkflows.ts`
+- `artifacts/product-corpus/2026-04-30/promotion-1s-5s-30s-120s-seeds7-19-37/evidence-summary.json`
+- `artifacts/product-corpus/2026-04-30/promotion-1s-5s-30s-120s-seeds7-19-37/registry-entry-draft.json`
+
+## Status Vocabulary
+
+| Status         | Meaning                                                                                               |
+| -------------- | ----------------------------------------------------------------------------------------------------- |
+| Covered        | Current product-corpus evidence is enough for the stated middle-run coverage purpose.                 |
+| Weak coverage  | Evidence exists, but a candidate aimed at this area needs more development, protected, or fresh rows. |
+| Missing        | No current product-corpus evidence covers the area.                                                   |
+| Not applicable | The area is useful context or smoke coverage, but not a promotion pressure family by itself.          |
+
+## Split And Matrix Coverage
+
+| Axis                    | Status        | Current Evidence                                                                                                                                                                                                  | Gap / Owner                                                                                                                                                |
+| ----------------------- | ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Development split       | Covered       | 5 cases: `typed-housing-single`, `typed-footprint-pressure`, `seeded-service-anchor-pressure`, `road-semantics-service-pressure`, `manual-layout-replay-warm-start`.                                              | Keep stable as the candidate-development slice. Add family-specific development analogs when a candidate targets a holdout-only family.                    |
+| Protected holdout split | Covered       | 5 cases: `row0-corridor-repair-pressure`, `service-local-neighborhood`, `road-semantics-gate-choke`, `multi-anchor-road-components`, `expansion-comparison-replay`.                                               | Keep protected from tuning. Add family-specific holdout analogs when a candidate targets a development-only family.                                        |
+| Fresh product holdout   | Weak coverage | Learned-LNS tracks have fresh-pressure holdout artifacts, but the product-workflow cross-mode promotion corpus has no separate fresh product holdout set.                                                         | M6 should name the fresh-holdout refresh command and storage path. M9 candidate intake must require a fresh-holdout plan for default-path candidates.      |
+| Modes                   | Covered       | Promotion artifact covers `auto`, `greedy`, `lns`, and `cp-sat`; `missingModes` is empty.                                                                                                                         | Keep all four modes in promotion matrix runs unless a reviewed candidate is explicitly mode-scoped.                                                        |
+| Budgets and seeds       | Covered       | Promotion artifact covers budgets `1,5,30,120` and seeds `7,19,37`; expected scorecards `120`, actual scorecards `120`, missing scorecards `0`.                                                                   | M5 should provide copy-paste same-slice baseline-repeat commands for these exact budgets and seeds.                                                        |
+| Replay workflows        | Covered       | `manual-layout-replay-warm-start` and `expansion-comparison-replay` both include replay metrics through `/api/layout/evaluate`; both are valid with zero validation errors and zero population delta from report. | M7 should refresh evaluator-validity/replay checks before any candidate decision closeout.                                                                 |
+| Exactness and gaps      | Covered       | Case metrics report CP-SAT statuses and minimum exact gap fields. Current promotion artifact includes `OPTIMAL` and `FEASIBLE` CP-SAT statuses depending on budget/case, with minimum exact gap observed as `0`.  | M8 should summarize CPU, wall-clock, first-feasible, and time-to-best alongside population deltas so reviewers do not inspect raw JSON bundles by default. |
+
+## Workflow Family Coverage
+
+| Workflow Family        | Development Cases                 | Protected Holdout Cases         | Fresh Holdout Cases | Status         | Gap / Owner                                                                                                               |
+| ---------------------- | --------------------------------- | ------------------------------- | ------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `service-pressure`     | `road-semantics-service-pressure` | `service-local-neighborhood`    | None                | Covered        | Best current family coverage. Fresh product pressure case belongs in M6 refresh planning before default-path promotion.   |
+| `manual-layout-replay` | `manual-layout-replay-warm-start` | None                            | None                | Weak coverage  | Add a protected manual-layout replay case if a candidate changes saved-layout, warm-start, or manual-edit reuse behavior. |
+| `expansion-comparison` | None                              | `expansion-comparison-replay`   | None                | Weak coverage  | Add a development expansion-comparison case if a candidate is tuned against expansion workflows.                          |
+| `anchor-service`       | `seeded-service-anchor-pressure`  | None                            | None                | Weak coverage  | Add a protected anchor-service analog before promoting a candidate whose lift is concentrated in seeded service anchors.  |
+| `corridor`             | None                              | `row0-corridor-repair-pressure` | None                | Weak coverage  | Add a development corridor-pressure analog before interpreting corridor-only holdout wins as broad signal.                |
+| `footprint-pressure`   | `typed-footprint-pressure`        | None                            | None                | Weak coverage  | Add protected footprint pressure before promoting footprint-specific placement or repair changes.                         |
+| `gate`                 | None                              | `road-semantics-gate-choke`     | None                | Weak coverage  | Add development gate-pressure coverage before using gate-only holdout movement for tuning.                                |
+| `multi-anchor`         | None                              | `multi-anchor-road-components`  | None                | Weak coverage  | Add development multi-anchor coverage before promoting road-component or anchor-policy changes.                           |
+| `solver-smoke`         | `typed-housing-single`            | None                            | None                | Not applicable | Keep as a tiny smoke and sanity case. Do not use it as promotion pressure evidence by itself.                             |
+
+## Case-Level Coverage
+
+| Case                              | Split       | Workflow Tags          | Matrix Coverage             | Notes                                                  |
+| --------------------------------- | ----------- | ---------------------- | --------------------------- | ------------------------------------------------------ |
+| `typed-housing-single`            | Development | `solver-smoke`         | 4 modes, 4 budgets, 3 seeds | Tiny smoke. Not promotion pressure by itself.          |
+| `typed-footprint-pressure`        | Development | `footprint-pressure`   | 4 modes, 4 budgets, 3 seeds | Development-only pressure family.                      |
+| `seeded-service-anchor-pressure`  | Development | `anchor-service`       | 4 modes, 4 budgets, 3 seeds | Development-only seeded service/anchor family.         |
+| `road-semantics-service-pressure` | Development | `service-pressure`     | 4 modes, 4 budgets, 3 seeds | Development side of current service-pressure coverage. |
+| `manual-layout-replay-warm-start` | Development | `manual-layout-replay` | 4 modes, 4 budgets, 3 seeds | Replay case with valid `/api/layout/evaluate` metrics. |
+| `row0-corridor-repair-pressure`   | Holdout     | `corridor`             | 4 modes, 4 budgets, 3 seeds | Protected holdout corridor family.                     |
+| `service-local-neighborhood`      | Holdout     | `service-pressure`     | 4 modes, 4 budgets, 3 seeds | Holdout side of current service-pressure coverage.     |
+| `road-semantics-gate-choke`       | Holdout     | `gate`                 | 4 modes, 4 budgets, 3 seeds | Protected holdout gate/road-semantics family.          |
+| `multi-anchor-road-components`    | Holdout     | `multi-anchor`         | 4 modes, 4 budgets, 3 seeds | Protected holdout multi-anchor road-component family.  |
+| `expansion-comparison-replay`     | Holdout     | `expansion-comparison` | 4 modes, 4 budgets, 3 seeds | Replay case with valid `/api/layout/evaluate` metrics. |
+
+## Promotion Use
+
+- Broad `auto` default-path candidates may use the current product workflow matrix as the protected development/holdout base, but reviewers must call out single-split family concentration when it appears.
+- Family-targeted candidates need either a development analog, a protected holdout analog, or a fresh product holdout case before promotion claims should be treated as durable.
+- Learned-LNS fresh-pressure holdout artifacts are useful track-specific evidence, but they do not replace a fresh product-workflow cross-mode holdout.
+- Fresh product holdout planning is carried forward to M6, and candidate-specific fresh-holdout requirements are carried forward to M9.

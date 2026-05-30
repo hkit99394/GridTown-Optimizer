@@ -43,7 +43,7 @@ Short version:
 - CP-SAT road semantics match the formal per-component anchor rule.
 - Auto uses trace-tuned LNS budget defaults while preserving the measured `0.2` CP-SAT reserve default and explicit caller overrides.
 - Cross-mode scorecards, product-corpus artifacts, telemetry manifests, workflow replay artifacts, and experiment-registry draft paths exist for promotion evidence.
-- Capacity-normalized benchmark metrics now report optimistic population bounds, capacity utilization, gap-to-capacity, and gap-closed-per-second. These metrics are context only, not proof of attainable population.
+- Capacity-normalized benchmark metrics now report optimistic population bounds, capacity utilization, gap-to-capacity, and gap-closed-per-second. These metrics are context only, not proof of attainable population. A separate hard population cap applies only when it is derived from the available residential inventory and each type's max population; if an exactly validated layout reaches that hard cap, no higher-population solution exists for the current objective.
 
 ## Current Solver Posture
 
@@ -84,6 +84,8 @@ Use this checklist before treating any solver branch as a default-path candidate
 
 Initial audit on 2026-05-29: the evidence framework is ready for middle-run work. The product workflow corpus has explicit development and holdout coverage, `quality:evidence` covers registry/artifact/product-corpus contracts, and the artifact policy separates durable summaries/manifests from large raw evidence bundles. No default-path promotion candidate is active.
 
+Corpus coverage audit on 2026-05-30: [MIDDLE_RUN_CORPUS_COVERAGE_AUDIT.md](MIDDLE_RUN_CORPUS_COVERAGE_AUDIT.md) records the current product-workflow split, mode, budget, seed, replay, and workflow-family coverage. Development and protected holdout coverage are promotion-matrix ready; fresh product holdout coverage remains weak and must be planned before default-path promotion claims.
+
 1. **Baseline freshness:** run `npm run quality:evidence` and a current product-corpus scorecard smoke before interpreting candidate results.
 2. **Corpus coverage:** confirm development, protected holdout, fresh holdout, workflow tags, evaluator-validity replay, CPU cost, and time-to-best fields are present for the candidate's comparison family.
 3. **Same-slice controls:** run baseline-repeat controls on the same cases, budgets, seeds, hardware, and command shape before broad scorecard interpretation.
@@ -100,7 +102,7 @@ These items make the evidence system current enough that solver candidates can b
 | M1  | Done    | Evidence readiness audit        | Confirmed evidence gate, registry, product-corpus split checks, and artifact policy posture | `npm run quality:evidence` passes, registry checks pass, and product-corpus scorecard smoke runs without creating promotion claims.                |
 | M2  | Done    | Middle-run operating checklist  | Checklist above                                                                             | Baseline freshness, corpus coverage, same-slice controls, promotion matrix, artifact policy, and decision closeout are written in the active plan. |
 | M3  | Done    | Product-corpus freshness smoke  | Small current scorecard smoke over product workflow cases                                   | Current corpus list is checked and at least one development workflow smoke runs across `auto`, `greedy`, `lns`, and `cp-sat`.                      |
-| M4  | Pending | Corpus coverage audit           | Coverage table for development, protected holdout, fresh holdout, workflow tags, and gaps   | Every promotion-relevant workflow family has an owner status: covered, weak coverage, missing, or not applicable.                                  |
+| M4  | Done    | Corpus coverage audit           | [MIDDLE_RUN_CORPUS_COVERAGE_AUDIT.md](MIDDLE_RUN_CORPUS_COVERAGE_AUDIT.md)                  | Every promotion-relevant workflow family has an owner status: covered, weak coverage, missing, or not applicable.                                  |
 | M5  | Pending | Baseline-repeat control runbook | Copy-paste commands for same-slice baseline-repeat controls                                 | Candidate reviewers can run baseline-repeat on the same cases, budgets, seeds, hardware, and command shape before broad scorecard interpretation.  |
 | M6  | Pending | Baseline scorecard refresh plan | Commands and storage plan for product-corpus baseline refresh                               | The plan names smoke, development, protected holdout, fresh holdout, and full promotion-matrix commands plus artifact locations.                   |
 | M7  | Pending | Evaluator-validity replay check | Current replay/evaluator-validity summary for product workflows                             | Product workflow scorecards report final-layout validity and replay compatibility clearly enough to block invalid promotion claims.                |
@@ -198,5 +200,6 @@ Any default-path solver change must include:
 - Tiny saturated cases are smoke tests, not promotion evidence.
 - Dynamic programming is a bounded exact subroutine for tiny windows and oracles, not a replacement for Greedy/LNS/CP-SAT.
 - CPU parallelism must be measured against both wall-clock and CPU-second cost.
-- Population upper bounds are optimistic benchmark context, not proven optima; do not use unreachable gaps as promotion blockers without exact proof or stronger feasibility bounds.
+- Hard population cap and optimistic capacity gap are different signals. If the cap is the true residential-inventory max and the final layout is validator-valid at that population, treat the current population objective as solved optimally and stop searching unless a secondary objective or explicit post-cap polish window is requested.
+- Population upper bounds and capacity gaps from benchmark context are not proven optima; do not use unreachable gaps as promotion blockers without exact proof, a hard residential-inventory cap hit, or stronger feasibility bounds.
 - Distributed solving should wait until hosting requires durable jobs or single-machine policy is no longer the bottleneck.

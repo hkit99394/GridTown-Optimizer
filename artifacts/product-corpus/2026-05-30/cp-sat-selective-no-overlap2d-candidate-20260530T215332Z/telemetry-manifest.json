@@ -1,0 +1,5509 @@
+{
+  "schemaVersion": 1,
+  "source": "cross-mode-benchmark",
+  "generatedAt": "2026-05-30T21:58:17.910Z",
+  "command": "node dist/crossModeBenchmarkCli.js --product-corpus --product-artifact-dir=artifacts/product-corpus/2026-05-30/cp-sat-selective-no-overlap2d-candidate-20260530T215332Z --product-run-id=product-corpus-scorecard-20260530T215332Z-cp-sat-selective-no-overlap2d-candidate --product-decision=benchmark-evidence-only '--product-summary=Selective CP-SAT NoOverlap2D focused slice using workflow-tag guard gate,multi-anchor,footprint-pressure; no solver default changed.' --cp-sat-no-overlap2d-tags=gate,multi-anchor,footprint-pressure --modes=cp-sat --budgets=1,5 --seeds=7,19,37 --json road-semantics-service-pressure typed-footprint-pressure road-semantics-gate-choke multi-anchor-road-components expansion-comparison-replay fresh-multi-anchor-service-island fresh-typed-footprint-scarcity fresh-expansion-corridor-service",
+  "git": {
+    "commit": "1e04bb555b71e4610ba0f80c984d1b9588b2c895",
+    "branch": "features/next-stage"
+  },
+  "hardware": {
+    "captured": true,
+    "platform": "darwin",
+    "arch": "arm64",
+    "cpuModel": "Apple M1 Pro",
+    "logicalCpuCount": 10,
+    "memoryBytes": 17179869184,
+    "totalMemoryBytes": 17179869184,
+    "gpuUsed": false
+  },
+  "suite": {
+    "caseCount": 8,
+    "modeCount": 1,
+    "totalRuns": 48,
+    "selectedCaseNames": [
+      "road-semantics-service-pressure",
+      "typed-footprint-pressure",
+      "road-semantics-gate-choke",
+      "multi-anchor-road-components",
+      "expansion-comparison-replay",
+      "fresh-multi-anchor-service-island",
+      "fresh-typed-footprint-scarcity",
+      "fresh-expansion-corridor-service"
+    ],
+    "modes": [
+      "cp-sat"
+    ],
+    "budgetsSeconds": [
+      1,
+      5
+    ],
+    "seeds": [
+      7,
+      19,
+      37
+    ]
+  },
+  "runs": [
+    {
+      "schemaVersion": 1,
+      "runId": "road-semantics-service-pressure:cp-sat:budget-1:seed-7",
+      "caseName": "road-semantics-service-pressure",
+      "split": "development",
+      "workflowTags": [
+        "service-pressure"
+      ],
+      "problemSizeBand": "small",
+      "mode": "cp-sat",
+      "optimizer": "cp-sat",
+      "budgetSeconds": 1,
+      "seed": 7,
+      "solverParams": {
+        "optimizer": "cp-sat",
+        "auto": null,
+        "greedy": {
+          "timeLimitSeconds": 1,
+          "randomSeed": 7,
+          "localSearch": true,
+          "restarts": 2,
+          "serviceRefineIterations": 1,
+          "serviceRefineCandidateLimit": 12,
+          "exhaustiveServiceSearch": false,
+          "serviceExactPoolLimit": 8,
+          "serviceExactMaxCombinations": 256
+        },
+        "lns": null,
+        "cpSat": {
+          "timeLimitSeconds": 1,
+          "maxDeterministicTime": 1,
+          "numWorkers": 1,
+          "useNoOverlap2d": false,
+          "randomSeed": 7,
+          "randomizeSearch": false,
+          "progressIntervalSeconds": 0.5
+        },
+        "portfolio": null
+      },
+      "timing": {
+        "wallClockSeconds": 1.592,
+        "firstFeasibleSeconds": 0.464,
+        "firstImprovementSeconds": 0.464,
+        "bestScoreSeconds": 0.464
+      },
+      "score": {
+        "finalPopulation": 740,
+        "bestScore": 740,
+        "cpSatStatus": "FEASIBLE",
+        "exactGap": 0,
+        "attainment": {
+          "populationCapacityUpperBound": 800,
+          "populationGapToCapacity": 60,
+          "capacityUtilization": 0.925,
+          "gapClosedVsZero": 0.925,
+          "baselinePopulation": 0,
+          "gapClosedVsBaseline": 0.925,
+          "gapClosedPerSecond": 0.581
+        },
+        "lnsStopReason": null,
+        "autoStopReason": null,
+        "stoppedByUser": false
+      },
+      "cpu": {
+        "workerCpuBudgetSeconds": 1,
+        "observedWorkerCpuSeconds": 0.931
+      },
+      "stageCount": 1,
+      "stages": [
+        {
+          "kind": "cp-sat",
+          "stage": "cp-sat",
+          "stageIndex": null,
+          "cycleIndex": null,
+          "phase": null,
+          "iteration": null,
+          "status": "FEASIBLE",
+          "operatorOutcome": "FEASIBLE",
+          "startedAtSeconds": null,
+          "wallClockSeconds": 0.931,
+          "completedAtSeconds": 0.931,
+          "scoreBefore": null,
+          "scoreAfter": 740,
+          "improvement": null,
+          "exactGap": 0,
+          "cpSatStatus": "FEASIBLE",
+          "candidateCounts": {
+            "serviceCandidates": 96,
+            "residentialCandidates": 65,
+            "allowedCells": 36,
+            "roadEligibleCells": 36,
+            "roadVariables": 36,
+            "directedEdges": 120
+          },
+          "cpSatModelSize": {
+            "variableCount": 407,
+            "booleanVariableCount": 208,
+            "constraintCount": 751,
+            "allowedCellCount": 36,
+            "roadEligibleCellCount": 36,
+            "roadVariableCount": 36,
+            "rootVariableCount": 11,
+            "directedEdgeCount": 120,
+            "serviceCandidateCount": 96,
+            "residentialCandidateCount": 65,
+            "populationVariableCount": 65
+          }
+        }
+      ]
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "road-semantics-service-pressure:cp-sat:budget-1:seed-19",
+      "caseName": "road-semantics-service-pressure",
+      "split": "development",
+      "workflowTags": [
+        "service-pressure"
+      ],
+      "problemSizeBand": "small",
+      "mode": "cp-sat",
+      "optimizer": "cp-sat",
+      "budgetSeconds": 1,
+      "seed": 19,
+      "solverParams": {
+        "optimizer": "cp-sat",
+        "auto": null,
+        "greedy": {
+          "timeLimitSeconds": 1,
+          "randomSeed": 19,
+          "localSearch": true,
+          "restarts": 2,
+          "serviceRefineIterations": 1,
+          "serviceRefineCandidateLimit": 12,
+          "exhaustiveServiceSearch": false,
+          "serviceExactPoolLimit": 8,
+          "serviceExactMaxCombinations": 256
+        },
+        "lns": null,
+        "cpSat": {
+          "timeLimitSeconds": 1,
+          "maxDeterministicTime": 1,
+          "numWorkers": 1,
+          "useNoOverlap2d": false,
+          "randomSeed": 19,
+          "randomizeSearch": false,
+          "progressIntervalSeconds": 0.5
+        },
+        "portfolio": null
+      },
+      "timing": {
+        "wallClockSeconds": 1.473,
+        "firstFeasibleSeconds": 0.55,
+        "firstImprovementSeconds": 0.55,
+        "bestScoreSeconds": 0.55
+      },
+      "score": {
+        "finalPopulation": 740,
+        "bestScore": 740,
+        "cpSatStatus": "FEASIBLE",
+        "exactGap": 0,
+        "attainment": {
+          "populationCapacityUpperBound": 800,
+          "populationGapToCapacity": 60,
+          "capacityUtilization": 0.925,
+          "gapClosedVsZero": 0.925,
+          "baselinePopulation": 0,
+          "gapClosedVsBaseline": 0.925,
+          "gapClosedPerSecond": 0.628
+        },
+        "lnsStopReason": null,
+        "autoStopReason": null,
+        "stoppedByUser": false
+      },
+      "cpu": {
+        "workerCpuBudgetSeconds": 1,
+        "observedWorkerCpuSeconds": 1
+      },
+      "stageCount": 1,
+      "stages": [
+        {
+          "kind": "cp-sat",
+          "stage": "cp-sat",
+          "stageIndex": null,
+          "cycleIndex": null,
+          "phase": null,
+          "iteration": null,
+          "status": "FEASIBLE",
+          "operatorOutcome": "FEASIBLE",
+          "startedAtSeconds": null,
+          "wallClockSeconds": 1,
+          "completedAtSeconds": 1,
+          "scoreBefore": null,
+          "scoreAfter": 740,
+          "improvement": null,
+          "exactGap": 0,
+          "cpSatStatus": "FEASIBLE",
+          "candidateCounts": {
+            "serviceCandidates": 96,
+            "residentialCandidates": 65,
+            "allowedCells": 36,
+            "roadEligibleCells": 36,
+            "roadVariables": 36,
+            "directedEdges": 120
+          },
+          "cpSatModelSize": {
+            "variableCount": 407,
+            "booleanVariableCount": 208,
+            "constraintCount": 751,
+            "allowedCellCount": 36,
+            "roadEligibleCellCount": 36,
+            "roadVariableCount": 36,
+            "rootVariableCount": 11,
+            "directedEdgeCount": 120,
+            "serviceCandidateCount": 96,
+            "residentialCandidateCount": 65,
+            "populationVariableCount": 65
+          }
+        }
+      ]
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "road-semantics-service-pressure:cp-sat:budget-1:seed-37",
+      "caseName": "road-semantics-service-pressure",
+      "split": "development",
+      "workflowTags": [
+        "service-pressure"
+      ],
+      "problemSizeBand": "small",
+      "mode": "cp-sat",
+      "optimizer": "cp-sat",
+      "budgetSeconds": 1,
+      "seed": 37,
+      "solverParams": {
+        "optimizer": "cp-sat",
+        "auto": null,
+        "greedy": {
+          "timeLimitSeconds": 1,
+          "randomSeed": 37,
+          "localSearch": true,
+          "restarts": 2,
+          "serviceRefineIterations": 1,
+          "serviceRefineCandidateLimit": 12,
+          "exhaustiveServiceSearch": false,
+          "serviceExactPoolLimit": 8,
+          "serviceExactMaxCombinations": 256
+        },
+        "lns": null,
+        "cpSat": {
+          "timeLimitSeconds": 1,
+          "maxDeterministicTime": 1,
+          "numWorkers": 1,
+          "useNoOverlap2d": false,
+          "randomSeed": 37,
+          "randomizeSearch": false,
+          "progressIntervalSeconds": 0.5
+        },
+        "portfolio": null
+      },
+      "timing": {
+        "wallClockSeconds": 1.348,
+        "firstFeasibleSeconds": 0.717,
+        "firstImprovementSeconds": 0.717,
+        "bestScoreSeconds": 0.717
+      },
+      "score": {
+        "finalPopulation": 740,
+        "bestScore": 740,
+        "cpSatStatus": "FEASIBLE",
+        "exactGap": 0,
+        "attainment": {
+          "populationCapacityUpperBound": 800,
+          "populationGapToCapacity": 60,
+          "capacityUtilization": 0.925,
+          "gapClosedVsZero": 0.925,
+          "baselinePopulation": 0,
+          "gapClosedVsBaseline": 0.925,
+          "gapClosedPerSecond": 0.686
+        },
+        "lnsStopReason": null,
+        "autoStopReason": null,
+        "stoppedByUser": false
+      },
+      "cpu": {
+        "workerCpuBudgetSeconds": 1,
+        "observedWorkerCpuSeconds": 0.895
+      },
+      "stageCount": 1,
+      "stages": [
+        {
+          "kind": "cp-sat",
+          "stage": "cp-sat",
+          "stageIndex": null,
+          "cycleIndex": null,
+          "phase": null,
+          "iteration": null,
+          "status": "FEASIBLE",
+          "operatorOutcome": "FEASIBLE",
+          "startedAtSeconds": null,
+          "wallClockSeconds": 0.895,
+          "completedAtSeconds": 0.895,
+          "scoreBefore": null,
+          "scoreAfter": 740,
+          "improvement": null,
+          "exactGap": 0,
+          "cpSatStatus": "FEASIBLE",
+          "candidateCounts": {
+            "serviceCandidates": 96,
+            "residentialCandidates": 65,
+            "allowedCells": 36,
+            "roadEligibleCells": 36,
+            "roadVariables": 36,
+            "directedEdges": 120
+          },
+          "cpSatModelSize": {
+            "variableCount": 407,
+            "booleanVariableCount": 208,
+            "constraintCount": 751,
+            "allowedCellCount": 36,
+            "roadEligibleCellCount": 36,
+            "roadVariableCount": 36,
+            "rootVariableCount": 11,
+            "directedEdgeCount": 120,
+            "serviceCandidateCount": 96,
+            "residentialCandidateCount": 65,
+            "populationVariableCount": 65
+          }
+        }
+      ]
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "road-semantics-service-pressure:cp-sat:budget-5:seed-7",
+      "caseName": "road-semantics-service-pressure",
+      "split": "development",
+      "workflowTags": [
+        "service-pressure"
+      ],
+      "problemSizeBand": "small",
+      "mode": "cp-sat",
+      "optimizer": "cp-sat",
+      "budgetSeconds": 5,
+      "seed": 7,
+      "solverParams": {
+        "optimizer": "cp-sat",
+        "auto": null,
+        "greedy": {
+          "timeLimitSeconds": 5,
+          "randomSeed": 7,
+          "localSearch": true,
+          "restarts": 2,
+          "serviceRefineIterations": 1,
+          "serviceRefineCandidateLimit": 12,
+          "exhaustiveServiceSearch": false,
+          "serviceExactPoolLimit": 8,
+          "serviceExactMaxCombinations": 256
+        },
+        "lns": null,
+        "cpSat": {
+          "timeLimitSeconds": 5,
+          "maxDeterministicTime": 5,
+          "numWorkers": 1,
+          "useNoOverlap2d": false,
+          "randomSeed": 7,
+          "randomizeSearch": false,
+          "progressIntervalSeconds": 0.5
+        },
+        "portfolio": null
+      },
+      "timing": {
+        "wallClockSeconds": 1.816,
+        "firstFeasibleSeconds": 0.456,
+        "firstImprovementSeconds": 0.456,
+        "bestScoreSeconds": 0.456
+      },
+      "score": {
+        "finalPopulation": 740,
+        "bestScore": 740,
+        "cpSatStatus": "OPTIMAL",
+        "exactGap": 0,
+        "attainment": {
+          "populationCapacityUpperBound": 800,
+          "populationGapToCapacity": 60,
+          "capacityUtilization": 0.925,
+          "gapClosedVsZero": 0.925,
+          "baselinePopulation": 0,
+          "gapClosedVsBaseline": 0.925,
+          "gapClosedPerSecond": 0.509
+        },
+        "lnsStopReason": null,
+        "autoStopReason": null,
+        "stoppedByUser": false
+      },
+      "cpu": {
+        "workerCpuBudgetSeconds": 5,
+        "observedWorkerCpuSeconds": 1.368
+      },
+      "stageCount": 1,
+      "stages": [
+        {
+          "kind": "cp-sat",
+          "stage": "cp-sat",
+          "stageIndex": null,
+          "cycleIndex": null,
+          "phase": null,
+          "iteration": null,
+          "status": "OPTIMAL",
+          "operatorOutcome": "OPTIMAL",
+          "startedAtSeconds": null,
+          "wallClockSeconds": 1.368,
+          "completedAtSeconds": 1.368,
+          "scoreBefore": null,
+          "scoreAfter": 740,
+          "improvement": null,
+          "exactGap": 0,
+          "cpSatStatus": "OPTIMAL",
+          "candidateCounts": {
+            "serviceCandidates": 96,
+            "residentialCandidates": 65,
+            "allowedCells": 36,
+            "roadEligibleCells": 36,
+            "roadVariables": 36,
+            "directedEdges": 120
+          },
+          "cpSatModelSize": {
+            "variableCount": 407,
+            "booleanVariableCount": 208,
+            "constraintCount": 751,
+            "allowedCellCount": 36,
+            "roadEligibleCellCount": 36,
+            "roadVariableCount": 36,
+            "rootVariableCount": 11,
+            "directedEdgeCount": 120,
+            "serviceCandidateCount": 96,
+            "residentialCandidateCount": 65,
+            "populationVariableCount": 65
+          }
+        }
+      ]
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "road-semantics-service-pressure:cp-sat:budget-5:seed-19",
+      "caseName": "road-semantics-service-pressure",
+      "split": "development",
+      "workflowTags": [
+        "service-pressure"
+      ],
+      "problemSizeBand": "small",
+      "mode": "cp-sat",
+      "optimizer": "cp-sat",
+      "budgetSeconds": 5,
+      "seed": 19,
+      "solverParams": {
+        "optimizer": "cp-sat",
+        "auto": null,
+        "greedy": {
+          "timeLimitSeconds": 5,
+          "randomSeed": 19,
+          "localSearch": true,
+          "restarts": 2,
+          "serviceRefineIterations": 1,
+          "serviceRefineCandidateLimit": 12,
+          "exhaustiveServiceSearch": false,
+          "serviceExactPoolLimit": 8,
+          "serviceExactMaxCombinations": 256
+        },
+        "lns": null,
+        "cpSat": {
+          "timeLimitSeconds": 5,
+          "maxDeterministicTime": 5,
+          "numWorkers": 1,
+          "useNoOverlap2d": false,
+          "randomSeed": 19,
+          "randomizeSearch": false,
+          "progressIntervalSeconds": 0.5
+        },
+        "portfolio": null
+      },
+      "timing": {
+        "wallClockSeconds": 2.915,
+        "firstFeasibleSeconds": 1.834,
+        "firstImprovementSeconds": 1.834,
+        "bestScoreSeconds": 1.834
+      },
+      "score": {
+        "finalPopulation": 740,
+        "bestScore": 740,
+        "cpSatStatus": "OPTIMAL",
+        "exactGap": 0,
+        "attainment": {
+          "populationCapacityUpperBound": 800,
+          "populationGapToCapacity": 60,
+          "capacityUtilization": 0.925,
+          "gapClosedVsZero": 0.925,
+          "baselinePopulation": 0,
+          "gapClosedVsBaseline": 0.925,
+          "gapClosedPerSecond": 0.317
+        },
+        "lnsStopReason": null,
+        "autoStopReason": null,
+        "stoppedByUser": false
+      },
+      "cpu": {
+        "workerCpuBudgetSeconds": 5,
+        "observedWorkerCpuSeconds": 2.452
+      },
+      "stageCount": 1,
+      "stages": [
+        {
+          "kind": "cp-sat",
+          "stage": "cp-sat",
+          "stageIndex": null,
+          "cycleIndex": null,
+          "phase": null,
+          "iteration": null,
+          "status": "OPTIMAL",
+          "operatorOutcome": "OPTIMAL",
+          "startedAtSeconds": null,
+          "wallClockSeconds": 2.452,
+          "completedAtSeconds": 2.452,
+          "scoreBefore": null,
+          "scoreAfter": 740,
+          "improvement": null,
+          "exactGap": 0,
+          "cpSatStatus": "OPTIMAL",
+          "candidateCounts": {
+            "serviceCandidates": 96,
+            "residentialCandidates": 65,
+            "allowedCells": 36,
+            "roadEligibleCells": 36,
+            "roadVariables": 36,
+            "directedEdges": 120
+          },
+          "cpSatModelSize": {
+            "variableCount": 407,
+            "booleanVariableCount": 208,
+            "constraintCount": 751,
+            "allowedCellCount": 36,
+            "roadEligibleCellCount": 36,
+            "roadVariableCount": 36,
+            "rootVariableCount": 11,
+            "directedEdgeCount": 120,
+            "serviceCandidateCount": 96,
+            "residentialCandidateCount": 65,
+            "populationVariableCount": 65
+          }
+        }
+      ]
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "road-semantics-service-pressure:cp-sat:budget-5:seed-37",
+      "caseName": "road-semantics-service-pressure",
+      "split": "development",
+      "workflowTags": [
+        "service-pressure"
+      ],
+      "problemSizeBand": "small",
+      "mode": "cp-sat",
+      "optimizer": "cp-sat",
+      "budgetSeconds": 5,
+      "seed": 37,
+      "solverParams": {
+        "optimizer": "cp-sat",
+        "auto": null,
+        "greedy": {
+          "timeLimitSeconds": 5,
+          "randomSeed": 37,
+          "localSearch": true,
+          "restarts": 2,
+          "serviceRefineIterations": 1,
+          "serviceRefineCandidateLimit": 12,
+          "exhaustiveServiceSearch": false,
+          "serviceExactPoolLimit": 8,
+          "serviceExactMaxCombinations": 256
+        },
+        "lns": null,
+        "cpSat": {
+          "timeLimitSeconds": 5,
+          "maxDeterministicTime": 5,
+          "numWorkers": 1,
+          "useNoOverlap2d": false,
+          "randomSeed": 37,
+          "randomizeSearch": false,
+          "progressIntervalSeconds": 0.5
+        },
+        "portfolio": null
+      },
+      "timing": {
+        "wallClockSeconds": 2.971,
+        "firstFeasibleSeconds": 0.816,
+        "firstImprovementSeconds": 0.816,
+        "bestScoreSeconds": 0.816
+      },
+      "score": {
+        "finalPopulation": 740,
+        "bestScore": 740,
+        "cpSatStatus": "OPTIMAL",
+        "exactGap": 0,
+        "attainment": {
+          "populationCapacityUpperBound": 800,
+          "populationGapToCapacity": 60,
+          "capacityUtilization": 0.925,
+          "gapClosedVsZero": 0.925,
+          "baselinePopulation": 0,
+          "gapClosedVsBaseline": 0.925,
+          "gapClosedPerSecond": 0.311
+        },
+        "lnsStopReason": null,
+        "autoStopReason": null,
+        "stoppedByUser": false
+      },
+      "cpu": {
+        "workerCpuBudgetSeconds": 5,
+        "observedWorkerCpuSeconds": 1.998
+      },
+      "stageCount": 1,
+      "stages": [
+        {
+          "kind": "cp-sat",
+          "stage": "cp-sat",
+          "stageIndex": null,
+          "cycleIndex": null,
+          "phase": null,
+          "iteration": null,
+          "status": "OPTIMAL",
+          "operatorOutcome": "OPTIMAL",
+          "startedAtSeconds": null,
+          "wallClockSeconds": 1.998,
+          "completedAtSeconds": 1.998,
+          "scoreBefore": null,
+          "scoreAfter": 740,
+          "improvement": null,
+          "exactGap": 0,
+          "cpSatStatus": "OPTIMAL",
+          "candidateCounts": {
+            "serviceCandidates": 96,
+            "residentialCandidates": 65,
+            "allowedCells": 36,
+            "roadEligibleCells": 36,
+            "roadVariables": 36,
+            "directedEdges": 120
+          },
+          "cpSatModelSize": {
+            "variableCount": 407,
+            "booleanVariableCount": 208,
+            "constraintCount": 751,
+            "allowedCellCount": 36,
+            "roadEligibleCellCount": 36,
+            "roadVariableCount": 36,
+            "rootVariableCount": 11,
+            "directedEdgeCount": 120,
+            "serviceCandidateCount": 96,
+            "residentialCandidateCount": 65,
+            "populationVariableCount": 65
+          }
+        }
+      ]
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "typed-footprint-pressure:cp-sat:budget-1:seed-7",
+      "caseName": "typed-footprint-pressure",
+      "split": "development",
+      "workflowTags": [
+        "footprint-pressure"
+      ],
+      "problemSizeBand": "small",
+      "mode": "cp-sat",
+      "optimizer": "cp-sat",
+      "budgetSeconds": 1,
+      "seed": 7,
+      "solverParams": {
+        "optimizer": "cp-sat",
+        "auto": null,
+        "greedy": {
+          "timeLimitSeconds": 1,
+          "randomSeed": 7,
+          "localSearch": true,
+          "restarts": 2,
+          "serviceRefineIterations": 1,
+          "serviceRefineCandidateLimit": 8,
+          "exhaustiveServiceSearch": false,
+          "serviceExactPoolLimit": 8,
+          "serviceExactMaxCombinations": 64
+        },
+        "lns": null,
+        "cpSat": {
+          "timeLimitSeconds": 1,
+          "maxDeterministicTime": 1,
+          "numWorkers": 1,
+          "useNoOverlap2d": true,
+          "randomSeed": 7,
+          "randomizeSearch": false,
+          "progressIntervalSeconds": 0.5
+        },
+        "portfolio": null
+      },
+      "timing": {
+        "wallClockSeconds": 1.967,
+        "firstFeasibleSeconds": 0.594,
+        "firstImprovementSeconds": 0.594,
+        "bestScoreSeconds": 1.967
+      },
+      "score": {
+        "finalPopulation": 510,
+        "bestScore": 510,
+        "cpSatStatus": "FEASIBLE",
+        "exactGap": 24,
+        "attainment": {
+          "populationCapacityUpperBound": 545,
+          "populationGapToCapacity": 35,
+          "capacityUtilization": 0.936,
+          "gapClosedVsZero": 0.936,
+          "baselinePopulation": 0,
+          "gapClosedVsBaseline": 0.936,
+          "gapClosedPerSecond": 0.476
+        },
+        "lnsStopReason": null,
+        "autoStopReason": null,
+        "stoppedByUser": false
+      },
+      "cpu": {
+        "workerCpuBudgetSeconds": 1,
+        "observedWorkerCpuSeconds": 1
+      },
+      "stageCount": 1,
+      "stages": [
+        {
+          "kind": "cp-sat",
+          "stage": "cp-sat",
+          "stageIndex": null,
+          "cycleIndex": null,
+          "phase": null,
+          "iteration": null,
+          "status": "FEASIBLE",
+          "operatorOutcome": "FEASIBLE",
+          "startedAtSeconds": null,
+          "wallClockSeconds": 1,
+          "completedAtSeconds": 1,
+          "scoreBefore": null,
+          "scoreAfter": 501,
+          "improvement": null,
+          "exactGap": 24,
+          "cpSatStatus": "FEASIBLE",
+          "candidateCounts": {
+            "serviceCandidates": 72,
+            "residentialCandidates": 90,
+            "allowedCells": 36,
+            "roadEligibleCells": 36,
+            "roadVariables": 36,
+            "directedEdges": 120
+          },
+          "cpSatModelSize": {
+            "variableCount": 433,
+            "booleanVariableCount": 209,
+            "constraintCount": 1164,
+            "allowedCellCount": 36,
+            "roadEligibleCellCount": 36,
+            "roadVariableCount": 36,
+            "rootVariableCount": 11,
+            "directedEdgeCount": 120,
+            "serviceCandidateCount": 72,
+            "residentialCandidateCount": 90,
+            "populationVariableCount": 90
+          }
+        }
+      ]
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "typed-footprint-pressure:cp-sat:budget-1:seed-19",
+      "caseName": "typed-footprint-pressure",
+      "split": "development",
+      "workflowTags": [
+        "footprint-pressure"
+      ],
+      "problemSizeBand": "small",
+      "mode": "cp-sat",
+      "optimizer": "cp-sat",
+      "budgetSeconds": 1,
+      "seed": 19,
+      "solverParams": {
+        "optimizer": "cp-sat",
+        "auto": null,
+        "greedy": {
+          "timeLimitSeconds": 1,
+          "randomSeed": 19,
+          "localSearch": true,
+          "restarts": 2,
+          "serviceRefineIterations": 1,
+          "serviceRefineCandidateLimit": 8,
+          "exhaustiveServiceSearch": false,
+          "serviceExactPoolLimit": 8,
+          "serviceExactMaxCombinations": 64
+        },
+        "lns": null,
+        "cpSat": {
+          "timeLimitSeconds": 1,
+          "maxDeterministicTime": 1,
+          "numWorkers": 1,
+          "useNoOverlap2d": true,
+          "randomSeed": 19,
+          "randomizeSearch": false,
+          "progressIntervalSeconds": 0.5
+        },
+        "portfolio": null
+      },
+      "timing": {
+        "wallClockSeconds": 1.448,
+        "firstFeasibleSeconds": 0.938,
+        "firstImprovementSeconds": 0.938,
+        "bestScoreSeconds": 1.448
+      },
+      "score": {
+        "finalPopulation": 505,
+        "bestScore": 505,
+        "cpSatStatus": "FEASIBLE",
+        "exactGap": 32,
+        "attainment": {
+          "populationCapacityUpperBound": 545,
+          "populationGapToCapacity": 40,
+          "capacityUtilization": 0.927,
+          "gapClosedVsZero": 0.927,
+          "baselinePopulation": 0,
+          "gapClosedVsBaseline": 0.927,
+          "gapClosedPerSecond": 0.64
+        },
+        "lnsStopReason": null,
+        "autoStopReason": null,
+        "stoppedByUser": false
+      },
+      "cpu": {
+        "workerCpuBudgetSeconds": 1,
+        "observedWorkerCpuSeconds": 1.001
+      },
+      "stageCount": 1,
+      "stages": [
+        {
+          "kind": "cp-sat",
+          "stage": "cp-sat",
+          "stageIndex": null,
+          "cycleIndex": null,
+          "phase": null,
+          "iteration": null,
+          "status": "FEASIBLE",
+          "operatorOutcome": "FEASIBLE",
+          "startedAtSeconds": null,
+          "wallClockSeconds": 1.001,
+          "completedAtSeconds": 1.001,
+          "scoreBefore": null,
+          "scoreAfter": 493,
+          "improvement": null,
+          "exactGap": 32,
+          "cpSatStatus": "FEASIBLE",
+          "candidateCounts": {
+            "serviceCandidates": 72,
+            "residentialCandidates": 90,
+            "allowedCells": 36,
+            "roadEligibleCells": 36,
+            "roadVariables": 36,
+            "directedEdges": 120
+          },
+          "cpSatModelSize": {
+            "variableCount": 433,
+            "booleanVariableCount": 209,
+            "constraintCount": 1164,
+            "allowedCellCount": 36,
+            "roadEligibleCellCount": 36,
+            "roadVariableCount": 36,
+            "rootVariableCount": 11,
+            "directedEdgeCount": 120,
+            "serviceCandidateCount": 72,
+            "residentialCandidateCount": 90,
+            "populationVariableCount": 90
+          }
+        }
+      ]
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "typed-footprint-pressure:cp-sat:budget-1:seed-37",
+      "caseName": "typed-footprint-pressure",
+      "split": "development",
+      "workflowTags": [
+        "footprint-pressure"
+      ],
+      "problemSizeBand": "small",
+      "mode": "cp-sat",
+      "optimizer": "cp-sat",
+      "budgetSeconds": 1,
+      "seed": 37,
+      "solverParams": {
+        "optimizer": "cp-sat",
+        "auto": null,
+        "greedy": {
+          "timeLimitSeconds": 1,
+          "randomSeed": 37,
+          "localSearch": true,
+          "restarts": 2,
+          "serviceRefineIterations": 1,
+          "serviceRefineCandidateLimit": 8,
+          "exhaustiveServiceSearch": false,
+          "serviceExactPoolLimit": 8,
+          "serviceExactMaxCombinations": 64
+        },
+        "lns": null,
+        "cpSat": {
+          "timeLimitSeconds": 1,
+          "maxDeterministicTime": 1,
+          "numWorkers": 1,
+          "useNoOverlap2d": true,
+          "randomSeed": 37,
+          "randomizeSearch": false,
+          "progressIntervalSeconds": 0.5
+        },
+        "portfolio": null
+      },
+      "timing": {
+        "wallClockSeconds": 1.445,
+        "firstFeasibleSeconds": 0.955,
+        "firstImprovementSeconds": 0.955,
+        "bestScoreSeconds": 0.955
+      },
+      "score": {
+        "finalPopulation": 525,
+        "bestScore": 525,
+        "cpSatStatus": "FEASIBLE",
+        "exactGap": 0,
+        "attainment": {
+          "populationCapacityUpperBound": 545,
+          "populationGapToCapacity": 20,
+          "capacityUtilization": 0.963,
+          "gapClosedVsZero": 0.963,
+          "baselinePopulation": 0,
+          "gapClosedVsBaseline": 0.963,
+          "gapClosedPerSecond": 0.667
+        },
+        "lnsStopReason": null,
+        "autoStopReason": null,
+        "stoppedByUser": false
+      },
+      "cpu": {
+        "workerCpuBudgetSeconds": 1,
+        "observedWorkerCpuSeconds": 1
+      },
+      "stageCount": 1,
+      "stages": [
+        {
+          "kind": "cp-sat",
+          "stage": "cp-sat",
+          "stageIndex": null,
+          "cycleIndex": null,
+          "phase": null,
+          "iteration": null,
+          "status": "FEASIBLE",
+          "operatorOutcome": "FEASIBLE",
+          "startedAtSeconds": null,
+          "wallClockSeconds": 1,
+          "completedAtSeconds": 1,
+          "scoreBefore": null,
+          "scoreAfter": 525,
+          "improvement": null,
+          "exactGap": 0,
+          "cpSatStatus": "FEASIBLE",
+          "candidateCounts": {
+            "serviceCandidates": 72,
+            "residentialCandidates": 90,
+            "allowedCells": 36,
+            "roadEligibleCells": 36,
+            "roadVariables": 36,
+            "directedEdges": 120
+          },
+          "cpSatModelSize": {
+            "variableCount": 433,
+            "booleanVariableCount": 209,
+            "constraintCount": 1164,
+            "allowedCellCount": 36,
+            "roadEligibleCellCount": 36,
+            "roadVariableCount": 36,
+            "rootVariableCount": 11,
+            "directedEdgeCount": 120,
+            "serviceCandidateCount": 72,
+            "residentialCandidateCount": 90,
+            "populationVariableCount": 90
+          }
+        }
+      ]
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "typed-footprint-pressure:cp-sat:budget-5:seed-7",
+      "caseName": "typed-footprint-pressure",
+      "split": "development",
+      "workflowTags": [
+        "footprint-pressure"
+      ],
+      "problemSizeBand": "small",
+      "mode": "cp-sat",
+      "optimizer": "cp-sat",
+      "budgetSeconds": 5,
+      "seed": 7,
+      "solverParams": {
+        "optimizer": "cp-sat",
+        "auto": null,
+        "greedy": {
+          "timeLimitSeconds": 5,
+          "randomSeed": 7,
+          "localSearch": true,
+          "restarts": 2,
+          "serviceRefineIterations": 1,
+          "serviceRefineCandidateLimit": 8,
+          "exhaustiveServiceSearch": false,
+          "serviceExactPoolLimit": 8,
+          "serviceExactMaxCombinations": 64
+        },
+        "lns": null,
+        "cpSat": {
+          "timeLimitSeconds": 5,
+          "maxDeterministicTime": 5,
+          "numWorkers": 1,
+          "useNoOverlap2d": true,
+          "randomSeed": 7,
+          "randomizeSearch": false,
+          "progressIntervalSeconds": 0.5
+        },
+        "portfolio": null
+      },
+      "timing": {
+        "wallClockSeconds": 5.115,
+        "firstFeasibleSeconds": 3.628,
+        "firstImprovementSeconds": 3.628,
+        "bestScoreSeconds": 3.628
+      },
+      "score": {
+        "finalPopulation": 525,
+        "bestScore": 525,
+        "cpSatStatus": "FEASIBLE",
+        "exactGap": 0,
+        "attainment": {
+          "populationCapacityUpperBound": 545,
+          "populationGapToCapacity": 20,
+          "capacityUtilization": 0.963,
+          "gapClosedVsZero": 0.963,
+          "baselinePopulation": 0,
+          "gapClosedVsBaseline": 0.963,
+          "gapClosedPerSecond": 0.188
+        },
+        "lnsStopReason": null,
+        "autoStopReason": null,
+        "stoppedByUser": false
+      },
+      "cpu": {
+        "workerCpuBudgetSeconds": 5,
+        "observedWorkerCpuSeconds": 4.671
+      },
+      "stageCount": 1,
+      "stages": [
+        {
+          "kind": "cp-sat",
+          "stage": "cp-sat",
+          "stageIndex": null,
+          "cycleIndex": null,
+          "phase": null,
+          "iteration": null,
+          "status": "FEASIBLE",
+          "operatorOutcome": "FEASIBLE",
+          "startedAtSeconds": null,
+          "wallClockSeconds": 4.671,
+          "completedAtSeconds": 4.671,
+          "scoreBefore": null,
+          "scoreAfter": 525,
+          "improvement": null,
+          "exactGap": 0,
+          "cpSatStatus": "FEASIBLE",
+          "candidateCounts": {
+            "serviceCandidates": 72,
+            "residentialCandidates": 90,
+            "allowedCells": 36,
+            "roadEligibleCells": 36,
+            "roadVariables": 36,
+            "directedEdges": 120
+          },
+          "cpSatModelSize": {
+            "variableCount": 433,
+            "booleanVariableCount": 209,
+            "constraintCount": 1164,
+            "allowedCellCount": 36,
+            "roadEligibleCellCount": 36,
+            "roadVariableCount": 36,
+            "rootVariableCount": 11,
+            "directedEdgeCount": 120,
+            "serviceCandidateCount": 72,
+            "residentialCandidateCount": 90,
+            "populationVariableCount": 90
+          }
+        }
+      ]
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "typed-footprint-pressure:cp-sat:budget-5:seed-19",
+      "caseName": "typed-footprint-pressure",
+      "split": "development",
+      "workflowTags": [
+        "footprint-pressure"
+      ],
+      "problemSizeBand": "small",
+      "mode": "cp-sat",
+      "optimizer": "cp-sat",
+      "budgetSeconds": 5,
+      "seed": 19,
+      "solverParams": {
+        "optimizer": "cp-sat",
+        "auto": null,
+        "greedy": {
+          "timeLimitSeconds": 5,
+          "randomSeed": 19,
+          "localSearch": true,
+          "restarts": 2,
+          "serviceRefineIterations": 1,
+          "serviceRefineCandidateLimit": 8,
+          "exhaustiveServiceSearch": false,
+          "serviceExactPoolLimit": 8,
+          "serviceExactMaxCombinations": 64
+        },
+        "lns": null,
+        "cpSat": {
+          "timeLimitSeconds": 5,
+          "maxDeterministicTime": 5,
+          "numWorkers": 1,
+          "useNoOverlap2d": true,
+          "randomSeed": 19,
+          "randomizeSearch": false,
+          "progressIntervalSeconds": 0.5
+        },
+        "portfolio": null
+      },
+      "timing": {
+        "wallClockSeconds": 5.164,
+        "firstFeasibleSeconds": 1.376,
+        "firstImprovementSeconds": 1.376,
+        "bestScoreSeconds": 1.376
+      },
+      "score": {
+        "finalPopulation": 525,
+        "bestScore": 525,
+        "cpSatStatus": "FEASIBLE",
+        "exactGap": 0,
+        "attainment": {
+          "populationCapacityUpperBound": 545,
+          "populationGapToCapacity": 20,
+          "capacityUtilization": 0.963,
+          "gapClosedVsZero": 0.963,
+          "baselinePopulation": 0,
+          "gapClosedVsBaseline": 0.963,
+          "gapClosedPerSecond": 0.187
+        },
+        "lnsStopReason": null,
+        "autoStopReason": null,
+        "stoppedByUser": false
+      },
+      "cpu": {
+        "workerCpuBudgetSeconds": 5,
+        "observedWorkerCpuSeconds": 4.699
+      },
+      "stageCount": 1,
+      "stages": [
+        {
+          "kind": "cp-sat",
+          "stage": "cp-sat",
+          "stageIndex": null,
+          "cycleIndex": null,
+          "phase": null,
+          "iteration": null,
+          "status": "FEASIBLE",
+          "operatorOutcome": "FEASIBLE",
+          "startedAtSeconds": null,
+          "wallClockSeconds": 4.699,
+          "completedAtSeconds": 4.699,
+          "scoreBefore": null,
+          "scoreAfter": 525,
+          "improvement": null,
+          "exactGap": 0,
+          "cpSatStatus": "FEASIBLE",
+          "candidateCounts": {
+            "serviceCandidates": 72,
+            "residentialCandidates": 90,
+            "allowedCells": 36,
+            "roadEligibleCells": 36,
+            "roadVariables": 36,
+            "directedEdges": 120
+          },
+          "cpSatModelSize": {
+            "variableCount": 433,
+            "booleanVariableCount": 209,
+            "constraintCount": 1164,
+            "allowedCellCount": 36,
+            "roadEligibleCellCount": 36,
+            "roadVariableCount": 36,
+            "rootVariableCount": 11,
+            "directedEdgeCount": 120,
+            "serviceCandidateCount": 72,
+            "residentialCandidateCount": 90,
+            "populationVariableCount": 90
+          }
+        }
+      ]
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "typed-footprint-pressure:cp-sat:budget-5:seed-37",
+      "caseName": "typed-footprint-pressure",
+      "split": "development",
+      "workflowTags": [
+        "footprint-pressure"
+      ],
+      "problemSizeBand": "small",
+      "mode": "cp-sat",
+      "optimizer": "cp-sat",
+      "budgetSeconds": 5,
+      "seed": 37,
+      "solverParams": {
+        "optimizer": "cp-sat",
+        "auto": null,
+        "greedy": {
+          "timeLimitSeconds": 5,
+          "randomSeed": 37,
+          "localSearch": true,
+          "restarts": 2,
+          "serviceRefineIterations": 1,
+          "serviceRefineCandidateLimit": 8,
+          "exhaustiveServiceSearch": false,
+          "serviceExactPoolLimit": 8,
+          "serviceExactMaxCombinations": 64
+        },
+        "lns": null,
+        "cpSat": {
+          "timeLimitSeconds": 5,
+          "maxDeterministicTime": 5,
+          "numWorkers": 1,
+          "useNoOverlap2d": true,
+          "randomSeed": 37,
+          "randomizeSearch": false,
+          "progressIntervalSeconds": 0.5
+        },
+        "portfolio": null
+      },
+      "timing": {
+        "wallClockSeconds": 5.203,
+        "firstFeasibleSeconds": 1.742,
+        "firstImprovementSeconds": 1.742,
+        "bestScoreSeconds": 1.742
+      },
+      "score": {
+        "finalPopulation": 525,
+        "bestScore": 525,
+        "cpSatStatus": "FEASIBLE",
+        "exactGap": 0,
+        "attainment": {
+          "populationCapacityUpperBound": 545,
+          "populationGapToCapacity": 20,
+          "capacityUtilization": 0.963,
+          "gapClosedVsZero": 0.963,
+          "baselinePopulation": 0,
+          "gapClosedVsBaseline": 0.963,
+          "gapClosedPerSecond": 0.185
+        },
+        "lnsStopReason": null,
+        "autoStopReason": null,
+        "stoppedByUser": false
+      },
+      "cpu": {
+        "workerCpuBudgetSeconds": 5,
+        "observedWorkerCpuSeconds": 4.747
+      },
+      "stageCount": 1,
+      "stages": [
+        {
+          "kind": "cp-sat",
+          "stage": "cp-sat",
+          "stageIndex": null,
+          "cycleIndex": null,
+          "phase": null,
+          "iteration": null,
+          "status": "FEASIBLE",
+          "operatorOutcome": "FEASIBLE",
+          "startedAtSeconds": null,
+          "wallClockSeconds": 4.747,
+          "completedAtSeconds": 4.747,
+          "scoreBefore": null,
+          "scoreAfter": 525,
+          "improvement": null,
+          "exactGap": 0,
+          "cpSatStatus": "FEASIBLE",
+          "candidateCounts": {
+            "serviceCandidates": 72,
+            "residentialCandidates": 90,
+            "allowedCells": 36,
+            "roadEligibleCells": 36,
+            "roadVariables": 36,
+            "directedEdges": 120
+          },
+          "cpSatModelSize": {
+            "variableCount": 433,
+            "booleanVariableCount": 209,
+            "constraintCount": 1164,
+            "allowedCellCount": 36,
+            "roadEligibleCellCount": 36,
+            "roadVariableCount": 36,
+            "rootVariableCount": 11,
+            "directedEdgeCount": 120,
+            "serviceCandidateCount": 72,
+            "residentialCandidateCount": 90,
+            "populationVariableCount": 90
+          }
+        }
+      ]
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "road-semantics-gate-choke:cp-sat:budget-1:seed-7",
+      "caseName": "road-semantics-gate-choke",
+      "split": "holdout",
+      "workflowTags": [
+        "gate"
+      ],
+      "problemSizeBand": "small",
+      "mode": "cp-sat",
+      "optimizer": "cp-sat",
+      "budgetSeconds": 1,
+      "seed": 7,
+      "solverParams": {
+        "optimizer": "cp-sat",
+        "auto": null,
+        "greedy": {
+          "timeLimitSeconds": 1,
+          "randomSeed": 7,
+          "localSearch": true,
+          "restarts": 2,
+          "serviceRefineIterations": 1,
+          "serviceRefineCandidateLimit": 12,
+          "exhaustiveServiceSearch": false,
+          "serviceExactPoolLimit": 8,
+          "serviceExactMaxCombinations": 256
+        },
+        "lns": null,
+        "cpSat": {
+          "timeLimitSeconds": 1,
+          "maxDeterministicTime": 1,
+          "numWorkers": 1,
+          "useNoOverlap2d": true,
+          "randomSeed": 7,
+          "randomizeSearch": false,
+          "progressIntervalSeconds": 0.5
+        },
+        "portfolio": null
+      },
+      "timing": {
+        "wallClockSeconds": 0.526,
+        "firstFeasibleSeconds": 0.067,
+        "firstImprovementSeconds": 0.067,
+        "bestScoreSeconds": 0.067
+      },
+      "score": {
+        "finalPopulation": 540,
+        "bestScore": 540,
+        "cpSatStatus": "OPTIMAL",
+        "exactGap": 0,
+        "attainment": {
+          "populationCapacityUpperBound": 710,
+          "populationGapToCapacity": 170,
+          "capacityUtilization": 0.761,
+          "gapClosedVsZero": 0.761,
+          "baselinePopulation": 0,
+          "gapClosedVsBaseline": 0.761,
+          "gapClosedPerSecond": 1.445
+        },
+        "lnsStopReason": null,
+        "autoStopReason": null,
+        "stoppedByUser": false
+      },
+      "cpu": {
+        "workerCpuBudgetSeconds": 1,
+        "observedWorkerCpuSeconds": 0.069
+      },
+      "stageCount": 1,
+      "stages": [
+        {
+          "kind": "cp-sat",
+          "stage": "cp-sat",
+          "stageIndex": null,
+          "cycleIndex": null,
+          "phase": null,
+          "iteration": null,
+          "status": "OPTIMAL",
+          "operatorOutcome": "OPTIMAL",
+          "startedAtSeconds": null,
+          "wallClockSeconds": 0.069,
+          "completedAtSeconds": 0.069,
+          "scoreBefore": null,
+          "scoreAfter": 540,
+          "improvement": null,
+          "exactGap": 0,
+          "cpSatStatus": "OPTIMAL",
+          "candidateCounts": {
+            "serviceCandidates": 32,
+            "residentialCandidates": 27,
+            "allowedCells": 32,
+            "roadEligibleCells": 32,
+            "roadVariables": 32,
+            "directedEdges": 92
+          },
+          "cpSatModelSize": {
+            "variableCount": 235,
+            "booleanVariableCount": 102,
+            "constraintCount": 662,
+            "allowedCellCount": 32,
+            "roadEligibleCellCount": 32,
+            "roadVariableCount": 32,
+            "rootVariableCount": 11,
+            "directedEdgeCount": 92,
+            "serviceCandidateCount": 32,
+            "residentialCandidateCount": 27,
+            "populationVariableCount": 27
+          }
+        }
+      ]
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "road-semantics-gate-choke:cp-sat:budget-1:seed-19",
+      "caseName": "road-semantics-gate-choke",
+      "split": "holdout",
+      "workflowTags": [
+        "gate"
+      ],
+      "problemSizeBand": "small",
+      "mode": "cp-sat",
+      "optimizer": "cp-sat",
+      "budgetSeconds": 1,
+      "seed": 19,
+      "solverParams": {
+        "optimizer": "cp-sat",
+        "auto": null,
+        "greedy": {
+          "timeLimitSeconds": 1,
+          "randomSeed": 19,
+          "localSearch": true,
+          "restarts": 2,
+          "serviceRefineIterations": 1,
+          "serviceRefineCandidateLimit": 12,
+          "exhaustiveServiceSearch": false,
+          "serviceExactPoolLimit": 8,
+          "serviceExactMaxCombinations": 256
+        },
+        "lns": null,
+        "cpSat": {
+          "timeLimitSeconds": 1,
+          "maxDeterministicTime": 1,
+          "numWorkers": 1,
+          "useNoOverlap2d": true,
+          "randomSeed": 19,
+          "randomizeSearch": false,
+          "progressIntervalSeconds": 0.5
+        },
+        "portfolio": null
+      },
+      "timing": {
+        "wallClockSeconds": 0.5,
+        "firstFeasibleSeconds": 0.066,
+        "firstImprovementSeconds": 0.066,
+        "bestScoreSeconds": 0.066
+      },
+      "score": {
+        "finalPopulation": 540,
+        "bestScore": 540,
+        "cpSatStatus": "OPTIMAL",
+        "exactGap": 0,
+        "attainment": {
+          "populationCapacityUpperBound": 710,
+          "populationGapToCapacity": 170,
+          "capacityUtilization": 0.761,
+          "gapClosedVsZero": 0.761,
+          "baselinePopulation": 0,
+          "gapClosedVsBaseline": 0.761,
+          "gapClosedPerSecond": 1.52
+        },
+        "lnsStopReason": null,
+        "autoStopReason": null,
+        "stoppedByUser": false
+      },
+      "cpu": {
+        "workerCpuBudgetSeconds": 1,
+        "observedWorkerCpuSeconds": 0.066
+      },
+      "stageCount": 1,
+      "stages": [
+        {
+          "kind": "cp-sat",
+          "stage": "cp-sat",
+          "stageIndex": null,
+          "cycleIndex": null,
+          "phase": null,
+          "iteration": null,
+          "status": "OPTIMAL",
+          "operatorOutcome": "OPTIMAL",
+          "startedAtSeconds": null,
+          "wallClockSeconds": 0.066,
+          "completedAtSeconds": 0.066,
+          "scoreBefore": null,
+          "scoreAfter": 540,
+          "improvement": null,
+          "exactGap": 0,
+          "cpSatStatus": "OPTIMAL",
+          "candidateCounts": {
+            "serviceCandidates": 32,
+            "residentialCandidates": 27,
+            "allowedCells": 32,
+            "roadEligibleCells": 32,
+            "roadVariables": 32,
+            "directedEdges": 92
+          },
+          "cpSatModelSize": {
+            "variableCount": 235,
+            "booleanVariableCount": 102,
+            "constraintCount": 662,
+            "allowedCellCount": 32,
+            "roadEligibleCellCount": 32,
+            "roadVariableCount": 32,
+            "rootVariableCount": 11,
+            "directedEdgeCount": 92,
+            "serviceCandidateCount": 32,
+            "residentialCandidateCount": 27,
+            "populationVariableCount": 27
+          }
+        }
+      ]
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "road-semantics-gate-choke:cp-sat:budget-1:seed-37",
+      "caseName": "road-semantics-gate-choke",
+      "split": "holdout",
+      "workflowTags": [
+        "gate"
+      ],
+      "problemSizeBand": "small",
+      "mode": "cp-sat",
+      "optimizer": "cp-sat",
+      "budgetSeconds": 1,
+      "seed": 37,
+      "solverParams": {
+        "optimizer": "cp-sat",
+        "auto": null,
+        "greedy": {
+          "timeLimitSeconds": 1,
+          "randomSeed": 37,
+          "localSearch": true,
+          "restarts": 2,
+          "serviceRefineIterations": 1,
+          "serviceRefineCandidateLimit": 12,
+          "exhaustiveServiceSearch": false,
+          "serviceExactPoolLimit": 8,
+          "serviceExactMaxCombinations": 256
+        },
+        "lns": null,
+        "cpSat": {
+          "timeLimitSeconds": 1,
+          "maxDeterministicTime": 1,
+          "numWorkers": 1,
+          "useNoOverlap2d": true,
+          "randomSeed": 37,
+          "randomizeSearch": false,
+          "progressIntervalSeconds": 0.5
+        },
+        "portfolio": null
+      },
+      "timing": {
+        "wallClockSeconds": 0.532,
+        "firstFeasibleSeconds": 0.062,
+        "firstImprovementSeconds": 0.062,
+        "bestScoreSeconds": 0.062
+      },
+      "score": {
+        "finalPopulation": 540,
+        "bestScore": 540,
+        "cpSatStatus": "OPTIMAL",
+        "exactGap": 0,
+        "attainment": {
+          "populationCapacityUpperBound": 710,
+          "populationGapToCapacity": 170,
+          "capacityUtilization": 0.761,
+          "gapClosedVsZero": 0.761,
+          "baselinePopulation": 0,
+          "gapClosedVsBaseline": 0.761,
+          "gapClosedPerSecond": 1.43
+        },
+        "lnsStopReason": null,
+        "autoStopReason": null,
+        "stoppedByUser": false
+      },
+      "cpu": {
+        "workerCpuBudgetSeconds": 1,
+        "observedWorkerCpuSeconds": 0.064
+      },
+      "stageCount": 1,
+      "stages": [
+        {
+          "kind": "cp-sat",
+          "stage": "cp-sat",
+          "stageIndex": null,
+          "cycleIndex": null,
+          "phase": null,
+          "iteration": null,
+          "status": "OPTIMAL",
+          "operatorOutcome": "OPTIMAL",
+          "startedAtSeconds": null,
+          "wallClockSeconds": 0.064,
+          "completedAtSeconds": 0.064,
+          "scoreBefore": null,
+          "scoreAfter": 540,
+          "improvement": null,
+          "exactGap": 0,
+          "cpSatStatus": "OPTIMAL",
+          "candidateCounts": {
+            "serviceCandidates": 32,
+            "residentialCandidates": 27,
+            "allowedCells": 32,
+            "roadEligibleCells": 32,
+            "roadVariables": 32,
+            "directedEdges": 92
+          },
+          "cpSatModelSize": {
+            "variableCount": 235,
+            "booleanVariableCount": 102,
+            "constraintCount": 662,
+            "allowedCellCount": 32,
+            "roadEligibleCellCount": 32,
+            "roadVariableCount": 32,
+            "rootVariableCount": 11,
+            "directedEdgeCount": 92,
+            "serviceCandidateCount": 32,
+            "residentialCandidateCount": 27,
+            "populationVariableCount": 27
+          }
+        }
+      ]
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "road-semantics-gate-choke:cp-sat:budget-5:seed-7",
+      "caseName": "road-semantics-gate-choke",
+      "split": "holdout",
+      "workflowTags": [
+        "gate"
+      ],
+      "problemSizeBand": "small",
+      "mode": "cp-sat",
+      "optimizer": "cp-sat",
+      "budgetSeconds": 5,
+      "seed": 7,
+      "solverParams": {
+        "optimizer": "cp-sat",
+        "auto": null,
+        "greedy": {
+          "timeLimitSeconds": 5,
+          "randomSeed": 7,
+          "localSearch": true,
+          "restarts": 2,
+          "serviceRefineIterations": 1,
+          "serviceRefineCandidateLimit": 12,
+          "exhaustiveServiceSearch": false,
+          "serviceExactPoolLimit": 8,
+          "serviceExactMaxCombinations": 256
+        },
+        "lns": null,
+        "cpSat": {
+          "timeLimitSeconds": 5,
+          "maxDeterministicTime": 5,
+          "numWorkers": 1,
+          "useNoOverlap2d": true,
+          "randomSeed": 7,
+          "randomizeSearch": false,
+          "progressIntervalSeconds": 0.5
+        },
+        "portfolio": null
+      },
+      "timing": {
+        "wallClockSeconds": 0.502,
+        "firstFeasibleSeconds": 0.067,
+        "firstImprovementSeconds": 0.067,
+        "bestScoreSeconds": 0.067
+      },
+      "score": {
+        "finalPopulation": 540,
+        "bestScore": 540,
+        "cpSatStatus": "OPTIMAL",
+        "exactGap": 0,
+        "attainment": {
+          "populationCapacityUpperBound": 710,
+          "populationGapToCapacity": 170,
+          "capacityUtilization": 0.761,
+          "gapClosedVsZero": 0.761,
+          "baselinePopulation": 0,
+          "gapClosedVsBaseline": 0.761,
+          "gapClosedPerSecond": 1.515
+        },
+        "lnsStopReason": null,
+        "autoStopReason": null,
+        "stoppedByUser": false
+      },
+      "cpu": {
+        "workerCpuBudgetSeconds": 5,
+        "observedWorkerCpuSeconds": 0.069
+      },
+      "stageCount": 1,
+      "stages": [
+        {
+          "kind": "cp-sat",
+          "stage": "cp-sat",
+          "stageIndex": null,
+          "cycleIndex": null,
+          "phase": null,
+          "iteration": null,
+          "status": "OPTIMAL",
+          "operatorOutcome": "OPTIMAL",
+          "startedAtSeconds": null,
+          "wallClockSeconds": 0.069,
+          "completedAtSeconds": 0.069,
+          "scoreBefore": null,
+          "scoreAfter": 540,
+          "improvement": null,
+          "exactGap": 0,
+          "cpSatStatus": "OPTIMAL",
+          "candidateCounts": {
+            "serviceCandidates": 32,
+            "residentialCandidates": 27,
+            "allowedCells": 32,
+            "roadEligibleCells": 32,
+            "roadVariables": 32,
+            "directedEdges": 92
+          },
+          "cpSatModelSize": {
+            "variableCount": 235,
+            "booleanVariableCount": 102,
+            "constraintCount": 662,
+            "allowedCellCount": 32,
+            "roadEligibleCellCount": 32,
+            "roadVariableCount": 32,
+            "rootVariableCount": 11,
+            "directedEdgeCount": 92,
+            "serviceCandidateCount": 32,
+            "residentialCandidateCount": 27,
+            "populationVariableCount": 27
+          }
+        }
+      ]
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "road-semantics-gate-choke:cp-sat:budget-5:seed-19",
+      "caseName": "road-semantics-gate-choke",
+      "split": "holdout",
+      "workflowTags": [
+        "gate"
+      ],
+      "problemSizeBand": "small",
+      "mode": "cp-sat",
+      "optimizer": "cp-sat",
+      "budgetSeconds": 5,
+      "seed": 19,
+      "solverParams": {
+        "optimizer": "cp-sat",
+        "auto": null,
+        "greedy": {
+          "timeLimitSeconds": 5,
+          "randomSeed": 19,
+          "localSearch": true,
+          "restarts": 2,
+          "serviceRefineIterations": 1,
+          "serviceRefineCandidateLimit": 12,
+          "exhaustiveServiceSearch": false,
+          "serviceExactPoolLimit": 8,
+          "serviceExactMaxCombinations": 256
+        },
+        "lns": null,
+        "cpSat": {
+          "timeLimitSeconds": 5,
+          "maxDeterministicTime": 5,
+          "numWorkers": 1,
+          "useNoOverlap2d": true,
+          "randomSeed": 19,
+          "randomizeSearch": false,
+          "progressIntervalSeconds": 0.5
+        },
+        "portfolio": null
+      },
+      "timing": {
+        "wallClockSeconds": 0.51,
+        "firstFeasibleSeconds": 0.067,
+        "firstImprovementSeconds": 0.067,
+        "bestScoreSeconds": 0.067
+      },
+      "score": {
+        "finalPopulation": 540,
+        "bestScore": 540,
+        "cpSatStatus": "OPTIMAL",
+        "exactGap": 0,
+        "attainment": {
+          "populationCapacityUpperBound": 710,
+          "populationGapToCapacity": 170,
+          "capacityUtilization": 0.761,
+          "gapClosedVsZero": 0.761,
+          "baselinePopulation": 0,
+          "gapClosedVsBaseline": 0.761,
+          "gapClosedPerSecond": 1.491
+        },
+        "lnsStopReason": null,
+        "autoStopReason": null,
+        "stoppedByUser": false
+      },
+      "cpu": {
+        "workerCpuBudgetSeconds": 5,
+        "observedWorkerCpuSeconds": 0.068
+      },
+      "stageCount": 1,
+      "stages": [
+        {
+          "kind": "cp-sat",
+          "stage": "cp-sat",
+          "stageIndex": null,
+          "cycleIndex": null,
+          "phase": null,
+          "iteration": null,
+          "status": "OPTIMAL",
+          "operatorOutcome": "OPTIMAL",
+          "startedAtSeconds": null,
+          "wallClockSeconds": 0.068,
+          "completedAtSeconds": 0.068,
+          "scoreBefore": null,
+          "scoreAfter": 540,
+          "improvement": null,
+          "exactGap": 0,
+          "cpSatStatus": "OPTIMAL",
+          "candidateCounts": {
+            "serviceCandidates": 32,
+            "residentialCandidates": 27,
+            "allowedCells": 32,
+            "roadEligibleCells": 32,
+            "roadVariables": 32,
+            "directedEdges": 92
+          },
+          "cpSatModelSize": {
+            "variableCount": 235,
+            "booleanVariableCount": 102,
+            "constraintCount": 662,
+            "allowedCellCount": 32,
+            "roadEligibleCellCount": 32,
+            "roadVariableCount": 32,
+            "rootVariableCount": 11,
+            "directedEdgeCount": 92,
+            "serviceCandidateCount": 32,
+            "residentialCandidateCount": 27,
+            "populationVariableCount": 27
+          }
+        }
+      ]
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "road-semantics-gate-choke:cp-sat:budget-5:seed-37",
+      "caseName": "road-semantics-gate-choke",
+      "split": "holdout",
+      "workflowTags": [
+        "gate"
+      ],
+      "problemSizeBand": "small",
+      "mode": "cp-sat",
+      "optimizer": "cp-sat",
+      "budgetSeconds": 5,
+      "seed": 37,
+      "solverParams": {
+        "optimizer": "cp-sat",
+        "auto": null,
+        "greedy": {
+          "timeLimitSeconds": 5,
+          "randomSeed": 37,
+          "localSearch": true,
+          "restarts": 2,
+          "serviceRefineIterations": 1,
+          "serviceRefineCandidateLimit": 12,
+          "exhaustiveServiceSearch": false,
+          "serviceExactPoolLimit": 8,
+          "serviceExactMaxCombinations": 256
+        },
+        "lns": null,
+        "cpSat": {
+          "timeLimitSeconds": 5,
+          "maxDeterministicTime": 5,
+          "numWorkers": 1,
+          "useNoOverlap2d": true,
+          "randomSeed": 37,
+          "randomizeSearch": false,
+          "progressIntervalSeconds": 0.5
+        },
+        "portfolio": null
+      },
+      "timing": {
+        "wallClockSeconds": 0.504,
+        "firstFeasibleSeconds": 0.063,
+        "firstImprovementSeconds": 0.063,
+        "bestScoreSeconds": 0.063
+      },
+      "score": {
+        "finalPopulation": 540,
+        "bestScore": 540,
+        "cpSatStatus": "OPTIMAL",
+        "exactGap": 0,
+        "attainment": {
+          "populationCapacityUpperBound": 710,
+          "populationGapToCapacity": 170,
+          "capacityUtilization": 0.761,
+          "gapClosedVsZero": 0.761,
+          "baselinePopulation": 0,
+          "gapClosedVsBaseline": 0.761,
+          "gapClosedPerSecond": 1.51
+        },
+        "lnsStopReason": null,
+        "autoStopReason": null,
+        "stoppedByUser": false
+      },
+      "cpu": {
+        "workerCpuBudgetSeconds": 5,
+        "observedWorkerCpuSeconds": 0.065
+      },
+      "stageCount": 1,
+      "stages": [
+        {
+          "kind": "cp-sat",
+          "stage": "cp-sat",
+          "stageIndex": null,
+          "cycleIndex": null,
+          "phase": null,
+          "iteration": null,
+          "status": "OPTIMAL",
+          "operatorOutcome": "OPTIMAL",
+          "startedAtSeconds": null,
+          "wallClockSeconds": 0.065,
+          "completedAtSeconds": 0.065,
+          "scoreBefore": null,
+          "scoreAfter": 540,
+          "improvement": null,
+          "exactGap": 0,
+          "cpSatStatus": "OPTIMAL",
+          "candidateCounts": {
+            "serviceCandidates": 32,
+            "residentialCandidates": 27,
+            "allowedCells": 32,
+            "roadEligibleCells": 32,
+            "roadVariables": 32,
+            "directedEdges": 92
+          },
+          "cpSatModelSize": {
+            "variableCount": 235,
+            "booleanVariableCount": 102,
+            "constraintCount": 662,
+            "allowedCellCount": 32,
+            "roadEligibleCellCount": 32,
+            "roadVariableCount": 32,
+            "rootVariableCount": 11,
+            "directedEdgeCount": 92,
+            "serviceCandidateCount": 32,
+            "residentialCandidateCount": 27,
+            "populationVariableCount": 27
+          }
+        }
+      ]
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "multi-anchor-road-components:cp-sat:budget-1:seed-7",
+      "caseName": "multi-anchor-road-components",
+      "split": "holdout",
+      "workflowTags": [
+        "multi-anchor"
+      ],
+      "problemSizeBand": "small",
+      "mode": "cp-sat",
+      "optimizer": "cp-sat",
+      "budgetSeconds": 1,
+      "seed": 7,
+      "solverParams": {
+        "optimizer": "cp-sat",
+        "auto": null,
+        "greedy": {
+          "timeLimitSeconds": 1,
+          "randomSeed": 7,
+          "localSearch": true,
+          "restarts": 2,
+          "serviceRefineIterations": 1,
+          "serviceRefineCandidateLimit": 12,
+          "exhaustiveServiceSearch": false,
+          "serviceExactPoolLimit": 8,
+          "serviceExactMaxCombinations": 256
+        },
+        "lns": null,
+        "cpSat": {
+          "timeLimitSeconds": 1,
+          "maxDeterministicTime": 1,
+          "numWorkers": 1,
+          "useNoOverlap2d": true,
+          "randomSeed": 7,
+          "randomizeSearch": false,
+          "progressIntervalSeconds": 0.5
+        },
+        "portfolio": null
+      },
+      "timing": {
+        "wallClockSeconds": 0.439,
+        "firstFeasibleSeconds": 0.007,
+        "firstImprovementSeconds": 0.007,
+        "bestScoreSeconds": 0.007
+      },
+      "score": {
+        "finalPopulation": 200,
+        "bestScore": 200,
+        "cpSatStatus": "OPTIMAL",
+        "exactGap": 0,
+        "attainment": {
+          "populationCapacityUpperBound": 200,
+          "populationGapToCapacity": 0,
+          "capacityUtilization": 1,
+          "gapClosedVsZero": 1,
+          "baselinePopulation": 0,
+          "gapClosedVsBaseline": 1,
+          "gapClosedPerSecond": 2.276
+        },
+        "lnsStopReason": null,
+        "autoStopReason": null,
+        "stoppedByUser": false
+      },
+      "cpu": {
+        "workerCpuBudgetSeconds": 1,
+        "observedWorkerCpuSeconds": 0.007
+      },
+      "stageCount": 1,
+      "stages": [
+        {
+          "kind": "cp-sat",
+          "stage": "cp-sat",
+          "stageIndex": null,
+          "cycleIndex": null,
+          "phase": null,
+          "iteration": null,
+          "status": "OPTIMAL",
+          "operatorOutcome": "OPTIMAL",
+          "startedAtSeconds": null,
+          "wallClockSeconds": 0.007,
+          "completedAtSeconds": 0.007,
+          "scoreBefore": null,
+          "scoreAfter": 200,
+          "improvement": null,
+          "exactGap": 0,
+          "cpSatStatus": "OPTIMAL",
+          "candidateCounts": {
+            "serviceCandidates": 0,
+            "residentialCandidates": 2,
+            "allowedCells": 10,
+            "roadEligibleCells": 10,
+            "roadVariables": 10,
+            "directedEdges": 20
+          },
+          "cpSatModelSize": {
+            "variableCount": 42,
+            "booleanVariableCount": 14,
+            "constraintCount": 141,
+            "allowedCellCount": 10,
+            "roadEligibleCellCount": 10,
+            "roadVariableCount": 10,
+            "rootVariableCount": 2,
+            "directedEdgeCount": 20,
+            "serviceCandidateCount": 0,
+            "residentialCandidateCount": 2,
+            "populationVariableCount": 2
+          }
+        }
+      ]
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "multi-anchor-road-components:cp-sat:budget-1:seed-19",
+      "caseName": "multi-anchor-road-components",
+      "split": "holdout",
+      "workflowTags": [
+        "multi-anchor"
+      ],
+      "problemSizeBand": "small",
+      "mode": "cp-sat",
+      "optimizer": "cp-sat",
+      "budgetSeconds": 1,
+      "seed": 19,
+      "solverParams": {
+        "optimizer": "cp-sat",
+        "auto": null,
+        "greedy": {
+          "timeLimitSeconds": 1,
+          "randomSeed": 19,
+          "localSearch": true,
+          "restarts": 2,
+          "serviceRefineIterations": 1,
+          "serviceRefineCandidateLimit": 12,
+          "exhaustiveServiceSearch": false,
+          "serviceExactPoolLimit": 8,
+          "serviceExactMaxCombinations": 256
+        },
+        "lns": null,
+        "cpSat": {
+          "timeLimitSeconds": 1,
+          "maxDeterministicTime": 1,
+          "numWorkers": 1,
+          "useNoOverlap2d": true,
+          "randomSeed": 19,
+          "randomizeSearch": false,
+          "progressIntervalSeconds": 0.5
+        },
+        "portfolio": null
+      },
+      "timing": {
+        "wallClockSeconds": 0.432,
+        "firstFeasibleSeconds": 0.005,
+        "firstImprovementSeconds": 0.005,
+        "bestScoreSeconds": 0.005
+      },
+      "score": {
+        "finalPopulation": 200,
+        "bestScore": 200,
+        "cpSatStatus": "OPTIMAL",
+        "exactGap": 0,
+        "attainment": {
+          "populationCapacityUpperBound": 200,
+          "populationGapToCapacity": 0,
+          "capacityUtilization": 1,
+          "gapClosedVsZero": 1,
+          "baselinePopulation": 0,
+          "gapClosedVsBaseline": 1,
+          "gapClosedPerSecond": 2.316
+        },
+        "lnsStopReason": null,
+        "autoStopReason": null,
+        "stoppedByUser": false
+      },
+      "cpu": {
+        "workerCpuBudgetSeconds": 1,
+        "observedWorkerCpuSeconds": 0.005
+      },
+      "stageCount": 1,
+      "stages": [
+        {
+          "kind": "cp-sat",
+          "stage": "cp-sat",
+          "stageIndex": null,
+          "cycleIndex": null,
+          "phase": null,
+          "iteration": null,
+          "status": "OPTIMAL",
+          "operatorOutcome": "OPTIMAL",
+          "startedAtSeconds": null,
+          "wallClockSeconds": 0.005,
+          "completedAtSeconds": 0.005,
+          "scoreBefore": null,
+          "scoreAfter": 200,
+          "improvement": null,
+          "exactGap": 0,
+          "cpSatStatus": "OPTIMAL",
+          "candidateCounts": {
+            "serviceCandidates": 0,
+            "residentialCandidates": 2,
+            "allowedCells": 10,
+            "roadEligibleCells": 10,
+            "roadVariables": 10,
+            "directedEdges": 20
+          },
+          "cpSatModelSize": {
+            "variableCount": 42,
+            "booleanVariableCount": 14,
+            "constraintCount": 141,
+            "allowedCellCount": 10,
+            "roadEligibleCellCount": 10,
+            "roadVariableCount": 10,
+            "rootVariableCount": 2,
+            "directedEdgeCount": 20,
+            "serviceCandidateCount": 0,
+            "residentialCandidateCount": 2,
+            "populationVariableCount": 2
+          }
+        }
+      ]
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "multi-anchor-road-components:cp-sat:budget-1:seed-37",
+      "caseName": "multi-anchor-road-components",
+      "split": "holdout",
+      "workflowTags": [
+        "multi-anchor"
+      ],
+      "problemSizeBand": "small",
+      "mode": "cp-sat",
+      "optimizer": "cp-sat",
+      "budgetSeconds": 1,
+      "seed": 37,
+      "solverParams": {
+        "optimizer": "cp-sat",
+        "auto": null,
+        "greedy": {
+          "timeLimitSeconds": 1,
+          "randomSeed": 37,
+          "localSearch": true,
+          "restarts": 2,
+          "serviceRefineIterations": 1,
+          "serviceRefineCandidateLimit": 12,
+          "exhaustiveServiceSearch": false,
+          "serviceExactPoolLimit": 8,
+          "serviceExactMaxCombinations": 256
+        },
+        "lns": null,
+        "cpSat": {
+          "timeLimitSeconds": 1,
+          "maxDeterministicTime": 1,
+          "numWorkers": 1,
+          "useNoOverlap2d": true,
+          "randomSeed": 37,
+          "randomizeSearch": false,
+          "progressIntervalSeconds": 0.5
+        },
+        "portfolio": null
+      },
+      "timing": {
+        "wallClockSeconds": 0.431,
+        "firstFeasibleSeconds": 0.005,
+        "firstImprovementSeconds": 0.005,
+        "bestScoreSeconds": 0.005
+      },
+      "score": {
+        "finalPopulation": 200,
+        "bestScore": 200,
+        "cpSatStatus": "OPTIMAL",
+        "exactGap": 0,
+        "attainment": {
+          "populationCapacityUpperBound": 200,
+          "populationGapToCapacity": 0,
+          "capacityUtilization": 1,
+          "gapClosedVsZero": 1,
+          "baselinePopulation": 0,
+          "gapClosedVsBaseline": 1,
+          "gapClosedPerSecond": 2.322
+        },
+        "lnsStopReason": null,
+        "autoStopReason": null,
+        "stoppedByUser": false
+      },
+      "cpu": {
+        "workerCpuBudgetSeconds": 1,
+        "observedWorkerCpuSeconds": 0.006
+      },
+      "stageCount": 1,
+      "stages": [
+        {
+          "kind": "cp-sat",
+          "stage": "cp-sat",
+          "stageIndex": null,
+          "cycleIndex": null,
+          "phase": null,
+          "iteration": null,
+          "status": "OPTIMAL",
+          "operatorOutcome": "OPTIMAL",
+          "startedAtSeconds": null,
+          "wallClockSeconds": 0.006,
+          "completedAtSeconds": 0.006,
+          "scoreBefore": null,
+          "scoreAfter": 200,
+          "improvement": null,
+          "exactGap": 0,
+          "cpSatStatus": "OPTIMAL",
+          "candidateCounts": {
+            "serviceCandidates": 0,
+            "residentialCandidates": 2,
+            "allowedCells": 10,
+            "roadEligibleCells": 10,
+            "roadVariables": 10,
+            "directedEdges": 20
+          },
+          "cpSatModelSize": {
+            "variableCount": 42,
+            "booleanVariableCount": 14,
+            "constraintCount": 141,
+            "allowedCellCount": 10,
+            "roadEligibleCellCount": 10,
+            "roadVariableCount": 10,
+            "rootVariableCount": 2,
+            "directedEdgeCount": 20,
+            "serviceCandidateCount": 0,
+            "residentialCandidateCount": 2,
+            "populationVariableCount": 2
+          }
+        }
+      ]
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "multi-anchor-road-components:cp-sat:budget-5:seed-7",
+      "caseName": "multi-anchor-road-components",
+      "split": "holdout",
+      "workflowTags": [
+        "multi-anchor"
+      ],
+      "problemSizeBand": "small",
+      "mode": "cp-sat",
+      "optimizer": "cp-sat",
+      "budgetSeconds": 5,
+      "seed": 7,
+      "solverParams": {
+        "optimizer": "cp-sat",
+        "auto": null,
+        "greedy": {
+          "timeLimitSeconds": 5,
+          "randomSeed": 7,
+          "localSearch": true,
+          "restarts": 2,
+          "serviceRefineIterations": 1,
+          "serviceRefineCandidateLimit": 12,
+          "exhaustiveServiceSearch": false,
+          "serviceExactPoolLimit": 8,
+          "serviceExactMaxCombinations": 256
+        },
+        "lns": null,
+        "cpSat": {
+          "timeLimitSeconds": 5,
+          "maxDeterministicTime": 5,
+          "numWorkers": 1,
+          "useNoOverlap2d": true,
+          "randomSeed": 7,
+          "randomizeSearch": false,
+          "progressIntervalSeconds": 0.5
+        },
+        "portfolio": null
+      },
+      "timing": {
+        "wallClockSeconds": 0.434,
+        "firstFeasibleSeconds": 0.005,
+        "firstImprovementSeconds": 0.005,
+        "bestScoreSeconds": 0.005
+      },
+      "score": {
+        "finalPopulation": 200,
+        "bestScore": 200,
+        "cpSatStatus": "OPTIMAL",
+        "exactGap": 0,
+        "attainment": {
+          "populationCapacityUpperBound": 200,
+          "populationGapToCapacity": 0,
+          "capacityUtilization": 1,
+          "gapClosedVsZero": 1,
+          "baselinePopulation": 0,
+          "gapClosedVsBaseline": 1,
+          "gapClosedPerSecond": 2.302
+        },
+        "lnsStopReason": null,
+        "autoStopReason": null,
+        "stoppedByUser": false
+      },
+      "cpu": {
+        "workerCpuBudgetSeconds": 5,
+        "observedWorkerCpuSeconds": 0.005
+      },
+      "stageCount": 1,
+      "stages": [
+        {
+          "kind": "cp-sat",
+          "stage": "cp-sat",
+          "stageIndex": null,
+          "cycleIndex": null,
+          "phase": null,
+          "iteration": null,
+          "status": "OPTIMAL",
+          "operatorOutcome": "OPTIMAL",
+          "startedAtSeconds": null,
+          "wallClockSeconds": 0.005,
+          "completedAtSeconds": 0.005,
+          "scoreBefore": null,
+          "scoreAfter": 200,
+          "improvement": null,
+          "exactGap": 0,
+          "cpSatStatus": "OPTIMAL",
+          "candidateCounts": {
+            "serviceCandidates": 0,
+            "residentialCandidates": 2,
+            "allowedCells": 10,
+            "roadEligibleCells": 10,
+            "roadVariables": 10,
+            "directedEdges": 20
+          },
+          "cpSatModelSize": {
+            "variableCount": 42,
+            "booleanVariableCount": 14,
+            "constraintCount": 141,
+            "allowedCellCount": 10,
+            "roadEligibleCellCount": 10,
+            "roadVariableCount": 10,
+            "rootVariableCount": 2,
+            "directedEdgeCount": 20,
+            "serviceCandidateCount": 0,
+            "residentialCandidateCount": 2,
+            "populationVariableCount": 2
+          }
+        }
+      ]
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "multi-anchor-road-components:cp-sat:budget-5:seed-19",
+      "caseName": "multi-anchor-road-components",
+      "split": "holdout",
+      "workflowTags": [
+        "multi-anchor"
+      ],
+      "problemSizeBand": "small",
+      "mode": "cp-sat",
+      "optimizer": "cp-sat",
+      "budgetSeconds": 5,
+      "seed": 19,
+      "solverParams": {
+        "optimizer": "cp-sat",
+        "auto": null,
+        "greedy": {
+          "timeLimitSeconds": 5,
+          "randomSeed": 19,
+          "localSearch": true,
+          "restarts": 2,
+          "serviceRefineIterations": 1,
+          "serviceRefineCandidateLimit": 12,
+          "exhaustiveServiceSearch": false,
+          "serviceExactPoolLimit": 8,
+          "serviceExactMaxCombinations": 256
+        },
+        "lns": null,
+        "cpSat": {
+          "timeLimitSeconds": 5,
+          "maxDeterministicTime": 5,
+          "numWorkers": 1,
+          "useNoOverlap2d": true,
+          "randomSeed": 19,
+          "randomizeSearch": false,
+          "progressIntervalSeconds": 0.5
+        },
+        "portfolio": null
+      },
+      "timing": {
+        "wallClockSeconds": 0.436,
+        "firstFeasibleSeconds": 0.006,
+        "firstImprovementSeconds": 0.006,
+        "bestScoreSeconds": 0.006
+      },
+      "score": {
+        "finalPopulation": 200,
+        "bestScore": 200,
+        "cpSatStatus": "OPTIMAL",
+        "exactGap": 0,
+        "attainment": {
+          "populationCapacityUpperBound": 200,
+          "populationGapToCapacity": 0,
+          "capacityUtilization": 1,
+          "gapClosedVsZero": 1,
+          "baselinePopulation": 0,
+          "gapClosedVsBaseline": 1,
+          "gapClosedPerSecond": 2.296
+        },
+        "lnsStopReason": null,
+        "autoStopReason": null,
+        "stoppedByUser": false
+      },
+      "cpu": {
+        "workerCpuBudgetSeconds": 5,
+        "observedWorkerCpuSeconds": 0.006
+      },
+      "stageCount": 1,
+      "stages": [
+        {
+          "kind": "cp-sat",
+          "stage": "cp-sat",
+          "stageIndex": null,
+          "cycleIndex": null,
+          "phase": null,
+          "iteration": null,
+          "status": "OPTIMAL",
+          "operatorOutcome": "OPTIMAL",
+          "startedAtSeconds": null,
+          "wallClockSeconds": 0.006,
+          "completedAtSeconds": 0.006,
+          "scoreBefore": null,
+          "scoreAfter": 200,
+          "improvement": null,
+          "exactGap": 0,
+          "cpSatStatus": "OPTIMAL",
+          "candidateCounts": {
+            "serviceCandidates": 0,
+            "residentialCandidates": 2,
+            "allowedCells": 10,
+            "roadEligibleCells": 10,
+            "roadVariables": 10,
+            "directedEdges": 20
+          },
+          "cpSatModelSize": {
+            "variableCount": 42,
+            "booleanVariableCount": 14,
+            "constraintCount": 141,
+            "allowedCellCount": 10,
+            "roadEligibleCellCount": 10,
+            "roadVariableCount": 10,
+            "rootVariableCount": 2,
+            "directedEdgeCount": 20,
+            "serviceCandidateCount": 0,
+            "residentialCandidateCount": 2,
+            "populationVariableCount": 2
+          }
+        }
+      ]
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "multi-anchor-road-components:cp-sat:budget-5:seed-37",
+      "caseName": "multi-anchor-road-components",
+      "split": "holdout",
+      "workflowTags": [
+        "multi-anchor"
+      ],
+      "problemSizeBand": "small",
+      "mode": "cp-sat",
+      "optimizer": "cp-sat",
+      "budgetSeconds": 5,
+      "seed": 37,
+      "solverParams": {
+        "optimizer": "cp-sat",
+        "auto": null,
+        "greedy": {
+          "timeLimitSeconds": 5,
+          "randomSeed": 37,
+          "localSearch": true,
+          "restarts": 2,
+          "serviceRefineIterations": 1,
+          "serviceRefineCandidateLimit": 12,
+          "exhaustiveServiceSearch": false,
+          "serviceExactPoolLimit": 8,
+          "serviceExactMaxCombinations": 256
+        },
+        "lns": null,
+        "cpSat": {
+          "timeLimitSeconds": 5,
+          "maxDeterministicTime": 5,
+          "numWorkers": 1,
+          "useNoOverlap2d": true,
+          "randomSeed": 37,
+          "randomizeSearch": false,
+          "progressIntervalSeconds": 0.5
+        },
+        "portfolio": null
+      },
+      "timing": {
+        "wallClockSeconds": 0.43,
+        "firstFeasibleSeconds": 0.006,
+        "firstImprovementSeconds": 0.006,
+        "bestScoreSeconds": 0.006
+      },
+      "score": {
+        "finalPopulation": 200,
+        "bestScore": 200,
+        "cpSatStatus": "OPTIMAL",
+        "exactGap": 0,
+        "attainment": {
+          "populationCapacityUpperBound": 200,
+          "populationGapToCapacity": 0,
+          "capacityUtilization": 1,
+          "gapClosedVsZero": 1,
+          "baselinePopulation": 0,
+          "gapClosedVsBaseline": 1,
+          "gapClosedPerSecond": 2.324
+        },
+        "lnsStopReason": null,
+        "autoStopReason": null,
+        "stoppedByUser": false
+      },
+      "cpu": {
+        "workerCpuBudgetSeconds": 5,
+        "observedWorkerCpuSeconds": 0.006
+      },
+      "stageCount": 1,
+      "stages": [
+        {
+          "kind": "cp-sat",
+          "stage": "cp-sat",
+          "stageIndex": null,
+          "cycleIndex": null,
+          "phase": null,
+          "iteration": null,
+          "status": "OPTIMAL",
+          "operatorOutcome": "OPTIMAL",
+          "startedAtSeconds": null,
+          "wallClockSeconds": 0.006,
+          "completedAtSeconds": 0.006,
+          "scoreBefore": null,
+          "scoreAfter": 200,
+          "improvement": null,
+          "exactGap": 0,
+          "cpSatStatus": "OPTIMAL",
+          "candidateCounts": {
+            "serviceCandidates": 0,
+            "residentialCandidates": 2,
+            "allowedCells": 10,
+            "roadEligibleCells": 10,
+            "roadVariables": 10,
+            "directedEdges": 20
+          },
+          "cpSatModelSize": {
+            "variableCount": 42,
+            "booleanVariableCount": 14,
+            "constraintCount": 141,
+            "allowedCellCount": 10,
+            "roadEligibleCellCount": 10,
+            "roadVariableCount": 10,
+            "rootVariableCount": 2,
+            "directedEdgeCount": 20,
+            "serviceCandidateCount": 0,
+            "residentialCandidateCount": 2,
+            "populationVariableCount": 2
+          }
+        }
+      ]
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "expansion-comparison-replay:cp-sat:budget-1:seed-7",
+      "caseName": "expansion-comparison-replay",
+      "split": "holdout",
+      "workflowTags": [
+        "expansion-comparison"
+      ],
+      "problemSizeBand": "small",
+      "mode": "cp-sat",
+      "optimizer": "cp-sat",
+      "budgetSeconds": 1,
+      "seed": 7,
+      "solverParams": {
+        "optimizer": "cp-sat",
+        "auto": null,
+        "greedy": {
+          "timeLimitSeconds": 1,
+          "randomSeed": 7,
+          "localSearch": true,
+          "restarts": 2,
+          "serviceRefineIterations": 1,
+          "serviceRefineCandidateLimit": 8,
+          "exhaustiveServiceSearch": false,
+          "serviceExactPoolLimit": 8,
+          "serviceExactMaxCombinations": 128
+        },
+        "lns": {
+          "iterations": 2,
+          "maxNoImprovementIterations": 3,
+          "neighborhoodRows": 3,
+          "neighborhoodCols": 3,
+          "repairTimeLimitSeconds": 0.5,
+          "seedHintSource": "expansion-comparison-replay"
+        },
+        "cpSat": {
+          "timeLimitSeconds": 1,
+          "maxDeterministicTime": 1,
+          "numWorkers": 1,
+          "useNoOverlap2d": false,
+          "randomSeed": 7,
+          "randomizeSearch": false,
+          "warmStartHintSource": "expansion-comparison-replay",
+          "progressIntervalSeconds": 0.5
+        },
+        "portfolio": null
+      },
+      "timing": {
+        "wallClockSeconds": 1.44,
+        "firstFeasibleSeconds": 0.781,
+        "firstImprovementSeconds": 0.781,
+        "bestScoreSeconds": 0.781
+      },
+      "score": {
+        "finalPopulation": 745,
+        "bestScore": 745,
+        "cpSatStatus": "FEASIBLE",
+        "exactGap": 35,
+        "attainment": {
+          "populationCapacityUpperBound": 820,
+          "populationGapToCapacity": 75,
+          "capacityUtilization": 0.909,
+          "gapClosedVsZero": 0.909,
+          "baselinePopulation": 0,
+          "gapClosedVsBaseline": 0.909,
+          "gapClosedPerSecond": 0.631
+        },
+        "lnsStopReason": null,
+        "autoStopReason": null,
+        "stoppedByUser": false
+      },
+      "cpu": {
+        "workerCpuBudgetSeconds": 1,
+        "observedWorkerCpuSeconds": 1.001
+      },
+      "stageCount": 1,
+      "stages": [
+        {
+          "kind": "cp-sat",
+          "stage": "cp-sat",
+          "stageIndex": null,
+          "cycleIndex": null,
+          "phase": null,
+          "iteration": null,
+          "status": "FEASIBLE",
+          "operatorOutcome": "FEASIBLE",
+          "startedAtSeconds": null,
+          "wallClockSeconds": 1.001,
+          "completedAtSeconds": 1.001,
+          "scoreBefore": null,
+          "scoreAfter": 745,
+          "improvement": null,
+          "exactGap": 35,
+          "cpSatStatus": "FEASIBLE",
+          "candidateCounts": {
+            "serviceCandidates": 96,
+            "residentialCandidates": 65,
+            "allowedCells": 36,
+            "roadEligibleCells": 36,
+            "roadVariables": 36,
+            "directedEdges": 120
+          },
+          "cpSatModelSize": {
+            "variableCount": 407,
+            "booleanVariableCount": 208,
+            "constraintCount": 753,
+            "allowedCellCount": 36,
+            "roadEligibleCellCount": 36,
+            "roadVariableCount": 36,
+            "rootVariableCount": 11,
+            "directedEdgeCount": 120,
+            "serviceCandidateCount": 96,
+            "residentialCandidateCount": 65,
+            "populationVariableCount": 65
+          }
+        }
+      ]
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "expansion-comparison-replay:cp-sat:budget-1:seed-19",
+      "caseName": "expansion-comparison-replay",
+      "split": "holdout",
+      "workflowTags": [
+        "expansion-comparison"
+      ],
+      "problemSizeBand": "small",
+      "mode": "cp-sat",
+      "optimizer": "cp-sat",
+      "budgetSeconds": 1,
+      "seed": 19,
+      "solverParams": {
+        "optimizer": "cp-sat",
+        "auto": null,
+        "greedy": {
+          "timeLimitSeconds": 1,
+          "randomSeed": 19,
+          "localSearch": true,
+          "restarts": 2,
+          "serviceRefineIterations": 1,
+          "serviceRefineCandidateLimit": 8,
+          "exhaustiveServiceSearch": false,
+          "serviceExactPoolLimit": 8,
+          "serviceExactMaxCombinations": 128
+        },
+        "lns": {
+          "iterations": 2,
+          "maxNoImprovementIterations": 3,
+          "neighborhoodRows": 3,
+          "neighborhoodCols": 3,
+          "repairTimeLimitSeconds": 0.5,
+          "seedHintSource": "expansion-comparison-replay"
+        },
+        "cpSat": {
+          "timeLimitSeconds": 1,
+          "maxDeterministicTime": 1,
+          "numWorkers": 1,
+          "useNoOverlap2d": false,
+          "randomSeed": 19,
+          "randomizeSearch": false,
+          "warmStartHintSource": "expansion-comparison-replay",
+          "progressIntervalSeconds": 0.5
+        },
+        "portfolio": null
+      },
+      "timing": {
+        "wallClockSeconds": 1.359,
+        "firstFeasibleSeconds": 0.85,
+        "firstImprovementSeconds": 0.85,
+        "bestScoreSeconds": 1.359
+      },
+      "score": {
+        "finalPopulation": 745,
+        "bestScore": 745,
+        "cpSatStatus": "FEASIBLE",
+        "exactGap": 48,
+        "attainment": {
+          "populationCapacityUpperBound": 820,
+          "populationGapToCapacity": 75,
+          "capacityUtilization": 0.909,
+          "gapClosedVsZero": 0.909,
+          "baselinePopulation": 0,
+          "gapClosedVsBaseline": 0.909,
+          "gapClosedPerSecond": 0.668
+        },
+        "lnsStopReason": null,
+        "autoStopReason": null,
+        "stoppedByUser": false
+      },
+      "cpu": {
+        "workerCpuBudgetSeconds": 1,
+        "observedWorkerCpuSeconds": 0.9
+      },
+      "stageCount": 1,
+      "stages": [
+        {
+          "kind": "cp-sat",
+          "stage": "cp-sat",
+          "stageIndex": null,
+          "cycleIndex": null,
+          "phase": null,
+          "iteration": null,
+          "status": "FEASIBLE",
+          "operatorOutcome": "FEASIBLE",
+          "startedAtSeconds": null,
+          "wallClockSeconds": 0.9,
+          "completedAtSeconds": 0.9,
+          "scoreBefore": null,
+          "scoreAfter": 732,
+          "improvement": null,
+          "exactGap": 48,
+          "cpSatStatus": "FEASIBLE",
+          "candidateCounts": {
+            "serviceCandidates": 96,
+            "residentialCandidates": 65,
+            "allowedCells": 36,
+            "roadEligibleCells": 36,
+            "roadVariables": 36,
+            "directedEdges": 120
+          },
+          "cpSatModelSize": {
+            "variableCount": 407,
+            "booleanVariableCount": 208,
+            "constraintCount": 753,
+            "allowedCellCount": 36,
+            "roadEligibleCellCount": 36,
+            "roadVariableCount": 36,
+            "rootVariableCount": 11,
+            "directedEdgeCount": 120,
+            "serviceCandidateCount": 96,
+            "residentialCandidateCount": 65,
+            "populationVariableCount": 65
+          }
+        }
+      ]
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "expansion-comparison-replay:cp-sat:budget-1:seed-37",
+      "caseName": "expansion-comparison-replay",
+      "split": "holdout",
+      "workflowTags": [
+        "expansion-comparison"
+      ],
+      "problemSizeBand": "small",
+      "mode": "cp-sat",
+      "optimizer": "cp-sat",
+      "budgetSeconds": 1,
+      "seed": 37,
+      "solverParams": {
+        "optimizer": "cp-sat",
+        "auto": null,
+        "greedy": {
+          "timeLimitSeconds": 1,
+          "randomSeed": 37,
+          "localSearch": true,
+          "restarts": 2,
+          "serviceRefineIterations": 1,
+          "serviceRefineCandidateLimit": 8,
+          "exhaustiveServiceSearch": false,
+          "serviceExactPoolLimit": 8,
+          "serviceExactMaxCombinations": 128
+        },
+        "lns": {
+          "iterations": 2,
+          "maxNoImprovementIterations": 3,
+          "neighborhoodRows": 3,
+          "neighborhoodCols": 3,
+          "repairTimeLimitSeconds": 0.5,
+          "seedHintSource": "expansion-comparison-replay"
+        },
+        "cpSat": {
+          "timeLimitSeconds": 1,
+          "maxDeterministicTime": 1,
+          "numWorkers": 1,
+          "useNoOverlap2d": false,
+          "randomSeed": 37,
+          "randomizeSearch": false,
+          "warmStartHintSource": "expansion-comparison-replay",
+          "progressIntervalSeconds": 0.5
+        },
+        "portfolio": null
+      },
+      "timing": {
+        "wallClockSeconds": 1.451,
+        "firstFeasibleSeconds": 0.979,
+        "firstImprovementSeconds": 0.979,
+        "bestScoreSeconds": 0.979
+      },
+      "score": {
+        "finalPopulation": 780,
+        "bestScore": 780,
+        "cpSatStatus": "FEASIBLE",
+        "exactGap": 0,
+        "attainment": {
+          "populationCapacityUpperBound": 820,
+          "populationGapToCapacity": 40,
+          "capacityUtilization": 0.951,
+          "gapClosedVsZero": 0.951,
+          "baselinePopulation": 0,
+          "gapClosedVsBaseline": 0.951,
+          "gapClosedPerSecond": 0.656
+        },
+        "lnsStopReason": null,
+        "autoStopReason": null,
+        "stoppedByUser": false
+      },
+      "cpu": {
+        "workerCpuBudgetSeconds": 1,
+        "observedWorkerCpuSeconds": 1
+      },
+      "stageCount": 1,
+      "stages": [
+        {
+          "kind": "cp-sat",
+          "stage": "cp-sat",
+          "stageIndex": null,
+          "cycleIndex": null,
+          "phase": null,
+          "iteration": null,
+          "status": "FEASIBLE",
+          "operatorOutcome": "FEASIBLE",
+          "startedAtSeconds": null,
+          "wallClockSeconds": 1,
+          "completedAtSeconds": 1,
+          "scoreBefore": null,
+          "scoreAfter": 780,
+          "improvement": null,
+          "exactGap": 0,
+          "cpSatStatus": "FEASIBLE",
+          "candidateCounts": {
+            "serviceCandidates": 96,
+            "residentialCandidates": 65,
+            "allowedCells": 36,
+            "roadEligibleCells": 36,
+            "roadVariables": 36,
+            "directedEdges": 120
+          },
+          "cpSatModelSize": {
+            "variableCount": 407,
+            "booleanVariableCount": 208,
+            "constraintCount": 753,
+            "allowedCellCount": 36,
+            "roadEligibleCellCount": 36,
+            "roadVariableCount": 36,
+            "rootVariableCount": 11,
+            "directedEdgeCount": 120,
+            "serviceCandidateCount": 96,
+            "residentialCandidateCount": 65,
+            "populationVariableCount": 65
+          }
+        }
+      ]
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "expansion-comparison-replay:cp-sat:budget-5:seed-7",
+      "caseName": "expansion-comparison-replay",
+      "split": "holdout",
+      "workflowTags": [
+        "expansion-comparison"
+      ],
+      "problemSizeBand": "small",
+      "mode": "cp-sat",
+      "optimizer": "cp-sat",
+      "budgetSeconds": 5,
+      "seed": 7,
+      "solverParams": {
+        "optimizer": "cp-sat",
+        "auto": null,
+        "greedy": {
+          "timeLimitSeconds": 5,
+          "randomSeed": 7,
+          "localSearch": true,
+          "restarts": 2,
+          "serviceRefineIterations": 1,
+          "serviceRefineCandidateLimit": 8,
+          "exhaustiveServiceSearch": false,
+          "serviceExactPoolLimit": 8,
+          "serviceExactMaxCombinations": 128
+        },
+        "lns": {
+          "iterations": 2,
+          "maxNoImprovementIterations": 3,
+          "neighborhoodRows": 3,
+          "neighborhoodCols": 3,
+          "repairTimeLimitSeconds": 0.5,
+          "seedHintSource": "expansion-comparison-replay"
+        },
+        "cpSat": {
+          "timeLimitSeconds": 5,
+          "maxDeterministicTime": 5,
+          "numWorkers": 1,
+          "useNoOverlap2d": false,
+          "randomSeed": 7,
+          "randomizeSearch": false,
+          "warmStartHintSource": "expansion-comparison-replay",
+          "progressIntervalSeconds": 0.5
+        },
+        "portfolio": null
+      },
+      "timing": {
+        "wallClockSeconds": 4.227,
+        "firstFeasibleSeconds": 1.656,
+        "firstImprovementSeconds": 1.656,
+        "bestScoreSeconds": 1.656
+      },
+      "score": {
+        "finalPopulation": 780,
+        "bestScore": 780,
+        "cpSatStatus": "FEASIBLE",
+        "exactGap": 0,
+        "attainment": {
+          "populationCapacityUpperBound": 820,
+          "populationGapToCapacity": 40,
+          "capacityUtilization": 0.951,
+          "gapClosedVsZero": 0.951,
+          "baselinePopulation": 0,
+          "gapClosedVsBaseline": 0.951,
+          "gapClosedPerSecond": 0.225
+        },
+        "lnsStopReason": null,
+        "autoStopReason": null,
+        "stoppedByUser": false
+      },
+      "cpu": {
+        "workerCpuBudgetSeconds": 5,
+        "observedWorkerCpuSeconds": 3.76
+      },
+      "stageCount": 1,
+      "stages": [
+        {
+          "kind": "cp-sat",
+          "stage": "cp-sat",
+          "stageIndex": null,
+          "cycleIndex": null,
+          "phase": null,
+          "iteration": null,
+          "status": "FEASIBLE",
+          "operatorOutcome": "FEASIBLE",
+          "startedAtSeconds": null,
+          "wallClockSeconds": 3.76,
+          "completedAtSeconds": 3.76,
+          "scoreBefore": null,
+          "scoreAfter": 780,
+          "improvement": null,
+          "exactGap": 0,
+          "cpSatStatus": "FEASIBLE",
+          "candidateCounts": {
+            "serviceCandidates": 96,
+            "residentialCandidates": 65,
+            "allowedCells": 36,
+            "roadEligibleCells": 36,
+            "roadVariables": 36,
+            "directedEdges": 120
+          },
+          "cpSatModelSize": {
+            "variableCount": 407,
+            "booleanVariableCount": 208,
+            "constraintCount": 753,
+            "allowedCellCount": 36,
+            "roadEligibleCellCount": 36,
+            "roadVariableCount": 36,
+            "rootVariableCount": 11,
+            "directedEdgeCount": 120,
+            "serviceCandidateCount": 96,
+            "residentialCandidateCount": 65,
+            "populationVariableCount": 65
+          }
+        }
+      ]
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "expansion-comparison-replay:cp-sat:budget-5:seed-19",
+      "caseName": "expansion-comparison-replay",
+      "split": "holdout",
+      "workflowTags": [
+        "expansion-comparison"
+      ],
+      "problemSizeBand": "small",
+      "mode": "cp-sat",
+      "optimizer": "cp-sat",
+      "budgetSeconds": 5,
+      "seed": 19,
+      "solverParams": {
+        "optimizer": "cp-sat",
+        "auto": null,
+        "greedy": {
+          "timeLimitSeconds": 5,
+          "randomSeed": 19,
+          "localSearch": true,
+          "restarts": 2,
+          "serviceRefineIterations": 1,
+          "serviceRefineCandidateLimit": 8,
+          "exhaustiveServiceSearch": false,
+          "serviceExactPoolLimit": 8,
+          "serviceExactMaxCombinations": 128
+        },
+        "lns": {
+          "iterations": 2,
+          "maxNoImprovementIterations": 3,
+          "neighborhoodRows": 3,
+          "neighborhoodCols": 3,
+          "repairTimeLimitSeconds": 0.5,
+          "seedHintSource": "expansion-comparison-replay"
+        },
+        "cpSat": {
+          "timeLimitSeconds": 5,
+          "maxDeterministicTime": 5,
+          "numWorkers": 1,
+          "useNoOverlap2d": false,
+          "randomSeed": 19,
+          "randomizeSearch": false,
+          "warmStartHintSource": "expansion-comparison-replay",
+          "progressIntervalSeconds": 0.5
+        },
+        "portfolio": null
+      },
+      "timing": {
+        "wallClockSeconds": 4.136,
+        "firstFeasibleSeconds": 1.97,
+        "firstImprovementSeconds": 1.97,
+        "bestScoreSeconds": 1.97
+      },
+      "score": {
+        "finalPopulation": 780,
+        "bestScore": 780,
+        "cpSatStatus": "FEASIBLE",
+        "exactGap": 0,
+        "attainment": {
+          "populationCapacityUpperBound": 820,
+          "populationGapToCapacity": 40,
+          "capacityUtilization": 0.951,
+          "gapClosedVsZero": 0.951,
+          "baselinePopulation": 0,
+          "gapClosedVsBaseline": 0.951,
+          "gapClosedPerSecond": 0.23
+        },
+        "lnsStopReason": null,
+        "autoStopReason": null,
+        "stoppedByUser": false
+      },
+      "cpu": {
+        "workerCpuBudgetSeconds": 5,
+        "observedWorkerCpuSeconds": 3.678
+      },
+      "stageCount": 1,
+      "stages": [
+        {
+          "kind": "cp-sat",
+          "stage": "cp-sat",
+          "stageIndex": null,
+          "cycleIndex": null,
+          "phase": null,
+          "iteration": null,
+          "status": "FEASIBLE",
+          "operatorOutcome": "FEASIBLE",
+          "startedAtSeconds": null,
+          "wallClockSeconds": 3.678,
+          "completedAtSeconds": 3.678,
+          "scoreBefore": null,
+          "scoreAfter": 780,
+          "improvement": null,
+          "exactGap": 0,
+          "cpSatStatus": "FEASIBLE",
+          "candidateCounts": {
+            "serviceCandidates": 96,
+            "residentialCandidates": 65,
+            "allowedCells": 36,
+            "roadEligibleCells": 36,
+            "roadVariables": 36,
+            "directedEdges": 120
+          },
+          "cpSatModelSize": {
+            "variableCount": 407,
+            "booleanVariableCount": 208,
+            "constraintCount": 753,
+            "allowedCellCount": 36,
+            "roadEligibleCellCount": 36,
+            "roadVariableCount": 36,
+            "rootVariableCount": 11,
+            "directedEdgeCount": 120,
+            "serviceCandidateCount": 96,
+            "residentialCandidateCount": 65,
+            "populationVariableCount": 65
+          }
+        }
+      ]
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "expansion-comparison-replay:cp-sat:budget-5:seed-37",
+      "caseName": "expansion-comparison-replay",
+      "split": "holdout",
+      "workflowTags": [
+        "expansion-comparison"
+      ],
+      "problemSizeBand": "small",
+      "mode": "cp-sat",
+      "optimizer": "cp-sat",
+      "budgetSeconds": 5,
+      "seed": 37,
+      "solverParams": {
+        "optimizer": "cp-sat",
+        "auto": null,
+        "greedy": {
+          "timeLimitSeconds": 5,
+          "randomSeed": 37,
+          "localSearch": true,
+          "restarts": 2,
+          "serviceRefineIterations": 1,
+          "serviceRefineCandidateLimit": 8,
+          "exhaustiveServiceSearch": false,
+          "serviceExactPoolLimit": 8,
+          "serviceExactMaxCombinations": 128
+        },
+        "lns": {
+          "iterations": 2,
+          "maxNoImprovementIterations": 3,
+          "neighborhoodRows": 3,
+          "neighborhoodCols": 3,
+          "repairTimeLimitSeconds": 0.5,
+          "seedHintSource": "expansion-comparison-replay"
+        },
+        "cpSat": {
+          "timeLimitSeconds": 5,
+          "maxDeterministicTime": 5,
+          "numWorkers": 1,
+          "useNoOverlap2d": false,
+          "randomSeed": 37,
+          "randomizeSearch": false,
+          "warmStartHintSource": "expansion-comparison-replay",
+          "progressIntervalSeconds": 0.5
+        },
+        "portfolio": null
+      },
+      "timing": {
+        "wallClockSeconds": 4.312,
+        "firstFeasibleSeconds": 3.105,
+        "firstImprovementSeconds": 3.105,
+        "bestScoreSeconds": 3.105
+      },
+      "score": {
+        "finalPopulation": 780,
+        "bestScore": 780,
+        "cpSatStatus": "FEASIBLE",
+        "exactGap": 0,
+        "attainment": {
+          "populationCapacityUpperBound": 820,
+          "populationGapToCapacity": 40,
+          "capacityUtilization": 0.951,
+          "gapClosedVsZero": 0.951,
+          "baselinePopulation": 0,
+          "gapClosedVsBaseline": 0.951,
+          "gapClosedPerSecond": 0.221
+        },
+        "lnsStopReason": null,
+        "autoStopReason": null,
+        "stoppedByUser": false
+      },
+      "cpu": {
+        "workerCpuBudgetSeconds": 5,
+        "observedWorkerCpuSeconds": 3.867
+      },
+      "stageCount": 1,
+      "stages": [
+        {
+          "kind": "cp-sat",
+          "stage": "cp-sat",
+          "stageIndex": null,
+          "cycleIndex": null,
+          "phase": null,
+          "iteration": null,
+          "status": "FEASIBLE",
+          "operatorOutcome": "FEASIBLE",
+          "startedAtSeconds": null,
+          "wallClockSeconds": 3.867,
+          "completedAtSeconds": 3.867,
+          "scoreBefore": null,
+          "scoreAfter": 780,
+          "improvement": null,
+          "exactGap": 0,
+          "cpSatStatus": "FEASIBLE",
+          "candidateCounts": {
+            "serviceCandidates": 96,
+            "residentialCandidates": 65,
+            "allowedCells": 36,
+            "roadEligibleCells": 36,
+            "roadVariables": 36,
+            "directedEdges": 120
+          },
+          "cpSatModelSize": {
+            "variableCount": 407,
+            "booleanVariableCount": 208,
+            "constraintCount": 753,
+            "allowedCellCount": 36,
+            "roadEligibleCellCount": 36,
+            "roadVariableCount": 36,
+            "rootVariableCount": 11,
+            "directedEdgeCount": 120,
+            "serviceCandidateCount": 96,
+            "residentialCandidateCount": 65,
+            "populationVariableCount": 65
+          }
+        }
+      ]
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "fresh-multi-anchor-service-island:cp-sat:budget-1:seed-7",
+      "caseName": "fresh-multi-anchor-service-island",
+      "split": "holdout",
+      "workflowTags": [
+        "multi-anchor",
+        "service-pressure",
+        "gate"
+      ],
+      "problemSizeBand": "small",
+      "mode": "cp-sat",
+      "optimizer": "cp-sat",
+      "budgetSeconds": 1,
+      "seed": 7,
+      "solverParams": {
+        "optimizer": "cp-sat",
+        "auto": null,
+        "greedy": {
+          "timeLimitSeconds": 1,
+          "randomSeed": 7,
+          "localSearch": true,
+          "restarts": 3,
+          "serviceRefineIterations": 2,
+          "serviceRefineCandidateLimit": 12,
+          "exhaustiveServiceSearch": false,
+          "serviceExactPoolLimit": 10,
+          "serviceExactMaxCombinations": 256
+        },
+        "lns": {
+          "iterations": 4,
+          "maxNoImprovementIterations": 3,
+          "neighborhoodRows": 4,
+          "neighborhoodCols": 4,
+          "repairTimeLimitSeconds": 0.75
+        },
+        "cpSat": {
+          "timeLimitSeconds": 1,
+          "maxDeterministicTime": 1,
+          "numWorkers": 1,
+          "useNoOverlap2d": true,
+          "randomSeed": 7,
+          "randomizeSearch": false,
+          "progressIntervalSeconds": 0.5
+        },
+        "portfolio": null
+      },
+      "timing": {
+        "wallClockSeconds": 1.476,
+        "firstFeasibleSeconds": 0.889,
+        "firstImprovementSeconds": 0.889,
+        "bestScoreSeconds": 0.889
+      },
+      "score": {
+        "finalPopulation": 1015,
+        "bestScore": 1015,
+        "cpSatStatus": "FEASIBLE",
+        "exactGap": 25,
+        "attainment": {
+          "populationCapacityUpperBound": 1040,
+          "populationGapToCapacity": 25,
+          "capacityUtilization": 0.976,
+          "gapClosedVsZero": 0.976,
+          "baselinePopulation": 0,
+          "gapClosedVsBaseline": 0.976,
+          "gapClosedPerSecond": 0.661
+        },
+        "lnsStopReason": null,
+        "autoStopReason": null,
+        "stoppedByUser": false
+      },
+      "cpu": {
+        "workerCpuBudgetSeconds": 1,
+        "observedWorkerCpuSeconds": 1.001
+      },
+      "stageCount": 1,
+      "stages": [
+        {
+          "kind": "cp-sat",
+          "stage": "cp-sat",
+          "stageIndex": null,
+          "cycleIndex": null,
+          "phase": null,
+          "iteration": null,
+          "status": "FEASIBLE",
+          "operatorOutcome": "FEASIBLE",
+          "startedAtSeconds": null,
+          "wallClockSeconds": 1.001,
+          "completedAtSeconds": 1.001,
+          "scoreBefore": null,
+          "scoreAfter": 1015,
+          "improvement": null,
+          "exactGap": 25,
+          "cpSatStatus": "FEASIBLE",
+          "candidateCounts": {
+            "serviceCandidates": 94,
+            "residentialCandidates": 65,
+            "allowedCells": 40,
+            "roadEligibleCells": 40,
+            "roadVariables": 40,
+            "directedEdges": 108
+          },
+          "cpSatModelSize": {
+            "variableCount": 395,
+            "booleanVariableCount": 209,
+            "constraintCount": 1108,
+            "allowedCellCount": 40,
+            "roadEligibleCellCount": 40,
+            "roadVariableCount": 40,
+            "rootVariableCount": 10,
+            "directedEdgeCount": 108,
+            "serviceCandidateCount": 94,
+            "residentialCandidateCount": 65,
+            "populationVariableCount": 65
+          }
+        }
+      ]
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "fresh-multi-anchor-service-island:cp-sat:budget-1:seed-19",
+      "caseName": "fresh-multi-anchor-service-island",
+      "split": "holdout",
+      "workflowTags": [
+        "multi-anchor",
+        "service-pressure",
+        "gate"
+      ],
+      "problemSizeBand": "small",
+      "mode": "cp-sat",
+      "optimizer": "cp-sat",
+      "budgetSeconds": 1,
+      "seed": 19,
+      "solverParams": {
+        "optimizer": "cp-sat",
+        "auto": null,
+        "greedy": {
+          "timeLimitSeconds": 1,
+          "randomSeed": 19,
+          "localSearch": true,
+          "restarts": 3,
+          "serviceRefineIterations": 2,
+          "serviceRefineCandidateLimit": 12,
+          "exhaustiveServiceSearch": false,
+          "serviceExactPoolLimit": 10,
+          "serviceExactMaxCombinations": 256
+        },
+        "lns": {
+          "iterations": 4,
+          "maxNoImprovementIterations": 3,
+          "neighborhoodRows": 4,
+          "neighborhoodCols": 4,
+          "repairTimeLimitSeconds": 0.75
+        },
+        "cpSat": {
+          "timeLimitSeconds": 1,
+          "maxDeterministicTime": 1,
+          "numWorkers": 1,
+          "useNoOverlap2d": true,
+          "randomSeed": 19,
+          "randomizeSearch": false,
+          "progressIntervalSeconds": 0.5
+        },
+        "portfolio": null
+      },
+      "timing": {
+        "wallClockSeconds": 1.452,
+        "firstFeasibleSeconds": 0.972,
+        "firstImprovementSeconds": 0.972,
+        "bestScoreSeconds": 1.452
+      },
+      "score": {
+        "finalPopulation": 1015,
+        "bestScore": 1015,
+        "cpSatStatus": "FEASIBLE",
+        "exactGap": 31,
+        "attainment": {
+          "populationCapacityUpperBound": 1040,
+          "populationGapToCapacity": 25,
+          "capacityUtilization": 0.976,
+          "gapClosedVsZero": 0.976,
+          "baselinePopulation": 0,
+          "gapClosedVsBaseline": 0.976,
+          "gapClosedPerSecond": 0.672
+        },
+        "lnsStopReason": null,
+        "autoStopReason": null,
+        "stoppedByUser": false
+      },
+      "cpu": {
+        "workerCpuBudgetSeconds": 1,
+        "observedWorkerCpuSeconds": 1
+      },
+      "stageCount": 1,
+      "stages": [
+        {
+          "kind": "cp-sat",
+          "stage": "cp-sat",
+          "stageIndex": null,
+          "cycleIndex": null,
+          "phase": null,
+          "iteration": null,
+          "status": "FEASIBLE",
+          "operatorOutcome": "FEASIBLE",
+          "startedAtSeconds": null,
+          "wallClockSeconds": 1,
+          "completedAtSeconds": 1,
+          "scoreBefore": null,
+          "scoreAfter": 1009,
+          "improvement": null,
+          "exactGap": 31,
+          "cpSatStatus": "FEASIBLE",
+          "candidateCounts": {
+            "serviceCandidates": 94,
+            "residentialCandidates": 65,
+            "allowedCells": 40,
+            "roadEligibleCells": 40,
+            "roadVariables": 40,
+            "directedEdges": 108
+          },
+          "cpSatModelSize": {
+            "variableCount": 395,
+            "booleanVariableCount": 209,
+            "constraintCount": 1108,
+            "allowedCellCount": 40,
+            "roadEligibleCellCount": 40,
+            "roadVariableCount": 40,
+            "rootVariableCount": 10,
+            "directedEdgeCount": 108,
+            "serviceCandidateCount": 94,
+            "residentialCandidateCount": 65,
+            "populationVariableCount": 65
+          }
+        }
+      ]
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "fresh-multi-anchor-service-island:cp-sat:budget-1:seed-37",
+      "caseName": "fresh-multi-anchor-service-island",
+      "split": "holdout",
+      "workflowTags": [
+        "multi-anchor",
+        "service-pressure",
+        "gate"
+      ],
+      "problemSizeBand": "small",
+      "mode": "cp-sat",
+      "optimizer": "cp-sat",
+      "budgetSeconds": 1,
+      "seed": 37,
+      "solverParams": {
+        "optimizer": "cp-sat",
+        "auto": null,
+        "greedy": {
+          "timeLimitSeconds": 1,
+          "randomSeed": 37,
+          "localSearch": true,
+          "restarts": 3,
+          "serviceRefineIterations": 2,
+          "serviceRefineCandidateLimit": 12,
+          "exhaustiveServiceSearch": false,
+          "serviceExactPoolLimit": 10,
+          "serviceExactMaxCombinations": 256
+        },
+        "lns": {
+          "iterations": 4,
+          "maxNoImprovementIterations": 3,
+          "neighborhoodRows": 4,
+          "neighborhoodCols": 4,
+          "repairTimeLimitSeconds": 0.75
+        },
+        "cpSat": {
+          "timeLimitSeconds": 1,
+          "maxDeterministicTime": 1,
+          "numWorkers": 1,
+          "useNoOverlap2d": true,
+          "randomSeed": 37,
+          "randomizeSearch": false,
+          "progressIntervalSeconds": 0.5
+        },
+        "portfolio": null
+      },
+      "timing": {
+        "wallClockSeconds": 1.445,
+        "firstFeasibleSeconds": 0.926,
+        "firstImprovementSeconds": 0.926,
+        "bestScoreSeconds": 0.926
+      },
+      "score": {
+        "finalPopulation": 1015,
+        "bestScore": 1015,
+        "cpSatStatus": "FEASIBLE",
+        "exactGap": 25,
+        "attainment": {
+          "populationCapacityUpperBound": 1040,
+          "populationGapToCapacity": 25,
+          "capacityUtilization": 0.976,
+          "gapClosedVsZero": 0.976,
+          "baselinePopulation": 0,
+          "gapClosedVsBaseline": 0.976,
+          "gapClosedPerSecond": 0.676
+        },
+        "lnsStopReason": null,
+        "autoStopReason": null,
+        "stoppedByUser": false
+      },
+      "cpu": {
+        "workerCpuBudgetSeconds": 1,
+        "observedWorkerCpuSeconds": 1
+      },
+      "stageCount": 1,
+      "stages": [
+        {
+          "kind": "cp-sat",
+          "stage": "cp-sat",
+          "stageIndex": null,
+          "cycleIndex": null,
+          "phase": null,
+          "iteration": null,
+          "status": "FEASIBLE",
+          "operatorOutcome": "FEASIBLE",
+          "startedAtSeconds": null,
+          "wallClockSeconds": 1,
+          "completedAtSeconds": 1,
+          "scoreBefore": null,
+          "scoreAfter": 1015,
+          "improvement": null,
+          "exactGap": 25,
+          "cpSatStatus": "FEASIBLE",
+          "candidateCounts": {
+            "serviceCandidates": 94,
+            "residentialCandidates": 65,
+            "allowedCells": 40,
+            "roadEligibleCells": 40,
+            "roadVariables": 40,
+            "directedEdges": 108
+          },
+          "cpSatModelSize": {
+            "variableCount": 395,
+            "booleanVariableCount": 209,
+            "constraintCount": 1108,
+            "allowedCellCount": 40,
+            "roadEligibleCellCount": 40,
+            "roadVariableCount": 40,
+            "rootVariableCount": 10,
+            "directedEdgeCount": 108,
+            "serviceCandidateCount": 94,
+            "residentialCandidateCount": 65,
+            "populationVariableCount": 65
+          }
+        }
+      ]
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "fresh-multi-anchor-service-island:cp-sat:budget-5:seed-7",
+      "caseName": "fresh-multi-anchor-service-island",
+      "split": "holdout",
+      "workflowTags": [
+        "multi-anchor",
+        "service-pressure",
+        "gate"
+      ],
+      "problemSizeBand": "small",
+      "mode": "cp-sat",
+      "optimizer": "cp-sat",
+      "budgetSeconds": 5,
+      "seed": 7,
+      "solverParams": {
+        "optimizer": "cp-sat",
+        "auto": null,
+        "greedy": {
+          "timeLimitSeconds": 5,
+          "randomSeed": 7,
+          "localSearch": true,
+          "restarts": 3,
+          "serviceRefineIterations": 2,
+          "serviceRefineCandidateLimit": 12,
+          "exhaustiveServiceSearch": false,
+          "serviceExactPoolLimit": 10,
+          "serviceExactMaxCombinations": 256
+        },
+        "lns": {
+          "iterations": 4,
+          "maxNoImprovementIterations": 3,
+          "neighborhoodRows": 4,
+          "neighborhoodCols": 4,
+          "repairTimeLimitSeconds": 0.75
+        },
+        "cpSat": {
+          "timeLimitSeconds": 5,
+          "maxDeterministicTime": 5,
+          "numWorkers": 1,
+          "useNoOverlap2d": true,
+          "randomSeed": 7,
+          "randomizeSearch": false,
+          "progressIntervalSeconds": 0.5
+        },
+        "portfolio": null
+      },
+      "timing": {
+        "wallClockSeconds": 4.083,
+        "firstFeasibleSeconds": 2.255,
+        "firstImprovementSeconds": 2.255,
+        "bestScoreSeconds": 2.255
+      },
+      "score": {
+        "finalPopulation": 1015,
+        "bestScore": 1015,
+        "cpSatStatus": "OPTIMAL",
+        "exactGap": 0,
+        "attainment": {
+          "populationCapacityUpperBound": 1040,
+          "populationGapToCapacity": 25,
+          "capacityUtilization": 0.976,
+          "gapClosedVsZero": 0.976,
+          "baselinePopulation": 0,
+          "gapClosedVsBaseline": 0.976,
+          "gapClosedPerSecond": 0.239
+        },
+        "lnsStopReason": null,
+        "autoStopReason": null,
+        "stoppedByUser": false
+      },
+      "cpu": {
+        "workerCpuBudgetSeconds": 5,
+        "observedWorkerCpuSeconds": 3.642
+      },
+      "stageCount": 1,
+      "stages": [
+        {
+          "kind": "cp-sat",
+          "stage": "cp-sat",
+          "stageIndex": null,
+          "cycleIndex": null,
+          "phase": null,
+          "iteration": null,
+          "status": "OPTIMAL",
+          "operatorOutcome": "OPTIMAL",
+          "startedAtSeconds": null,
+          "wallClockSeconds": 3.642,
+          "completedAtSeconds": 3.642,
+          "scoreBefore": null,
+          "scoreAfter": 1015,
+          "improvement": null,
+          "exactGap": 0,
+          "cpSatStatus": "OPTIMAL",
+          "candidateCounts": {
+            "serviceCandidates": 94,
+            "residentialCandidates": 65,
+            "allowedCells": 40,
+            "roadEligibleCells": 40,
+            "roadVariables": 40,
+            "directedEdges": 108
+          },
+          "cpSatModelSize": {
+            "variableCount": 395,
+            "booleanVariableCount": 209,
+            "constraintCount": 1108,
+            "allowedCellCount": 40,
+            "roadEligibleCellCount": 40,
+            "roadVariableCount": 40,
+            "rootVariableCount": 10,
+            "directedEdgeCount": 108,
+            "serviceCandidateCount": 94,
+            "residentialCandidateCount": 65,
+            "populationVariableCount": 65
+          }
+        }
+      ]
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "fresh-multi-anchor-service-island:cp-sat:budget-5:seed-19",
+      "caseName": "fresh-multi-anchor-service-island",
+      "split": "holdout",
+      "workflowTags": [
+        "multi-anchor",
+        "service-pressure",
+        "gate"
+      ],
+      "problemSizeBand": "small",
+      "mode": "cp-sat",
+      "optimizer": "cp-sat",
+      "budgetSeconds": 5,
+      "seed": 19,
+      "solverParams": {
+        "optimizer": "cp-sat",
+        "auto": null,
+        "greedy": {
+          "timeLimitSeconds": 5,
+          "randomSeed": 19,
+          "localSearch": true,
+          "restarts": 3,
+          "serviceRefineIterations": 2,
+          "serviceRefineCandidateLimit": 12,
+          "exhaustiveServiceSearch": false,
+          "serviceExactPoolLimit": 10,
+          "serviceExactMaxCombinations": 256
+        },
+        "lns": {
+          "iterations": 4,
+          "maxNoImprovementIterations": 3,
+          "neighborhoodRows": 4,
+          "neighborhoodCols": 4,
+          "repairTimeLimitSeconds": 0.75
+        },
+        "cpSat": {
+          "timeLimitSeconds": 5,
+          "maxDeterministicTime": 5,
+          "numWorkers": 1,
+          "useNoOverlap2d": true,
+          "randomSeed": 19,
+          "randomizeSearch": false,
+          "progressIntervalSeconds": 0.5
+        },
+        "portfolio": null
+      },
+      "timing": {
+        "wallClockSeconds": 4.363,
+        "firstFeasibleSeconds": 1.528,
+        "firstImprovementSeconds": 1.528,
+        "bestScoreSeconds": 1.528
+      },
+      "score": {
+        "finalPopulation": 1015,
+        "bestScore": 1015,
+        "cpSatStatus": "OPTIMAL",
+        "exactGap": 0,
+        "attainment": {
+          "populationCapacityUpperBound": 1040,
+          "populationGapToCapacity": 25,
+          "capacityUtilization": 0.976,
+          "gapClosedVsZero": 0.976,
+          "baselinePopulation": 0,
+          "gapClosedVsBaseline": 0.976,
+          "gapClosedPerSecond": 0.224
+        },
+        "lnsStopReason": null,
+        "autoStopReason": null,
+        "stoppedByUser": false
+      },
+      "cpu": {
+        "workerCpuBudgetSeconds": 5,
+        "observedWorkerCpuSeconds": 3.907
+      },
+      "stageCount": 1,
+      "stages": [
+        {
+          "kind": "cp-sat",
+          "stage": "cp-sat",
+          "stageIndex": null,
+          "cycleIndex": null,
+          "phase": null,
+          "iteration": null,
+          "status": "OPTIMAL",
+          "operatorOutcome": "OPTIMAL",
+          "startedAtSeconds": null,
+          "wallClockSeconds": 3.907,
+          "completedAtSeconds": 3.907,
+          "scoreBefore": null,
+          "scoreAfter": 1015,
+          "improvement": null,
+          "exactGap": 0,
+          "cpSatStatus": "OPTIMAL",
+          "candidateCounts": {
+            "serviceCandidates": 94,
+            "residentialCandidates": 65,
+            "allowedCells": 40,
+            "roadEligibleCells": 40,
+            "roadVariables": 40,
+            "directedEdges": 108
+          },
+          "cpSatModelSize": {
+            "variableCount": 395,
+            "booleanVariableCount": 209,
+            "constraintCount": 1108,
+            "allowedCellCount": 40,
+            "roadEligibleCellCount": 40,
+            "roadVariableCount": 40,
+            "rootVariableCount": 10,
+            "directedEdgeCount": 108,
+            "serviceCandidateCount": 94,
+            "residentialCandidateCount": 65,
+            "populationVariableCount": 65
+          }
+        }
+      ]
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "fresh-multi-anchor-service-island:cp-sat:budget-5:seed-37",
+      "caseName": "fresh-multi-anchor-service-island",
+      "split": "holdout",
+      "workflowTags": [
+        "multi-anchor",
+        "service-pressure",
+        "gate"
+      ],
+      "problemSizeBand": "small",
+      "mode": "cp-sat",
+      "optimizer": "cp-sat",
+      "budgetSeconds": 5,
+      "seed": 37,
+      "solverParams": {
+        "optimizer": "cp-sat",
+        "auto": null,
+        "greedy": {
+          "timeLimitSeconds": 5,
+          "randomSeed": 37,
+          "localSearch": true,
+          "restarts": 3,
+          "serviceRefineIterations": 2,
+          "serviceRefineCandidateLimit": 12,
+          "exhaustiveServiceSearch": false,
+          "serviceExactPoolLimit": 10,
+          "serviceExactMaxCombinations": 256
+        },
+        "lns": {
+          "iterations": 4,
+          "maxNoImprovementIterations": 3,
+          "neighborhoodRows": 4,
+          "neighborhoodCols": 4,
+          "repairTimeLimitSeconds": 0.75
+        },
+        "cpSat": {
+          "timeLimitSeconds": 5,
+          "maxDeterministicTime": 5,
+          "numWorkers": 1,
+          "useNoOverlap2d": true,
+          "randomSeed": 37,
+          "randomizeSearch": false,
+          "progressIntervalSeconds": 0.5
+        },
+        "portfolio": null
+      },
+      "timing": {
+        "wallClockSeconds": 4.06,
+        "firstFeasibleSeconds": 1.081,
+        "firstImprovementSeconds": 1.081,
+        "bestScoreSeconds": 1.081
+      },
+      "score": {
+        "finalPopulation": 1015,
+        "bestScore": 1015,
+        "cpSatStatus": "OPTIMAL",
+        "exactGap": 0,
+        "attainment": {
+          "populationCapacityUpperBound": 1040,
+          "populationGapToCapacity": 25,
+          "capacityUtilization": 0.976,
+          "gapClosedVsZero": 0.976,
+          "baselinePopulation": 0,
+          "gapClosedVsBaseline": 0.976,
+          "gapClosedPerSecond": 0.24
+        },
+        "lnsStopReason": null,
+        "autoStopReason": null,
+        "stoppedByUser": false
+      },
+      "cpu": {
+        "workerCpuBudgetSeconds": 5,
+        "observedWorkerCpuSeconds": 3.609
+      },
+      "stageCount": 1,
+      "stages": [
+        {
+          "kind": "cp-sat",
+          "stage": "cp-sat",
+          "stageIndex": null,
+          "cycleIndex": null,
+          "phase": null,
+          "iteration": null,
+          "status": "OPTIMAL",
+          "operatorOutcome": "OPTIMAL",
+          "startedAtSeconds": null,
+          "wallClockSeconds": 3.609,
+          "completedAtSeconds": 3.609,
+          "scoreBefore": null,
+          "scoreAfter": 1015,
+          "improvement": null,
+          "exactGap": 0,
+          "cpSatStatus": "OPTIMAL",
+          "candidateCounts": {
+            "serviceCandidates": 94,
+            "residentialCandidates": 65,
+            "allowedCells": 40,
+            "roadEligibleCells": 40,
+            "roadVariables": 40,
+            "directedEdges": 108
+          },
+          "cpSatModelSize": {
+            "variableCount": 395,
+            "booleanVariableCount": 209,
+            "constraintCount": 1108,
+            "allowedCellCount": 40,
+            "roadEligibleCellCount": 40,
+            "roadVariableCount": 40,
+            "rootVariableCount": 10,
+            "directedEdgeCount": 108,
+            "serviceCandidateCount": 94,
+            "residentialCandidateCount": 65,
+            "populationVariableCount": 65
+          }
+        }
+      ]
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "fresh-typed-footprint-scarcity:cp-sat:budget-1:seed-7",
+      "caseName": "fresh-typed-footprint-scarcity",
+      "split": "holdout",
+      "workflowTags": [
+        "footprint-pressure",
+        "service-pressure"
+      ],
+      "problemSizeBand": "small",
+      "mode": "cp-sat",
+      "optimizer": "cp-sat",
+      "budgetSeconds": 1,
+      "seed": 7,
+      "solverParams": {
+        "optimizer": "cp-sat",
+        "auto": null,
+        "greedy": {
+          "timeLimitSeconds": 1,
+          "randomSeed": 7,
+          "localSearch": true,
+          "restarts": 4,
+          "serviceRefineIterations": 2,
+          "serviceRefineCandidateLimit": 14,
+          "exhaustiveServiceSearch": false,
+          "serviceExactPoolLimit": 12,
+          "serviceExactMaxCombinations": 384
+        },
+        "lns": {
+          "iterations": 4,
+          "maxNoImprovementIterations": 3,
+          "neighborhoodRows": 4,
+          "neighborhoodCols": 4,
+          "repairTimeLimitSeconds": 0.75
+        },
+        "cpSat": {
+          "timeLimitSeconds": 1,
+          "maxDeterministicTime": 1,
+          "numWorkers": 1,
+          "useNoOverlap2d": true,
+          "randomSeed": 7,
+          "randomizeSearch": false,
+          "progressIntervalSeconds": 0.5
+        },
+        "portfolio": null
+      },
+      "timing": {
+        "wallClockSeconds": 0.995,
+        "firstFeasibleSeconds": 0.284,
+        "firstImprovementSeconds": 0.284,
+        "bestScoreSeconds": 0.284
+      },
+      "score": {
+        "finalPopulation": 840,
+        "bestScore": 840,
+        "cpSatStatus": "OPTIMAL",
+        "exactGap": 0,
+        "attainment": {
+          "populationCapacityUpperBound": 970,
+          "populationGapToCapacity": 130,
+          "capacityUtilization": 0.866,
+          "gapClosedVsZero": 0.866,
+          "baselinePopulation": 0,
+          "gapClosedVsBaseline": 0.866,
+          "gapClosedPerSecond": 0.87
+        },
+        "lnsStopReason": null,
+        "autoStopReason": null,
+        "stoppedByUser": false
+      },
+      "cpu": {
+        "workerCpuBudgetSeconds": 1,
+        "observedWorkerCpuSeconds": 0.531
+      },
+      "stageCount": 1,
+      "stages": [
+        {
+          "kind": "cp-sat",
+          "stage": "cp-sat",
+          "stageIndex": null,
+          "cycleIndex": null,
+          "phase": null,
+          "iteration": null,
+          "status": "OPTIMAL",
+          "operatorOutcome": "OPTIMAL",
+          "startedAtSeconds": null,
+          "wallClockSeconds": 0.531,
+          "completedAtSeconds": 0.531,
+          "scoreBefore": null,
+          "scoreAfter": 840,
+          "improvement": null,
+          "exactGap": 0,
+          "cpSatStatus": "OPTIMAL",
+          "candidateCounts": {
+            "serviceCandidates": 76,
+            "residentialCandidates": 57,
+            "allowedCells": 32,
+            "roadEligibleCells": 32,
+            "roadVariables": 32,
+            "directedEdges": 88
+          },
+          "cpSatModelSize": {
+            "variableCount": 335,
+            "booleanVariableCount": 176,
+            "constraintCount": 908,
+            "allowedCellCount": 32,
+            "roadEligibleCellCount": 32,
+            "roadVariableCount": 32,
+            "rootVariableCount": 11,
+            "directedEdgeCount": 88,
+            "serviceCandidateCount": 76,
+            "residentialCandidateCount": 57,
+            "populationVariableCount": 57
+          }
+        }
+      ]
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "fresh-typed-footprint-scarcity:cp-sat:budget-1:seed-19",
+      "caseName": "fresh-typed-footprint-scarcity",
+      "split": "holdout",
+      "workflowTags": [
+        "footprint-pressure",
+        "service-pressure"
+      ],
+      "problemSizeBand": "small",
+      "mode": "cp-sat",
+      "optimizer": "cp-sat",
+      "budgetSeconds": 1,
+      "seed": 19,
+      "solverParams": {
+        "optimizer": "cp-sat",
+        "auto": null,
+        "greedy": {
+          "timeLimitSeconds": 1,
+          "randomSeed": 19,
+          "localSearch": true,
+          "restarts": 4,
+          "serviceRefineIterations": 2,
+          "serviceRefineCandidateLimit": 14,
+          "exhaustiveServiceSearch": false,
+          "serviceExactPoolLimit": 12,
+          "serviceExactMaxCombinations": 384
+        },
+        "lns": {
+          "iterations": 4,
+          "maxNoImprovementIterations": 3,
+          "neighborhoodRows": 4,
+          "neighborhoodCols": 4,
+          "repairTimeLimitSeconds": 0.75
+        },
+        "cpSat": {
+          "timeLimitSeconds": 1,
+          "maxDeterministicTime": 1,
+          "numWorkers": 1,
+          "useNoOverlap2d": true,
+          "randomSeed": 19,
+          "randomizeSearch": false,
+          "progressIntervalSeconds": 0.5
+        },
+        "portfolio": null
+      },
+      "timing": {
+        "wallClockSeconds": 1.44,
+        "firstFeasibleSeconds": 0.766,
+        "firstImprovementSeconds": 0.766,
+        "bestScoreSeconds": 0.766
+      },
+      "score": {
+        "finalPopulation": 840,
+        "bestScore": 840,
+        "cpSatStatus": "FEASIBLE",
+        "exactGap": 35,
+        "attainment": {
+          "populationCapacityUpperBound": 970,
+          "populationGapToCapacity": 130,
+          "capacityUtilization": 0.866,
+          "gapClosedVsZero": 0.866,
+          "baselinePopulation": 0,
+          "gapClosedVsBaseline": 0.866,
+          "gapClosedPerSecond": 0.601
+        },
+        "lnsStopReason": null,
+        "autoStopReason": null,
+        "stoppedByUser": false
+      },
+      "cpu": {
+        "workerCpuBudgetSeconds": 1,
+        "observedWorkerCpuSeconds": 1
+      },
+      "stageCount": 1,
+      "stages": [
+        {
+          "kind": "cp-sat",
+          "stage": "cp-sat",
+          "stageIndex": null,
+          "cycleIndex": null,
+          "phase": null,
+          "iteration": null,
+          "status": "FEASIBLE",
+          "operatorOutcome": "FEASIBLE",
+          "startedAtSeconds": null,
+          "wallClockSeconds": 1,
+          "completedAtSeconds": 1,
+          "scoreBefore": null,
+          "scoreAfter": 840,
+          "improvement": null,
+          "exactGap": 35,
+          "cpSatStatus": "FEASIBLE",
+          "candidateCounts": {
+            "serviceCandidates": 76,
+            "residentialCandidates": 57,
+            "allowedCells": 32,
+            "roadEligibleCells": 32,
+            "roadVariables": 32,
+            "directedEdges": 88
+          },
+          "cpSatModelSize": {
+            "variableCount": 335,
+            "booleanVariableCount": 176,
+            "constraintCount": 908,
+            "allowedCellCount": 32,
+            "roadEligibleCellCount": 32,
+            "roadVariableCount": 32,
+            "rootVariableCount": 11,
+            "directedEdgeCount": 88,
+            "serviceCandidateCount": 76,
+            "residentialCandidateCount": 57,
+            "populationVariableCount": 57
+          }
+        }
+      ]
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "fresh-typed-footprint-scarcity:cp-sat:budget-1:seed-37",
+      "caseName": "fresh-typed-footprint-scarcity",
+      "split": "holdout",
+      "workflowTags": [
+        "footprint-pressure",
+        "service-pressure"
+      ],
+      "problemSizeBand": "small",
+      "mode": "cp-sat",
+      "optimizer": "cp-sat",
+      "budgetSeconds": 1,
+      "seed": 37,
+      "solverParams": {
+        "optimizer": "cp-sat",
+        "auto": null,
+        "greedy": {
+          "timeLimitSeconds": 1,
+          "randomSeed": 37,
+          "localSearch": true,
+          "restarts": 4,
+          "serviceRefineIterations": 2,
+          "serviceRefineCandidateLimit": 14,
+          "exhaustiveServiceSearch": false,
+          "serviceExactPoolLimit": 12,
+          "serviceExactMaxCombinations": 384
+        },
+        "lns": {
+          "iterations": 4,
+          "maxNoImprovementIterations": 3,
+          "neighborhoodRows": 4,
+          "neighborhoodCols": 4,
+          "repairTimeLimitSeconds": 0.75
+        },
+        "cpSat": {
+          "timeLimitSeconds": 1,
+          "maxDeterministicTime": 1,
+          "numWorkers": 1,
+          "useNoOverlap2d": true,
+          "randomSeed": 37,
+          "randomizeSearch": false,
+          "progressIntervalSeconds": 0.5
+        },
+        "portfolio": null
+      },
+      "timing": {
+        "wallClockSeconds": 1.407,
+        "firstFeasibleSeconds": 0.45,
+        "firstImprovementSeconds": 0.45,
+        "bestScoreSeconds": 0.45
+      },
+      "score": {
+        "finalPopulation": 840,
+        "bestScore": 840,
+        "cpSatStatus": "OPTIMAL",
+        "exactGap": 0,
+        "attainment": {
+          "populationCapacityUpperBound": 970,
+          "populationGapToCapacity": 130,
+          "capacityUtilization": 0.866,
+          "gapClosedVsZero": 0.866,
+          "baselinePopulation": 0,
+          "gapClosedVsBaseline": 0.866,
+          "gapClosedPerSecond": 0.615
+        },
+        "lnsStopReason": null,
+        "autoStopReason": null,
+        "stoppedByUser": false
+      },
+      "cpu": {
+        "workerCpuBudgetSeconds": 1,
+        "observedWorkerCpuSeconds": 0.878
+      },
+      "stageCount": 1,
+      "stages": [
+        {
+          "kind": "cp-sat",
+          "stage": "cp-sat",
+          "stageIndex": null,
+          "cycleIndex": null,
+          "phase": null,
+          "iteration": null,
+          "status": "OPTIMAL",
+          "operatorOutcome": "OPTIMAL",
+          "startedAtSeconds": null,
+          "wallClockSeconds": 0.878,
+          "completedAtSeconds": 0.878,
+          "scoreBefore": null,
+          "scoreAfter": 840,
+          "improvement": null,
+          "exactGap": 0,
+          "cpSatStatus": "OPTIMAL",
+          "candidateCounts": {
+            "serviceCandidates": 76,
+            "residentialCandidates": 57,
+            "allowedCells": 32,
+            "roadEligibleCells": 32,
+            "roadVariables": 32,
+            "directedEdges": 88
+          },
+          "cpSatModelSize": {
+            "variableCount": 335,
+            "booleanVariableCount": 176,
+            "constraintCount": 908,
+            "allowedCellCount": 32,
+            "roadEligibleCellCount": 32,
+            "roadVariableCount": 32,
+            "rootVariableCount": 11,
+            "directedEdgeCount": 88,
+            "serviceCandidateCount": 76,
+            "residentialCandidateCount": 57,
+            "populationVariableCount": 57
+          }
+        }
+      ]
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "fresh-typed-footprint-scarcity:cp-sat:budget-5:seed-7",
+      "caseName": "fresh-typed-footprint-scarcity",
+      "split": "holdout",
+      "workflowTags": [
+        "footprint-pressure",
+        "service-pressure"
+      ],
+      "problemSizeBand": "small",
+      "mode": "cp-sat",
+      "optimizer": "cp-sat",
+      "budgetSeconds": 5,
+      "seed": 7,
+      "solverParams": {
+        "optimizer": "cp-sat",
+        "auto": null,
+        "greedy": {
+          "timeLimitSeconds": 5,
+          "randomSeed": 7,
+          "localSearch": true,
+          "restarts": 4,
+          "serviceRefineIterations": 2,
+          "serviceRefineCandidateLimit": 14,
+          "exhaustiveServiceSearch": false,
+          "serviceExactPoolLimit": 12,
+          "serviceExactMaxCombinations": 384
+        },
+        "lns": {
+          "iterations": 4,
+          "maxNoImprovementIterations": 3,
+          "neighborhoodRows": 4,
+          "neighborhoodCols": 4,
+          "repairTimeLimitSeconds": 0.75
+        },
+        "cpSat": {
+          "timeLimitSeconds": 5,
+          "maxDeterministicTime": 5,
+          "numWorkers": 1,
+          "useNoOverlap2d": true,
+          "randomSeed": 7,
+          "randomizeSearch": false,
+          "progressIntervalSeconds": 0.5
+        },
+        "portfolio": null
+      },
+      "timing": {
+        "wallClockSeconds": 0.966,
+        "firstFeasibleSeconds": 0.269,
+        "firstImprovementSeconds": 0.269,
+        "bestScoreSeconds": 0.269
+      },
+      "score": {
+        "finalPopulation": 840,
+        "bestScore": 840,
+        "cpSatStatus": "OPTIMAL",
+        "exactGap": 0,
+        "attainment": {
+          "populationCapacityUpperBound": 970,
+          "populationGapToCapacity": 130,
+          "capacityUtilization": 0.866,
+          "gapClosedVsZero": 0.866,
+          "baselinePopulation": 0,
+          "gapClosedVsBaseline": 0.866,
+          "gapClosedPerSecond": 0.896
+        },
+        "lnsStopReason": null,
+        "autoStopReason": null,
+        "stoppedByUser": false
+      },
+      "cpu": {
+        "workerCpuBudgetSeconds": 5,
+        "observedWorkerCpuSeconds": 0.518
+      },
+      "stageCount": 1,
+      "stages": [
+        {
+          "kind": "cp-sat",
+          "stage": "cp-sat",
+          "stageIndex": null,
+          "cycleIndex": null,
+          "phase": null,
+          "iteration": null,
+          "status": "OPTIMAL",
+          "operatorOutcome": "OPTIMAL",
+          "startedAtSeconds": null,
+          "wallClockSeconds": 0.518,
+          "completedAtSeconds": 0.518,
+          "scoreBefore": null,
+          "scoreAfter": 840,
+          "improvement": null,
+          "exactGap": 0,
+          "cpSatStatus": "OPTIMAL",
+          "candidateCounts": {
+            "serviceCandidates": 76,
+            "residentialCandidates": 57,
+            "allowedCells": 32,
+            "roadEligibleCells": 32,
+            "roadVariables": 32,
+            "directedEdges": 88
+          },
+          "cpSatModelSize": {
+            "variableCount": 335,
+            "booleanVariableCount": 176,
+            "constraintCount": 908,
+            "allowedCellCount": 32,
+            "roadEligibleCellCount": 32,
+            "roadVariableCount": 32,
+            "rootVariableCount": 11,
+            "directedEdgeCount": 88,
+            "serviceCandidateCount": 76,
+            "residentialCandidateCount": 57,
+            "populationVariableCount": 57
+          }
+        }
+      ]
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "fresh-typed-footprint-scarcity:cp-sat:budget-5:seed-19",
+      "caseName": "fresh-typed-footprint-scarcity",
+      "split": "holdout",
+      "workflowTags": [
+        "footprint-pressure",
+        "service-pressure"
+      ],
+      "problemSizeBand": "small",
+      "mode": "cp-sat",
+      "optimizer": "cp-sat",
+      "budgetSeconds": 5,
+      "seed": 19,
+      "solverParams": {
+        "optimizer": "cp-sat",
+        "auto": null,
+        "greedy": {
+          "timeLimitSeconds": 5,
+          "randomSeed": 19,
+          "localSearch": true,
+          "restarts": 4,
+          "serviceRefineIterations": 2,
+          "serviceRefineCandidateLimit": 14,
+          "exhaustiveServiceSearch": false,
+          "serviceExactPoolLimit": 12,
+          "serviceExactMaxCombinations": 384
+        },
+        "lns": {
+          "iterations": 4,
+          "maxNoImprovementIterations": 3,
+          "neighborhoodRows": 4,
+          "neighborhoodCols": 4,
+          "repairTimeLimitSeconds": 0.75
+        },
+        "cpSat": {
+          "timeLimitSeconds": 5,
+          "maxDeterministicTime": 5,
+          "numWorkers": 1,
+          "useNoOverlap2d": true,
+          "randomSeed": 19,
+          "randomizeSearch": false,
+          "progressIntervalSeconds": 0.5
+        },
+        "portfolio": null
+      },
+      "timing": {
+        "wallClockSeconds": 1.67,
+        "firstFeasibleSeconds": 0.856,
+        "firstImprovementSeconds": 0.856,
+        "bestScoreSeconds": 0.856
+      },
+      "score": {
+        "finalPopulation": 840,
+        "bestScore": 840,
+        "cpSatStatus": "OPTIMAL",
+        "exactGap": 0,
+        "attainment": {
+          "populationCapacityUpperBound": 970,
+          "populationGapToCapacity": 130,
+          "capacityUtilization": 0.866,
+          "gapClosedVsZero": 0.866,
+          "baselinePopulation": 0,
+          "gapClosedVsBaseline": 0.866,
+          "gapClosedPerSecond": 0.518
+        },
+        "lnsStopReason": null,
+        "autoStopReason": null,
+        "stoppedByUser": false
+      },
+      "cpu": {
+        "workerCpuBudgetSeconds": 5,
+        "observedWorkerCpuSeconds": 1.206
+      },
+      "stageCount": 1,
+      "stages": [
+        {
+          "kind": "cp-sat",
+          "stage": "cp-sat",
+          "stageIndex": null,
+          "cycleIndex": null,
+          "phase": null,
+          "iteration": null,
+          "status": "OPTIMAL",
+          "operatorOutcome": "OPTIMAL",
+          "startedAtSeconds": null,
+          "wallClockSeconds": 1.206,
+          "completedAtSeconds": 1.206,
+          "scoreBefore": null,
+          "scoreAfter": 840,
+          "improvement": null,
+          "exactGap": 0,
+          "cpSatStatus": "OPTIMAL",
+          "candidateCounts": {
+            "serviceCandidates": 76,
+            "residentialCandidates": 57,
+            "allowedCells": 32,
+            "roadEligibleCells": 32,
+            "roadVariables": 32,
+            "directedEdges": 88
+          },
+          "cpSatModelSize": {
+            "variableCount": 335,
+            "booleanVariableCount": 176,
+            "constraintCount": 908,
+            "allowedCellCount": 32,
+            "roadEligibleCellCount": 32,
+            "roadVariableCount": 32,
+            "rootVariableCount": 11,
+            "directedEdgeCount": 88,
+            "serviceCandidateCount": 76,
+            "residentialCandidateCount": 57,
+            "populationVariableCount": 57
+          }
+        }
+      ]
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "fresh-typed-footprint-scarcity:cp-sat:budget-5:seed-37",
+      "caseName": "fresh-typed-footprint-scarcity",
+      "split": "holdout",
+      "workflowTags": [
+        "footprint-pressure",
+        "service-pressure"
+      ],
+      "problemSizeBand": "small",
+      "mode": "cp-sat",
+      "optimizer": "cp-sat",
+      "budgetSeconds": 5,
+      "seed": 37,
+      "solverParams": {
+        "optimizer": "cp-sat",
+        "auto": null,
+        "greedy": {
+          "timeLimitSeconds": 5,
+          "randomSeed": 37,
+          "localSearch": true,
+          "restarts": 4,
+          "serviceRefineIterations": 2,
+          "serviceRefineCandidateLimit": 14,
+          "exhaustiveServiceSearch": false,
+          "serviceExactPoolLimit": 12,
+          "serviceExactMaxCombinations": 384
+        },
+        "lns": {
+          "iterations": 4,
+          "maxNoImprovementIterations": 3,
+          "neighborhoodRows": 4,
+          "neighborhoodCols": 4,
+          "repairTimeLimitSeconds": 0.75
+        },
+        "cpSat": {
+          "timeLimitSeconds": 5,
+          "maxDeterministicTime": 5,
+          "numWorkers": 1,
+          "useNoOverlap2d": true,
+          "randomSeed": 37,
+          "randomizeSearch": false,
+          "progressIntervalSeconds": 0.5
+        },
+        "portfolio": null
+      },
+      "timing": {
+        "wallClockSeconds": 1.331,
+        "firstFeasibleSeconds": 0.461,
+        "firstImprovementSeconds": 0.461,
+        "bestScoreSeconds": 0.461
+      },
+      "score": {
+        "finalPopulation": 840,
+        "bestScore": 840,
+        "cpSatStatus": "OPTIMAL",
+        "exactGap": 0,
+        "attainment": {
+          "populationCapacityUpperBound": 970,
+          "populationGapToCapacity": 130,
+          "capacityUtilization": 0.866,
+          "gapClosedVsZero": 0.866,
+          "baselinePopulation": 0,
+          "gapClosedVsBaseline": 0.866,
+          "gapClosedPerSecond": 0.65
+        },
+        "lnsStopReason": null,
+        "autoStopReason": null,
+        "stoppedByUser": false
+      },
+      "cpu": {
+        "workerCpuBudgetSeconds": 5,
+        "observedWorkerCpuSeconds": 0.875
+      },
+      "stageCount": 1,
+      "stages": [
+        {
+          "kind": "cp-sat",
+          "stage": "cp-sat",
+          "stageIndex": null,
+          "cycleIndex": null,
+          "phase": null,
+          "iteration": null,
+          "status": "OPTIMAL",
+          "operatorOutcome": "OPTIMAL",
+          "startedAtSeconds": null,
+          "wallClockSeconds": 0.875,
+          "completedAtSeconds": 0.875,
+          "scoreBefore": null,
+          "scoreAfter": 840,
+          "improvement": null,
+          "exactGap": 0,
+          "cpSatStatus": "OPTIMAL",
+          "candidateCounts": {
+            "serviceCandidates": 76,
+            "residentialCandidates": 57,
+            "allowedCells": 32,
+            "roadEligibleCells": 32,
+            "roadVariables": 32,
+            "directedEdges": 88
+          },
+          "cpSatModelSize": {
+            "variableCount": 335,
+            "booleanVariableCount": 176,
+            "constraintCount": 908,
+            "allowedCellCount": 32,
+            "roadEligibleCellCount": 32,
+            "roadVariableCount": 32,
+            "rootVariableCount": 11,
+            "directedEdgeCount": 88,
+            "serviceCandidateCount": 76,
+            "residentialCandidateCount": 57,
+            "populationVariableCount": 57
+          }
+        }
+      ]
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "fresh-expansion-corridor-service:cp-sat:budget-1:seed-7",
+      "caseName": "fresh-expansion-corridor-service",
+      "split": "holdout",
+      "workflowTags": [
+        "expansion-comparison",
+        "corridor"
+      ],
+      "problemSizeBand": "small",
+      "mode": "cp-sat",
+      "optimizer": "cp-sat",
+      "budgetSeconds": 1,
+      "seed": 7,
+      "solverParams": {
+        "optimizer": "cp-sat",
+        "auto": null,
+        "greedy": {
+          "timeLimitSeconds": 1,
+          "randomSeed": 7,
+          "localSearch": true,
+          "restarts": 4,
+          "serviceRefineIterations": 2,
+          "serviceRefineCandidateLimit": 14,
+          "exhaustiveServiceSearch": false,
+          "serviceExactPoolLimit": 12,
+          "serviceExactMaxCombinations": 384
+        },
+        "lns": {
+          "iterations": 4,
+          "maxNoImprovementIterations": 3,
+          "neighborhoodRows": 4,
+          "neighborhoodCols": 4,
+          "repairTimeLimitSeconds": 0.75
+        },
+        "cpSat": {
+          "timeLimitSeconds": 1,
+          "maxDeterministicTime": 1,
+          "numWorkers": 1,
+          "useNoOverlap2d": false,
+          "randomSeed": 7,
+          "randomizeSearch": false,
+          "progressIntervalSeconds": 0.5
+        },
+        "portfolio": null
+      },
+      "timing": {
+        "wallClockSeconds": 1.448,
+        "firstFeasibleSeconds": 0.982,
+        "firstImprovementSeconds": 0.982,
+        "bestScoreSeconds": 1.448
+      },
+      "score": {
+        "finalPopulation": 775,
+        "bestScore": 775,
+        "cpSatStatus": "FEASIBLE",
+        "exactGap": 234,
+        "attainment": {
+          "populationCapacityUpperBound": 1110,
+          "populationGapToCapacity": 335,
+          "capacityUtilization": 0.698,
+          "gapClosedVsZero": 0.698,
+          "baselinePopulation": 0,
+          "gapClosedVsBaseline": 0.698,
+          "gapClosedPerSecond": 0.482
+        },
+        "lnsStopReason": null,
+        "autoStopReason": null,
+        "stoppedByUser": false
+      },
+      "cpu": {
+        "workerCpuBudgetSeconds": 1,
+        "observedWorkerCpuSeconds": 1
+      },
+      "stageCount": 1,
+      "stages": [
+        {
+          "kind": "cp-sat",
+          "stage": "cp-sat",
+          "stageIndex": null,
+          "cycleIndex": null,
+          "phase": null,
+          "iteration": null,
+          "status": "FEASIBLE",
+          "operatorOutcome": "FEASIBLE",
+          "startedAtSeconds": null,
+          "wallClockSeconds": 1,
+          "completedAtSeconds": 1,
+          "scoreBefore": null,
+          "scoreAfter": 765,
+          "improvement": null,
+          "exactGap": 234,
+          "cpSatStatus": "FEASIBLE",
+          "candidateCounts": {
+            "serviceCandidates": 141,
+            "residentialCandidates": 58,
+            "allowedCells": 41,
+            "roadEligibleCells": 41,
+            "roadVariables": 41,
+            "directedEdges": 100
+          },
+          "cpSatModelSize": {
+            "variableCount": 421,
+            "booleanVariableCount": 250,
+            "constraintCount": 752,
+            "allowedCellCount": 41,
+            "roadEligibleCellCount": 41,
+            "roadVariableCount": 41,
+            "rootVariableCount": 10,
+            "directedEdgeCount": 100,
+            "serviceCandidateCount": 141,
+            "residentialCandidateCount": 58,
+            "populationVariableCount": 58
+          }
+        }
+      ]
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "fresh-expansion-corridor-service:cp-sat:budget-1:seed-19",
+      "caseName": "fresh-expansion-corridor-service",
+      "split": "holdout",
+      "workflowTags": [
+        "expansion-comparison",
+        "corridor"
+      ],
+      "problemSizeBand": "small",
+      "mode": "cp-sat",
+      "optimizer": "cp-sat",
+      "budgetSeconds": 1,
+      "seed": 19,
+      "solverParams": {
+        "optimizer": "cp-sat",
+        "auto": null,
+        "greedy": {
+          "timeLimitSeconds": 1,
+          "randomSeed": 19,
+          "localSearch": true,
+          "restarts": 4,
+          "serviceRefineIterations": 2,
+          "serviceRefineCandidateLimit": 14,
+          "exhaustiveServiceSearch": false,
+          "serviceExactPoolLimit": 12,
+          "serviceExactMaxCombinations": 384
+        },
+        "lns": {
+          "iterations": 4,
+          "maxNoImprovementIterations": 3,
+          "neighborhoodRows": 4,
+          "neighborhoodCols": 4,
+          "repairTimeLimitSeconds": 0.75
+        },
+        "cpSat": {
+          "timeLimitSeconds": 1,
+          "maxDeterministicTime": 1,
+          "numWorkers": 1,
+          "useNoOverlap2d": false,
+          "randomSeed": 19,
+          "randomizeSearch": false,
+          "progressIntervalSeconds": 0.5
+        },
+        "portfolio": null
+      },
+      "timing": {
+        "wallClockSeconds": 1.457,
+        "firstFeasibleSeconds": 0.983,
+        "firstImprovementSeconds": 0.983,
+        "bestScoreSeconds": 0.983
+      },
+      "score": {
+        "finalPopulation": 990,
+        "bestScore": 990,
+        "cpSatStatus": "FEASIBLE",
+        "exactGap": 8,
+        "attainment": {
+          "populationCapacityUpperBound": 1110,
+          "populationGapToCapacity": 120,
+          "capacityUtilization": 0.892,
+          "gapClosedVsZero": 0.892,
+          "baselinePopulation": 0,
+          "gapClosedVsBaseline": 0.892,
+          "gapClosedPerSecond": 0.612
+        },
+        "lnsStopReason": null,
+        "autoStopReason": null,
+        "stoppedByUser": false
+      },
+      "cpu": {
+        "workerCpuBudgetSeconds": 1,
+        "observedWorkerCpuSeconds": 1.001
+      },
+      "stageCount": 1,
+      "stages": [
+        {
+          "kind": "cp-sat",
+          "stage": "cp-sat",
+          "stageIndex": null,
+          "cycleIndex": null,
+          "phase": null,
+          "iteration": null,
+          "status": "FEASIBLE",
+          "operatorOutcome": "FEASIBLE",
+          "startedAtSeconds": null,
+          "wallClockSeconds": 1.001,
+          "completedAtSeconds": 1.001,
+          "scoreBefore": null,
+          "scoreAfter": 990,
+          "improvement": null,
+          "exactGap": 8,
+          "cpSatStatus": "FEASIBLE",
+          "candidateCounts": {
+            "serviceCandidates": 141,
+            "residentialCandidates": 58,
+            "allowedCells": 41,
+            "roadEligibleCells": 41,
+            "roadVariables": 41,
+            "directedEdges": 100
+          },
+          "cpSatModelSize": {
+            "variableCount": 421,
+            "booleanVariableCount": 250,
+            "constraintCount": 752,
+            "allowedCellCount": 41,
+            "roadEligibleCellCount": 41,
+            "roadVariableCount": 41,
+            "rootVariableCount": 10,
+            "directedEdgeCount": 100,
+            "serviceCandidateCount": 141,
+            "residentialCandidateCount": 58,
+            "populationVariableCount": 58
+          }
+        }
+      ]
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "fresh-expansion-corridor-service:cp-sat:budget-1:seed-37",
+      "caseName": "fresh-expansion-corridor-service",
+      "split": "holdout",
+      "workflowTags": [
+        "expansion-comparison",
+        "corridor"
+      ],
+      "problemSizeBand": "small",
+      "mode": "cp-sat",
+      "optimizer": "cp-sat",
+      "budgetSeconds": 1,
+      "seed": 37,
+      "solverParams": {
+        "optimizer": "cp-sat",
+        "auto": null,
+        "greedy": {
+          "timeLimitSeconds": 1,
+          "randomSeed": 37,
+          "localSearch": true,
+          "restarts": 4,
+          "serviceRefineIterations": 2,
+          "serviceRefineCandidateLimit": 14,
+          "exhaustiveServiceSearch": false,
+          "serviceExactPoolLimit": 12,
+          "serviceExactMaxCombinations": 384
+        },
+        "lns": {
+          "iterations": 4,
+          "maxNoImprovementIterations": 3,
+          "neighborhoodRows": 4,
+          "neighborhoodCols": 4,
+          "repairTimeLimitSeconds": 0.75
+        },
+        "cpSat": {
+          "timeLimitSeconds": 1,
+          "maxDeterministicTime": 1,
+          "numWorkers": 1,
+          "useNoOverlap2d": false,
+          "randomSeed": 37,
+          "randomizeSearch": false,
+          "progressIntervalSeconds": 0.5
+        },
+        "portfolio": null
+      },
+      "timing": {
+        "wallClockSeconds": 1.007,
+        "firstFeasibleSeconds": 0.537,
+        "firstImprovementSeconds": 0.537,
+        "bestScoreSeconds": 0.537
+      },
+      "score": {
+        "finalPopulation": 990,
+        "bestScore": 990,
+        "cpSatStatus": "OPTIMAL",
+        "exactGap": 0,
+        "attainment": {
+          "populationCapacityUpperBound": 1110,
+          "populationGapToCapacity": 120,
+          "capacityUtilization": 0.892,
+          "gapClosedVsZero": 0.892,
+          "baselinePopulation": 0,
+          "gapClosedVsBaseline": 0.892,
+          "gapClosedPerSecond": 0.886
+        },
+        "lnsStopReason": null,
+        "autoStopReason": null,
+        "stoppedByUser": false
+      },
+      "cpu": {
+        "workerCpuBudgetSeconds": 1,
+        "observedWorkerCpuSeconds": 0.568
+      },
+      "stageCount": 1,
+      "stages": [
+        {
+          "kind": "cp-sat",
+          "stage": "cp-sat",
+          "stageIndex": null,
+          "cycleIndex": null,
+          "phase": null,
+          "iteration": null,
+          "status": "OPTIMAL",
+          "operatorOutcome": "OPTIMAL",
+          "startedAtSeconds": null,
+          "wallClockSeconds": 0.568,
+          "completedAtSeconds": 0.568,
+          "scoreBefore": null,
+          "scoreAfter": 990,
+          "improvement": null,
+          "exactGap": 0,
+          "cpSatStatus": "OPTIMAL",
+          "candidateCounts": {
+            "serviceCandidates": 141,
+            "residentialCandidates": 58,
+            "allowedCells": 41,
+            "roadEligibleCells": 41,
+            "roadVariables": 41,
+            "directedEdges": 100
+          },
+          "cpSatModelSize": {
+            "variableCount": 421,
+            "booleanVariableCount": 250,
+            "constraintCount": 752,
+            "allowedCellCount": 41,
+            "roadEligibleCellCount": 41,
+            "roadVariableCount": 41,
+            "rootVariableCount": 10,
+            "directedEdgeCount": 100,
+            "serviceCandidateCount": 141,
+            "residentialCandidateCount": 58,
+            "populationVariableCount": 58
+          }
+        }
+      ]
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "fresh-expansion-corridor-service:cp-sat:budget-5:seed-7",
+      "caseName": "fresh-expansion-corridor-service",
+      "split": "holdout",
+      "workflowTags": [
+        "expansion-comparison",
+        "corridor"
+      ],
+      "problemSizeBand": "small",
+      "mode": "cp-sat",
+      "optimizer": "cp-sat",
+      "budgetSeconds": 5,
+      "seed": 7,
+      "solverParams": {
+        "optimizer": "cp-sat",
+        "auto": null,
+        "greedy": {
+          "timeLimitSeconds": 5,
+          "randomSeed": 7,
+          "localSearch": true,
+          "restarts": 4,
+          "serviceRefineIterations": 2,
+          "serviceRefineCandidateLimit": 14,
+          "exhaustiveServiceSearch": false,
+          "serviceExactPoolLimit": 12,
+          "serviceExactMaxCombinations": 384
+        },
+        "lns": {
+          "iterations": 4,
+          "maxNoImprovementIterations": 3,
+          "neighborhoodRows": 4,
+          "neighborhoodCols": 4,
+          "repairTimeLimitSeconds": 0.75
+        },
+        "cpSat": {
+          "timeLimitSeconds": 5,
+          "maxDeterministicTime": 5,
+          "numWorkers": 1,
+          "useNoOverlap2d": false,
+          "randomSeed": 7,
+          "randomizeSearch": false,
+          "progressIntervalSeconds": 0.5
+        },
+        "portfolio": null
+      },
+      "timing": {
+        "wallClockSeconds": 1.983,
+        "firstFeasibleSeconds": 1.479,
+        "firstImprovementSeconds": 1.479,
+        "bestScoreSeconds": 1.479
+      },
+      "score": {
+        "finalPopulation": 990,
+        "bestScore": 990,
+        "cpSatStatus": "OPTIMAL",
+        "exactGap": 0,
+        "attainment": {
+          "populationCapacityUpperBound": 1110,
+          "populationGapToCapacity": 120,
+          "capacityUtilization": 0.892,
+          "gapClosedVsZero": 0.892,
+          "baselinePopulation": 0,
+          "gapClosedVsBaseline": 0.892,
+          "gapClosedPerSecond": 0.45
+        },
+        "lnsStopReason": null,
+        "autoStopReason": null,
+        "stoppedByUser": false
+      },
+      "cpu": {
+        "workerCpuBudgetSeconds": 5,
+        "observedWorkerCpuSeconds": 1.542
+      },
+      "stageCount": 1,
+      "stages": [
+        {
+          "kind": "cp-sat",
+          "stage": "cp-sat",
+          "stageIndex": null,
+          "cycleIndex": null,
+          "phase": null,
+          "iteration": null,
+          "status": "OPTIMAL",
+          "operatorOutcome": "OPTIMAL",
+          "startedAtSeconds": null,
+          "wallClockSeconds": 1.542,
+          "completedAtSeconds": 1.542,
+          "scoreBefore": null,
+          "scoreAfter": 990,
+          "improvement": null,
+          "exactGap": 0,
+          "cpSatStatus": "OPTIMAL",
+          "candidateCounts": {
+            "serviceCandidates": 141,
+            "residentialCandidates": 58,
+            "allowedCells": 41,
+            "roadEligibleCells": 41,
+            "roadVariables": 41,
+            "directedEdges": 100
+          },
+          "cpSatModelSize": {
+            "variableCount": 421,
+            "booleanVariableCount": 250,
+            "constraintCount": 752,
+            "allowedCellCount": 41,
+            "roadEligibleCellCount": 41,
+            "roadVariableCount": 41,
+            "rootVariableCount": 10,
+            "directedEdgeCount": 100,
+            "serviceCandidateCount": 141,
+            "residentialCandidateCount": 58,
+            "populationVariableCount": 58
+          }
+        }
+      ]
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "fresh-expansion-corridor-service:cp-sat:budget-5:seed-19",
+      "caseName": "fresh-expansion-corridor-service",
+      "split": "holdout",
+      "workflowTags": [
+        "expansion-comparison",
+        "corridor"
+      ],
+      "problemSizeBand": "small",
+      "mode": "cp-sat",
+      "optimizer": "cp-sat",
+      "budgetSeconds": 5,
+      "seed": 19,
+      "solverParams": {
+        "optimizer": "cp-sat",
+        "auto": null,
+        "greedy": {
+          "timeLimitSeconds": 5,
+          "randomSeed": 19,
+          "localSearch": true,
+          "restarts": 4,
+          "serviceRefineIterations": 2,
+          "serviceRefineCandidateLimit": 14,
+          "exhaustiveServiceSearch": false,
+          "serviceExactPoolLimit": 12,
+          "serviceExactMaxCombinations": 384
+        },
+        "lns": {
+          "iterations": 4,
+          "maxNoImprovementIterations": 3,
+          "neighborhoodRows": 4,
+          "neighborhoodCols": 4,
+          "repairTimeLimitSeconds": 0.75
+        },
+        "cpSat": {
+          "timeLimitSeconds": 5,
+          "maxDeterministicTime": 5,
+          "numWorkers": 1,
+          "useNoOverlap2d": false,
+          "randomSeed": 19,
+          "randomizeSearch": false,
+          "progressIntervalSeconds": 0.5
+        },
+        "portfolio": null
+      },
+      "timing": {
+        "wallClockSeconds": 1.571,
+        "firstFeasibleSeconds": 1.033,
+        "firstImprovementSeconds": 1.033,
+        "bestScoreSeconds": 1.033
+      },
+      "score": {
+        "finalPopulation": 990,
+        "bestScore": 990,
+        "cpSatStatus": "OPTIMAL",
+        "exactGap": 0,
+        "attainment": {
+          "populationCapacityUpperBound": 1110,
+          "populationGapToCapacity": 120,
+          "capacityUtilization": 0.892,
+          "gapClosedVsZero": 0.892,
+          "baselinePopulation": 0,
+          "gapClosedVsBaseline": 0.892,
+          "gapClosedPerSecond": 0.568
+        },
+        "lnsStopReason": null,
+        "autoStopReason": null,
+        "stoppedByUser": false
+      },
+      "cpu": {
+        "workerCpuBudgetSeconds": 5,
+        "observedWorkerCpuSeconds": 1.122
+      },
+      "stageCount": 1,
+      "stages": [
+        {
+          "kind": "cp-sat",
+          "stage": "cp-sat",
+          "stageIndex": null,
+          "cycleIndex": null,
+          "phase": null,
+          "iteration": null,
+          "status": "OPTIMAL",
+          "operatorOutcome": "OPTIMAL",
+          "startedAtSeconds": null,
+          "wallClockSeconds": 1.122,
+          "completedAtSeconds": 1.122,
+          "scoreBefore": null,
+          "scoreAfter": 990,
+          "improvement": null,
+          "exactGap": 0,
+          "cpSatStatus": "OPTIMAL",
+          "candidateCounts": {
+            "serviceCandidates": 141,
+            "residentialCandidates": 58,
+            "allowedCells": 41,
+            "roadEligibleCells": 41,
+            "roadVariables": 41,
+            "directedEdges": 100
+          },
+          "cpSatModelSize": {
+            "variableCount": 421,
+            "booleanVariableCount": 250,
+            "constraintCount": 752,
+            "allowedCellCount": 41,
+            "roadEligibleCellCount": 41,
+            "roadVariableCount": 41,
+            "rootVariableCount": 10,
+            "directedEdgeCount": 100,
+            "serviceCandidateCount": 141,
+            "residentialCandidateCount": 58,
+            "populationVariableCount": 58
+          }
+        }
+      ]
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "fresh-expansion-corridor-service:cp-sat:budget-5:seed-37",
+      "caseName": "fresh-expansion-corridor-service",
+      "split": "holdout",
+      "workflowTags": [
+        "expansion-comparison",
+        "corridor"
+      ],
+      "problemSizeBand": "small",
+      "mode": "cp-sat",
+      "optimizer": "cp-sat",
+      "budgetSeconds": 5,
+      "seed": 37,
+      "solverParams": {
+        "optimizer": "cp-sat",
+        "auto": null,
+        "greedy": {
+          "timeLimitSeconds": 5,
+          "randomSeed": 37,
+          "localSearch": true,
+          "restarts": 4,
+          "serviceRefineIterations": 2,
+          "serviceRefineCandidateLimit": 14,
+          "exhaustiveServiceSearch": false,
+          "serviceExactPoolLimit": 12,
+          "serviceExactMaxCombinations": 384
+        },
+        "lns": {
+          "iterations": 4,
+          "maxNoImprovementIterations": 3,
+          "neighborhoodRows": 4,
+          "neighborhoodCols": 4,
+          "repairTimeLimitSeconds": 0.75
+        },
+        "cpSat": {
+          "timeLimitSeconds": 5,
+          "maxDeterministicTime": 5,
+          "numWorkers": 1,
+          "useNoOverlap2d": false,
+          "randomSeed": 37,
+          "randomizeSearch": false,
+          "progressIntervalSeconds": 0.5
+        },
+        "portfolio": null
+      },
+      "timing": {
+        "wallClockSeconds": 1.021,
+        "firstFeasibleSeconds": 0.533,
+        "firstImprovementSeconds": 0.533,
+        "bestScoreSeconds": 0.533
+      },
+      "score": {
+        "finalPopulation": 990,
+        "bestScore": 990,
+        "cpSatStatus": "OPTIMAL",
+        "exactGap": 0,
+        "attainment": {
+          "populationCapacityUpperBound": 1110,
+          "populationGapToCapacity": 120,
+          "capacityUtilization": 0.892,
+          "gapClosedVsZero": 0.892,
+          "baselinePopulation": 0,
+          "gapClosedVsBaseline": 0.892,
+          "gapClosedPerSecond": 0.873
+        },
+        "lnsStopReason": null,
+        "autoStopReason": null,
+        "stoppedByUser": false
+      },
+      "cpu": {
+        "workerCpuBudgetSeconds": 5,
+        "observedWorkerCpuSeconds": 0.563
+      },
+      "stageCount": 1,
+      "stages": [
+        {
+          "kind": "cp-sat",
+          "stage": "cp-sat",
+          "stageIndex": null,
+          "cycleIndex": null,
+          "phase": null,
+          "iteration": null,
+          "status": "OPTIMAL",
+          "operatorOutcome": "OPTIMAL",
+          "startedAtSeconds": null,
+          "wallClockSeconds": 0.563,
+          "completedAtSeconds": 0.563,
+          "scoreBefore": null,
+          "scoreAfter": 990,
+          "improvement": null,
+          "exactGap": 0,
+          "cpSatStatus": "OPTIMAL",
+          "candidateCounts": {
+            "serviceCandidates": 141,
+            "residentialCandidates": 58,
+            "allowedCells": 41,
+            "roadEligibleCells": 41,
+            "roadVariables": 41,
+            "directedEdges": 100
+          },
+          "cpSatModelSize": {
+            "variableCount": 421,
+            "booleanVariableCount": 250,
+            "constraintCount": 752,
+            "allowedCellCount": 41,
+            "roadEligibleCellCount": 41,
+            "roadVariableCount": 41,
+            "rootVariableCount": 10,
+            "directedEdgeCount": 100,
+            "serviceCandidateCount": 141,
+            "residentialCandidateCount": 58,
+            "populationVariableCount": 58
+          }
+        }
+      ]
+    }
+  ]
+}

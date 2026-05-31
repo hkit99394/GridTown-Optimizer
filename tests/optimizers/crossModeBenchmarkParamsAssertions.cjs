@@ -76,7 +76,9 @@ async function testCrossModeBenchmarkParamsAssertions() {
       "cp-sat-reserve-5s-guarded",
       "lns-seed-repair-5s-guarded",
       "lns-seed-reserve-5s-guarded",
-      "lns-repair-reserve-5s-guarded"
+      "lns-repair-reserve-5s-guarded",
+      "expansion-corridor-lns-repair-5s-guarded",
+      "expansion-corridor-lns-seed-repair-5s-guarded"
     ]
   );
   const coverageNames = DEFAULT_CROSS_MODE_BUDGET_ABLATION_COVERAGE_CORPUS.map((entry) => entry.name);
@@ -93,6 +95,8 @@ async function testCrossModeBenchmarkParamsAssertions() {
   assert(productNames.includes("manual-layout-replay-warm-start"));
   assert(productNames.includes("expansion-comparison-replay"));
   assert(productNames.includes("multi-anchor-road-components"));
+  assert(productNames.includes("development-expansion-corridor-service"));
+  assert(productNames.includes("fresh-expansion-corridor-service"));
   const productTags = new Set(DEFAULT_CROSS_MODE_PRODUCT_WORKFLOW_CORPUS.flatMap((entry) => entry.workflowTags ?? []));
   for (const tag of [
     "solver-smoke",
@@ -313,6 +317,15 @@ async function testCrossModeBenchmarkParamsAssertions() {
   const row0CorridorCase = DEFAULT_CROSS_MODE_PRODUCT_WORKFLOW_CORPUS.find(
     (entry) => entry.name === "row0-corridor-repair-pressure"
   );
+  const freshExpansionCorridorCase = DEFAULT_CROSS_MODE_PRODUCT_WORKFLOW_CORPUS.find(
+    (entry) => entry.name === "fresh-expansion-corridor-service"
+  );
+  const developmentExpansionCorridorCase = DEFAULT_CROSS_MODE_PRODUCT_WORKFLOW_CORPUS.find(
+    (entry) => entry.name === "development-expansion-corridor-service"
+  );
+  const freshMultiAnchorCase = DEFAULT_CROSS_MODE_PRODUCT_WORKFLOW_CORPUS.find(
+    (entry) => entry.name === "fresh-multi-anchor-service-island"
+  );
   const multiAnchorCase = DEFAULT_CROSS_MODE_PRODUCT_WORKFLOW_CORPUS.find(
     (entry) => entry.name === "multi-anchor-road-components"
   );
@@ -321,6 +334,9 @@ async function testCrossModeBenchmarkParamsAssertions() {
   assert(typedFootprintCase);
   assert(typedHousingCase);
   assert(row0CorridorCase);
+  assert(freshExpansionCorridorCase);
+  assert(developmentExpansionCorridorCase);
+  assert(freshMultiAnchorCase);
   assert(multiAnchorCase);
   const servicePressureFiveSecondAutoParams = buildCrossModeBenchmarkParams(servicePressureCase, "auto", {
     budgetSeconds: 5,
@@ -421,6 +437,86 @@ async function testCrossModeBenchmarkParamsAssertions() {
   assert.equal(repairReserveFiveSecondAutoParams.lns.seedTimeLimitSeconds, 1);
   assert.equal(repairReserveFiveSecondAutoParams.lns.repairTimeLimitSeconds, 1);
   assert.equal(repairReserveFiveSecondAutoParams.lns.escalatedRepairTimeLimitSeconds, 1.5);
+  const expansionCorridorRepairPolicy = OPTIONAL_CROSS_MODE_BUDGET_ABLATION_POLICIES.find(
+    (policy) => policy.name === "expansion-corridor-lns-repair-5s-guarded"
+  );
+  assert(expansionCorridorRepairPolicy);
+  const expansionCorridorFreshFiveSecondAutoParams = buildCrossModeBenchmarkParams(freshExpansionCorridorCase, "auto", {
+    budgetSeconds: 5,
+    seeds: [5],
+    budgetAblationPolicy: expansionCorridorRepairPolicy
+  });
+  assert.equal(expansionCorridorFreshFiveSecondAutoParams.lns.repairTimeLimitSeconds, 1);
+  assert.equal(expansionCorridorFreshFiveSecondAutoParams.lns.escalatedRepairTimeLimitSeconds, 1.5);
+  const expansionCorridorRow0FiveSecondLnsParams = buildCrossModeBenchmarkParams(row0CorridorCase, "lns", {
+    budgetSeconds: 5,
+    seeds: [5],
+    budgetAblationPolicy: expansionCorridorRepairPolicy
+  });
+  assert.equal(expansionCorridorRow0FiveSecondLnsParams.lns.repairTimeLimitSeconds, 1);
+  assert.equal(expansionCorridorRow0FiveSecondLnsParams.lns.escalatedRepairTimeLimitSeconds, 1.5);
+  const expansionCorridorFreshOneSecondAutoParams = buildCrossModeBenchmarkParams(freshExpansionCorridorCase, "auto", {
+    budgetSeconds: 1,
+    seeds: [5],
+    budgetAblationPolicy: expansionCorridorRepairPolicy
+  });
+  const expansionCorridorFreshOneSecondBaselineAutoParams = buildCrossModeBenchmarkParams(
+    freshExpansionCorridorCase,
+    "auto",
+    {
+      budgetSeconds: 1,
+      seeds: [5]
+    }
+  );
+  assert.equal(
+    expansionCorridorFreshOneSecondAutoParams.lns.repairTimeLimitSeconds,
+    expansionCorridorFreshOneSecondBaselineAutoParams.lns.repairTimeLimitSeconds
+  );
+  const expansionCorridorFreshMultiFiveSecondAutoParams = buildCrossModeBenchmarkParams(freshMultiAnchorCase, "auto", {
+    budgetSeconds: 5,
+    seeds: [5],
+    budgetAblationPolicy: expansionCorridorRepairPolicy
+  });
+  assert.equal(expansionCorridorFreshMultiFiveSecondAutoParams.lns.repairTimeLimitSeconds, 1);
+  assert.equal(expansionCorridorFreshMultiFiveSecondAutoParams.lns.escalatedRepairTimeLimitSeconds, 1);
+  const expansionCorridorSeedRepairPolicy = OPTIONAL_CROSS_MODE_BUDGET_ABLATION_POLICIES.find(
+    (policy) => policy.name === "expansion-corridor-lns-seed-repair-5s-guarded"
+  );
+  assert(expansionCorridorSeedRepairPolicy);
+  const expansionCorridorDevelopmentFiveSecondAutoParams = buildCrossModeBenchmarkParams(
+    developmentExpansionCorridorCase,
+    "auto",
+    {
+      budgetSeconds: 5,
+      seeds: [5],
+      budgetAblationPolicy: expansionCorridorSeedRepairPolicy
+    }
+  );
+  assert.equal(expansionCorridorDevelopmentFiveSecondAutoParams.lns.seedTimeLimitSeconds, 0.25);
+  assert.equal(expansionCorridorDevelopmentFiveSecondAutoParams.lns.repairTimeLimitSeconds, 1.25);
+  assert.equal(expansionCorridorDevelopmentFiveSecondAutoParams.lns.escalatedRepairTimeLimitSeconds, 2);
+  const expansionCorridorSeedRepairFreshFiveSecondAutoParams = buildCrossModeBenchmarkParams(
+    freshExpansionCorridorCase,
+    "auto",
+    {
+      budgetSeconds: 5,
+      seeds: [5],
+      budgetAblationPolicy: expansionCorridorSeedRepairPolicy
+    }
+  );
+  assert.equal(expansionCorridorSeedRepairFreshFiveSecondAutoParams.lns.seedTimeLimitSeconds, 0.25);
+  assert.equal(expansionCorridorSeedRepairFreshFiveSecondAutoParams.lns.repairTimeLimitSeconds, 1.25);
+  const expansionCorridorSeedRepairFreshMultiFiveSecondAutoParams = buildCrossModeBenchmarkParams(
+    freshMultiAnchorCase,
+    "auto",
+    {
+      budgetSeconds: 5,
+      seeds: [5],
+      budgetAblationPolicy: expansionCorridorSeedRepairPolicy
+    }
+  );
+  assert.equal(expansionCorridorSeedRepairFreshMultiFiveSecondAutoParams.lns.seedTimeLimitSeconds, 1);
+  assert.equal(expansionCorridorSeedRepairFreshMultiFiveSecondAutoParams.lns.repairTimeLimitSeconds, 1);
   const serviceMasterShortlistPolicy = OPTIONAL_CROSS_MODE_BUDGET_ABLATION_POLICIES.find(
     (policy) => policy.name === "service-master-shortlist"
   );

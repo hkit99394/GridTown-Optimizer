@@ -61,19 +61,23 @@ function readJson(relativePath) {
 function testProductCorpusListingIsStableAndMetadataRich() {
   const names = listCrossModeBenchmarkCaseNames(DEFAULT_CROSS_MODE_PRODUCT_WORKFLOW_CORPUS);
 
-  assert.equal(names.length, 12);
+  assert.equal(names.length, 14);
   assert.equal(new Set(names).size, names.length);
   assert.deepEqual(names.slice(-2), ["manual-layout-replay-warm-start", "expansion-comparison-replay"]);
+  assert.equal(names.includes("development-expansion-corridor-service"), true);
   assert.equal(names.includes("fresh-multi-anchor-service-island"), true);
   assert.equal(names.includes("fresh-typed-footprint-scarcity"), true);
+  assert.equal(names.includes("fresh-expansion-corridor-service"), true);
 
   const splitNames = casesBySplit(DEFAULT_CROSS_MODE_PRODUCT_WORKFLOW_CORPUS);
   assert.equal(splitNames.development.length > 0, true);
   assert.equal(splitNames.holdout.length > 0, true);
   assert.equal(splitNames.development.includes("manual-layout-replay-warm-start"), true);
+  assert.equal(splitNames.development.includes("development-expansion-corridor-service"), true);
   assert.equal(splitNames.holdout.includes("expansion-comparison-replay"), true);
   assert.equal(splitNames.holdout.includes("fresh-multi-anchor-service-island"), true);
   assert.equal(splitNames.holdout.includes("fresh-typed-footprint-scarcity"), true);
+  assert.equal(splitNames.holdout.includes("fresh-expansion-corridor-service"), true);
 
   assert.deepEqual(workflowTags(DEFAULT_CROSS_MODE_PRODUCT_WORKFLOW_CORPUS), [
     "anchor-service",
@@ -345,7 +349,7 @@ async function testFullPromotionMatrixIsRequiredForProtectedHoldout() {
   });
   assert.equal(draft.splitStatus.protectedHoldout, true);
   assert.equal(draft.splitStatus.leakage, "none");
-  assert.equal(draft.budget.totalRuns, 576);
+  assert.equal(draft.budget.totalRuns, 672);
 
   const metadataOnlyResult = {
     ...result,
@@ -354,8 +358,8 @@ async function testFullPromotionMatrixIsRequiredForProtectedHoldout() {
   const metadataOnlyEvidence = buildCrossModeProductWorkflowEvidenceSummary(metadataOnlyResult);
   assert.equal(metadataOnlyEvidence.promotionCoverage.protectedHoldout, false);
   assert.equal(metadataOnlyEvidence.promotionCoverage.expectedScorecardCount, expectedScorecardCount);
-  assert.equal(metadataOnlyEvidence.promotionCoverage.actualScorecardCount, 12);
-  assert.equal(metadataOnlyEvidence.promotionCoverage.missingScorecards.length, expectedScorecardCount - 12);
+  assert.equal(metadataOnlyEvidence.promotionCoverage.actualScorecardCount, 14);
+  assert.equal(metadataOnlyEvidence.promotionCoverage.missingScorecards.length, expectedScorecardCount - 14);
 
   const wrongSeedResult = {
     ...result,

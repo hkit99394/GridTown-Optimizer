@@ -37,7 +37,7 @@ Promotion reviewers should use these fields before opening raw trace bundles:
 
 ## Current Registered Product Baseline Summary
 
-The current registered 2026-04-30 product promotion artifact covers the pre-L0 10-case corpus. The next full refresh should cover 12 workflow cases, 144 case/budget/seed scorecards, and 576 mode runs after the two L0 fresh holdout cases.
+The current registered 2026-04-30 product promotion artifact covers the pre-L0 10-case corpus. The next full refresh should cover 14 workflow cases, 168 case/budget/seed scorecards, and 672 mode runs after the three L0 fresh holdout cases and the development expansion/corridor analog.
 
 - 10 workflow cases, split into 5 development and 5 protected holdout cases.
 - 120 case/budget/seed scorecards.

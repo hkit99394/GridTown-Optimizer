@@ -1,0 +1,38 @@
+=== Cross-Mode Benchmark Scorecard ===
+Generated: 2026-05-30T22:01:00.178Z
+Cases: 1
+Modes: CP-SAT
+Equal wall-clock budgets: 1s per mode
+Seeds: 7, 37
+
+- typed-footprint-pressure: Typed 2x2 variants share footprints, and a second service keeps the dynamic grouped scorer hot.
+  band=small split=development workflow=footprint-pressure budget=1s seed=7 best=520 capacity-bound=545 winner=CP-SAT grid=6x6
+  CP-SAT: rank=1 score=520 delta=best win-vs-auto=no-auto auto-delta=n/a wall=1.715s cpu-budget=1s observed-cpu=1.001s pop/cpu-budget=520.000 roads=7 services=2 residentials=4
+    attainment=cap=545 gap=25 util=95.4% closed-zero=95.4% baseline=0 closed-baseline=95.4% closed/s=0.556
+    progress=current=519 best=520 stage=cp-sat reuse=none elapsed=1.715s since-improve=0.054s stop=n/a gap=6
+    quality=first-feasible=0.948s first-improve=0.948s best=520@1.715s improvements=2 time-checkpoints=5.000s:520,30.000s:520,120.000s:520 quality-targets=50%:0.948s,90%:0.948s,100%:1.715s trace-events=3
+    road-semantics=anchor-connected anchor-roads=2 anchor-connected=7 disconnected=0 connected-ratio=1.000 adjacent-buildings=6 unadjacent-buildings=0
+    budget-signal=over-budget use=171.5% unused=0.000s overrun=0.715s first-improve=0.948s best=1.715s after-best=0.000s improvements/s=1.166 auto-best-delta=n/a
+    reason=CP-SAT FEASIBLE with population gap 6.
+- typed-footprint-pressure: Typed 2x2 variants share footprints, and a second service keeps the dynamic grouped scorer hot.
+  band=small split=development workflow=footprint-pressure budget=1s seed=37 best=525 capacity-bound=545 winner=CP-SAT grid=6x6
+  CP-SAT: rank=1 score=525 delta=best win-vs-auto=no-auto auto-delta=n/a wall=1.460s cpu-budget=1s observed-cpu=1.000s pop/cpu-budget=525.000 roads=11 services=2 residentials=4
+    attainment=cap=545 gap=20 util=96.3% closed-zero=96.3% baseline=0 closed-baseline=96.3% closed/s=0.660
+    progress=current=525 best=525 stage=cp-sat reuse=none elapsed=1.46s since-improve=0.026s stop=n/a gap=0
+    quality=first-feasible=0.974s first-improve=0.974s best=525@0.974s improvements=1 time-checkpoints=5.000s:525,30.000s:525,120.000s:525 quality-targets=50%:0.974s,90%:0.974s,100%:0.974s trace-events=3
+    road-semantics=anchor-connected anchor-roads=2 anchor-connected=11 disconnected=0 connected-ratio=1.000 adjacent-buildings=6 unadjacent-buildings=0
+    budget-signal=over-budget use=146.0% unused=0.000s overrun=0.460s first-improve=0.974s best=0.974s after-best=0.486s improvements/s=0.685 auto-best-delta=n/a
+    reason=CP-SAT FEASIBLE with population gap 0.
+
+Mode summaries:
+- CP-SAT: runs=2 mean=522.5 best=525 worst=520 seed-stddev=2.5 util-mean=95.8% closed/s-mean=0.608 win-rate-vs-auto=n/a
+
+Budget policy signals:
+- typed-footprint-pressure budget=1s seed=7 recommendation=add-auto-baseline auto=n/a best=CP-SAT:520 auto-gap=n/a lns-vs-auto=n/a auto-lns=n/a/+n/a auto-cp-sat=n/a/+n/a reason=No Auto run is present for this budget; add Auto before comparing budget policy.
+- typed-footprint-pressure budget=1s seed=37 recommendation=add-auto-baseline auto=n/a best=CP-SAT:525 auto-gap=n/a lns-vs-auto=n/a auto-lns=n/a/+n/a auto-cp-sat=n/a/+n/a reason=No Auto run is present for this budget; add Auto before comparing budget policy.
+
+Portfolio efficiency signals:
+- No paired CP-SAT / CP-SAT portfolio runs.
+
+Problem-size summaries:
+- small CP-SAT: mean=522.5 best=525 win-rate-vs-auto=n/a

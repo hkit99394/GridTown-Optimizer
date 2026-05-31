@@ -1,0 +1,24 @@
+{
+  "artifactDir": "artifacts/candidate-evaluator-validity/2026-05-30/cp-sat-selective-no-overlap2d-20260530T215332Z",
+  "artifactPaths": {
+    "validityJson": "artifacts/candidate-evaluator-validity/2026-05-30/cp-sat-selective-no-overlap2d-20260530T215332Z/candidate-evaluator-validity.json",
+    "validityText": "artifacts/candidate-evaluator-validity/2026-05-30/cp-sat-selective-no-overlap2d-20260530T215332Z/candidate-evaluator-validity.txt",
+    "telemetryManifestJson": "artifacts/candidate-evaluator-validity/2026-05-30/cp-sat-selective-no-overlap2d-20260530T215332Z/telemetry-manifest.json",
+    "registryEntryDraftJson": "artifacts/candidate-evaluator-validity/2026-05-30/cp-sat-selective-no-overlap2d-20260530T215332Z/registry-entry-draft.json"
+  },
+  "runId": "candidate-evaluator-validity-20260530T215332Z-cp-sat-selective-no-overlap2d-preflight",
+  "candidateId": "cp-sat-selective-no-overlap2d-preflight",
+  "candidateOptions": {
+    "cpSatUseNoOverlap2d": false,
+    "cpSatNoOverlap2dWorkflowTags": [
+      "gate",
+      "multi-anchor",
+      "footprint-pressure"
+    ]
+  },
+  "generatedAt": "2026-05-30T21:59:54.620Z",
+  "rowCount": 48,
+  "validCount": 48,
+  "invalidCount": 0,
+  "populationMismatchCount": 0
+}

@@ -62,6 +62,13 @@ Current decisions:
 
 No default-path promotion candidate is currently active.
 
+Recent opt-in diagnostics candidates:
+
+- **Selective CP-SAT NoOverlap2D:** [M9_CANDIDATE_INTAKE_CP_SAT_SELECTIVE_NO_OVERLAP2D.md](M9_CANDIDATE_INTAKE_CP_SAT_SELECTIVE_NO_OVERLAP2D.md) now has a clean focused slice and a full CP-SAT `1,5` product-corpus expansion: no evaluator invalidity, no protected/fresh population regression, and expansion/corridor guard rows stayed baseline-equivalent. It remains diagnostics-only because the signal is CP-SAT-standalone, guarded time-to-best is worse, and workflow-tag gating is not a runtime problem-feature guard.
+- **CP-SAT runtime geometry-pressure guard:** [M9_CANDIDATE_INTAKE_CP_SAT_GEOMETRY_PRESSURE_GUARD.md](M9_CANDIDATE_INTAKE_CP_SAT_GEOMETRY_PRESSURE_GUARD.md) replaces workflow-tag selection with a runtime grid/catalog guard and passed full CP-SAT `1,5` evaluator validity. It remains diagnostics-only because guard-enabled time-to-best is still worse and value is concentrated in short-budget standalone CP-SAT rows.
+- **Auto/LNS expansion-corridor policy:** [M9_CANDIDATE_INTAKE_AUTO_LNS_EXPANSION_CORRIDOR.md](M9_CANDIDATE_INTAKE_AUTO_LNS_EXPANSION_CORRIDOR.md) closed diagnostics-only in [M9_AUTO_LNS_EXPANSION_CORRIDOR_CLOSEOUT.md](M9_AUTO_LNS_EXPANSION_CORRIDOR_CLOSEOUT.md). Its first repair policy and stronger seed/repair policy were safe but population-neutral on focused 5s baseline-repeat controls, so no broad sweep or default-path work is justified.
+- **Auto 1s miss triage:** [M9_CANDIDATE_INTAKE_AUTO_1S_MISS_TRIAGE.md](M9_CANDIDATE_INTAKE_AUTO_1S_MISS_TRIAGE.md) closed diagnostics-only. The current 14-case smoke misses reproduced for seed `7` but did not reproduce across seeds `19` and `37`, so no new Auto budget policy is justified.
+
 Allowed near-term work is maintenance, diagnostics, or explicitly gated experimentation:
 
 - Keep service-master decomposition opt-in while preserving its telemetry and evaluator-valid evidence.
@@ -85,11 +92,35 @@ Use this checklist before treating any solver branch as a default-path candidate
 
 Initial audit on 2026-05-29: the evidence framework is ready for middle-run work. The product workflow corpus has explicit development and holdout coverage, `quality:evidence` covers registry/artifact/product-corpus contracts, and the artifact policy separates durable summaries/manifests from large raw evidence bundles. No default-path promotion candidate is active.
 
-Corpus coverage audit on 2026-05-30: [MIDDLE_RUN_CORPUS_COVERAGE_AUDIT.md](MIDDLE_RUN_CORPUS_COVERAGE_AUDIT.md) records the current product-workflow split, mode, budget, seed, replay, and workflow-family coverage. Development and protected holdout coverage are promotion-matrix ready; the first two fresh product holdout cases are now implemented for the CP-SAT preflight, but evidence refreshes still need to be run before promotion claims.
+Corpus coverage audit on 2026-05-31: [MIDDLE_RUN_CORPUS_COVERAGE_AUDIT.md](MIDDLE_RUN_CORPUS_COVERAGE_AUDIT.md) records the current product-workflow split, mode, budget, seed, replay, and workflow-family coverage. Development and protected holdout coverage are promotion-matrix ready; three fresh product holdout cases are implemented for CP-SAT geometry and expansion/corridor preflights, and the expansion/corridor family now has a development analog. Evidence refreshes still need to be run before promotion claims.
 
 Baseline-repeat runbook on 2026-05-30: [MIDDLE_RUN_BASELINE_REPEAT_RUNBOOK.md](MIDDLE_RUN_BASELINE_REPEAT_RUNBOOK.md) gives copy-paste same-slice controls for smoke, full product-corpus, candidate, and focused-row runs. Candidate deltas must be interpreted against the baseline-repeat envelope before broad scorecard claims.
 
-Baseline scorecard refresh plan on 2026-05-30: [MIDDLE_RUN_BASELINE_SCORECARD_REFRESH_PLAN.md](MIDDLE_RUN_BASELINE_SCORECARD_REFRESH_PLAN.md) names smoke, development, protected holdout, fresh holdout, and full promotion-matrix refresh commands plus storage conventions. The first fresh product holdout pair is now implemented, and full promotion refreshes should expect 12 product workflow cases.
+Baseline scorecard refresh plan on 2026-05-30: [MIDDLE_RUN_BASELINE_SCORECARD_REFRESH_PLAN.md](MIDDLE_RUN_BASELINE_SCORECARD_REFRESH_PLAN.md) names smoke, development, protected holdout, fresh holdout, and full promotion-matrix refresh commands plus storage conventions. The first fresh product holdout set and the expansion/corridor development analog are now implemented, and full promotion refreshes should expect 14 product workflow cases.
+
+Current 14-case product-corpus smoke on 2026-05-31: `artifacts/product-corpus/2026-05-31/baseline-current-14-case-smoke-20260531T183922Z` covered all 14 cases and all four modes at `1s`, seed `7`, with no missing cases, split mismatches, or missing modes for the smoke slice. Auto tied best on 11 of 14 rows and was behind best on three short-budget rows; treat these as evidence targets, not default-change proof.
+
+Development fast-lane baseline refresh on 2026-05-31: `artifacts/product-corpus/2026-05-31/baseline-development-fast-1s-5s-seeds7-19-37-20260531T190759Z` covered the six development cases across `auto`, `greedy`, `lns`, and `cp-sat` at `1s` and `5s`, seeds `7,19,37`. Auto tied best on 34 of 36 rows; the only gaps were `typed-footprint-pressure` by `5` at `1s` seed `19` and by `20` at `5s` seed `7`.
+
+Development `30s` baseline refresh on 2026-05-31: `artifacts/product-corpus/2026-05-31/baseline-development-30s-seeds7-19-37-20260531T192916Z` covered the six development cases across all four modes at `30s`, seeds `7,19,37`. Auto tied best on all 18 rows, so the short-budget development gaps disappear by `30s`.
+
+Development `120s` baseline refresh on 2026-05-31: `artifacts/product-corpus/2026-05-31/baseline-development-120s-seeds7-19-37-20260531T195607Z` covered the six development cases across all four modes at `120s`, seeds `7,19,37`. Auto tied best on all 18 rows, with no Auto budget overruns; the slowest Auto row was `107.284s`.
+
+Protected holdout fast-lane baseline refresh on 2026-05-31: `artifacts/product-corpus/2026-05-31/baseline-protected-holdout-fast-1s-5s-seeds7-19-37-20260531T191419Z` covered the five protected holdout cases across all four modes at `1s` and `5s`, seeds `7,19,37`. Auto tied best on 28 of 30 rows; the only gaps were `service-local-neighborhood` by `15` and `expansion-comparison-replay` by `35`, both at `1s` seed `7`. This matches the focused Auto 1s miss triage and does not justify a default-path policy change.
+
+Protected holdout `30s` baseline refresh on 2026-05-31: `artifacts/product-corpus/2026-05-31/baseline-protected-holdout-30s-seeds7-19-37-20260531T193849Z` covered the five protected holdout cases across all four modes at `30s`, seeds `7,19,37`. Auto tied best on all 15 rows, so the protected short-budget gaps disappear by `30s`.
+
+Protected holdout `120s` baseline refresh on 2026-05-31: `artifacts/product-corpus/2026-05-31/baseline-protected-holdout-120s-seeds7-19-37-20260531T201243Z` covered the five protected holdout cases across all four modes at `120s`, seeds `7,19,37`. Auto tied best on all 15 rows, with no Auto budget overruns; the slowest Auto row was `28.283s`.
+
+Fresh holdout fast-lane baseline refresh on 2026-05-31: `artifacts/product-corpus/2026-05-31/baseline-fresh-holdout-fast-1s-5s-seeds7-19-37-20260531T191827Z` covered the three fresh holdout cases across all four modes at `1s` and `5s`, seeds `7,19,37`. Auto tied best on 17 of 18 rows; the only gap was `fresh-multi-anchor-service-island` by `25` at `1s` seed `7`. Across all split fast-lane refreshes, Auto ties best on 79 of 84 rows.
+
+Fresh holdout `30s` baseline refresh on 2026-05-31: `artifacts/product-corpus/2026-05-31/baseline-fresh-holdout-30s-seeds7-19-37-20260531T194631Z` covered the three fresh holdout cases across all four modes at `30s`, seeds `7,19,37`. Auto tied best on all 9 rows, so the full current `30s` baseline across development, protected holdout, and fresh holdout is now covered: 42 scorecards and 168 mode runs, with Auto tied best on every row.
+
+Fresh holdout `120s` baseline refresh on 2026-05-31: `artifacts/product-corpus/2026-05-31/baseline-fresh-holdout-120s-seeds7-19-37-20260531T221202Z` covered the three fresh holdout cases across all four modes at `120s`, seeds `7,19,37`. Auto tied best on all 9 rows, with no Auto budget overruns; the slowest Auto row was `16.456s`.
+
+Full split-baseline coverage on 2026-05-31: split-lane artifacts now cover all 14 product-corpus cases, all four modes, budgets `1,5,30,120`, and seeds `7,19,37`: 168 scorecards and 672 mode runs. Auto tied best on 163 of 168 rows; the five gaps are short-budget rows only. Auto tied best on all `30s` and `120s` rows. Keep the split artifacts as the durable baseline unless a release process explicitly needs one combined promotion-matrix artifact.
+
+Focused Auto 1s miss triage on 2026-05-31: [M9_CANDIDATE_INTAKE_AUTO_1S_MISS_TRIAGE.md](M9_CANDIDATE_INTAKE_AUTO_1S_MISS_TRIAGE.md) ran a same-slice baseline-repeat check over the three smoke misses at `1s`, seeds `7,19,37`. The misses were seed `7` only, with no baseline-repeat Auto movement, so the intake closed diagnostics-only.
 
 Evaluator-validity replay check on 2026-05-30: [MIDDLE_RUN_EVALUATOR_VALIDITY_REPLAY_CHECK.md](MIDDLE_RUN_EVALUATOR_VALIDITY_REPLAY_CHECK.md) records the current product workflow replay and final-layout validity boundary. Replay workflow metrics cover manual-layout and expansion replays through `/api/layout/evaluate`; the service-master diagnostics branch has 120/120 evaluator-valid Greedy rows; broad future candidates still need candidate-specific final-layout evaluator validity before promotion.
 
@@ -97,7 +128,7 @@ CPU and time-to-best review on 2026-05-30: [MIDDLE_RUN_CPU_TIME_TO_BEST_REVIEW.m
 
 Promotion readiness checkpoint on 2026-05-30: [MIDDLE_RUN_PROMOTION_READINESS_CHECKPOINT.md](MIDDLE_RUN_PROMOTION_READINESS_CHECKPOINT.md) keeps the current status precise. M1-M11 make the middle-run evidence framework usable, but long-run promotion remains blocked until fresh product holdout coverage and candidate-specific final-layout evaluator-validity evidence are runnable for the actual candidate being reviewed.
 
-L0 pre-long-run checkpoint on 2026-05-30: [L0_PRE_LONG_RUN_CHECKPOINT.md](L0_PRE_LONG_RUN_CHECKPOINT.md) starts the handoff from middle-run framework readiness into candidate intake. It records the first fresh holdout nominations, implements the first two CP-SAT-relevant fresh cases, adds the candidate-specific evaluator-validity automation command shape, and links the first M9 intake: [M9_CANDIDATE_INTAKE_CP_SAT_NO_OVERLAP2D.md](M9_CANDIDATE_INTAKE_CP_SAT_NO_OVERLAP2D.md). The L0 CP-SAT smoke passed on both fresh cases with zero population mismatches, and the first CP-SAT candidate has since closed diagnostics-only.
+L0 pre-long-run checkpoint on 2026-05-30: [L0_PRE_LONG_RUN_CHECKPOINT.md](L0_PRE_LONG_RUN_CHECKPOINT.md) starts the handoff from middle-run framework readiness into candidate intake. It records the first fresh holdout nominations, implements the first two CP-SAT-relevant fresh cases, adds the candidate-specific evaluator-validity automation command shape, and links the first M9 intake: [M9_CANDIDATE_INTAKE_CP_SAT_NO_OVERLAP2D.md](M9_CANDIDATE_INTAKE_CP_SAT_NO_OVERLAP2D.md). The L0 CP-SAT smoke passed on both fresh cases with zero population mismatches, the first CP-SAT candidate has since closed diagnostics-only, and the expansion/corridor fresh row has now been exercised in focused Auto/LNS diagnostics.
 
 Candidate intake template on 2026-05-30: [MIDDLE_RUN_CANDIDATE_INTAKE_TEMPLATE.md](MIDDLE_RUN_CANDIDATE_INTAKE_TEMPLATE.md) defines the required pre-work request shape for solver candidates. New candidates must name trigger, hypothesis, affected modes, cases, budgets, seeds, expected signal, blockers, evaluator/replay gates, CPU/time-to-best interpretation, and artifact policy before implementation.
 
@@ -172,6 +203,32 @@ Evidence:
 
 Reopen only with a fresh reproducible outside-envelope failure or a new policy candidate that clears baseline-repeat controls before broad interpretation.
 
+### Auto/LNS Expansion-Corridor Policies
+
+Decision: closed on 2026-05-31 as diagnostics-only.
+
+Evidence:
+
+- Added `development-expansion-corridor-service` so the expansion/corridor family has development, protected, and fresh rows.
+- Focused 5s Auto/LNS baseline-repeat evidence covered development, protected, and fresh cases at seeds `7,19,37`.
+- `expansion-corridor-lns-repair-5s-guarded` and `expansion-corridor-lns-seed-repair-5s-guarded` were both safe but population-neutral.
+- The stronger policy improved mean Auto wall-clock by `0.635s` but did not improve population on any row.
+
+Reopen only with a population-moving protected/fresh expansion-corridor row outside the baseline-repeat envelope, or with an explicit product target that makes equal-population time-to-best the primary claim.
+
+### Auto 1s Miss Triage
+
+Decision: closed on 2026-05-31 as diagnostics-only.
+
+Evidence:
+
+- Current 14-case smoke found Auto behind best-of-mode on `service-local-neighborhood`, `fresh-multi-anchor-service-island`, and `expansion-comparison-replay` at `1s`, seed `7`.
+- Focused baseline-repeat evidence over the same rows at seeds `7,19,37` found `keep-auto=6` and `shift-auto-budget-to-lns=3`.
+- All three shift-to-LNS recommendations were seed `7`; seeds `19` and `37` tied or favored Auto.
+- Baseline-repeat Auto movement was `0`, so the seed `7` rows are deterministic but not cross-seed enough for policy work.
+
+Reopen only if the same workflow family falls behind best-of-mode across more than one standard seed, or if a proposed candidate fixes seed `7` while preserving seeds `19` and `37`.
+
 ## Maintenance Backlog
 
 These items are not solver-policy candidates. They track planner/runtime reliability follow-ups that protect long-running solve workflows.
@@ -182,6 +239,17 @@ Recently completed maintenance:
 
 - **Roadmap restructure:** completed 2026-05-29. The active roadmap was shortened to current posture, active tracks, closed decisions, gated priorities, promotion gates, guardrails, and maintenance backlog. The detailed May evidence narrative moved to [SOLVER_ROADMAP_HISTORY_2026-05.md](SOLVER_ROADMAP_HISTORY_2026-05.md).
 - **First M9 CP-SAT candidate closeout:** completed 2026-05-30. The opt-in `NoOverlap2D` CP-SAT encoding passed evaluator validity but is blocked from promotion by a repeatable protected holdout population regression and worse aggregate time-to-best: [M9_CP_SAT_NO_OVERLAP2D_CLOSEOUT.md](M9_CP_SAT_NO_OVERLAP2D_CLOSEOUT.md).
+- **M9 Auto/LNS expansion-corridor closeout:** completed 2026-05-31. The opt-in repair and seed/repair policies were safe but population-neutral, with only a diagnostic wall-clock improvement: [M9_AUTO_LNS_EXPANSION_CORRIDOR_CLOSEOUT.md](M9_AUTO_LNS_EXPANSION_CORRIDOR_CLOSEOUT.md).
+- **M9 Auto 1s miss triage:** completed 2026-05-31. The three current-corpus smoke misses were seed `7` only after baseline-repeat expansion to seeds `7,19,37`: [M9_CANDIDATE_INTAKE_AUTO_1S_MISS_TRIAGE.md](M9_CANDIDATE_INTAKE_AUTO_1S_MISS_TRIAGE.md).
+- **Development fast-lane baseline refresh:** completed 2026-05-31. The current six-case development split passed the `1s/5s`, seeds `7,19,37` refresh with Auto tied best on 34 of 36 rows; the two remaining Auto gaps are both `typed-footprint-pressure` rows.
+- **Development `30s` baseline refresh:** completed 2026-05-31. The current six-case development split passed the `30s`, seeds `7,19,37` refresh with Auto tied best on all 18 rows.
+- **Development `120s` baseline refresh:** completed 2026-05-31. The current six-case development split passed the `120s`, seeds `7,19,37` refresh with Auto tied best on all 18 rows.
+- **Protected holdout fast-lane baseline refresh:** completed 2026-05-31. The current five-case protected holdout split passed the `1s/5s`, seeds `7,19,37` refresh with Auto tied best on 28 of 30 rows; both gaps are `1s`, seed `7` rows already covered by Auto 1s miss triage.
+- **Protected holdout `30s` baseline refresh:** completed 2026-05-31. The current five-case protected holdout split passed the `30s`, seeds `7,19,37` refresh with Auto tied best on all 15 rows.
+- **Protected holdout `120s` baseline refresh:** completed 2026-05-31. The current five-case protected holdout split passed the `120s`, seeds `7,19,37` refresh with Auto tied best on all 15 rows.
+- **Fresh holdout fast-lane baseline refresh:** completed 2026-05-31. The current three-case fresh holdout split passed the `1s/5s`, seeds `7,19,37` refresh with Auto tied best on 17 of 18 rows; the only gap is the `fresh-multi-anchor-service-island` `1s`, seed `7` row already covered by Auto 1s miss triage.
+- **Fresh holdout `30s` baseline refresh:** completed 2026-05-31. The current three-case fresh holdout split passed the `30s`, seeds `7,19,37` refresh with Auto tied best on all 9 rows; the current 14-case `30s` baseline is now complete.
+- **Fresh holdout `120s` baseline refresh:** completed 2026-05-31. The current three-case fresh holdout split passed the `120s`, seeds `7,19,37` refresh with Auto tied best on all 9 rows; the current split-lane baseline now covers all 14 cases, all four modes, all four standard budgets, and all three standard seeds.
 
 ## Gated Priorities
 

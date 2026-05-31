@@ -84,16 +84,16 @@ node dist/crossModeBenchmarkCli.js \
 
 Coverage:
 
-- 12 product workflow cases.
+- 14 product workflow cases.
 - 2 policies.
 - 1 mode.
 - 4 budgets.
 - 3 seeds.
-- 288 total Auto runs.
+- 336 total Auto runs.
 
 ## Candidate Same-Slice Control
 
-Use this before interpreting broad candidate results. Replace `CANDIDATE_POLICY` with one of the supported budget-ablation policies, for example `service-pressure-cp-sat-reserve-5s-guarded`, `service-present-lns-seed-reserve-5s-guarded`, `lns-seed-reserve-5s-guarded`, or `service-master-shortlist`.
+Use this before interpreting broad candidate results. Replace `CANDIDATE_POLICY` with one of the supported budget-ablation policies, for example `service-pressure-cp-sat-reserve-5s-guarded`, `service-present-lns-seed-reserve-5s-guarded`, `lns-seed-reserve-5s-guarded`, `expansion-corridor-lns-repair-5s-guarded`, `expansion-corridor-lns-seed-repair-5s-guarded`, or `service-master-shortlist`.
 
 ```bash
 CANDIDATE_POLICY="service-pressure-cp-sat-reserve-5s-guarded"

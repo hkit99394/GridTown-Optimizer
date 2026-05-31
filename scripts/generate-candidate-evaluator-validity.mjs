@@ -28,9 +28,25 @@ function usage() {
     "  --summary=<text>            Registry draft summary.",
     "  --fresh-holdout-note=<text> Registry split note for fresh holdout nominations.",
     "  --cp-sat-no-overlap2d       Run CP-SAT modes with the experimental NoOverlap2D occupancy encoding.",
+    "  --cp-sat-no-overlap2d-tags=<csv>",
+    "                              Run NoOverlap2D only for cases with matching workflow tags.",
+    "  --cp-sat-no-overlap2d-geometry-pressure",
+    "                              Run NoOverlap2D only when runtime grid/catalog pressure heuristics match.",
     "  --force-artifact-dir        Reuse an existing artifact directory."
   ].join("\n");
 }
+
+const CROSS_MODE_WORKFLOW_TAGS = Object.freeze([
+  "solver-smoke",
+  "manual-layout-replay",
+  "expansion-comparison",
+  "corridor",
+  "gate",
+  "footprint-pressure",
+  "service-pressure",
+  "anchor-service",
+  "multi-anchor"
+]);
 
 function repoRoot() {
   return path.resolve(path.dirname(url.fileURLToPath(import.meta.url)), "..");
@@ -61,12 +77,26 @@ function parseNumberList(value, label) {
   return [...new Set(parsed)];
 }
 
+function parseWorkflowTags(value) {
+  const knownTags = new Set(CROSS_MODE_WORKFLOW_TAGS);
+  const tags = parseCsv(value, "--cp-sat-no-overlap2d-tags");
+  const unknownTags = tags.filter((tag) => !knownTags.has(tag));
+  if (unknownTags.length > 0) {
+    throw new Error(
+      `Unknown cross-mode workflow tag(s): ${unknownTags.join(", ")}. Available tags: ${CROSS_MODE_WORKFLOW_TAGS.join(", ")}.`
+    );
+  }
+  return tags;
+}
+
 function parseArgs(argv) {
   const args = {
     budgets: [1],
     cases: undefined,
     decision: "candidate-evaluator-validity",
     cpSatUseNoOverlap2d: false,
+    cpSatNoOverlap2dWorkflowTags: undefined,
+    cpSatNoOverlap2dGeometryPressure: false,
     forceArtifactDir: false,
     freshHoldoutNote: undefined,
     modes: ["auto", "greedy", "lns", "cp-sat"],
@@ -85,6 +115,10 @@ function parseArgs(argv) {
       args.cpSatUseNoOverlap2d = true;
       continue;
     }
+    if (arg === "--cp-sat-no-overlap2d-geometry-pressure") {
+      args.cpSatNoOverlap2dGeometryPressure = true;
+      continue;
+    }
     const separator = arg.indexOf("=");
     if (!arg.startsWith("--") || separator === -1) throw new Error(`Unknown argument '${arg}'.`);
     const name = arg.slice(2, separator);
@@ -93,6 +127,7 @@ function parseArgs(argv) {
     else if (name === "budgets") args.budgets = parseNumberList(value, "--budgets");
     else if (name === "candidate-id") args.candidateId = value.trim();
     else if (name === "cases") args.cases = parseCsv(value, "--cases");
+    else if (name === "cp-sat-no-overlap2d-tags") args.cpSatNoOverlap2dWorkflowTags = parseWorkflowTags(value);
     else if (name === "decision") args.decision = value;
     else if (name === "fresh-holdout-note") args.freshHoldoutNote = value;
     else if (name === "modes") args.modes = parseCsv(value, "--modes");
@@ -103,6 +138,16 @@ function parseArgs(argv) {
   }
   if (!args.artifactDir) throw new Error("--artifact-dir is required.");
   if (!args.candidateId) throw new Error("--candidate-id is required.");
+  const cpSatNoOverlap2dSelectorCount = [
+    args.cpSatUseNoOverlap2d,
+    args.cpSatNoOverlap2dWorkflowTags !== undefined,
+    args.cpSatNoOverlap2dGeometryPressure
+  ].filter(Boolean).length;
+  if (cpSatNoOverlap2dSelectorCount > 1) {
+    throw new Error(
+      "Use only one CP-SAT NoOverlap2D selector: --cp-sat-no-overlap2d, --cp-sat-no-overlap2d-tags, or --cp-sat-no-overlap2d-geometry-pressure."
+    );
+  }
   return args;
 }
 
@@ -131,6 +176,17 @@ function caseNamesBySplit(corpus) {
   bySplit.development.sort();
   bySplit.holdout.sort();
   return bySplit;
+}
+
+function noOverlap2dAppliesToCase(benchmarkApi, benchmarkCase, options) {
+  if (options.cpSatUseNoOverlap2d) return true;
+  if (options.cpSatNoOverlap2dGeometryPressure) {
+    return benchmarkApi.evaluateCpSatNoOverlap2dGeometryPressure(benchmarkCase).applies;
+  }
+  const selectedTags = options.cpSatNoOverlap2dWorkflowTags;
+  if (!selectedTags?.length) return false;
+  const caseTags = new Set(benchmarkCase.workflowTags ?? []);
+  return selectedTags.some((tag) => caseTags.has(tag));
 }
 
 function summarizeRows(rows, filter = () => true) {
@@ -271,7 +327,13 @@ async function main() {
   const startedAt = performance.now();
   const rows = [];
   const candidateOptions = {
-    cpSatUseNoOverlap2d: options.cpSatUseNoOverlap2d
+    cpSatUseNoOverlap2d: options.cpSatUseNoOverlap2d,
+    ...(options.cpSatNoOverlap2dWorkflowTags !== undefined
+      ? { cpSatNoOverlap2dWorkflowTags: [...options.cpSatNoOverlap2dWorkflowTags] }
+      : {}),
+    ...(options.cpSatNoOverlap2dGeometryPressure
+      ? { cpSatNoOverlap2dGeometryPressure: options.cpSatNoOverlap2dGeometryPressure }
+      : {})
   };
 
   for (const benchmarkCase of corpus) {
@@ -280,7 +342,9 @@ async function main() {
         for (const mode of options.modes) {
           const params = benchmarkApi.buildCrossModeBenchmarkParams(benchmarkCase, mode, {
             budgetSeconds,
-            cpSat: options.cpSatUseNoOverlap2d ? { useNoOverlap2d: true } : undefined,
+            cpSat: noOverlap2dAppliesToCase(benchmarkApi, benchmarkCase, options)
+              ? { useNoOverlap2d: true }
+              : undefined,
             seeds: [seed]
           });
           const rowStartedAt = performance.now();

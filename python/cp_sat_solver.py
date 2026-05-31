@@ -91,6 +91,7 @@ from cp_sat_grid import (
     service_effect_zone,
     trim_road_eligible_cells,
 )
+from cp_sat_no_overlap import add_no_overlap_2d_occupancy_constraints, use_no_overlap_2d_encoding
 from cp_sat_road_model import (
     add_aggregated_border_capacity_constraints,
     add_border_access_constraints,
@@ -205,56 +206,6 @@ def add_occupancy_constraints(model, cell_count, road_vars, service_vars, servic
             occupancy_terms[cell_id].append(variable)
     for cell_id in range(cell_count):
         model.Add(sum(occupancy_terms[cell_id]) + road_vars[cell_id] <= 1)
-
-
-def add_no_overlap_2d_occupancy_constraints(
-    model,
-    id_to_cell,
-    road_vars,
-    service_vars,
-    service_candidates,
-    residential_vars,
-    residential_candidates,
-):
-    x_intervals = []
-    y_intervals = []
-
-    def add_optional_rectangle(name, present, r, c, rows, cols):
-        x_intervals.append(model.NewOptionalFixedSizeIntervalVar(c, cols, present, f"{name}_x"))
-        y_intervals.append(model.NewOptionalFixedSizeIntervalVar(r, rows, present, f"{name}_y"))
-
-    for cell_id, road_var in enumerate(road_vars):
-        r, c = id_to_cell[cell_id]
-        add_optional_rectangle(f"road_{cell_id}", road_var, r, c, 1, 1)
-
-    for candidate_index, variable in enumerate(service_vars):
-        candidate = service_candidates[candidate_index]
-        add_optional_rectangle(
-            f"service_{candidate_index}",
-            variable,
-            candidate["r"],
-            candidate["c"],
-            candidate["rows"],
-            candidate["cols"],
-        )
-
-    for candidate_index, variable in enumerate(residential_vars):
-        candidate = residential_candidates[candidate_index]
-        add_optional_rectangle(
-            f"residential_{candidate_index}",
-            variable,
-            candidate["r"],
-            candidate["c"],
-            candidate["rows"],
-            candidate["cols"],
-        )
-
-    model.AddNoOverlap2D(x_intervals, y_intervals)
-
-
-def use_no_overlap_2d_encoding(params) -> bool:
-    cp_sat_options = params.get("cpSat") or {}
-    return bool(cp_sat_options.get("useNoOverlap2d", False))
 
 
 def build_objective_policy(cell_count: int, service_candidate_count: int) -> ObjectivePolicy:

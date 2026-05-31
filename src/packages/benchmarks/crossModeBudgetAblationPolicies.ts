@@ -48,6 +48,27 @@ function hasServiceTypes(benchmarkCase: CrossModeBenchmarkCase): boolean {
   return (benchmarkCase.params.serviceTypes?.length ?? 0) > 0;
 }
 
+function gridBlockedCellRatio(benchmarkCase: CrossModeBenchmarkCase): number {
+  const rowCount = benchmarkCase.grid.length;
+  const colCount = benchmarkCase.grid[0]?.length ?? 0;
+  const cellCount = rowCount * colCount;
+  if (cellCount === 0) return 1;
+  let allowedCellCount = 0;
+  for (const row of benchmarkCase.grid) {
+    for (const cell of row) {
+      if (cell) allowedCellCount++;
+    }
+  }
+  return (cellCount - allowedCellCount) / cellCount;
+}
+
+function isExpansionCorridorLnsCandidate(benchmarkCase: CrossModeBenchmarkCase): boolean {
+  const serviceTypeCount = benchmarkCase.params.serviceTypes?.length ?? 0;
+  const cellCount = benchmarkCase.grid.length * (benchmarkCase.grid[0]?.length ?? 0);
+  const blockedCellRatio = gridBlockedCellRatio(benchmarkCase);
+  return serviceTypeCount > 0 && cellCount >= 36 && blockedCellRatio >= 0.2 && blockedCellRatio <= 0.35;
+}
+
 export const OPTIONAL_CROSS_MODE_BUDGET_ABLATION_POLICIES = Object.freeze([
   {
     name: "baseline-repeat",
@@ -124,6 +145,25 @@ export const OPTIONAL_CROSS_MODE_BUDGET_ABLATION_POLICIES = Object.freeze([
     lnsRepairBudgetRatio: 0.2,
     lnsEscalatedRepairBudgetRatio: 0.3,
     autoCpSatStageReserveRatio: 0.1
+  },
+  {
+    name: "expansion-corridor-lns-repair-5s-guarded",
+    description:
+      "Lengthen LNS repair only at 5s for service-bearing corridor/expansion layouts with moderate blocked-cell fragmentation.",
+    activeBudgetSeconds: [5],
+    appliesToCase: isExpansionCorridorLnsCandidate,
+    lnsRepairBudgetRatio: 0.2,
+    lnsEscalatedRepairBudgetRatio: 0.3
+  },
+  {
+    name: "expansion-corridor-lns-seed-repair-5s-guarded",
+    description:
+      "Shorten LNS seed and spend a larger repair window at 5s for service-bearing corridor/expansion layouts with moderate blocked-cell fragmentation.",
+    activeBudgetSeconds: [5],
+    appliesToCase: isExpansionCorridorLnsCandidate,
+    lnsSeedBudgetRatio: 0.05,
+    lnsRepairBudgetRatio: 0.25,
+    lnsEscalatedRepairBudgetRatio: 0.4
   }
 ] satisfies CrossModeBenchmarkBudgetAblationPolicy[]);
 

@@ -26,6 +26,7 @@ import { normalizeBenchmarkSeeds } from "./benchmarkSeeds.js";
 import { buildCpSatBenchmarkCpuPlan, normalizeCpSatBenchmarkOptions } from "./cpSat.js";
 import { normalizeGreedyBenchmarkOptions } from "./greedy.js";
 import { normalizeLnsBenchmarkOptions } from "./lns.js";
+import { withCaseScopedCpSatOptions } from "./crossModeCpSatGeometry.js";
 import { buildCrossModeRunTelemetry } from "./crossModeTelemetry.js";
 import { DEFAULT_CROSS_MODE_BENCHMARK_CORPUS } from "./crossModeCorpus.js";
 import { MODE_LABELS } from "./crossModeLabels.js";
@@ -39,7 +40,9 @@ import {
 import { buildPopulationAttainmentMetrics } from "./populationAttainment.js";
 
 export { DEFAULT_CROSS_MODE_BENCHMARK_CORPUS } from "./crossModeCorpus.js";
+export { evaluateCpSatNoOverlap2dGeometryPressure } from "./crossModeCpSatGeometry.js";
 export { formatCrossModeBenchmarkSuite } from "./crossModeFormatting.js";
+export type { CrossModeCpSatNoOverlap2dGeometryPressureSignal } from "./crossModeCpSatGeometry.js";
 export type {
   CrossModeBenchmarkBudgetAblationPolicy,
   CrossModeBenchmarkBudgetPolicySignal,
@@ -426,15 +429,20 @@ export function buildCrossModeBenchmarkParams(
   options: CrossModeBenchmarkRunOptions = {}
 ): SolverParams {
   assertCrossModeBenchmarkMode(mode);
-  const budgetSeconds = normalizeSingleRunBudgetSeconds(options);
-  const seed = normalizeSeeds(options.seeds)[0] ?? DEFAULT_CROSS_MODE_BENCHMARK_SEEDS[0];
+  const scopedOptions = withCaseScopedCpSatOptions(benchmarkCase, options);
+  const budgetSeconds = normalizeSingleRunBudgetSeconds(scopedOptions);
+  const seed = normalizeSeeds(scopedOptions.seeds)[0] ?? DEFAULT_CROSS_MODE_BENCHMARK_SEEDS[0];
   const params = cloneBenchmarkSolverParams(benchmarkCase.params);
   const optimizer = modeToOptimizer(mode);
-  const greedy = buildBudgetedGreedyOptions(benchmarkCase, mode, params, options, budgetSeconds, seed);
+  const greedy = buildBudgetedGreedyOptions(benchmarkCase, mode, params, scopedOptions, budgetSeconds, seed);
   const baseWithGreedy = applyGreedyCompatibilityFields(params, greedy);
-  const portfolio = mode === "cp-sat-portfolio" ? buildPortfolioOptions(options, budgetSeconds, seed) : undefined;
-  const cpSat = buildBudgetedCpSatOptions(baseWithGreedy, options, budgetSeconds, seed, portfolio);
-  const autoPolicyOverrides = budgetAblationAutoOptions(options.budgetAblationPolicy, budgetSeconds, benchmarkCase);
+  const portfolio = mode === "cp-sat-portfolio" ? buildPortfolioOptions(scopedOptions, budgetSeconds, seed) : undefined;
+  const cpSat = buildBudgetedCpSatOptions(baseWithGreedy, scopedOptions, budgetSeconds, seed, portfolio);
+  const autoPolicyOverrides = budgetAblationAutoOptions(
+    scopedOptions.budgetAblationPolicy,
+    budgetSeconds,
+    benchmarkCase
+  );
 
   if (mode === "greedy") {
     return {
@@ -448,7 +456,7 @@ export function buildCrossModeBenchmarkParams(
       ...baseWithGreedy,
       optimizer,
       cpSat: withoutPortfolio(cpSat),
-      lns: buildBudgetedLnsOptions(benchmarkCase, baseWithGreedy, options, budgetSeconds)
+      lns: buildBudgetedLnsOptions(benchmarkCase, baseWithGreedy, scopedOptions, budgetSeconds)
     };
   }
 
@@ -458,17 +466,19 @@ export function buildCrossModeBenchmarkParams(
       optimizer,
       auto: {
         ...(baseWithGreedy.auto ?? {}),
-        ...(options.auto ?? {}),
+        ...(scopedOptions.auto ?? {}),
         ...autoPolicyOverrides,
         wallClockLimitSeconds: budgetSeconds,
         randomSeed: seed,
         cpSatStageTimeLimitSeconds: Math.min(
-          autoPolicyOverrides.cpSatStageTimeLimitSeconds ?? options.auto?.cpSatStageTimeLimitSeconds ?? budgetSeconds,
+          autoPolicyOverrides.cpSatStageTimeLimitSeconds ??
+            scopedOptions.auto?.cpSatStageTimeLimitSeconds ??
+            budgetSeconds,
           budgetSeconds
         )
       },
       cpSat: withoutPortfolio(cpSat),
-      lns: buildBudgetedLnsOptions(benchmarkCase, baseWithGreedy, options, budgetSeconds)
+      lns: buildBudgetedLnsOptions(benchmarkCase, baseWithGreedy, scopedOptions, budgetSeconds)
     };
   }
 

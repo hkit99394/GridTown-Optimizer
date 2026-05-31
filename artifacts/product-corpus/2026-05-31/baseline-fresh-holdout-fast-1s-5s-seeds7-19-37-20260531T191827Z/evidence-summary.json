@@ -1,0 +1,1319 @@
+{
+  "caseCount": 3,
+  "modeCount": 4,
+  "budgetsSeconds": [
+    1,
+    5
+  ],
+  "seeds": [
+    7,
+    19,
+    37
+  ],
+  "splitCaseCounts": {
+    "development": 0,
+    "holdout": 3
+  },
+  "workflowTagCounts": {
+    "corridor": 6,
+    "expansion-comparison": 6,
+    "footprint-pressure": 6,
+    "gate": 6,
+    "multi-anchor": 6,
+    "service-pressure": 12
+  },
+  "promotionCoverage": {
+    "requiredCaseNames": [
+      "typed-housing-single",
+      "row0-corridor-repair-pressure",
+      "typed-footprint-pressure",
+      "service-local-neighborhood",
+      "seeded-service-anchor-pressure",
+      "road-semantics-gate-choke",
+      "road-semantics-service-pressure",
+      "multi-anchor-road-components",
+      "development-expansion-corridor-service",
+      "fresh-multi-anchor-service-island",
+      "fresh-typed-footprint-scarcity",
+      "fresh-expansion-corridor-service",
+      "manual-layout-replay-warm-start",
+      "expansion-comparison-replay"
+    ],
+    "missingCaseNames": [
+      "typed-housing-single",
+      "row0-corridor-repair-pressure",
+      "typed-footprint-pressure",
+      "service-local-neighborhood",
+      "seeded-service-anchor-pressure",
+      "road-semantics-gate-choke",
+      "road-semantics-service-pressure",
+      "multi-anchor-road-components",
+      "development-expansion-corridor-service",
+      "manual-layout-replay-warm-start",
+      "expansion-comparison-replay"
+    ],
+    "splitMismatches": [],
+    "requiredModes": [
+      "auto",
+      "greedy",
+      "lns",
+      "cp-sat"
+    ],
+    "missingModes": [],
+    "requiredBudgetsSeconds": [
+      1,
+      5,
+      30,
+      120
+    ],
+    "missingBudgetsSeconds": [
+      30,
+      120
+    ],
+    "requiredSeeds": [
+      7,
+      19,
+      37
+    ],
+    "missingSeeds": [],
+    "unexpectedSeeds": [],
+    "expectedScorecardCount": 168,
+    "actualScorecardCount": 18,
+    "missingScorecards": [
+      {
+        "caseName": "typed-housing-single",
+        "budgetSeconds": 1,
+        "seed": 7
+      },
+      {
+        "caseName": "typed-housing-single",
+        "budgetSeconds": 1,
+        "seed": 19
+      },
+      {
+        "caseName": "typed-housing-single",
+        "budgetSeconds": 1,
+        "seed": 37
+      },
+      {
+        "caseName": "typed-housing-single",
+        "budgetSeconds": 5,
+        "seed": 7
+      },
+      {
+        "caseName": "typed-housing-single",
+        "budgetSeconds": 5,
+        "seed": 19
+      },
+      {
+        "caseName": "typed-housing-single",
+        "budgetSeconds": 5,
+        "seed": 37
+      },
+      {
+        "caseName": "typed-housing-single",
+        "budgetSeconds": 30,
+        "seed": 7
+      },
+      {
+        "caseName": "typed-housing-single",
+        "budgetSeconds": 30,
+        "seed": 19
+      },
+      {
+        "caseName": "typed-housing-single",
+        "budgetSeconds": 30,
+        "seed": 37
+      },
+      {
+        "caseName": "typed-housing-single",
+        "budgetSeconds": 120,
+        "seed": 7
+      },
+      {
+        "caseName": "typed-housing-single",
+        "budgetSeconds": 120,
+        "seed": 19
+      },
+      {
+        "caseName": "typed-housing-single",
+        "budgetSeconds": 120,
+        "seed": 37
+      },
+      {
+        "caseName": "row0-corridor-repair-pressure",
+        "budgetSeconds": 1,
+        "seed": 7
+      },
+      {
+        "caseName": "row0-corridor-repair-pressure",
+        "budgetSeconds": 1,
+        "seed": 19
+      },
+      {
+        "caseName": "row0-corridor-repair-pressure",
+        "budgetSeconds": 1,
+        "seed": 37
+      },
+      {
+        "caseName": "row0-corridor-repair-pressure",
+        "budgetSeconds": 5,
+        "seed": 7
+      },
+      {
+        "caseName": "row0-corridor-repair-pressure",
+        "budgetSeconds": 5,
+        "seed": 19
+      },
+      {
+        "caseName": "row0-corridor-repair-pressure",
+        "budgetSeconds": 5,
+        "seed": 37
+      },
+      {
+        "caseName": "row0-corridor-repair-pressure",
+        "budgetSeconds": 30,
+        "seed": 7
+      },
+      {
+        "caseName": "row0-corridor-repair-pressure",
+        "budgetSeconds": 30,
+        "seed": 19
+      },
+      {
+        "caseName": "row0-corridor-repair-pressure",
+        "budgetSeconds": 30,
+        "seed": 37
+      },
+      {
+        "caseName": "row0-corridor-repair-pressure",
+        "budgetSeconds": 120,
+        "seed": 7
+      },
+      {
+        "caseName": "row0-corridor-repair-pressure",
+        "budgetSeconds": 120,
+        "seed": 19
+      },
+      {
+        "caseName": "row0-corridor-repair-pressure",
+        "budgetSeconds": 120,
+        "seed": 37
+      },
+      {
+        "caseName": "typed-footprint-pressure",
+        "budgetSeconds": 1,
+        "seed": 7
+      },
+      {
+        "caseName": "typed-footprint-pressure",
+        "budgetSeconds": 1,
+        "seed": 19
+      },
+      {
+        "caseName": "typed-footprint-pressure",
+        "budgetSeconds": 1,
+        "seed": 37
+      },
+      {
+        "caseName": "typed-footprint-pressure",
+        "budgetSeconds": 5,
+        "seed": 7
+      },
+      {
+        "caseName": "typed-footprint-pressure",
+        "budgetSeconds": 5,
+        "seed": 19
+      },
+      {
+        "caseName": "typed-footprint-pressure",
+        "budgetSeconds": 5,
+        "seed": 37
+      },
+      {
+        "caseName": "typed-footprint-pressure",
+        "budgetSeconds": 30,
+        "seed": 7
+      },
+      {
+        "caseName": "typed-footprint-pressure",
+        "budgetSeconds": 30,
+        "seed": 19
+      },
+      {
+        "caseName": "typed-footprint-pressure",
+        "budgetSeconds": 30,
+        "seed": 37
+      },
+      {
+        "caseName": "typed-footprint-pressure",
+        "budgetSeconds": 120,
+        "seed": 7
+      },
+      {
+        "caseName": "typed-footprint-pressure",
+        "budgetSeconds": 120,
+        "seed": 19
+      },
+      {
+        "caseName": "typed-footprint-pressure",
+        "budgetSeconds": 120,
+        "seed": 37
+      },
+      {
+        "caseName": "service-local-neighborhood",
+        "budgetSeconds": 1,
+        "seed": 7
+      },
+      {
+        "caseName": "service-local-neighborhood",
+        "budgetSeconds": 1,
+        "seed": 19
+      },
+      {
+        "caseName": "service-local-neighborhood",
+        "budgetSeconds": 1,
+        "seed": 37
+      },
+      {
+        "caseName": "service-local-neighborhood",
+        "budgetSeconds": 5,
+        "seed": 7
+      },
+      {
+        "caseName": "service-local-neighborhood",
+        "budgetSeconds": 5,
+        "seed": 19
+      },
+      {
+        "caseName": "service-local-neighborhood",
+        "budgetSeconds": 5,
+        "seed": 37
+      },
+      {
+        "caseName": "service-local-neighborhood",
+        "budgetSeconds": 30,
+        "seed": 7
+      },
+      {
+        "caseName": "service-local-neighborhood",
+        "budgetSeconds": 30,
+        "seed": 19
+      },
+      {
+        "caseName": "service-local-neighborhood",
+        "budgetSeconds": 30,
+        "seed": 37
+      },
+      {
+        "caseName": "service-local-neighborhood",
+        "budgetSeconds": 120,
+        "seed": 7
+      },
+      {
+        "caseName": "service-local-neighborhood",
+        "budgetSeconds": 120,
+        "seed": 19
+      },
+      {
+        "caseName": "service-local-neighborhood",
+        "budgetSeconds": 120,
+        "seed": 37
+      },
+      {
+        "caseName": "seeded-service-anchor-pressure",
+        "budgetSeconds": 1,
+        "seed": 7
+      },
+      {
+        "caseName": "seeded-service-anchor-pressure",
+        "budgetSeconds": 1,
+        "seed": 19
+      },
+      {
+        "caseName": "seeded-service-anchor-pressure",
+        "budgetSeconds": 1,
+        "seed": 37
+      },
+      {
+        "caseName": "seeded-service-anchor-pressure",
+        "budgetSeconds": 5,
+        "seed": 7
+      },
+      {
+        "caseName": "seeded-service-anchor-pressure",
+        "budgetSeconds": 5,
+        "seed": 19
+      },
+      {
+        "caseName": "seeded-service-anchor-pressure",
+        "budgetSeconds": 5,
+        "seed": 37
+      },
+      {
+        "caseName": "seeded-service-anchor-pressure",
+        "budgetSeconds": 30,
+        "seed": 7
+      },
+      {
+        "caseName": "seeded-service-anchor-pressure",
+        "budgetSeconds": 30,
+        "seed": 19
+      },
+      {
+        "caseName": "seeded-service-anchor-pressure",
+        "budgetSeconds": 30,
+        "seed": 37
+      },
+      {
+        "caseName": "seeded-service-anchor-pressure",
+        "budgetSeconds": 120,
+        "seed": 7
+      },
+      {
+        "caseName": "seeded-service-anchor-pressure",
+        "budgetSeconds": 120,
+        "seed": 19
+      },
+      {
+        "caseName": "seeded-service-anchor-pressure",
+        "budgetSeconds": 120,
+        "seed": 37
+      },
+      {
+        "caseName": "road-semantics-gate-choke",
+        "budgetSeconds": 1,
+        "seed": 7
+      },
+      {
+        "caseName": "road-semantics-gate-choke",
+        "budgetSeconds": 1,
+        "seed": 19
+      },
+      {
+        "caseName": "road-semantics-gate-choke",
+        "budgetSeconds": 1,
+        "seed": 37
+      },
+      {
+        "caseName": "road-semantics-gate-choke",
+        "budgetSeconds": 5,
+        "seed": 7
+      },
+      {
+        "caseName": "road-semantics-gate-choke",
+        "budgetSeconds": 5,
+        "seed": 19
+      },
+      {
+        "caseName": "road-semantics-gate-choke",
+        "budgetSeconds": 5,
+        "seed": 37
+      },
+      {
+        "caseName": "road-semantics-gate-choke",
+        "budgetSeconds": 30,
+        "seed": 7
+      },
+      {
+        "caseName": "road-semantics-gate-choke",
+        "budgetSeconds": 30,
+        "seed": 19
+      },
+      {
+        "caseName": "road-semantics-gate-choke",
+        "budgetSeconds": 30,
+        "seed": 37
+      },
+      {
+        "caseName": "road-semantics-gate-choke",
+        "budgetSeconds": 120,
+        "seed": 7
+      },
+      {
+        "caseName": "road-semantics-gate-choke",
+        "budgetSeconds": 120,
+        "seed": 19
+      },
+      {
+        "caseName": "road-semantics-gate-choke",
+        "budgetSeconds": 120,
+        "seed": 37
+      },
+      {
+        "caseName": "road-semantics-service-pressure",
+        "budgetSeconds": 1,
+        "seed": 7
+      },
+      {
+        "caseName": "road-semantics-service-pressure",
+        "budgetSeconds": 1,
+        "seed": 19
+      },
+      {
+        "caseName": "road-semantics-service-pressure",
+        "budgetSeconds": 1,
+        "seed": 37
+      },
+      {
+        "caseName": "road-semantics-service-pressure",
+        "budgetSeconds": 5,
+        "seed": 7
+      },
+      {
+        "caseName": "road-semantics-service-pressure",
+        "budgetSeconds": 5,
+        "seed": 19
+      },
+      {
+        "caseName": "road-semantics-service-pressure",
+        "budgetSeconds": 5,
+        "seed": 37
+      },
+      {
+        "caseName": "road-semantics-service-pressure",
+        "budgetSeconds": 30,
+        "seed": 7
+      },
+      {
+        "caseName": "road-semantics-service-pressure",
+        "budgetSeconds": 30,
+        "seed": 19
+      },
+      {
+        "caseName": "road-semantics-service-pressure",
+        "budgetSeconds": 30,
+        "seed": 37
+      },
+      {
+        "caseName": "road-semantics-service-pressure",
+        "budgetSeconds": 120,
+        "seed": 7
+      },
+      {
+        "caseName": "road-semantics-service-pressure",
+        "budgetSeconds": 120,
+        "seed": 19
+      },
+      {
+        "caseName": "road-semantics-service-pressure",
+        "budgetSeconds": 120,
+        "seed": 37
+      },
+      {
+        "caseName": "multi-anchor-road-components",
+        "budgetSeconds": 1,
+        "seed": 7
+      },
+      {
+        "caseName": "multi-anchor-road-components",
+        "budgetSeconds": 1,
+        "seed": 19
+      },
+      {
+        "caseName": "multi-anchor-road-components",
+        "budgetSeconds": 1,
+        "seed": 37
+      },
+      {
+        "caseName": "multi-anchor-road-components",
+        "budgetSeconds": 5,
+        "seed": 7
+      },
+      {
+        "caseName": "multi-anchor-road-components",
+        "budgetSeconds": 5,
+        "seed": 19
+      },
+      {
+        "caseName": "multi-anchor-road-components",
+        "budgetSeconds": 5,
+        "seed": 37
+      },
+      {
+        "caseName": "multi-anchor-road-components",
+        "budgetSeconds": 30,
+        "seed": 7
+      },
+      {
+        "caseName": "multi-anchor-road-components",
+        "budgetSeconds": 30,
+        "seed": 19
+      },
+      {
+        "caseName": "multi-anchor-road-components",
+        "budgetSeconds": 30,
+        "seed": 37
+      },
+      {
+        "caseName": "multi-anchor-road-components",
+        "budgetSeconds": 120,
+        "seed": 7
+      },
+      {
+        "caseName": "multi-anchor-road-components",
+        "budgetSeconds": 120,
+        "seed": 19
+      },
+      {
+        "caseName": "multi-anchor-road-components",
+        "budgetSeconds": 120,
+        "seed": 37
+      },
+      {
+        "caseName": "development-expansion-corridor-service",
+        "budgetSeconds": 1,
+        "seed": 7
+      },
+      {
+        "caseName": "development-expansion-corridor-service",
+        "budgetSeconds": 1,
+        "seed": 19
+      },
+      {
+        "caseName": "development-expansion-corridor-service",
+        "budgetSeconds": 1,
+        "seed": 37
+      },
+      {
+        "caseName": "development-expansion-corridor-service",
+        "budgetSeconds": 5,
+        "seed": 7
+      },
+      {
+        "caseName": "development-expansion-corridor-service",
+        "budgetSeconds": 5,
+        "seed": 19
+      },
+      {
+        "caseName": "development-expansion-corridor-service",
+        "budgetSeconds": 5,
+        "seed": 37
+      },
+      {
+        "caseName": "development-expansion-corridor-service",
+        "budgetSeconds": 30,
+        "seed": 7
+      },
+      {
+        "caseName": "development-expansion-corridor-service",
+        "budgetSeconds": 30,
+        "seed": 19
+      },
+      {
+        "caseName": "development-expansion-corridor-service",
+        "budgetSeconds": 30,
+        "seed": 37
+      },
+      {
+        "caseName": "development-expansion-corridor-service",
+        "budgetSeconds": 120,
+        "seed": 7
+      },
+      {
+        "caseName": "development-expansion-corridor-service",
+        "budgetSeconds": 120,
+        "seed": 19
+      },
+      {
+        "caseName": "development-expansion-corridor-service",
+        "budgetSeconds": 120,
+        "seed": 37
+      },
+      {
+        "caseName": "fresh-multi-anchor-service-island",
+        "budgetSeconds": 30,
+        "seed": 7
+      },
+      {
+        "caseName": "fresh-multi-anchor-service-island",
+        "budgetSeconds": 30,
+        "seed": 19
+      },
+      {
+        "caseName": "fresh-multi-anchor-service-island",
+        "budgetSeconds": 30,
+        "seed": 37
+      },
+      {
+        "caseName": "fresh-multi-anchor-service-island",
+        "budgetSeconds": 120,
+        "seed": 7
+      },
+      {
+        "caseName": "fresh-multi-anchor-service-island",
+        "budgetSeconds": 120,
+        "seed": 19
+      },
+      {
+        "caseName": "fresh-multi-anchor-service-island",
+        "budgetSeconds": 120,
+        "seed": 37
+      },
+      {
+        "caseName": "fresh-typed-footprint-scarcity",
+        "budgetSeconds": 30,
+        "seed": 7
+      },
+      {
+        "caseName": "fresh-typed-footprint-scarcity",
+        "budgetSeconds": 30,
+        "seed": 19
+      },
+      {
+        "caseName": "fresh-typed-footprint-scarcity",
+        "budgetSeconds": 30,
+        "seed": 37
+      },
+      {
+        "caseName": "fresh-typed-footprint-scarcity",
+        "budgetSeconds": 120,
+        "seed": 7
+      },
+      {
+        "caseName": "fresh-typed-footprint-scarcity",
+        "budgetSeconds": 120,
+        "seed": 19
+      },
+      {
+        "caseName": "fresh-typed-footprint-scarcity",
+        "budgetSeconds": 120,
+        "seed": 37
+      },
+      {
+        "caseName": "fresh-expansion-corridor-service",
+        "budgetSeconds": 30,
+        "seed": 7
+      },
+      {
+        "caseName": "fresh-expansion-corridor-service",
+        "budgetSeconds": 30,
+        "seed": 19
+      },
+      {
+        "caseName": "fresh-expansion-corridor-service",
+        "budgetSeconds": 30,
+        "seed": 37
+      },
+      {
+        "caseName": "fresh-expansion-corridor-service",
+        "budgetSeconds": 120,
+        "seed": 7
+      },
+      {
+        "caseName": "fresh-expansion-corridor-service",
+        "budgetSeconds": 120,
+        "seed": 19
+      },
+      {
+        "caseName": "fresh-expansion-corridor-service",
+        "budgetSeconds": 120,
+        "seed": 37
+      },
+      {
+        "caseName": "manual-layout-replay-warm-start",
+        "budgetSeconds": 1,
+        "seed": 7
+      },
+      {
+        "caseName": "manual-layout-replay-warm-start",
+        "budgetSeconds": 1,
+        "seed": 19
+      },
+      {
+        "caseName": "manual-layout-replay-warm-start",
+        "budgetSeconds": 1,
+        "seed": 37
+      },
+      {
+        "caseName": "manual-layout-replay-warm-start",
+        "budgetSeconds": 5,
+        "seed": 7
+      },
+      {
+        "caseName": "manual-layout-replay-warm-start",
+        "budgetSeconds": 5,
+        "seed": 19
+      },
+      {
+        "caseName": "manual-layout-replay-warm-start",
+        "budgetSeconds": 5,
+        "seed": 37
+      },
+      {
+        "caseName": "manual-layout-replay-warm-start",
+        "budgetSeconds": 30,
+        "seed": 7
+      },
+      {
+        "caseName": "manual-layout-replay-warm-start",
+        "budgetSeconds": 30,
+        "seed": 19
+      },
+      {
+        "caseName": "manual-layout-replay-warm-start",
+        "budgetSeconds": 30,
+        "seed": 37
+      },
+      {
+        "caseName": "manual-layout-replay-warm-start",
+        "budgetSeconds": 120,
+        "seed": 7
+      },
+      {
+        "caseName": "manual-layout-replay-warm-start",
+        "budgetSeconds": 120,
+        "seed": 19
+      },
+      {
+        "caseName": "manual-layout-replay-warm-start",
+        "budgetSeconds": 120,
+        "seed": 37
+      },
+      {
+        "caseName": "expansion-comparison-replay",
+        "budgetSeconds": 1,
+        "seed": 7
+      },
+      {
+        "caseName": "expansion-comparison-replay",
+        "budgetSeconds": 1,
+        "seed": 19
+      },
+      {
+        "caseName": "expansion-comparison-replay",
+        "budgetSeconds": 1,
+        "seed": 37
+      },
+      {
+        "caseName": "expansion-comparison-replay",
+        "budgetSeconds": 5,
+        "seed": 7
+      },
+      {
+        "caseName": "expansion-comparison-replay",
+        "budgetSeconds": 5,
+        "seed": 19
+      },
+      {
+        "caseName": "expansion-comparison-replay",
+        "budgetSeconds": 5,
+        "seed": 37
+      },
+      {
+        "caseName": "expansion-comparison-replay",
+        "budgetSeconds": 30,
+        "seed": 7
+      },
+      {
+        "caseName": "expansion-comparison-replay",
+        "budgetSeconds": 30,
+        "seed": 19
+      },
+      {
+        "caseName": "expansion-comparison-replay",
+        "budgetSeconds": 30,
+        "seed": 37
+      },
+      {
+        "caseName": "expansion-comparison-replay",
+        "budgetSeconds": 120,
+        "seed": 7
+      },
+      {
+        "caseName": "expansion-comparison-replay",
+        "budgetSeconds": 120,
+        "seed": 19
+      },
+      {
+        "caseName": "expansion-comparison-replay",
+        "budgetSeconds": 120,
+        "seed": 37
+      }
+    ],
+    "scorecardsMissingModes": [],
+    "minimumSeedCount": 3,
+    "seedCount": 3,
+    "fullCorpus": false,
+    "requiredSplitCoverage": true,
+    "requiredModeCoverage": true,
+    "requiredBudgetCoverage": false,
+    "requiredSeedCoverage": true,
+    "requiredScorecardCoverage": false,
+    "requiredScorecardModeCoverage": true,
+    "protectedHoldout": false
+  },
+  "caseMetrics": [
+    {
+      "caseName": "fresh-multi-anchor-service-island",
+      "split": "holdout",
+      "workflowTags": [
+        "multi-anchor",
+        "service-pressure",
+        "gate"
+      ],
+      "budgetSeconds": 1,
+      "seed": 7,
+      "bestScore": 1015,
+      "bestMode": "lns",
+      "autoScore": 990,
+      "autoDeltaToBest": 25,
+      "timeToFirstFeasibleSeconds": 0.119,
+      "timeToBestSeconds": 0.119,
+      "reuseSources": [
+        "greedy-seed",
+        "hint"
+      ],
+      "cpSatStatuses": [
+        "FEASIBLE"
+      ],
+      "minimumExactGap": 25,
+      "manualReplayCoverage": "not-applicable",
+      "expansionComparisonLift": null
+    },
+    {
+      "caseName": "fresh-multi-anchor-service-island",
+      "split": "holdout",
+      "workflowTags": [
+        "multi-anchor",
+        "service-pressure",
+        "gate"
+      ],
+      "budgetSeconds": 1,
+      "seed": 19,
+      "bestScore": 1015,
+      "bestMode": "auto",
+      "autoScore": 1015,
+      "autoDeltaToBest": 0,
+      "timeToFirstFeasibleSeconds": 0.101,
+      "timeToBestSeconds": 0.101,
+      "reuseSources": [
+        "greedy-seed",
+        "hint"
+      ],
+      "cpSatStatuses": [
+        "FEASIBLE"
+      ],
+      "minimumExactGap": 25,
+      "manualReplayCoverage": "not-applicable",
+      "expansionComparisonLift": null
+    },
+    {
+      "caseName": "fresh-multi-anchor-service-island",
+      "split": "holdout",
+      "workflowTags": [
+        "multi-anchor",
+        "service-pressure",
+        "gate"
+      ],
+      "budgetSeconds": 1,
+      "seed": 37,
+      "bestScore": 1015,
+      "bestMode": "auto",
+      "autoScore": 1015,
+      "autoDeltaToBest": 0,
+      "timeToFirstFeasibleSeconds": 0.077,
+      "timeToBestSeconds": 0.077,
+      "reuseSources": [
+        "greedy-seed",
+        "hint"
+      ],
+      "cpSatStatuses": [
+        "FEASIBLE"
+      ],
+      "minimumExactGap": 25,
+      "manualReplayCoverage": "not-applicable",
+      "expansionComparisonLift": null
+    },
+    {
+      "caseName": "fresh-multi-anchor-service-island",
+      "split": "holdout",
+      "workflowTags": [
+        "multi-anchor",
+        "service-pressure",
+        "gate"
+      ],
+      "budgetSeconds": 5,
+      "seed": 7,
+      "bestScore": 1015,
+      "bestMode": "auto",
+      "autoScore": 1015,
+      "autoDeltaToBest": 0,
+      "timeToFirstFeasibleSeconds": 0.114,
+      "timeToBestSeconds": 0.114,
+      "reuseSources": [
+        "greedy-seed"
+      ],
+      "cpSatStatuses": [
+        "FEASIBLE",
+        "OPTIMAL"
+      ],
+      "minimumExactGap": 0,
+      "manualReplayCoverage": "not-applicable",
+      "expansionComparisonLift": null
+    },
+    {
+      "caseName": "fresh-multi-anchor-service-island",
+      "split": "holdout",
+      "workflowTags": [
+        "multi-anchor",
+        "service-pressure",
+        "gate"
+      ],
+      "budgetSeconds": 5,
+      "seed": 19,
+      "bestScore": 1015,
+      "bestMode": "auto",
+      "autoScore": 1015,
+      "autoDeltaToBest": 0,
+      "timeToFirstFeasibleSeconds": 0.076,
+      "timeToBestSeconds": 0.076,
+      "reuseSources": [
+        "greedy-seed"
+      ],
+      "cpSatStatuses": [
+        "FEASIBLE"
+      ],
+      "minimumExactGap": 25,
+      "manualReplayCoverage": "not-applicable",
+      "expansionComparisonLift": null
+    },
+    {
+      "caseName": "fresh-multi-anchor-service-island",
+      "split": "holdout",
+      "workflowTags": [
+        "multi-anchor",
+        "service-pressure",
+        "gate"
+      ],
+      "budgetSeconds": 5,
+      "seed": 37,
+      "bestScore": 1015,
+      "bestMode": "auto",
+      "autoScore": 1015,
+      "autoDeltaToBest": 0,
+      "timeToFirstFeasibleSeconds": 0.089,
+      "timeToBestSeconds": 0.089,
+      "reuseSources": [
+        "greedy-seed",
+        "hint"
+      ],
+      "cpSatStatuses": [
+        "FEASIBLE",
+        "OPTIMAL"
+      ],
+      "minimumExactGap": 0,
+      "manualReplayCoverage": "not-applicable",
+      "expansionComparisonLift": null
+    },
+    {
+      "caseName": "fresh-typed-footprint-scarcity",
+      "split": "holdout",
+      "workflowTags": [
+        "footprint-pressure",
+        "service-pressure"
+      ],
+      "budgetSeconds": 1,
+      "seed": 7,
+      "bestScore": 840,
+      "bestMode": "auto",
+      "autoScore": 840,
+      "autoDeltaToBest": 0,
+      "timeToFirstFeasibleSeconds": 0.065,
+      "timeToBestSeconds": 0.1,
+      "reuseSources": [
+        "greedy-seed",
+        "hint"
+      ],
+      "cpSatStatuses": [
+        "OPTIMAL"
+      ],
+      "minimumExactGap": 0,
+      "manualReplayCoverage": "not-applicable",
+      "expansionComparisonLift": null
+    },
+    {
+      "caseName": "fresh-typed-footprint-scarcity",
+      "split": "holdout",
+      "workflowTags": [
+        "footprint-pressure",
+        "service-pressure"
+      ],
+      "budgetSeconds": 1,
+      "seed": 19,
+      "bestScore": 840,
+      "bestMode": "auto",
+      "autoScore": 840,
+      "autoDeltaToBest": 0,
+      "timeToFirstFeasibleSeconds": 0.058,
+      "timeToBestSeconds": 0.089,
+      "reuseSources": [
+        "greedy-seed",
+        "hint"
+      ],
+      "cpSatStatuses": [
+        "OPTIMAL"
+      ],
+      "minimumExactGap": 0,
+      "manualReplayCoverage": "not-applicable",
+      "expansionComparisonLift": null
+    },
+    {
+      "caseName": "fresh-typed-footprint-scarcity",
+      "split": "holdout",
+      "workflowTags": [
+        "footprint-pressure",
+        "service-pressure"
+      ],
+      "budgetSeconds": 1,
+      "seed": 37,
+      "bestScore": 840,
+      "bestMode": "auto",
+      "autoScore": 840,
+      "autoDeltaToBest": 0,
+      "timeToFirstFeasibleSeconds": 0.059,
+      "timeToBestSeconds": 0.091,
+      "reuseSources": [
+        "greedy-seed",
+        "hint"
+      ],
+      "cpSatStatuses": [
+        "OPTIMAL"
+      ],
+      "minimumExactGap": 0,
+      "manualReplayCoverage": "not-applicable",
+      "expansionComparisonLift": null
+    },
+    {
+      "caseName": "fresh-typed-footprint-scarcity",
+      "split": "holdout",
+      "workflowTags": [
+        "footprint-pressure",
+        "service-pressure"
+      ],
+      "budgetSeconds": 5,
+      "seed": 7,
+      "bestScore": 840,
+      "bestMode": "auto",
+      "autoScore": 840,
+      "autoDeltaToBest": 0,
+      "timeToFirstFeasibleSeconds": 0.019,
+      "timeToBestSeconds": 0.019,
+      "reuseSources": [
+        "greedy-seed"
+      ],
+      "cpSatStatuses": [
+        "OPTIMAL"
+      ],
+      "minimumExactGap": 0,
+      "manualReplayCoverage": "not-applicable",
+      "expansionComparisonLift": null
+    },
+    {
+      "caseName": "fresh-typed-footprint-scarcity",
+      "split": "holdout",
+      "workflowTags": [
+        "footprint-pressure",
+        "service-pressure"
+      ],
+      "budgetSeconds": 5,
+      "seed": 19,
+      "bestScore": 840,
+      "bestMode": "auto",
+      "autoScore": 840,
+      "autoDeltaToBest": 0,
+      "timeToFirstFeasibleSeconds": 0.022,
+      "timeToBestSeconds": 0.022,
+      "reuseSources": [
+        "greedy-seed"
+      ],
+      "cpSatStatuses": [
+        "OPTIMAL"
+      ],
+      "minimumExactGap": 0,
+      "manualReplayCoverage": "not-applicable",
+      "expansionComparisonLift": null
+    },
+    {
+      "caseName": "fresh-typed-footprint-scarcity",
+      "split": "holdout",
+      "workflowTags": [
+        "footprint-pressure",
+        "service-pressure"
+      ],
+      "budgetSeconds": 5,
+      "seed": 37,
+      "bestScore": 840,
+      "bestMode": "auto",
+      "autoScore": 840,
+      "autoDeltaToBest": 0,
+      "timeToFirstFeasibleSeconds": 0.017,
+      "timeToBestSeconds": 0.017,
+      "reuseSources": [
+        "greedy-seed"
+      ],
+      "cpSatStatuses": [
+        "OPTIMAL"
+      ],
+      "minimumExactGap": 0,
+      "manualReplayCoverage": "not-applicable",
+      "expansionComparisonLift": null
+    },
+    {
+      "caseName": "fresh-expansion-corridor-service",
+      "split": "holdout",
+      "workflowTags": [
+        "expansion-comparison",
+        "corridor"
+      ],
+      "budgetSeconds": 1,
+      "seed": 7,
+      "bestScore": 990,
+      "bestMode": "auto",
+      "autoScore": 990,
+      "autoDeltaToBest": 0,
+      "timeToFirstFeasibleSeconds": 0.082,
+      "timeToBestSeconds": 0.2,
+      "reuseSources": [
+        "greedy-seed",
+        "hint"
+      ],
+      "cpSatStatuses": [
+        "FEASIBLE",
+        "OPTIMAL"
+      ],
+      "minimumExactGap": 0,
+      "manualReplayCoverage": "not-applicable",
+      "expansionComparisonLift": 0
+    },
+    {
+      "caseName": "fresh-expansion-corridor-service",
+      "split": "holdout",
+      "workflowTags": [
+        "expansion-comparison",
+        "corridor"
+      ],
+      "budgetSeconds": 1,
+      "seed": 19,
+      "bestScore": 990,
+      "bestMode": "auto",
+      "autoScore": 990,
+      "autoDeltaToBest": 0,
+      "timeToFirstFeasibleSeconds": 0.079,
+      "timeToBestSeconds": 0.095,
+      "reuseSources": [
+        "greedy-seed",
+        "hint"
+      ],
+      "cpSatStatuses": [
+        "FEASIBLE",
+        "OPTIMAL"
+      ],
+      "minimumExactGap": 0,
+      "manualReplayCoverage": "not-applicable",
+      "expansionComparisonLift": 0
+    },
+    {
+      "caseName": "fresh-expansion-corridor-service",
+      "split": "holdout",
+      "workflowTags": [
+        "expansion-comparison",
+        "corridor"
+      ],
+      "budgetSeconds": 1,
+      "seed": 37,
+      "bestScore": 990,
+      "bestMode": "auto",
+      "autoScore": 990,
+      "autoDeltaToBest": 0,
+      "timeToFirstFeasibleSeconds": 0.081,
+      "timeToBestSeconds": 0.101,
+      "reuseSources": [
+        "greedy-seed",
+        "hint"
+      ],
+      "cpSatStatuses": [
+        "OPTIMAL"
+      ],
+      "minimumExactGap": 0,
+      "manualReplayCoverage": "not-applicable",
+      "expansionComparisonLift": 0
+    },
+    {
+      "caseName": "fresh-expansion-corridor-service",
+      "split": "holdout",
+      "workflowTags": [
+        "expansion-comparison",
+        "corridor"
+      ],
+      "budgetSeconds": 5,
+      "seed": 7,
+      "bestScore": 990,
+      "bestMode": "auto",
+      "autoScore": 990,
+      "autoDeltaToBest": 0,
+      "timeToFirstFeasibleSeconds": 0.095,
+      "timeToBestSeconds": 0.13,
+      "reuseSources": [
+        "greedy-seed"
+      ],
+      "cpSatStatuses": [
+        "OPTIMAL"
+      ],
+      "minimumExactGap": 0,
+      "manualReplayCoverage": "not-applicable",
+      "expansionComparisonLift": 0
+    },
+    {
+      "caseName": "fresh-expansion-corridor-service",
+      "split": "holdout",
+      "workflowTags": [
+        "expansion-comparison",
+        "corridor"
+      ],
+      "budgetSeconds": 5,
+      "seed": 19,
+      "bestScore": 990,
+      "bestMode": "auto",
+      "autoScore": 990,
+      "autoDeltaToBest": 0,
+      "timeToFirstFeasibleSeconds": 0.084,
+      "timeToBestSeconds": 0.12,
+      "reuseSources": [
+        "greedy-seed"
+      ],
+      "cpSatStatuses": [
+        "OPTIMAL"
+      ],
+      "minimumExactGap": 0,
+      "manualReplayCoverage": "not-applicable",
+      "expansionComparisonLift": 0
+    },
+    {
+      "caseName": "fresh-expansion-corridor-service",
+      "split": "holdout",
+      "workflowTags": [
+        "expansion-comparison",
+        "corridor"
+      ],
+      "budgetSeconds": 5,
+      "seed": 37,
+      "bestScore": 990,
+      "bestMode": "auto",
+      "autoScore": 990,
+      "autoDeltaToBest": 0,
+      "timeToFirstFeasibleSeconds": 0.082,
+      "timeToBestSeconds": 0.082,
+      "reuseSources": [
+        "greedy-seed"
+      ],
+      "cpSatStatuses": [
+        "OPTIMAL"
+      ],
+      "minimumExactGap": 0,
+      "manualReplayCoverage": "not-applicable",
+      "expansionComparisonLift": 0
+    }
+  ],
+  "replayMetrics": []
+}

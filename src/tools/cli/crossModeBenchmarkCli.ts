@@ -32,7 +32,7 @@ import {
   writeCliText
 } from "../../apps/cliOutput.js";
 
-import type { CrossModeBenchmarkMode } from "../../benchmarkApi.js";
+import type { CrossModeBenchmarkMode, CrossModeWorkflowTag } from "../../benchmarkApi.js";
 import {
   formatBudgetAblationArtifactManifest,
   formatProductArtifactManifest,
@@ -66,11 +66,25 @@ interface ParsedBenchmarkArgs {
   productRegisterDryRun: boolean;
   productPromotionMatrix: boolean;
   cpSatUseNoOverlap2d: boolean;
+  cpSatNoOverlap2dWorkflowTags?: CrossModeWorkflowTag[];
+  cpSatNoOverlap2dGeometryPressure: boolean;
   forceArtifactDir: boolean;
   ablationRunId?: string;
   ablationDecision?: string;
   ablationSummary?: string;
 }
+
+const CROSS_MODE_WORKFLOW_TAGS = Object.freeze([
+  "solver-smoke",
+  "manual-layout-replay",
+  "expansion-comparison",
+  "corridor",
+  "gate",
+  "footprint-pressure",
+  "service-pressure",
+  "anchor-service",
+  "multi-anchor"
+] satisfies CrossModeWorkflowTag[]);
 
 function parseModes(value: string): CrossModeBenchmarkMode[] {
   const knownModes = new Set<string>(DEFAULT_CROSS_MODE_BENCHMARK_MODES);
@@ -82,6 +96,18 @@ function parseModes(value: string): CrossModeBenchmarkMode[] {
     );
   }
   return modes as CrossModeBenchmarkMode[];
+}
+
+function parseWorkflowTags(value: string): CrossModeWorkflowTag[] {
+  const knownTags = new Set<string>(CROSS_MODE_WORKFLOW_TAGS);
+  const tags = parseNameList(value, "cross-mode benchmark --cp-sat-no-overlap2d-tags");
+  const unknownTags = tags.filter((tag) => !knownTags.has(tag));
+  if (unknownTags.length > 0) {
+    throw new Error(
+      `Unknown cross-mode workflow tag(s): ${unknownTags.join(", ")}. Available tags: ${CROSS_MODE_WORKFLOW_TAGS.join(", ")}.`
+    );
+  }
+  return tags as CrossModeWorkflowTag[];
 }
 
 function parseArgs(argv: string[]): ParsedBenchmarkArgs {
@@ -108,6 +134,8 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
   let productRegisterDryRun = false;
   let productPromotionMatrix = false;
   let cpSatUseNoOverlap2d = false;
+  let cpSatNoOverlap2dWorkflowTags: CrossModeWorkflowTag[] | undefined;
+  let cpSatNoOverlap2dGeometryPressure = false;
   let forceArtifactDir = false;
   let ablationRunId: string | undefined;
   let ablationDecision: string | undefined;
@@ -149,6 +177,9 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
     },
     "product-registry": (value) => {
       productRegistryPath = value;
+    },
+    "cp-sat-no-overlap2d-tags": (value) => {
+      cpSatNoOverlap2dWorkflowTags = parseWorkflowTags(value);
     },
     "ablation-run-id": (value) => {
       ablationRunId = value;
@@ -198,6 +229,10 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
       cpSatUseNoOverlap2d = true;
       continue;
     }
+    if (isCliFlag(arg, "--cp-sat-no-overlap2d-geometry-pressure")) {
+      cpSatNoOverlap2dGeometryPressure = true;
+      continue;
+    }
     if (isCliFlag(arg, "--force-artifact-dir")) {
       forceArtifactDir = true;
       continue;
@@ -236,6 +271,8 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
     productRegisterDryRun,
     productPromotionMatrix,
     cpSatUseNoOverlap2d,
+    cpSatNoOverlap2dWorkflowTags,
+    cpSatNoOverlap2dGeometryPressure,
     forceArtifactDir,
     ablationRunId,
     ablationDecision,
@@ -307,6 +344,16 @@ export async function runCrossModeBenchmarkCli(): Promise<void> {
   if (args.productPromotionMatrix && args.budgetAblations) {
     throw new Error("--product-promotion-matrix cannot be combined with --budget-ablation.");
   }
+  const cpSatNoOverlap2dSelectorCount = [
+    args.cpSatUseNoOverlap2d,
+    args.cpSatNoOverlap2dWorkflowTags !== undefined,
+    args.cpSatNoOverlap2dGeometryPressure
+  ].filter(Boolean).length;
+  if (cpSatNoOverlap2dSelectorCount > 1) {
+    throw new Error(
+      "Use only one CP-SAT NoOverlap2D selector: --cp-sat-no-overlap2d, --cp-sat-no-overlap2d-tags, or --cp-sat-no-overlap2d-geometry-pressure."
+    );
+  }
   if (
     args.productPromotionMatrix &&
     (args.modes !== undefined ||
@@ -334,7 +381,9 @@ export async function runCrossModeBenchmarkCli(): Promise<void> {
       budgetSeconds: args.budgetSeconds,
       budgetsSeconds: args.budgetsSeconds,
       seeds: args.seeds,
-      cpSat: args.cpSatUseNoOverlap2d ? { useNoOverlap2d: true } : undefined
+      cpSat: args.cpSatUseNoOverlap2d ? { useNoOverlap2d: true } : undefined,
+      cpSatNoOverlap2dWorkflowTags: args.cpSatNoOverlap2dWorkflowTags,
+      cpSatNoOverlap2dGeometryPressure: args.cpSatNoOverlap2dGeometryPressure
     });
 
     if (args.artifactDir !== undefined) {
@@ -363,7 +412,9 @@ export async function runCrossModeBenchmarkCli(): Promise<void> {
     budgetSeconds: args.productPromotionMatrix ? undefined : args.budgetSeconds,
     budgetsSeconds: args.productPromotionMatrix ? [...PRODUCT_WORKFLOW_PROMOTION_BUDGETS_SECONDS] : args.budgetsSeconds,
     seeds: args.productPromotionMatrix ? [...PRODUCT_WORKFLOW_PROMOTION_SEEDS] : args.seeds,
-    cpSat: args.cpSatUseNoOverlap2d ? { useNoOverlap2d: true } : undefined
+    cpSat: args.cpSatUseNoOverlap2d ? { useNoOverlap2d: true } : undefined,
+    cpSatNoOverlap2dWorkflowTags: args.cpSatNoOverlap2dWorkflowTags,
+    cpSatNoOverlap2dGeometryPressure: args.cpSatNoOverlap2dGeometryPressure
   });
 
   if (args.artifactDir !== undefined) {

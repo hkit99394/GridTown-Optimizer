@@ -78,5 +78,93 @@ function testCandidateEvaluatorValidityScriptCreatesArtifacts() {
   }
 }
 
+function testCandidateEvaluatorValidityScriptRecordsSelectiveNoOverlap2dTags() {
+  const artifactDir = "artifacts/tmp-candidate-evaluator-validity-tags-test";
+  const absoluteArtifactDir = path.join(repoRoot, artifactDir);
+  fs.rmSync(absoluteArtifactDir, { recursive: true, force: true });
+
+  try {
+    const result = childProcess.spawnSync(
+      process.execPath,
+      [
+        "scripts/generate-candidate-evaluator-validity.mjs",
+        `--artifact-dir=${artifactDir}`,
+        "--candidate-id=test-selective-candidate",
+        "--run-id=candidate-evaluator-validity-tags-test",
+        "--cp-sat-no-overlap2d-tags=multi-anchor,footprint-pressure",
+        "--modes=greedy",
+        "--budgets=1",
+        "--seeds=7",
+        "--cases=fresh-multi-anchor-service-island,fresh-expansion-corridor-service"
+      ],
+      {
+        cwd: repoRoot,
+        encoding: "utf8"
+      }
+    );
+
+    assert.equal(result.status, 0, result.stderr || result.stdout);
+    const manifest = JSON.parse(result.stdout);
+    assert.deepEqual(manifest.candidateOptions, {
+      cpSatUseNoOverlap2d: false,
+      cpSatNoOverlap2dWorkflowTags: ["multi-anchor", "footprint-pressure"]
+    });
+
+    const validity = readJson(manifest.artifactPaths.validityJson);
+    assert.deepEqual(validity.casesBySplit, {
+      development: [],
+      holdout: ["fresh-expansion-corridor-service", "fresh-multi-anchor-service-island"]
+    });
+    assert.deepEqual(validity.candidateOptions, manifest.candidateOptions);
+  } finally {
+    fs.rmSync(absoluteArtifactDir, { recursive: true, force: true });
+  }
+}
+
+function testCandidateEvaluatorValidityScriptRecordsGeometryPressureSelector() {
+  const artifactDir = "artifacts/tmp-candidate-evaluator-validity-geometry-pressure-test";
+  const absoluteArtifactDir = path.join(repoRoot, artifactDir);
+  fs.rmSync(absoluteArtifactDir, { recursive: true, force: true });
+
+  try {
+    const result = childProcess.spawnSync(
+      process.execPath,
+      [
+        "scripts/generate-candidate-evaluator-validity.mjs",
+        `--artifact-dir=${artifactDir}`,
+        "--candidate-id=test-geometry-pressure-candidate",
+        "--run-id=candidate-evaluator-validity-geometry-pressure-test",
+        "--cp-sat-no-overlap2d-geometry-pressure",
+        "--modes=greedy",
+        "--budgets=1",
+        "--seeds=7",
+        "--cases=typed-footprint-pressure,fresh-expansion-corridor-service"
+      ],
+      {
+        cwd: repoRoot,
+        encoding: "utf8"
+      }
+    );
+
+    assert.equal(result.status, 0, result.stderr || result.stdout);
+    const manifest = JSON.parse(result.stdout);
+    assert.deepEqual(manifest.candidateOptions, {
+      cpSatUseNoOverlap2d: false,
+      cpSatNoOverlap2dGeometryPressure: true
+    });
+
+    const validity = readJson(manifest.artifactPaths.validityJson);
+    assert.deepEqual(validity.candidateOptions, manifest.candidateOptions);
+    assert.deepEqual(validity.casesBySplit, {
+      development: ["typed-footprint-pressure"],
+      holdout: ["fresh-expansion-corridor-service"]
+    });
+  } finally {
+    fs.rmSync(absoluteArtifactDir, { recursive: true, force: true });
+  }
+}
+
 testCandidateEvaluatorValidityScriptCreatesArtifacts();
+testCandidateEvaluatorValidityScriptRecordsSelectiveNoOverlap2dTags();
+testCandidateEvaluatorValidityScriptRecordsGeometryPressureSelector();
 console.log("Candidate evaluator-validity script tests passed.");

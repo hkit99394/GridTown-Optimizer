@@ -4,7 +4,7 @@ Reviewed on 2026-05-30.
 
 Use this plan to refresh baseline product-workflow scorecards before interpreting solver candidates. It refreshes evidence only; it does not promote solver behavior.
 
-The current product workflow corpus has development and protected holdout splits. L0 has added the first two fresh product holdout cases inside the holdout split: `fresh-multi-anchor-service-island` and `fresh-typed-footprint-scarcity`. Treat them as a separate fresh refresh slice for candidate evidence even though the TypeScript split field remains `holdout`.
+The current product workflow corpus has development and protected holdout splits. L0 has added three fresh product holdout cases inside the holdout split: `fresh-multi-anchor-service-island`, `fresh-typed-footprint-scarcity`, and `fresh-expansion-corridor-service`. The Auto/LNS expansion-corridor intake also added `development-expansion-corridor-service` as a development-side analog. Treat the three fresh rows as a separate refresh slice for candidate evidence even though the TypeScript split field remains `holdout`.
 
 ## Shared Setup
 
@@ -76,9 +76,26 @@ Expected shape:
 - `seeds` is `[7]`.
 - `workflow-replay.json` contains both replay cases.
 
+Latest current-corpus smoke:
+
+- Date: 2026-05-31.
+- Artifact: `artifacts/product-corpus/2026-05-31/baseline-current-14-case-smoke-20260531T183922Z`.
+- Shape: 14 cases, 4 modes, budget `1`, seed `7`.
+- Product coverage: no missing cases, no split mismatches, no missing modes for the smoke slice.
+- Auto ties best on 11 of 14 rows.
+- Auto is behind best on `service-local-neighborhood` by `15`, `fresh-multi-anchor-service-island` by `25`, and `expansion-comparison-replay` by `35`.
+- Follow-up baseline-repeat triage: `artifacts/cross-mode-budget-ablations/2026-05-31/auto-1s-miss-triage-baseline-repeat-20260531T185216Z` showed all three misses are seed `7` only across seeds `7,19,37`.
+- Split fast-lane refreshes now cover all 14 cases at `1s/5s`, seeds `7,19,37`: development, protected holdout, and fresh holdout artifacts listed below. Across those 84 case/budget/seed rows, Auto ties best on 79 rows.
+- This is a smoke refresh only; the full promotion matrix remains pending.
+
 ## Development Split Refresh
 
 Use this to refresh the development half of the product workflow corpus.
+
+Run the `1s/5s` fast lane first when validating the refresh path locally. The
+full `1s/5s/30s/120s` command is decision-grade but sequentially expensive; use
+it after the fast lane is healthy or split the longer budgets into separate
+artifact runs.
 
 ```bash
 ARTIFACT_DIR="${PRODUCT_ROOT}/baseline-development-1s-5s-30s-120s-seeds7-19-37-${RUN_STAMP}"
@@ -98,17 +115,47 @@ node dist/crossModeBenchmarkCli.js \
   typed-footprint-pressure \
   seeded-service-anchor-pressure \
   road-semantics-service-pressure \
+  development-expansion-corridor-service \
   manual-layout-replay-warm-start
 ```
 
 Coverage:
 
-- 5 development cases.
+- 6 development cases.
 - 4 modes.
 - 4 budgets.
 - 3 seeds.
-- 60 case/budget/seed scorecards.
-- 240 mode runs.
+- 72 case/budget/seed scorecards.
+- 288 mode runs.
+
+Latest development fast-lane refresh:
+
+- Date: 2026-05-31.
+- Artifact: `artifacts/product-corpus/2026-05-31/baseline-development-fast-1s-5s-seeds7-19-37-20260531T190759Z`.
+- Shape: 6 development cases, 4 modes, budgets `1,5`, seeds `7,19,37`.
+- Coverage: 36 case/budget/seed scorecards and 144 mode runs.
+- Auto ties best on 34 of 36 rows.
+- Auto is behind best only on `typed-footprint-pressure`: by `5` at `1s` seed `19` and by `20` at `5s` seed `7`.
+
+Latest development `30s` lane refresh:
+
+- Date: 2026-05-31.
+- Artifact: `artifacts/product-corpus/2026-05-31/baseline-development-30s-seeds7-19-37-20260531T192916Z`.
+- Shape: 6 development cases, 4 modes, budget `30`, seeds `7,19,37`.
+- Coverage: 18 case/budget/seed scorecards and 72 mode runs.
+- Auto ties best on all 18 rows.
+- Auto mean wall-clock was `11.610s`; no Auto row exceeded the `30s` budget by more than 10%.
+
+Latest development `120s` lane refresh:
+
+- Date: 2026-05-31.
+- Artifact: `artifacts/product-corpus/2026-05-31/baseline-development-120s-seeds7-19-37-20260531T195607Z`.
+- Shape: 6 development cases, 4 modes, budget `120`, seeds `7,19,37`.
+- Coverage: 18 case/budget/seed scorecards and 72 mode runs.
+- Auto ties best on all 18 rows.
+- Auto mean wall-clock was `23.524s`; the slowest Auto row was `107.284s`.
+- No Auto row exceeded the `120s` budget by more than 10%.
+- Development split now has current `1s/5s/30s/120s` coverage. An initial all-budget attempt was stopped after about seven minutes because the sequential command entered long CP-SAT rows before producing row-level artifacts.
 
 ## Protected Holdout Refresh
 
@@ -144,14 +191,44 @@ Coverage:
 - 60 case/budget/seed scorecards.
 - 240 mode runs.
 
+Latest protected holdout fast-lane refresh:
+
+- Date: 2026-05-31.
+- Artifact: `artifacts/product-corpus/2026-05-31/baseline-protected-holdout-fast-1s-5s-seeds7-19-37-20260531T191419Z`.
+- Shape: 5 protected holdout cases, 4 modes, budgets `1,5`, seeds `7,19,37`.
+- Coverage: 30 case/budget/seed scorecards and 120 mode runs.
+- Auto ties best on 28 of 30 rows.
+- Auto is behind best only at `1s`, seed `7`: `service-local-neighborhood` by `15` and `expansion-comparison-replay` by `35`.
+
+Latest protected holdout `30s` lane refresh:
+
+- Date: 2026-05-31.
+- Artifact: `artifacts/product-corpus/2026-05-31/baseline-protected-holdout-30s-seeds7-19-37-20260531T193849Z`.
+- Shape: 5 protected holdout cases, 4 modes, budget `30`, seeds `7,19,37`.
+- Coverage: 15 case/budget/seed scorecards and 60 mode runs.
+- Auto ties best on all 15 rows.
+- Auto mean wall-clock was `11.178s`; no Auto row exceeded the `30s` budget by more than 10%.
+
+Latest protected holdout `120s` lane refresh:
+
+- Date: 2026-05-31.
+- Artifact: `artifacts/product-corpus/2026-05-31/baseline-protected-holdout-120s-seeds7-19-37-20260531T201243Z`.
+- Shape: 5 protected holdout cases, 4 modes, budget `120`, seeds `7,19,37`.
+- Coverage: 15 case/budget/seed scorecards and 60 mode runs.
+- Auto ties best on all 15 rows.
+- Auto mean wall-clock was `14.484s`; the slowest Auto row was `28.283s`.
+- No Auto row exceeded the `120s` budget by more than 10%.
+- Protected holdout split now has current `1s/5s/30s/120s` coverage.
+
 ## Fresh Product Holdout Refresh
 
-Current status: runnable for the first L0 fresh product holdout pair. These cases are in the product workflow corpus as holdout cases, but they should be refreshed separately before candidate claims.
+Current status: runnable for the first L0 fresh product holdout set. These cases are in the product workflow corpus as holdout cases, but they should be refreshed separately before candidate claims.
 
 ```bash
 FRESH_CASES=(
   fresh-multi-anchor-service-island
   fresh-typed-footprint-scarcity
+  fresh-expansion-corridor-service
 )
 
 ARTIFACT_DIR="${PRODUCT_ROOT}/baseline-fresh-holdout-1s-5s-30s-120s-seeds7-19-37-${RUN_STAMP}"
@@ -177,6 +254,50 @@ Rules for fresh product holdout:
 - If fresh cases are not yet part of `DEFAULT_CROSS_MODE_PRODUCT_WORKFLOW_CORPUS`, add the corpus cases first or use a candidate-specific benchmark harness that writes equivalent registry metadata.
 - Do not replace this with learned-LNS fresh-pressure evidence; that evidence is track-specific and does not cover the full product workflow promotion matrix.
 
+Latest fresh holdout fast-lane refresh:
+
+- Date: 2026-05-31.
+- Artifact: `artifacts/product-corpus/2026-05-31/baseline-fresh-holdout-fast-1s-5s-seeds7-19-37-20260531T191827Z`.
+- Shape: 3 fresh holdout cases, 4 modes, budgets `1,5`, seeds `7,19,37`.
+- Coverage: 18 case/budget/seed scorecards and 72 mode runs.
+- Auto ties best on 17 of 18 rows.
+- Auto is behind best only on `fresh-multi-anchor-service-island` by `25` at `1s`, seed `7`.
+
+Latest fresh holdout `30s` lane refresh:
+
+- Date: 2026-05-31.
+- Artifact: `artifacts/product-corpus/2026-05-31/baseline-fresh-holdout-30s-seeds7-19-37-20260531T194631Z`.
+- Shape: 3 fresh holdout cases, 4 modes, budget `30`, seeds `7,19,37`.
+- Coverage: 9 case/budget/seed scorecards and 36 mode runs.
+- Auto ties best on all 9 rows.
+- Auto mean wall-clock was `10.228s`; no Auto row exceeded the `30s` budget by more than 10%.
+
+Latest fresh holdout `120s` lane refresh:
+
+- Date: 2026-05-31.
+- Artifact: `artifacts/product-corpus/2026-05-31/baseline-fresh-holdout-120s-seeds7-19-37-20260531T221202Z`.
+- Shape: 3 fresh holdout cases, 4 modes, budget `120`, seeds `7,19,37`.
+- Coverage: 9 case/budget/seed scorecards and 36 mode runs.
+- Auto ties best on all 9 rows.
+- Auto mean wall-clock was `13.899s`; the slowest Auto row was `16.456s`.
+- No Auto row exceeded the `120s` budget by more than 10%.
+- Fresh holdout split now has current `1s/5s/30s/120s` coverage.
+
+Current `30s` baseline coverage:
+
+- Development, protected holdout, and fresh holdout `30s` lane refreshes now cover all 14 product-corpus cases at seeds `7,19,37`.
+- Coverage: 42 case/budget/seed scorecards and 168 mode runs.
+- Auto ties best on all 42 `30s` rows.
+
+Current full split-baseline coverage:
+
+- Development, protected holdout, and fresh holdout split-lane refreshes now cover all 14 product-corpus cases, all four modes, budgets `1,5,30,120`, and seeds `7,19,37`.
+- Coverage: 168 case/budget/seed scorecards and 672 mode runs.
+- Auto ties best on 163 of 168 rows.
+- The five Auto gaps are short-budget rows only: `typed-footprint-pressure` at `1s` seed `19` and `5s` seed `7`, `service-local-neighborhood` at `1s` seed `7`, `expansion-comparison-replay` at `1s` seed `7`, and `fresh-multi-anchor-service-island` at `1s` seed `7`.
+- Auto ties best on all `30s` and `120s` rows.
+- The split artifacts are the recommended durable baseline unless a release process explicitly needs one combined promotion-matrix artifact.
+
 ## Full Promotion-Matrix Refresh
 
 Use this after smoke, development, and protected holdout refreshes are healthy. This is the current baseline refresh shape for the product workflow promotion matrix.
@@ -197,12 +318,12 @@ node dist/crossModeBenchmarkCli.js \
 
 Coverage:
 
-- 12 product workflow cases.
+- 14 product workflow cases.
 - 4 modes.
 - 4 budgets.
 - 3 seeds.
-- 144 case/budget/seed scorecards.
-- 576 mode runs.
+- 168 case/budget/seed scorecards.
+- 672 mode runs.
 
 ## Registry Closeout
 

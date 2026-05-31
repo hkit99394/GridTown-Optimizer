@@ -1,0 +1,47 @@
+[
+  {
+    "caseName": "manual-layout-replay-warm-start",
+    "split": "development",
+    "workflowTag": "manual-layout-replay",
+    "apiRoute": "/api/layout/evaluate",
+    "sourceName": "manual-layout-replay",
+    "scorecardCount": 3,
+    "budgetsSeconds": [
+      120
+    ],
+    "seeds": [
+      7,
+      19,
+      37
+    ],
+    "modes": [
+      "auto",
+      "cp-sat",
+      "greedy",
+      "lns"
+    ],
+    "valid": true,
+    "validationErrorCount": 0,
+    "reportedPopulation": 160,
+    "evaluatedPopulation": 160,
+    "populationDeltaFromReported": 0,
+    "reportedRoadCount": 5,
+    "evaluatedRoadCount": 4,
+    "removedRoadCount": 1,
+    "bestScore": 240,
+    "bestScoreSource": {
+      "budgetSeconds": 120,
+      "seed": 7,
+      "mode": "auto"
+    },
+    "bestScoreDeltaFromEvaluated": 80,
+    "autoScore": 240,
+    "autoScoreSource": {
+      "budgetSeconds": 120,
+      "seed": 7,
+      "mode": "auto"
+    },
+    "autoScoreDeltaFromEvaluated": 80,
+    "expansionComparisonLift": null
+  }
+]

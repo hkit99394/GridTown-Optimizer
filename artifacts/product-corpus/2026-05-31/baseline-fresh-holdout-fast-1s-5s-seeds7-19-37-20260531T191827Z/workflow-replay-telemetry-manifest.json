@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "source": "product-workflow-replay",
+  "command": "node dist/crossModeBenchmarkCli.js --product-corpus --product-artifact-dir=artifacts/product-corpus/2026-05-31/baseline-fresh-holdout-fast-1s-5s-seeds7-19-37-20260531T191827Z --product-run-id=product-corpus-scorecard-20260531T191827Z-baseline-fresh-holdout-fast-1s-5s-seeds7-19-37 --product-decision=benchmark-refresh-fresh-holdout-fast-lane '--product-summary=Baseline fresh-holdout fast-lane product-corpus refresh over Auto/Greedy/LNS/CP-SAT at 1s/5s and seeds 7/19/37; no solver default changed.' --modes=auto,greedy,lns,cp-sat --budgets=1,5 --seeds=7,19,37 --json fresh-multi-anchor-service-island fresh-typed-footprint-scarcity fresh-expansion-corridor-service",
+  "generatedAt": "2026-05-31T19:20:37.732Z",
+  "git": {
+    "commit": "1e04bb555b71e4610ba0f80c984d1b9588b2c895",
+    "branch": "features/next-stage"
+  },
+  "hardware": {
+    "captured": true,
+    "platform": "darwin",
+    "arch": "arm64",
+    "cpuModel": "Apple M1 Pro",
+    "logicalCpuCount": 10,
+    "memoryBytes": 17179869184,
+    "totalMemoryBytes": 17179869184,
+    "gpuUsed": false
+  },
+  "suite": {
+    "caseCount": 3,
+    "replayCount": 0,
+    "validReplayCount": 0,
+    "invalidReplayCount": 0,
+    "apiRoutes": [],
+    "workflowTags": [],
+    "budgetsSeconds": [],
+    "seeds": [],
+    "modes": []
+  },
+  "replays": []
+}

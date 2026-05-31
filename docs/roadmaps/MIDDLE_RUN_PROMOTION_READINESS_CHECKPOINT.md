@@ -13,7 +13,7 @@ This checkpoint blocks that handoff for any long-run/default-path candidate unti
 1. Fresh product holdout coverage exists for the product workflow being claimed.
 2. Candidate-specific final-layout evaluator-validity evidence is runnable for the affected modes, cases, budgets, and seeds.
 
-L0 now carries the operational checklist, first fresh holdout nominations, and evaluator-validity automation command shape. `fresh-multi-anchor-service-island` and `fresh-typed-footprint-scarcity` are implemented and passed a CP-SAT evaluator-validity smoke for the first M9 intake: [M9_CANDIDATE_INTAKE_CP_SAT_NO_OVERLAP2D.md](M9_CANDIDATE_INTAKE_CP_SAT_NO_OVERLAP2D.md).
+L0 now carries the operational checklist, first fresh holdout nominations, and evaluator-validity automation command shape. `fresh-multi-anchor-service-island` and `fresh-typed-footprint-scarcity` are implemented and passed a CP-SAT evaluator-validity smoke for the first M9 intake: [M9_CANDIDATE_INTAKE_CP_SAT_NO_OVERLAP2D.md](M9_CANDIDATE_INTAKE_CP_SAT_NO_OVERLAP2D.md). `fresh-expansion-corridor-service` is implemented for the selective CP-SAT intake, passed the 2026-05-31 full CP-SAT evaluator-validity expansion, and has now been paired with `development-expansion-corridor-service` for focused Auto/LNS expansion-corridor diagnostics.
 
 The first M9 candidate has now closed diagnostics-only: [M9_CP_SAT_NO_OVERLAP2D_CLOSEOUT.md](M9_CP_SAT_NO_OVERLAP2D_CLOSEOUT.md). It passed final-layout evaluator validity but is blocked from promotion by a repeatable protected holdout population regression.
 

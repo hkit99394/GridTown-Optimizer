@@ -1,0 +1,17 @@
+=== Candidate Evaluator Validity ===
+Generated: 2026-05-30T21:59:54.620Z
+Candidate: cp-sat-selective-no-overlap2d-preflight
+Cases: 8
+Modes: cp-sat
+Budgets: 1, 5s
+Seeds: 7, 19, 37
+Coverage: rows=48 valid=48 invalid=0 population-mismatches=0 max-abs-delta=0
+Fresh holdout note: Uses L0 fresh holdout cases fresh-multi-anchor-service-island, fresh-typed-footprint-scarcity, and fresh-expansion-corridor-service before promotion claims.
+
+- mode=cp-sat: rows=48 valid=48 invalid=0 population-mismatches=0 mean-wall=1.822s
+
+- split=development: rows=12 valid=12 invalid=0 population-mismatches=0
+- split=holdout: rows=36 valid=36 invalid=0 population-mismatches=0
+
+- budget=1s rows=24 valid=24 invalid=0 population-mismatches=0
+- budget=5s rows=24 valid=24 invalid=0 population-mismatches=0

@@ -180,7 +180,9 @@ function sendRecoveredProgressLogStatus(
           "Recovered progress log finalResult.solution"
         );
         const solution = materializeSerializedSolution(document.finalResult.solution);
-        compactResponse = buildCompactSolveResponse(document.input.grid, document.input.params, solution);
+        compactResponse = buildCompactSolveResponse(document.input.grid, document.input.params, solution, {
+          validationMode: "lightweight"
+        });
       } catch (error) {
         sendJson(
           res,
@@ -502,7 +504,7 @@ export function handleSolveStatus(
         ...buildSolveJobResponseBase(job),
         ...(job.message ? { message: job.message } : {}),
         ...(progressEntry ? { progressEntry } : {}),
-        ...buildCompactSolveResponse(job.grid, job.params, job.solution)
+        ...buildCompactSolveResponse(job.grid, job.params, job.solution, { validationMode: "lightweight" })
       },
       route.headOnly
     );

@@ -451,7 +451,7 @@ async function runGuidedFlowSmoke() {
 
     const result = await runSolve(baseUrl, solveRequest, `guided-flow-main-${Date.now()}`);
     assert.equal(result.validation.valid, true, result.validation.errors.join("\n"));
-    assert.equal(result.validation.populationValidation.mode, "full-recompute");
+    assert.equal(result.validation.populationValidation.mode, "reported-invariants");
     assert.equal(result.stats.optimizer, "auto");
     assert.equal(result.stats.totalPopulation > 0, true);
 

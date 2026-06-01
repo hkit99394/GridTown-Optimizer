@@ -6,6 +6,7 @@ import { once } from "node:events";
 const HOST = "127.0.0.1";
 const REQUEST_TIMEOUT_MS = 5000;
 const SOLVE_TIMEOUT_MS = 15000;
+const TERMINAL_STATUS_MAX_MS = 2000;
 const POLL_INTERVAL_MS = 100;
 
 function sleep(ms) {
@@ -136,13 +137,23 @@ async function runSmoke() {
 
     assert.notEqual(finalStatus, null, `Solve did not complete within ${SOLVE_TIMEOUT_MS}ms.`);
     assert.equal(finalStatus.payload.validation.valid, true, finalStatus.payload.validation.errors.join("\n"));
-    assert.equal(finalStatus.payload.validation.populationValidation.mode, "full-recompute");
+    assert.equal(finalStatus.payload.validation.populationValidation.mode, "reported-invariants");
+    assert.equal(
+      finalStatus.elapsedMs < TERMINAL_STATUS_MAX_MS,
+      true,
+      `terminal status poll took ${finalStatus.elapsedMs}ms`
+    );
     assert.equal(finalStatus.payload.solution.residentials.length, 1);
     assert.equal(finalStatus.payload.stats.totalPopulation > 0, true);
 
     const recheck = await fetchJson(baseUrl, `/api/solve/status?${new URLSearchParams({ requestId }).toString()}`);
     assert.equal(recheck.payload.jobStatus, "completed");
-    assert.equal(recheck.payload.validation.populationValidation.mode, "full-recompute");
+    assert.equal(recheck.payload.validation.populationValidation.mode, "reported-invariants");
+    assert.equal(
+      recheck.elapsedMs < TERMINAL_STATUS_MAX_MS,
+      true,
+      `terminal status recheck took ${recheck.elapsedMs}ms`
+    );
 
     console.log(
       JSON.stringify({
@@ -151,6 +162,7 @@ async function runSmoke() {
         polls,
         startMs: start.elapsedMs,
         maxStatusMs,
+        terminalStatusMs: finalStatus.elapsedMs,
         recheckMs: recheck.elapsedMs,
         totalPopulation: finalStatus.payload.stats.totalPopulation,
         validationMode: finalStatus.payload.validation.populationValidation.mode

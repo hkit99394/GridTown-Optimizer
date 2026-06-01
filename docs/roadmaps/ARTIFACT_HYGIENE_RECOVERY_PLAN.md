@@ -204,4 +204,4 @@ Artifact hygiene recovery is complete when:
 
 ## Recommended Next Move
 
-Commit the first-pass migration as one reviewable artifact-policy change. After that, return to the maintenance sequence: add the planner completed-status workflow smoke, then nominate or implement `fresh-manual-resume-neighborhood` before any candidate touches saved-layout reuse, warm-start behavior, or planner resume flows.
+The first-pass migration was committed as `1b75973 Recover artifact hygiene and externalize raw evidence`, and planner completed-status resilience followed on 2026-06-01. The next maintenance move is nomination or implementation of `fresh-manual-resume-neighborhood` before any candidate touches saved-layout reuse, warm-start behavior, or planner resume flows.

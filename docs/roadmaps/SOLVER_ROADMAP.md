@@ -98,8 +98,8 @@ Findings from this review:
 
 Forward sequence:
 
-1. **Commit artifact-cap recovery:** review and commit [ARTIFACT_HYGIENE_RECOVERY_PLAN.md](ARTIFACT_HYGIENE_RECOVERY_PLAN.md), the compact external manifest, registry-draft rewrites, raw-file untracking, and the evidence-contract test update as one artifact-policy checkpoint.
-2. **Planner completed-status smoke:** add the workflow-level smoke from the maintenance backlog so long-running solve completion stays reliable while solver candidates remain gated.
+1. **Commit artifact-cap recovery:** done in `1b75973 Recover artifact hygiene and externalize raw evidence`.
+2. **Planner completed-status smoke:** done on 2026-06-01. Completed and recovered status responses use lightweight reported-invariant validation, the web-solve smoke asserts terminal status polling stays quick, and the UI runtime smoke proves a delayed terminal `completed` payload is not converted into a failed solve.
 3. **Fresh manual-resume holdout:** implement or nominate `fresh-manual-resume-neighborhood` before any candidate touches saved-layout reuse, warm-start behavior, or planner resume flows.
 4. **Candidate intake only on trigger:** do not open another broad solver candidate just to keep momentum. Reopen Auto/LNS only for a reproducible outside-envelope failure, CP-SAT geometry only for a different runtime-bottleneck hypothesis, learned guidance only for protected/fresh online value coverage, and service-master only for repeatable equal-budget wins.
 5. **Long-run promotion:** once a triggered candidate exists, use M9 intake, same-slice baseline repeat, candidate-specific evaluator validity, CPU/time-to-best review, artifact storage handoff, and decision closeout before changing defaults.
@@ -251,10 +251,9 @@ Reopen only if the same workflow family falls behind best-of-mode across more th
 
 These items are not solver-policy candidates. They track planner/runtime reliability follow-ups that protect long-running solve workflows.
 
-1. **Planner completed-status resilience:** marked 2026-05-29 after a completed background solve surfaced as failed in the UI because final status polling performed heavyweight response validation. The immediate route fix keeps completed and recovered status responses on lightweight reported-invariant validation. Follow-up work should add a workflow-level smoke that completes a large background solve through `/api/solve/status`, asserts the terminal response returns promptly with `jobStatus: "completed"`, and checks that the UI does not convert terminal poll latency into a failed solve.
-
 Recently completed maintenance:
 
+1. **Planner completed-status resilience:** completed 2026-06-01 after a completed background solve surfaced as failed in the UI because final status polling performed heavyweight response validation. Completed and recovered `/api/solve/status` terminal responses now use lightweight reported-invariant validation, the web-solve smoke asserts terminal completed polls stay quick, and `tests/planner-completed-status-smoke.test.cjs` checks that the UI accepts a delayed terminal `completed` payload without reporting a failed solve.
 1. **Artifact-cap recovery:** completed 2026-06-01 after the review found `node tests/artifact-repository-hygiene.test.cjs` failing at 1716 tracked artifacts against the 1600 cap. [ARTIFACT_HYGIENE_RECOVERY_PLAN.md](ARTIFACT_HYGIENE_RECOVERY_PLAN.md) records the migration: 234 unindexed raw artifacts were packaged into durable GitHub Release assets, untracked from git, and replaced in affected registry drafts by the compact tracked external manifest. `npm run quality:evidence` is green again.
 
 - **Roadmap restructure:** completed 2026-05-29. The active roadmap was shortened to current posture, active tracks, closed decisions, gated priorities, promotion gates, guardrails, and maintenance backlog. The detailed May evidence narrative moved to [SOLVER_ROADMAP_HISTORY_2026-05.md](SOLVER_ROADMAP_HISTORY_2026-05.md).

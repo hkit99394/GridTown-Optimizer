@@ -130,14 +130,16 @@ function loadPlannerWorkbenchModule() {
   }).CityBuilderWorkbench;
 }
 
-function loadPlannerSolveRuntimeModule() {
+function loadPlannerSolveRuntimeModule(fetch = undefined) {
   return loadBrowserModule("apps/planner-web/plannerSolveRuntime.js", {
     window: {
       clearInterval,
       setInterval
     },
     context: {
-      Error
+      Error,
+      fetch,
+      URLSearchParams
     }
   }).CityBuilderSolveRuntime;
 }

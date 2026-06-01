@@ -1,6 +1,6 @@
 # Middle-Run Artifact Storage Handoff
 
-Reviewed on 2026-05-30.
+Reviewed on 2026-06-01.
 
 Use this handoff when an evidence run creates raw bundles that are useful for audit but too large or noisy for normal code review. The goal is simple: keep the registry and summaries in git, move large raw bundles to durable release or external storage, and preserve enough metadata to recover the raw evidence later.
 
@@ -17,7 +17,7 @@ The repository already has decision artifacts near the tracked-artifact hygiene 
 | Service-master Auto/Greedy cost evidence                      | `decision-trace.jsonl`        | 1.9 MB      | Trace dumps belong in external storage after closeout.     |
 | LNS replay labels and online learned-guidance diagnostic runs | `labels.json` / ablation JSON | 10-13 MB    | Label and online matrices are external-storage candidates. |
 
-This document does not require cleanup of historical tracked artifacts. It sets the convention for new middle-run evidence.
+The 2026-06-01 stage review found the tracked artifact count at `1716`, above the hygiene cap of `1600`. The first-pass recovery in [ARTIFACT_HYGIENE_RECOVERY_PLAN.md](ARTIFACT_HYGIENE_RECOVERY_PLAN.md) externalized 234 unindexed raw artifacts and recovered the evidence gate while keeping summaries, manifests, registry drafts, and the registry index in git.
 
 ## Storage Tiers
 
@@ -190,3 +190,5 @@ Block decision-grade closeout when any of these are true:
 ## Decision
 
 M11 is satisfied as a middle-run artifact storage handoff. Large scorecards, replay labels, trace dumps, solve logs, and raw matrices now have a durable release/external storage convention while registry entries remain the git-tracked index.
+
+Current follow-up: commit the first-pass recovery from [ARTIFACT_HYGIENE_RECOVERY_PLAN.md](ARTIFACT_HYGIENE_RECOVERY_PLAN.md) as one artifact-policy checkpoint. Keep the 2026-05-31 split artifacts as the durable baseline; do not generate one combined promotion-matrix artifact just to solve artifact hygiene.

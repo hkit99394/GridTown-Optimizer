@@ -7,11 +7,11 @@
     "node dist/lnsBenchmarkCli.js --window-replay-online-scorecard=artifacts/lns-window-ranker-online/2026-05-10/protected-broadened-one-iteration-selected-feature-gate-high-service-pressure-min-score-delta-1.18/lns-window-ranker-online-ablation.json --window-replay-protected-holdout --seeds=7,19,37 --max-windows=16 --exploration-windows=8 --repair-time=0.2 --roll-forward-iterations=4 --roll-forward-repair-time=0.2 --window-replay-artifact-dir=artifacts/lns-window-replay-labels/2026-05-10/protected-service-braid-online-selected-feature-gated-decision-coverage-roll-forward-4x0.2 --force-artifact-dir lns-holdout-service-braid-pressure"
   ],
   "artifactPaths": [
-    "artifacts/lns-window-replay-labels/2026-05-10/protected-service-braid-online-selected-feature-gated-decision-coverage-roll-forward-4x0.2/lns-window-replay-labels.json",
     "artifacts/lns-window-replay-labels/2026-05-10/protected-service-braid-online-selected-feature-gated-decision-coverage-roll-forward-4x0.2/lns-window-replay-labels.txt",
     "artifacts/lns-window-replay-labels/2026-05-10/protected-service-braid-online-selected-feature-gated-decision-coverage-roll-forward-4x0.2/repeatability-summary.json",
     "artifacts/lns-window-replay-labels/2026-05-10/protected-service-braid-online-selected-feature-gated-decision-coverage-roll-forward-4x0.2/manifest.json",
-    "artifacts/lns-window-replay-labels/2026-05-10/protected-service-braid-online-selected-feature-gated-decision-coverage-roll-forward-4x0.2/telemetry-manifest.json"
+    "artifacts/lns-window-replay-labels/2026-05-10/protected-service-braid-online-selected-feature-gated-decision-coverage-roll-forward-4x0.2/telemetry-manifest.json",
+    "artifacts/external-artifacts/2026-06-01/artifact-hygiene-unindexed-raw-manifest.json"
   ],
   "cases": [
     "lns-holdout-service-braid-pressure"

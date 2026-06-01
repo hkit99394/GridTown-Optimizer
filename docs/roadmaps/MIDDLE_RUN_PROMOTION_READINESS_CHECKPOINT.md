@@ -2,7 +2,9 @@
 
 Date: 2026-05-30
 
-Status: Done for first CP-SAT intake; first candidate closed diagnostics-only; promotion evidence still pending
+Last reviewed: 2026-06-01
+
+Status: Middle-run baseline split evidence complete; candidate-specific promotion evidence still required
 
 ## Purpose
 
@@ -28,7 +30,7 @@ Middle-run framework readiness is now satisfied for candidate intake. Do not mar
 ## Required Before Long-Run Candidate Work
 
 1. **Fresh product holdout nomination:** add or nominate cases that were not tuned against during learned-LNS or service-master diagnostics. Each case should name workflow family, split, mode relevance, budget relevance, and why it is product-realistic.
-2. **Baseline refresh shape:** define or run the baseline commands for development, protected holdout, and fresh product holdout slices using the current telemetry-manifest artifact writer.
+2. **Baseline refresh shape:** define or run the baseline commands for development, protected holdout, and fresh product holdout slices using the current telemetry-manifest artifact writer. The 2026-05-31 split artifacts now satisfy the current baseline requirement for the standard product-corpus matrix.
 3. **Candidate evaluator-validity shape:** define a runnable command or harness that validates each candidate final layout through the final-layout evaluator for the affected modes, cases, budgets, and seeds.
 4. **Artifact plan:** name where summary manifests, registry drafts, raw scorecards, replay labels, and trace bundles will live before the candidate run starts.
 5. **Decision linkage:** require the candidate intake and closeout to link this checkpoint, the fresh holdout evidence, and the evaluator-validity evidence.
@@ -39,16 +41,21 @@ Middle-run framework readiness is now satisfied for candidate intake. Do not mar
 - If evaluator-validity evidence covers only old diagnostics branches or replay workflows, long-run promotion is blocked for new broad candidates.
 - If a candidate improves benchmark population but lacks final-layout evaluator validity, it cannot change runtime defaults.
 - If artifact storage is unclear, run only diagnostics until summaries, manifests, and registry index entries have durable homes.
+- If artifact hygiene exceeds the tracked-file cap again, do not use `npm run quality:evidence` as a release or promotion green light until artifact-cap recovery is complete.
 
 ## Done When
 
 - Fresh product holdout cases are present or explicitly nominated in the product corpus workflow.
 - A candidate-specific final-layout evaluator-validity command or harness is checked in or linked from the candidate intake.
-- Baseline refresh commands cover development, protected holdout, and fresh product holdout slices.
+- Baseline refresh commands or artifacts cover development, protected holdout, and fresh product holdout slices.
 - A long-run candidate intake can cite this checkpoint with no open block rules.
 
 ## Current Position
 
 The project is in a good middle-run position: evidence gates, baseline repeatability, evaluator-validity boundaries, CPU/time-to-best review, candidate intake, decision closeout, and artifact storage policy are documented.
+
+The 2026-05-31 split artifacts are the durable baseline for the current 14-case product-corpus matrix: all four modes, budgets `1,5,30,120`, and seeds `7,19,37`. A single combined promotion-matrix artifact is unnecessary unless a release process explicitly requires one.
+
+The 2026-06-01 stage review found one evidence-hygiene blocker: tracked artifacts were above the current repository cap. [ARTIFACT_HYGIENE_RECOVERY_PLAN.md](ARTIFACT_HYGIENE_RECOVERY_PLAN.md) records the first-pass recovery. It does not change solver posture, but it restores the evidence gate and keeps the artifact-storage convention current for future release or promotion closeouts.
 
 The project is ready to intake the next opt-in long-run diagnostics candidate when its trigger is satisfied. It is not promotion-evidence-complete for long-run/default-path solver changes; promotion still requires candidate implementation, same-slice baseline-repeat controls, fresh/development/protected evidence, evaluator validity across the claimed matrix, CPU/time-to-best review, artifact registry coverage, and decision closeout.

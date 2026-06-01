@@ -7,9 +7,9 @@
     "node dist/lnsBenchmarkCli.js --window-ranker-online-ablation --window-ranker-protected-holdout --seeds=7,19,37 --window-ranker-model=artifacts/lns-window-ranker/2026-05-08/strict-lns-replay-labels-curated-seeds-v3-final-lift-no-weak-broadened-online-decision-feature-selectivity-calibration-lr0.02-cap100/lns-window-ranker.json --window-ranker-min-score-delta=1.18 --lns-iterations=1 '--window-ranker-selected-feature-gates=area>=0.6,area<=0.6,serviceCandidateBonus>=5.58,residentialCandidatesBlocked>=0.65' --window-ranker-artifact-dir=artifacts/lns-window-ranker-online/2026-05-10/protected-broadened-one-iteration-selected-feature-gate-high-service-pressure-min-score-delta-1.18 --force-artifact-dir"
   ],
   "artifactPaths": [
-    "artifacts/lns-window-ranker-online/2026-05-10/protected-broadened-one-iteration-selected-feature-gate-high-service-pressure-min-score-delta-1.18/lns-window-ranker-online-ablation.json",
     "artifacts/lns-window-ranker-online/2026-05-10/protected-broadened-one-iteration-selected-feature-gate-high-service-pressure-min-score-delta-1.18/lns-window-ranker-online-ablation.txt",
-    "artifacts/lns-window-ranker-online/2026-05-10/protected-broadened-one-iteration-selected-feature-gate-high-service-pressure-min-score-delta-1.18/telemetry-manifest.json"
+    "artifacts/lns-window-ranker-online/2026-05-10/protected-broadened-one-iteration-selected-feature-gate-high-service-pressure-min-score-delta-1.18/telemetry-manifest.json",
+    "artifacts/external-artifacts/2026-06-01/artifact-hygiene-unindexed-raw-manifest.json"
   ],
   "cases": {
     "development": [],

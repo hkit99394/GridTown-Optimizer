@@ -86,7 +86,7 @@ Latest current-corpus smoke:
 - Auto is behind best on `service-local-neighborhood` by `15`, `fresh-multi-anchor-service-island` by `25`, and `expansion-comparison-replay` by `35`.
 - Follow-up baseline-repeat triage: `artifacts/cross-mode-budget-ablations/2026-05-31/auto-1s-miss-triage-baseline-repeat-20260531T185216Z` showed all three misses are seed `7` only across seeds `7,19,37`.
 - Split fast-lane refreshes now cover all 14 cases at `1s/5s`, seeds `7,19,37`: development, protected holdout, and fresh holdout artifacts listed below. Across those 84 case/budget/seed rows, Auto ties best on 79 rows.
-- This is a smoke refresh only; the full promotion matrix remains pending.
+- This is a smoke refresh only. The current split-lane baseline is complete; create one combined promotion-matrix artifact only when a release process explicitly requires it.
 
 ## Development Split Refresh
 
@@ -296,11 +296,11 @@ Current full split-baseline coverage:
 - Auto ties best on 163 of 168 rows.
 - The five Auto gaps are short-budget rows only: `typed-footprint-pressure` at `1s` seed `19` and `5s` seed `7`, `service-local-neighborhood` at `1s` seed `7`, `expansion-comparison-replay` at `1s` seed `7`, and `fresh-multi-anchor-service-island` at `1s` seed `7`.
 - Auto ties best on all `30s` and `120s` rows.
-- The split artifacts are the recommended durable baseline unless a release process explicitly needs one combined promotion-matrix artifact.
+- Decision: keep the split artifacts as the durable baseline. Do not create a single combined promotion-matrix artifact unless a release process explicitly requires one.
 
 ## Full Promotion-Matrix Refresh
 
-Use this after smoke, development, and protected holdout refreshes are healthy. This is the current baseline refresh shape for the product workflow promotion matrix.
+Use this only when a release process explicitly requires one combined promotion-matrix artifact. The current durable baseline is the split artifact set listed above.
 
 ```bash
 ARTIFACT_DIR="${PRODUCT_ROOT}/baseline-promotion-matrix-1s-5s-30s-120s-seeds7-19-37-${RUN_STAMP}"

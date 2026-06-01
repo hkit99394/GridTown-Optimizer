@@ -7,9 +7,9 @@
     "node dist/lnsBenchmarkCli.js --window-ranker-online-ablation --window-ranker-protected-holdout --window-ranker-model=artifacts/lns-window-ranker/2026-05-12/strict-lns-replay-labels-curated-seeds-v3-final-lift-no-weak-product-pair-weight0.1-protected-neutral-weight0.0001-trajectory-ignore-baseline-conflict-excluded-calibration-lr0.02-cap100/model.json --window-ranker-min-score-delta=1 --seeds=7,19,37 --lns-iterations=2 --window-ranker-artifact-dir=artifacts/lns-window-ranker-online/2026-05-12/protected-holdout-two-iteration-product-pair-weight0.1-protected-neutral-weight0.0001-3seed-min-score-delta-1 --window-ranker-run-id=lns-window-ranker-online-2026-05-12-protected-product-pair-weight0.1-protected-neutral-weight0.0001-3seed-min-score-delta-1 --window-ranker-decision=online-lns-window-ranker-protected-product-pair-protected-neutral-very-low-weight-threshold1-diagnostic '--window-ranker-summary=Standard protected online A/B for very-low-weight exact protected-neutral suppression model at threshold 1.0. No solver default changed.' --force-artifact-dir --json"
   ],
   "artifactPaths": [
-    "artifacts/lns-window-ranker-online/2026-05-12/protected-holdout-two-iteration-product-pair-weight0.1-protected-neutral-weight0.0001-3seed-min-score-delta-1/lns-window-ranker-online-ablation.json",
     "artifacts/lns-window-ranker-online/2026-05-12/protected-holdout-two-iteration-product-pair-weight0.1-protected-neutral-weight0.0001-3seed-min-score-delta-1/lns-window-ranker-online-ablation.txt",
-    "artifacts/lns-window-ranker-online/2026-05-12/protected-holdout-two-iteration-product-pair-weight0.1-protected-neutral-weight0.0001-3seed-min-score-delta-1/telemetry-manifest.json"
+    "artifacts/lns-window-ranker-online/2026-05-12/protected-holdout-two-iteration-product-pair-weight0.1-protected-neutral-weight0.0001-3seed-min-score-delta-1/telemetry-manifest.json",
+    "artifacts/external-artifacts/2026-06-01/artifact-hygiene-unindexed-raw-manifest.json"
   ],
   "cases": {
     "development": [],

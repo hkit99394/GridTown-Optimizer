@@ -7,11 +7,11 @@
     "node dist/lnsBenchmarkCli.js --window-replay-labels --window-replay-protected-holdout --window-replay-online-scorecard=artifacts/lns-window-ranker-online/2026-05-12/protected-holdout-two-iteration-online-decision-selected-pair-supervision-weight0.1-trajectory-model-9seed-min-score-delta-0.5/lns-window-ranker-online-ablation.json --window-replay-artifact-dir=artifacts/lns-window-replay-labels/2026-05-12/protected-weight0.1-neutral-overrides-online-decision-roll-forward-4x0.2 --roll-forward-iterations=4 --roll-forward-repair-time=0.2 --force-artifact-dir --json"
   ],
   "artifactPaths": [
-    "artifacts/lns-window-replay-labels/2026-05-12/protected-weight0.1-neutral-overrides-online-decision-roll-forward-4x0.2/lns-window-replay-labels.json",
     "artifacts/lns-window-replay-labels/2026-05-12/protected-weight0.1-neutral-overrides-online-decision-roll-forward-4x0.2/lns-window-replay-labels.txt",
     "artifacts/lns-window-replay-labels/2026-05-12/protected-weight0.1-neutral-overrides-online-decision-roll-forward-4x0.2/repeatability-summary.json",
     "artifacts/lns-window-replay-labels/2026-05-12/protected-weight0.1-neutral-overrides-online-decision-roll-forward-4x0.2/manifest.json",
-    "artifacts/lns-window-replay-labels/2026-05-12/protected-weight0.1-neutral-overrides-online-decision-roll-forward-4x0.2/telemetry-manifest.json"
+    "artifacts/lns-window-replay-labels/2026-05-12/protected-weight0.1-neutral-overrides-online-decision-roll-forward-4x0.2/telemetry-manifest.json",
+    "artifacts/external-artifacts/2026-06-01/artifact-hygiene-unindexed-raw-manifest.json"
   ],
   "cases": [
     "lns-holdout-corridor-weave-pressure",

@@ -7,12 +7,12 @@
     "node dist/crossModeBenchmarkCli.js --product-corpus --product-artifact-dir=artifacts/product-corpus/2026-05-30/cp-sat-selective-no-overlap2d-focused-typed-footprint-20260530T215332Z --product-run-id=product-corpus-scorecard-20260530T215332Z-cp-sat-selective-no-overlap2d-focused-typed-footprint --product-decision=benchmark-evidence-only '--product-summary=Focused selective CP-SAT NoOverlap2D rerun for typed-footprint-pressure budget 1 seeds 7 and 37; no solver default changed.' --cp-sat-no-overlap2d-tags=gate,multi-anchor,footprint-pressure --modes=cp-sat --budgets=1 --seeds=7,37 --json typed-footprint-pressure"
   ],
   "artifactPaths": [
-    "artifacts/product-corpus/2026-05-30/cp-sat-selective-no-overlap2d-focused-typed-footprint-20260530T215332Z/scorecard.json",
     "artifacts/product-corpus/2026-05-30/cp-sat-selective-no-overlap2d-focused-typed-footprint-20260530T215332Z/scorecard.txt",
     "artifacts/product-corpus/2026-05-30/cp-sat-selective-no-overlap2d-focused-typed-footprint-20260530T215332Z/evidence-summary.json",
     "artifacts/product-corpus/2026-05-30/cp-sat-selective-no-overlap2d-focused-typed-footprint-20260530T215332Z/workflow-replay.json",
     "artifacts/product-corpus/2026-05-30/cp-sat-selective-no-overlap2d-focused-typed-footprint-20260530T215332Z/workflow-replay-telemetry-manifest.json",
-    "artifacts/product-corpus/2026-05-30/cp-sat-selective-no-overlap2d-focused-typed-footprint-20260530T215332Z/telemetry-manifest.json"
+    "artifacts/product-corpus/2026-05-30/cp-sat-selective-no-overlap2d-focused-typed-footprint-20260530T215332Z/telemetry-manifest.json",
+    "artifacts/external-artifacts/2026-06-01/artifact-hygiene-unindexed-raw-manifest.json"
   ],
   "cases": {
     "development": [

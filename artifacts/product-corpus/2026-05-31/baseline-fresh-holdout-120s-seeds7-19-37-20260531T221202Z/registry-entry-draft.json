@@ -7,12 +7,12 @@
     "node dist/crossModeBenchmarkCli.js --product-corpus --product-artifact-dir=artifacts/product-corpus/2026-05-31/baseline-fresh-holdout-120s-seeds7-19-37-20260531T221202Z --product-run-id=product-corpus-scorecard-20260531T221202Z-baseline-fresh-holdout-120s-seeds7-19-37 --product-decision=benchmark-refresh-fresh-holdout-120s-lane '--product-summary=Baseline fresh-holdout long-budget product-corpus refresh over Auto/Greedy/LNS/CP-SAT at 120s and seeds 7/19/37; no solver default changed.' --modes=auto,greedy,lns,cp-sat --budgets=120 --seeds=7,19,37 --json fresh-multi-anchor-service-island fresh-typed-footprint-scarcity fresh-expansion-corridor-service"
   ],
   "artifactPaths": [
-    "artifacts/product-corpus/2026-05-31/baseline-fresh-holdout-120s-seeds7-19-37-20260531T221202Z/scorecard.json",
     "artifacts/product-corpus/2026-05-31/baseline-fresh-holdout-120s-seeds7-19-37-20260531T221202Z/scorecard.txt",
     "artifacts/product-corpus/2026-05-31/baseline-fresh-holdout-120s-seeds7-19-37-20260531T221202Z/evidence-summary.json",
     "artifacts/product-corpus/2026-05-31/baseline-fresh-holdout-120s-seeds7-19-37-20260531T221202Z/workflow-replay.json",
     "artifacts/product-corpus/2026-05-31/baseline-fresh-holdout-120s-seeds7-19-37-20260531T221202Z/workflow-replay-telemetry-manifest.json",
-    "artifacts/product-corpus/2026-05-31/baseline-fresh-holdout-120s-seeds7-19-37-20260531T221202Z/telemetry-manifest.json"
+    "artifacts/product-corpus/2026-05-31/baseline-fresh-holdout-120s-seeds7-19-37-20260531T221202Z/telemetry-manifest.json",
+    "artifacts/external-artifacts/2026-06-01/artifact-hygiene-unindexed-raw-manifest.json"
   ],
   "cases": {
     "development": [],

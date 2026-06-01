@@ -7,9 +7,9 @@
     "node dist/learnedRankingLabelCli.js --strict-lns-replay --natural-lns-replay-seeds --roll-forward-iterations=1 --roll-forward-repair-time=0.1 --artifact-dir=artifacts/learned-ranking-labels/2026-05-04/strict-lns-replay-labels-natural-seeds-roll-forward-1x0.1 --label-run-id=strict-lns-replay-labels-2026-05-04-natural-seeds-roll-forward-1x0-1 --label-decision=offline-natural-seed-lns-replay-label-diagnostics '--label-summary=Strict LNS replay labels with natural non-weak replay seeds and one-iteration roll-forward final-lift payloads; diagnostics only, no solver default changed.' --json"
   ],
   "artifactPaths": [
-    "artifacts/learned-ranking-labels/2026-05-04/strict-lns-replay-labels-natural-seeds-roll-forward-1x0.1/labels.json",
     "artifacts/learned-ranking-labels/2026-05-04/strict-lns-replay-labels-natural-seeds-roll-forward-1x0.1/labels.txt",
-    "artifacts/learned-ranking-labels/2026-05-04/strict-lns-replay-labels-natural-seeds-roll-forward-1x0.1/telemetry-manifest.json"
+    "artifacts/learned-ranking-labels/2026-05-04/strict-lns-replay-labels-natural-seeds-roll-forward-1x0.1/telemetry-manifest.json",
+    "artifacts/external-artifacts/2026-06-01/artifact-hygiene-unindexed-raw-manifest.json"
   ],
   "cases": {
     "development": [

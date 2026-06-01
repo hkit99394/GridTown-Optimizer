@@ -7,10 +7,9 @@
     "node dist/crossModeBenchmarkCli.js --product-corpus --budget-ablation --ablation-policies=baseline,baseline-repeat --modes=auto,lns --budgets=1 --seeds=7,19,37 --artifact-dir=artifacts/cross-mode-budget-ablations/2026-05-31/auto-1s-miss-triage-baseline-repeat-20260531T185216Z --ablation-run-id=auto-1s-miss-triage-baseline-repeat-20260531T185216Z --ablation-decision=diagnostics-only-auto-1s-miss-triage-baseline-repeat '--ablation-summary=Focused same-slice baseline-repeat control for current 14-case 1s Auto misses; no solver default changed.' --json service-local-neighborhood fresh-multi-anchor-service-island expansion-comparison-replay"
   ],
   "artifactPaths": [
-    "artifacts/cross-mode-budget-ablations/2026-05-31/auto-1s-miss-triage-baseline-repeat-20260531T185216Z/budget-ablation.json",
     "artifacts/cross-mode-budget-ablations/2026-05-31/auto-1s-miss-triage-baseline-repeat-20260531T185216Z/budget-ablation.txt",
-    "artifacts/cross-mode-budget-ablations/2026-05-31/auto-1s-miss-triage-baseline-repeat-20260531T185216Z/decision-trace.jsonl",
-    "artifacts/cross-mode-budget-ablations/2026-05-31/auto-1s-miss-triage-baseline-repeat-20260531T185216Z/telemetry-manifest.json"
+    "artifacts/cross-mode-budget-ablations/2026-05-31/auto-1s-miss-triage-baseline-repeat-20260531T185216Z/telemetry-manifest.json",
+    "artifacts/external-artifacts/2026-06-01/artifact-hygiene-unindexed-raw-manifest.json"
   ],
   "cases": {
     "holdout": [

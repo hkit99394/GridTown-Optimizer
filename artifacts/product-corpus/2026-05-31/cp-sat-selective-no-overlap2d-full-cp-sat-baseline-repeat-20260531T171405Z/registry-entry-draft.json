@@ -7,12 +7,12 @@
     "node dist/crossModeBenchmarkCli.js --product-corpus --product-artifact-dir=artifacts/product-corpus/2026-05-31/cp-sat-selective-no-overlap2d-full-cp-sat-baseline-repeat-20260531T171405Z --product-run-id=cp-sat-selective-no-overlap2d-full-cp-sat-baseline-repeat-20260531T171405Z --product-decision=benchmark-evidence-only '--product-summary=Full CP-SAT product-corpus baseline-repeat for selective NoOverlap2D candidate intake.' --modes=cp-sat --budgets=1,5 --seeds=7,19,37 --json"
   ],
   "artifactPaths": [
-    "artifacts/product-corpus/2026-05-31/cp-sat-selective-no-overlap2d-full-cp-sat-baseline-repeat-20260531T171405Z/scorecard.json",
     "artifacts/product-corpus/2026-05-31/cp-sat-selective-no-overlap2d-full-cp-sat-baseline-repeat-20260531T171405Z/scorecard.txt",
     "artifacts/product-corpus/2026-05-31/cp-sat-selective-no-overlap2d-full-cp-sat-baseline-repeat-20260531T171405Z/evidence-summary.json",
     "artifacts/product-corpus/2026-05-31/cp-sat-selective-no-overlap2d-full-cp-sat-baseline-repeat-20260531T171405Z/workflow-replay.json",
     "artifacts/product-corpus/2026-05-31/cp-sat-selective-no-overlap2d-full-cp-sat-baseline-repeat-20260531T171405Z/workflow-replay-telemetry-manifest.json",
-    "artifacts/product-corpus/2026-05-31/cp-sat-selective-no-overlap2d-full-cp-sat-baseline-repeat-20260531T171405Z/telemetry-manifest.json"
+    "artifacts/product-corpus/2026-05-31/cp-sat-selective-no-overlap2d-full-cp-sat-baseline-repeat-20260531T171405Z/telemetry-manifest.json",
+    "artifacts/external-artifacts/2026-06-01/artifact-hygiene-unindexed-raw-manifest.json"
   ],
   "cases": {
     "development": [

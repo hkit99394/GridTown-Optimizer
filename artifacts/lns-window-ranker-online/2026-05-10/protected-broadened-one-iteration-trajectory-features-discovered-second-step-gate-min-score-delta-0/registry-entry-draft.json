@@ -7,9 +7,9 @@
     "node dist/lnsBenchmarkCli.js --window-ranker-online-ablation --window-ranker-protected-holdout --seeds=7,19,37 --window-ranker-model=artifacts/lns-window-ranker/2026-05-10/strict-lns-replay-labels-curated-seeds-v3-final-lift-no-weak-generated-right-repeatability-trajectory-features-ignore-baseline-conflict-excluded-calibration-lr0.02-cap100/model.json --window-ranker-min-score-delta=0 --lns-iterations=1 '--window-ranker-selected-feature-gate-groups=allowedWindowCells<=1.95,componentDelta>=-0.2,operatorScore>=19.96' --window-ranker-artifact-dir=artifacts/lns-window-ranker-online/2026-05-10/protected-broadened-one-iteration-trajectory-features-discovered-second-step-gate-min-score-delta-0 --window-ranker-run-id=lns-window-ranker-online-2026-05-10-protected-broadened-one-iteration-trajectory-features-discovered-second-step-gate-min-score-delta-0 --window-ranker-decision=online-lns-window-ranker-trajectory-features-discovered-second-step-gate-diagnostics-only '--window-ranker-summary=Protected broadened one-iteration online diagnostic for trajectory-feature model with discovered second-step selected-feature gate. No solver default changed.' --json"
   ],
   "artifactPaths": [
-    "artifacts/lns-window-ranker-online/2026-05-10/protected-broadened-one-iteration-trajectory-features-discovered-second-step-gate-min-score-delta-0/lns-window-ranker-online-ablation.json",
     "artifacts/lns-window-ranker-online/2026-05-10/protected-broadened-one-iteration-trajectory-features-discovered-second-step-gate-min-score-delta-0/lns-window-ranker-online-ablation.txt",
-    "artifacts/lns-window-ranker-online/2026-05-10/protected-broadened-one-iteration-trajectory-features-discovered-second-step-gate-min-score-delta-0/telemetry-manifest.json"
+    "artifacts/lns-window-ranker-online/2026-05-10/protected-broadened-one-iteration-trajectory-features-discovered-second-step-gate-min-score-delta-0/telemetry-manifest.json",
+    "artifacts/external-artifacts/2026-06-01/artifact-hygiene-unindexed-raw-manifest.json"
   ],
   "cases": {
     "development": [],

@@ -7,12 +7,12 @@
     "node dist/crossModeBenchmarkCli.js --product-corpus --product-artifact-dir=artifacts/product-corpus/2026-05-31/cp-sat-geometry-pressure-no-overlap2d-full-cp-sat-candidate-20260531T173841Z --product-run-id=cp-sat-geometry-pressure-no-overlap2d-full-cp-sat-candidate-20260531T173841Z --product-decision=benchmark-evidence-only '--product-summary=Full CP-SAT product-corpus candidate for runtime geometry-pressure NoOverlap2D guard; no solver default changed.' --modes=cp-sat --budgets=1,5 --seeds=7,19,37 --cp-sat-no-overlap2d-geometry-pressure --json"
   ],
   "artifactPaths": [
-    "artifacts/product-corpus/2026-05-31/cp-sat-geometry-pressure-no-overlap2d-full-cp-sat-candidate-20260531T173841Z/scorecard.json",
     "artifacts/product-corpus/2026-05-31/cp-sat-geometry-pressure-no-overlap2d-full-cp-sat-candidate-20260531T173841Z/scorecard.txt",
     "artifacts/product-corpus/2026-05-31/cp-sat-geometry-pressure-no-overlap2d-full-cp-sat-candidate-20260531T173841Z/evidence-summary.json",
     "artifacts/product-corpus/2026-05-31/cp-sat-geometry-pressure-no-overlap2d-full-cp-sat-candidate-20260531T173841Z/workflow-replay.json",
     "artifacts/product-corpus/2026-05-31/cp-sat-geometry-pressure-no-overlap2d-full-cp-sat-candidate-20260531T173841Z/workflow-replay-telemetry-manifest.json",
-    "artifacts/product-corpus/2026-05-31/cp-sat-geometry-pressure-no-overlap2d-full-cp-sat-candidate-20260531T173841Z/telemetry-manifest.json"
+    "artifacts/product-corpus/2026-05-31/cp-sat-geometry-pressure-no-overlap2d-full-cp-sat-candidate-20260531T173841Z/telemetry-manifest.json",
+    "artifacts/external-artifacts/2026-06-01/artifact-hygiene-unindexed-raw-manifest.json"
   ],
   "cases": {
     "development": [

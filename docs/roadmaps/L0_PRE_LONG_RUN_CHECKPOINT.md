@@ -17,14 +17,14 @@ L0 does not promote solver behavior. It only decides whether a candidate is read
 
 ## Fresh Holdout Nominations
 
-These nominations are the first proposed fresh product holdout set for long-run candidates. `fresh-multi-anchor-service-island` and `fresh-typed-footprint-scarcity` were implemented for the first CP-SAT intake and passed a CP-SAT evaluator-validity smoke on 2026-05-30. `fresh-expansion-corridor-service` is now implemented for the selective CP-SAT geometry intake, passed the 2026-05-31 full CP-SAT evaluator-validity expansion, and has been used in the Auto/LNS expansion-corridor focused diagnostics lane. Other nominations still need a product-workflow case or candidate-specific equivalent harness before use.
+These nominations are the first proposed fresh product holdout set for long-run candidates. `fresh-multi-anchor-service-island` and `fresh-typed-footprint-scarcity` were implemented for the first CP-SAT intake and passed a CP-SAT evaluator-validity smoke on 2026-05-30. `fresh-expansion-corridor-service` is implemented for the selective CP-SAT geometry and Auto/LNS expansion-corridor lanes, passed the 2026-05-31 full CP-SAT evaluator-validity expansion, and has been used in the Auto/LNS expansion-corridor focused diagnostics lane. `fresh-manual-resume-neighborhood` was implemented on 2026-06-01 as the saved-layout resume and warm-start fresh holdout. Other nominations still need a product-workflow case or candidate-specific equivalent harness before use.
 
 | Nomination ID                       | Workflow family               | Product shape                                                                  | Leakage guard                                                                                   | Candidate relevance                                                           | Required before use                                                                                                                                                                 |
 | ----------------------------------- | ----------------------------- | ------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `fresh-expansion-corridor-service`  | expansion plus corridor       | Compare next service/residential expansion on a corridor-constrained layout.   | Must not reuse the closed expansion repair-volatility rows or learned-LNS fresh-pressure cases. | Auto/LNS budget policy and planner expansion candidates.                      | Implemented; selective CP-SAT focused and full CP-SAT evidence passed evaluator validity with no population regression; Auto/LNS focused policies were safe but population-neutral. |
 | `fresh-multi-anchor-service-island` | multi-anchor road semantics   | Multiple anchor components with service access competing against road budget.  | Must not tune from `multi-anchor-road-components` or `road-semantics-gate-choke`.               | CP-SAT road semantics, Auto exact-stage reserve, and road cleanup candidates. | Implemented; CP-SAT validity smoke passed with zero population mismatch.                                                                                                            |
 | `fresh-typed-footprint-scarcity`    | typed footprint pressure      | Scarce large residential footprint plus small service reach and mixed sizes.   | Must not tune from `typed-footprint-pressure` or service-master shortlist diagnostics.          | Greedy service ordering, CP-SAT geometry, and population-cap behavior.        | Implemented; CP-SAT validity smoke passed with zero population mismatch.                                                                                                            |
-| `fresh-manual-resume-neighborhood`  | manual replay plus warm start | Saved layout resume where a valid incumbent seeds LNS and CP-SAT continuation. | Must be generated from a new saved layout, not the current `manual-layout-replay-warm-start`.   | Planner happy path, LNS seed behavior, CP-SAT warm-start compatibility.       | Add a replay hint, final layout evaluator check, and replay population-delta check.                                                                                                 |
+| `fresh-manual-resume-neighborhood`  | manual replay plus warm start | Saved layout resume where a valid incumbent seeds LNS and CP-SAT continuation. | Must be generated from a new saved layout, not the current `manual-layout-replay-warm-start`.   | Planner happy path, LNS seed behavior, CP-SAT warm-start compatibility.       | Implemented; replay hint, final-layout evaluator check, and replay population-delta check are in the product corpus. Needs focused refresh before promotion claims.                 |
 
 ## Evaluator-Validity Automation
 
@@ -85,12 +85,20 @@ L0 can close for a candidate when:
 
 L0 is satisfied for the implemented CP-SAT and Auto/LNS diagnostic lanes that use `fresh-multi-anchor-service-island`, `fresh-typed-footprint-scarcity`, and `fresh-expansion-corridor-service`. The first `cp-sat-no-overlap2d-preflight` candidate did proceed to opt-in diagnostics and is now closed diagnostics-only in [M9_CP_SAT_NO_OVERLAP2D_CLOSEOUT.md](M9_CP_SAT_NO_OVERLAP2D_CLOSEOUT.md). Runtime defaults and promotion claims remain blocked for that candidate because the focused M9 slice found a repeatable protected holdout population regression.
 
-Current long-run posture: no candidate has an open promotion path. Future long-run candidates can cite L0 only after they choose the relevant fresh holdout cases, link the candidate-specific evaluator-validity command, and name artifact storage before broad scorecards run. `fresh-manual-resume-neighborhood` remains the next useful holdout nomination if work shifts toward planner resume, saved-layout reuse, or warm-start behavior.
+Current long-run posture: no candidate has an open promotion path. Future long-run candidates can cite L0 only after they choose the relevant fresh holdout cases, link the candidate-specific evaluator-validity command, and name artifact storage before broad scorecards run. If work shifts toward planner resume, saved-layout reuse, or warm-start behavior, start from a focused `fresh-manual-resume-neighborhood` evaluator-validity and baseline-repeat slice before any broad scorecard run.
 
 L0 smoke result on 2026-05-30:
 
 - Command shape: `npm run evidence:candidate-evaluator-validity -- --modes=cp-sat --budgets=1 --seeds=7 --cases=fresh-multi-anchor-service-island,fresh-typed-footprint-scarcity`
 - Rows: 2
 - Valid rows: 2
+- Invalid rows: 0
+- Population mismatches: 0
+
+Fresh manual-resume smoke result on 2026-06-01:
+
+- Command shape: `npm run evidence:candidate-evaluator-validity -- --modes=greedy --budgets=1 --seeds=7 --cases=fresh-manual-resume-neighborhood`
+- Rows: 1
+- Valid rows: 1
 - Invalid rows: 0
 - Population mismatches: 0

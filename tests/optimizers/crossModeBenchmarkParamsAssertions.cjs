@@ -97,10 +97,12 @@ async function testCrossModeBenchmarkParamsAssertions() {
   assert(productNames.includes("multi-anchor-road-components"));
   assert(productNames.includes("development-expansion-corridor-service"));
   assert(productNames.includes("fresh-expansion-corridor-service"));
+  assert(productNames.includes("fresh-manual-resume-neighborhood"));
   const productTags = new Set(DEFAULT_CROSS_MODE_PRODUCT_WORKFLOW_CORPUS.flatMap((entry) => entry.workflowTags ?? []));
   for (const tag of [
     "solver-smoke",
     "manual-layout-replay",
+    "manual-resume-neighborhood",
     "expansion-comparison",
     "corridor",
     "gate",
@@ -118,6 +120,17 @@ async function testCrossModeBenchmarkParamsAssertions() {
   );
   assert.equal(manualReplayCase.params.lns.seedHint.sourceName, "manual-layout-replay");
   assert.equal(manualReplayCase.params.cpSat.warmStartHint.sourceName, "manual-layout-replay");
+  const manualResumeCase = DEFAULT_CROSS_MODE_PRODUCT_WORKFLOW_CORPUS.find(
+    (entry) => entry.name === "fresh-manual-resume-neighborhood"
+  );
+  assert(manualResumeCase);
+  assert.equal(manualResumeCase.split, "holdout");
+  assert.deepEqual(manualResumeCase.workflowTags, ["manual-layout-replay", "manual-resume-neighborhood"]);
+  assert.equal(manualResumeCase.params.lns.seedHint.sourceName, "fresh-manual-resume-neighborhood");
+  assert.equal(manualResumeCase.params.cpSat.warmStartHint.sourceName, "fresh-manual-resume-neighborhood");
+  assert.equal(manualResumeCase.params.cpSat.warmStartHint.solution.totalPopulation, 400);
+  assert.equal(manualResumeCase.params.cpSat.warmStartHint.neighborhoodWindow.rows, 3);
+  assert.equal(manualResumeCase.params.cpSat.warmStartHint.fixOutsideNeighborhoodToHintedValue, true);
 
   assert.throws(
     () => buildCrossModeBenchmarkParams(benchmarkCase, "greedy", { budgetSeconds: -1, seeds: [5] }),

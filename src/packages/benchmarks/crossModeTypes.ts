@@ -21,6 +21,7 @@ export type CrossModeBenchmarkSplit = "development" | "holdout";
 export type CrossModeWorkflowTag =
   | "solver-smoke"
   | "manual-layout-replay"
+  | "manual-resume-neighborhood"
   | "expansion-comparison"
   | "corridor"
   | "gate"

@@ -2,7 +2,7 @@
 
 Date: 2026-06-01
 
-Status: First-pass recovery complete; commit/review checkpoint pending.
+Status: First-pass recovery complete; follow-up baseline hygiene active.
 
 ## Purpose
 
@@ -204,4 +204,4 @@ Artifact hygiene recovery is complete when:
 
 ## Recommended Next Move
 
-The first-pass migration was committed as `1b75973 Recover artifact hygiene and externalize raw evidence`, and planner completed-status resilience followed on 2026-06-01. The next maintenance move is nomination or implementation of `fresh-manual-resume-neighborhood` before any candidate touches saved-layout reuse, warm-start behavior, or planner resume flows.
+The first-pass migration was committed as `1b75973 Recover artifact hygiene and externalize raw evidence`, planner completed-status resilience followed on 2026-06-01, and `fresh-manual-resume-neighborhood` is now implemented as the next fresh holdout row. The next maintenance move is a focused evaluator-validity and baseline-refresh slice for that row before any candidate touches saved-layout reuse, warm-start behavior, or planner resume flows.

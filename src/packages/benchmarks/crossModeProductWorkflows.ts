@@ -266,6 +266,30 @@ const EXPANSION_COMPARISON_REPLAY_HINT = {
   objectiveLowerBound: 115
 };
 
+const FRESH_MANUAL_RESUME_NEIGHBORHOOD_HINT = {
+  sourceName: "fresh-manual-resume-neighborhood",
+  roads: ["0,0", "0,1", "0,2", "0,3", "1,3", "1,4", "2,4", "3,4", "4,4"],
+  solution: {
+    roads: ["0,0", "0,1", "0,2", "0,3", "1,3", "1,4", "2,4", "3,4", "4,4"],
+    services: [
+      { r: 1, c: 0, rows: 1, cols: 1, range: 1, typeIndex: 0, bonus: 45 },
+      { r: 3, c: 2, rows: 1, cols: 2, range: 2, typeIndex: 1, bonus: 90 }
+    ],
+    residentials: [
+      { r: 1, c: 1, rows: 2, cols: 2, typeIndex: 0, population: 220 },
+      { r: 3, c: 5, rows: 2, cols: 2, typeIndex: 0, population: 180 }
+    ],
+    populations: [220, 180],
+    totalPopulation: 400
+  },
+  objectiveLowerBound: 400,
+  preferStrictImprove: true,
+  repairHint: true,
+  fixVariablesToHintedValue: false,
+  neighborhoodWindow: { top: 2, left: 2, rows: 3, cols: 4 },
+  fixOutsideNeighborhoodToHintedValue: true
+};
+
 const PRODUCT_WORKFLOW_REPLAY_CASES: readonly CrossModeBenchmarkCase[] = Object.freeze([
   {
     name: "manual-layout-replay-warm-start",
@@ -306,6 +330,55 @@ const PRODUCT_WORKFLOW_REPLAY_CASES: readonly CrossModeBenchmarkCase[] = Object.
         exhaustiveServiceSearch: false,
         serviceExactPoolLimit: 6,
         serviceExactMaxCombinations: 64
+      }
+    }
+  },
+  {
+    name: "fresh-manual-resume-neighborhood",
+    description:
+      "Fresh product holdout for saved-layout resume where a valid incumbent seeds neighborhood repair and CP-SAT continuation.",
+    problemSizeBand: "small",
+    split: "holdout",
+    workflowTags: ["manual-layout-replay", "manual-resume-neighborhood"],
+    grid: [
+      [1, 1, 1, 1, 1, 1, 1],
+      [1, 1, 1, 1, 1, 0, 1],
+      [1, 1, 1, 0, 1, 1, 1],
+      [1, 1, 1, 1, 1, 1, 1],
+      [1, 0, 1, 1, 1, 1, 1]
+    ],
+    params: {
+      serviceTypes: [
+        { rows: 1, cols: 1, bonus: 45, range: 1, avail: 1 },
+        { rows: 1, cols: 2, bonus: 90, range: 2, avail: 1 }
+      ],
+      residentialTypes: [
+        { w: 2, h: 2, min: 90, max: 220, avail: 3 },
+        { w: 1, h: 2, min: 60, max: 130, avail: 2 }
+      ],
+      availableBuildings: { services: 2, residentials: 4 },
+      lns: {
+        iterations: 3,
+        maxNoImprovementIterations: 3,
+        neighborhoodRows: 3,
+        neighborhoodCols: 4,
+        repairTimeLimitSeconds: 0.75,
+        seedHint: FRESH_MANUAL_RESUME_NEIGHBORHOOD_HINT
+      },
+      cpSat: {
+        timeLimitSeconds: 1,
+        maxDeterministicTime: 1,
+        warmStartHint: FRESH_MANUAL_RESUME_NEIGHBORHOOD_HINT
+      },
+      greedy: {
+        localSearch: true,
+        randomSeed: 103,
+        restarts: 3,
+        serviceRefineIterations: 2,
+        serviceRefineCandidateLimit: 10,
+        exhaustiveServiceSearch: false,
+        serviceExactPoolLimit: 10,
+        serviceExactMaxCombinations: 256
       }
     }
   },

@@ -77,6 +77,7 @@ interface ParsedBenchmarkArgs {
 const CROSS_MODE_WORKFLOW_TAGS = Object.freeze([
   "solver-smoke",
   "manual-layout-replay",
+  "manual-resume-neighborhood",
   "expansion-comparison",
   "corridor",
   "gate",

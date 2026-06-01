@@ -113,6 +113,26 @@ Decision:
 
 `npm run candidate-trigger:scaffold` creates a consistent trigger-ledger record and M9 intake draft. Use `--write-intake` to write the intake draft to `docs/roadmaps/M9_CANDIDATE_INTAKE_<ID>.md`; keep the generated ledger record reviewable before changing the open-trigger table.
 
+Dry-run example:
+
+```bash
+npm run candidate-trigger:scaffold -- \
+  --trigger-id=auto-lns-expansion-corridor-gap \
+  --candidate-id=auto-lns-expansion-corridor-policy \
+  "--source=artifacts/cross-mode-budget-ablations/2026-05-31/expansion-corridor-lns-seed-repair-5s-focused-20260531T180649Z" \
+  --artifact-path=artifacts/cross-mode-budget-ablations/2026-05-31/expansion-corridor-lns-seed-repair-5s-focused-20260531T180649Z \
+  "--candidate-class=Auto/LNS repair policy" \
+  --cases=development-expansion-corridor-service,row0-corridor-repair-pressure,expansion-comparison-replay,fresh-expansion-corridor-service \
+  "--splits=development,holdout,fresh holdout" \
+  --modes=auto,lns \
+  --budgets=5s \
+  --seeds=7,19,37 \
+  "--workflow-tags=expansion-comparison,corridor" \
+  --objective=population
+```
+
+The command above is a dry run because it omits `--write-intake`: it prints the ledger record and intake draft for review, but does not change files. Add `--write-intake` only after the trigger source is current, admission-ready, and worth turning into a real M9 intake file; keep using the printed ledger record as a reviewed edit to this ledger.
+
 `npm run candidate-intake:check` enforces the M15 gate for new or active M9 intake docs. It requires:
 
 - A real trigger source and trigger-ledger link.

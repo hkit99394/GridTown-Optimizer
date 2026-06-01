@@ -8,9 +8,7 @@ import {
   resolveOptimizerName,
   SolveJobManager,
   settleFailedSolve,
-  settleSuccessfulSolve,
-  type SolveJob,
-  type SolveProgressLogReadResult
+  settleSuccessfulSolve
 } from "../../../packages/runtime/index.js";
 import {
   assertValidSerializedSolutionPayload,
@@ -21,11 +19,16 @@ import {
   resolveSolveRequestClientRole,
   sanitizeSolveRequest
 } from "./contracts.js";
-import { buildCompactSolveResponse, buildManualLayoutResponse, buildSolveResponse } from "./solutionResponse.js";
+import { buildManualLayoutResponse, buildSolveResponse } from "./solutionResponse.js";
+import {
+  buildActiveSolveResponse,
+  buildRecoveredProgressLogStatusResponse,
+  buildSolveStatusResponse
+} from "./solveStatusResponse.js";
 import { monitorClientDisconnect, readValidatedJsonBody, sendJson } from "./transport.js";
 
 import type { CancelSolveRequest, LayoutEvaluateRequest, SolveRequest } from "./contracts.js";
-import type { SerializedSolution, Solution } from "../../../packages/core/index.js";
+import type { SerializedSolution } from "../../../packages/core/index.js";
 
 export const PLANNER_API_ROUTE_METHODS: ReadonlyMap<string, readonly string[]> = new Map([
   ["/api/health", ["GET", "HEAD"]],
@@ -38,57 +41,6 @@ export const PLANNER_API_ROUTE_METHODS: ReadonlyMap<string, readonly string[]> =
   ["/api/solve/cancel", ["POST"]]
 ]);
 
-function buildSolveJobResponseBase(job: {
-  requestId: string;
-  clientRole?: string;
-  optimizer: string;
-  status: string;
-  cancelRequested: boolean;
-  progressLogFilePath: string;
-  createdAt?: number;
-  finishedAt?: number;
-}) {
-  const elapsedMs =
-    job.createdAt === undefined ? undefined : Math.max(0, (job.finishedAt ?? Date.now()) - job.createdAt);
-  return {
-    ok: true,
-    requestId: job.requestId,
-    clientRole: job.clientRole,
-    optimizer: job.optimizer,
-    jobStatus: job.status,
-    cancelRequested: job.cancelRequested,
-    ...(elapsedMs === undefined ? {} : { elapsedMs }),
-    progressLogFilePath: job.progressLogFilePath
-  };
-}
-
-function buildSolveJobInput(job: Pick<SolveJob, "grid" | "params">) {
-  return {
-    grid: job.grid,
-    params: job.params
-  };
-}
-
-function buildActiveSolveResponse(job: SolveJob) {
-  const progressEntry = job.progressLogWriter.getLastEntry();
-  const snapshotState = job.handle?.getLatestSnapshotState() ?? {
-    hasFeasibleSolution: false,
-    totalPopulation: null
-  };
-
-  return {
-    ...buildSolveJobResponseBase(job),
-    active: true,
-    input: buildSolveJobInput(job),
-    hasFeasibleSolution: snapshotState.hasFeasibleSolution,
-    bestTotalPopulation: snapshotState.totalPopulation,
-    activeOptimizer: snapshotState.activeOptimizer ?? null,
-    autoStage: snapshotState.autoStage ?? null,
-    ...(progressEntry ? { progressEntry } : {}),
-    ...(job.message ? { message: job.message } : {})
-  };
-}
-
 function buildCancelRequestedMessage(optimizer: string): string {
   return optimizer === "cp-sat"
     ? "Stop requested. Finalizing the current CP-SAT run and preserving the best feasible solution found so far."
@@ -99,25 +51,6 @@ function buildCancelRequestedMessage(optimizer: string): string {
         : "Stop requested. Finalizing the current greedy run and preserving the best result found so far.";
 }
 
-function buildLiveProgressEntry(job: SolveJob, solution: Solution) {
-  return job.progressLogWriter.buildSolutionSample(solution, {
-    elapsedMs: Date.now() - job.createdAt,
-    source: "live-snapshot"
-  });
-}
-
-function buildProgressLogStatusResponseBase(progressLog: SolveProgressLogReadResult) {
-  const { document, filePath } = progressLog;
-  return {
-    ok: true,
-    requestId: document.requestId,
-    optimizer: document.optimizer,
-    jobStatus: document.status,
-    cancelRequested: document.status === "stopped" || Boolean(document.finalResult?.stoppedByUser),
-    progressLogFilePath: filePath
-  };
-}
-
 function sendSolveCapacityFull(res: ServerResponse<IncomingMessage>, solveJobManager: SolveJobManager): void {
   const activeJob = solveJobManager.getActiveRunningJob();
   sendJson(res, 429, {
@@ -126,120 +59,6 @@ function sendSolveCapacityFull(res: ServerResponse<IncomingMessage>, solveJobMan
       "Another solve is already running. Stop the running solve or wait for it to finish before starting a new one.",
     ...(activeJob ? { activeSolve: buildActiveSolveResponse(activeJob) } : {})
   });
-}
-
-function buildOrphanedRunningProgressLogMessage(): string {
-  return "Solver status was lost because the local server is no longer tracking this run. The progress log still shows it as running, so the server was likely stopped or restarted before the solve finished.";
-}
-
-function buildTerminalProgressLogError(progressLog: SolveProgressLogReadResult): string {
-  const { status, error } = progressLog.document;
-  return (
-    error ??
-    (status === "stopped"
-      ? "Solve was stopped."
-      : status === "failed"
-        ? "Solve failed."
-        : "Solve completed without a persisted final result.")
-  );
-}
-
-function getRecoveredProgressLogValidationError(error: unknown): string {
-  const detail = error instanceof Error ? error.message : "Unknown validation error.";
-  return `Recovered solve progress log is invalid and cannot be materialized: ${detail}`;
-}
-
-function buildRecoveredProgressLogTerminalErrorResponse(
-  progressLog: SolveProgressLogReadResult,
-  progressEntry: SolveProgressLogReadResult["document"]["entries"][number] | null,
-  error: string
-) {
-  const { document } = progressLog;
-  return {
-    ...buildProgressLogStatusResponseBase(progressLog),
-    ...(document.message ? { message: document.message } : {}),
-    ...(progressEntry ? { progressEntry } : {}),
-    error
-  };
-}
-
-function sendRecoveredProgressLogStatus(
-  res: ServerResponse<IncomingMessage>,
-  progressLog: SolveProgressLogReadResult,
-  headOnly: boolean
-): void {
-  const { document, filePath } = progressLog;
-  const progressEntry = document.entries[document.entries.length - 1] ?? null;
-  if (document.status !== "running") {
-    if (document.finalResult) {
-      let compactResponse: ReturnType<typeof buildCompactSolveResponse>;
-      try {
-        assertValidSolveInputs(document.input.grid, document.input.params);
-        assertValidSerializedSolutionPayload(
-          document.finalResult.solution,
-          "Recovered progress log finalResult.solution"
-        );
-        const solution = materializeSerializedSolution(document.finalResult.solution);
-        compactResponse = buildCompactSolveResponse(document.input.grid, document.input.params, solution, {
-          validationMode: "lightweight"
-        });
-      } catch (error) {
-        sendJson(
-          res,
-          200,
-          buildRecoveredProgressLogTerminalErrorResponse(
-            progressLog,
-            progressEntry,
-            getRecoveredProgressLogValidationError(error)
-          ),
-          headOnly
-        );
-        return;
-      }
-      sendJson(
-        res,
-        200,
-        {
-          ...buildProgressLogStatusResponseBase(progressLog),
-          ...(document.message ? { message: document.message } : {}),
-          ...(document.error ? { error: document.error } : {}),
-          ...(progressEntry ? { progressEntry } : {}),
-          ...compactResponse
-        },
-        headOnly
-      );
-      return;
-    }
-
-    sendJson(
-      res,
-      200,
-      {
-        ...buildProgressLogStatusResponseBase(progressLog),
-        ...(document.message ? { message: document.message } : {}),
-        ...(progressEntry ? { progressEntry } : {}),
-        error: buildTerminalProgressLogError(progressLog)
-      },
-      headOnly
-    );
-    return;
-  }
-
-  sendJson(
-    res,
-    410,
-    {
-      ok: false,
-      requestId: document.requestId,
-      optimizer: document.optimizer,
-      jobStatus: document.status === "running" ? "failed" : document.status,
-      cancelRequested: false,
-      progressLogFilePath: filePath,
-      ...(progressEntry ? { progressEntry } : {}),
-      error: buildOrphanedRunningProgressLogMessage()
-    },
-    headOnly
-  );
 }
 
 function requestUrl(req: IncomingMessage): URL {
@@ -478,7 +297,8 @@ export function handleSolveStatus(
   if (!jobStatus) {
     const progressLogStatus = solveJobManager.getProgressLogStatus(requestId);
     if (progressLogStatus) {
-      sendRecoveredProgressLogStatus(res, progressLogStatus, route.headOnly);
+      const projection = buildRecoveredProgressLogStatusResponse(progressLogStatus);
+      sendJson(res, projection.statusCode, projection.payload, route.headOnly);
       return true;
     }
 
@@ -493,72 +313,8 @@ export function handleSolveStatus(
     );
     return true;
   }
-  const { job, snapshotState, liveSnapshot } = jobStatus;
-
-  if (job.solution) {
-    const progressEntry = job.progressLogWriter.getLastEntry();
-    sendJson(
-      res,
-      200,
-      {
-        ...buildSolveJobResponseBase(job),
-        ...(job.message ? { message: job.message } : {}),
-        ...(progressEntry ? { progressEntry } : {}),
-        ...buildCompactSolveResponse(job.grid, job.params, job.solution, { validationMode: "lightweight" })
-      },
-      route.headOnly
-    );
-    return true;
-  }
-
-  if (job.status !== "running") {
-    sendJson(
-      res,
-      200,
-      {
-        ...buildSolveJobResponseBase(job),
-        error: job.error ?? (job.status === "stopped" ? "Solve was stopped." : "Solve failed.")
-      },
-      route.headOnly
-    );
-    return true;
-  }
-
-  if (liveSnapshot) {
-    const progressEntry = buildLiveProgressEntry(job, liveSnapshot);
-    sendJson(
-      res,
-      200,
-      {
-        ...buildSolveJobResponseBase(job),
-        hasFeasibleSolution: snapshotState.hasFeasibleSolution,
-        bestTotalPopulation: snapshotState.totalPopulation,
-        activeOptimizer: snapshotState.activeOptimizer ?? null,
-        autoStage: snapshotState.autoStage ?? null,
-        progressEntry,
-        liveSnapshot: true,
-        ...(job.message ? { message: job.message } : {}),
-        ...buildCompactSolveResponse(job.grid, job.params, liveSnapshot, { validationMode: "lightweight" })
-      },
-      route.headOnly
-    );
-    return true;
-  }
-
-  const progressEntry = job.progressLogWriter.getLastEntry();
-  sendJson(
-    res,
-    200,
-    {
-      ...buildSolveJobResponseBase(job),
-      hasFeasibleSolution: snapshotState.hasFeasibleSolution,
-      bestTotalPopulation: snapshotState.totalPopulation,
-      activeOptimizer: snapshotState.activeOptimizer ?? null,
-      autoStage: snapshotState.autoStage ?? null,
-      ...(progressEntry ? { progressEntry } : {})
-    },
-    route.headOnly
-  );
+  const projection = buildSolveStatusResponse(jobStatus);
+  sendJson(res, projection.statusCode, projection.payload, route.headOnly);
   return true;
 }
 

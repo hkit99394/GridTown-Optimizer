@@ -19,6 +19,8 @@ The repository already has decision artifacts near the tracked-artifact hygiene 
 
 The 2026-06-01 stage review found the tracked artifact count at `1716`, above the hygiene cap of `1600`. The first-pass recovery in [ARTIFACT_HYGIENE_RECOVERY_PLAN.md](ARTIFACT_HYGIENE_RECOVERY_PLAN.md) externalized 234 unindexed raw artifacts and recovered the evidence gate while keeping summaries, manifests, registry drafts, and the registry index in git. The later 15-case baseline lock leaves the repository at `1501` tracked artifacts with `0` unindexed raw candidates, so `1500` is now a soft watch target and `1600` remains the hard evidence gate.
 
+Automation status: `npm run artifact-hygiene:check` and `npm run quality:evidence` warn above the `1500` soft target and fail above the `1600` hard cap. `npm run artifact-hygiene:inventory` reports the soft overage, hard-cap headroom, and `artifactHygieneStatus` for evidence planning.
+
 ## Storage Tiers
 
 | Tier                   | Location                                                     | Git Status         | Use                                                                                               |
@@ -191,4 +193,4 @@ Block decision-grade closeout when any of these are true:
 
 M11 is satisfied as a middle-run artifact storage handoff. Large scorecards, replay labels, trace dumps, solve logs, and raw matrices now have a durable release/external storage convention while registry entries remain the git-tracked index.
 
-Current follow-up: keep the 2026-05-31 plus 2026-06-01 split artifacts as the durable 15-case baseline; do not generate one combined promotion-matrix artifact just to solve artifact hygiene. Future broad artifact-producing runs should either preserve the current 1501-file soft-margin posture or include a reviewed externalization step before closeout.
+Current follow-up: keep the 2026-05-31 plus 2026-06-01 split artifacts as the durable 15-case baseline; do not generate one combined promotion-matrix artifact just to solve artifact hygiene. Future broad artifact-producing runs should either preserve the current 1501-file soft-margin posture or include a reviewed externalization step before closeout. Treat a soft-cap warning as a planning signal, not a release blocker, unless the hard cap is also breached.

@@ -37,6 +37,13 @@ The first-pass unindexed raw migration is complete.
 
 The compact tracked external manifest is `artifacts/external-artifacts/2026-06-01/artifact-hygiene-unindexed-raw-manifest.json`. After the later manual-resume baseline evidence and registry lock, `npm run artifact-hygiene:inventory` reports 1501 tracked artifacts, 0 unindexed raw candidates, and roughly 201.9 MB of tracked artifact data. The repository is above the original 1500 execution target by one file, but still comfortably under the 1600 hard gate and byte cap. Treat 1500 as a soft margin target from this point forward: the next artifact-producing run should either keep the count near this level or include a planned externalization pass.
 
+Soft-cap automation added on 2026-06-01:
+
+- `npm run artifact-hygiene:check` runs the repository hygiene guard directly.
+- `npm run quality:evidence` includes that guard and emits a non-failing warning when tracked artifacts exceed the 1500 soft target.
+- `npm run artifact-hygiene:inventory` reports `trackedArtifactFileCountSoftMax`, `trackedArtifactFileCountHardMax`, `trackedArtifactCountOverSoftLimit`, `trackedArtifactHardLimitRemaining`, `softLimitExceeded`, `hardLimitExceeded`, `artifactHygieneStatus`, and `warnings`.
+- The hard failure threshold remains 1600 tracked artifact files.
+
 ## Recovery Principle
 
 Keep in git:
@@ -111,6 +118,8 @@ This first pass leaves indexed raw files tracked. That is deliberate: the regist
 
 5. Verify the first pass.
    - `git ls-files -- artifacts` should be at or below 1500 files for first-pass recovery.
+   - `npm run artifact-hygiene:check` should pass; a soft-cap warning above 1500 is acceptable when documented.
+   - `npm run artifact-hygiene:inventory` should show hard-cap headroom and any soft-cap overage.
    - `node tests/artifact-repository-hygiene.test.cjs` should pass.
    - `node tests/product-corpus-registry.test.cjs` should pass.
    - `npm run experiment-registry:check` should pass.
@@ -152,6 +161,7 @@ This kept local raw files available for audit while removing 234 unindexed raw f
 Verification completed:
 
 - `npm run artifact-hygiene:inventory`
+- `npm run artifact-hygiene:check`
 - `node tests/artifact-repository-hygiene.test.cjs`
 - `node tests/product-corpus-registry.test.cjs`
 - `npm run experiment-registry:check`
@@ -199,6 +209,7 @@ Artifact hygiene recovery is complete when:
 - First-pass tracked artifact count is at or below 1500, and later baseline-lock artifact count remains below the 1600 hard cap with an explicit soft-margin watch.
 - Tracked artifact bytes have at least 100 MiB of headroom under the current cap.
 - `npm run artifact-hygiene:inventory` reports 0 unindexed raw candidates, or a reviewed externalization plan exists for the remaining candidates.
+- `npm run artifact-hygiene:check` passes and emits a visible soft-cap warning when tracked artifacts exceed 1500.
 - `node tests/artifact-repository-hygiene.test.cjs` passes.
 - `node tests/product-corpus-registry.test.cjs` passes.
 - `npm run experiment-registry:check` passes.
@@ -216,4 +227,4 @@ Artifact hygiene recovery is complete when:
 
 ## Recommended Next Move
 
-The first-pass migration was committed as `1b75973 Recover artifact hygiene and externalize raw evidence`, planner completed-status resilience followed on 2026-06-01, and `fresh-manual-resume-neighborhood` is now implemented as the next fresh holdout row. Its focused evaluator-validity and `1s/5s/30s/120s` split-lane baseline refresh is complete, the June 1 bundles are registered, and [MIDDLE_RUN_AUTO_1S_MANUAL_RESUME_TIMING_TRIAGE.md](MIDDLE_RUN_AUTO_1S_MANUAL_RESUME_TIMING_TRIAGE.md) closes the `1s` Auto timing watch as triaged. The next maintenance move is to hold the current 15-case split baseline, keep artifact inventory below the hard cap, and open new solver work only on a gated trigger.
+The first-pass migration was committed as `1b75973 Recover artifact hygiene and externalize raw evidence`, planner completed-status resilience followed on 2026-06-01, and `fresh-manual-resume-neighborhood` is now implemented as the next fresh holdout row. Its focused evaluator-validity and `1s/5s/30s/120s` split-lane baseline refresh is complete, the June 1 bundles are registered, [MIDDLE_RUN_AUTO_1S_MANUAL_RESUME_TIMING_TRIAGE.md](MIDDLE_RUN_AUTO_1S_MANUAL_RESUME_TIMING_TRIAGE.md) closes the `1s` Auto timing watch as triaged, and artifact soft-cap automation is live. The next maintenance move is to hold the current 15-case split baseline, keep artifact inventory below the hard cap, and open new solver work only on a gated trigger.

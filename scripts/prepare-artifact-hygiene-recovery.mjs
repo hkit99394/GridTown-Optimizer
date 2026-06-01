@@ -11,6 +11,8 @@ const repoRoot = path.resolve(scriptDir, "..");
 const defaultRunDate = "2026-06-01";
 const stagingRoot = path.join(repoRoot, "release-assets", "artifact-hygiene", defaultRunDate, "unindexed-raw");
 const recoveryPlanPath = "docs/roadmaps/ARTIFACT_HYGIENE_RECOVERY_PLAN.md";
+const trackedArtifactFileCountSoftMax = 1500;
+const trackedArtifactFileCountHardMax = 1600;
 
 const candidateClasses = [
   {
@@ -149,17 +151,38 @@ function buildInventory() {
   });
 
   const candidateBytes = candidates.reduce((total, candidate) => total + candidate.bytes, 0);
+  const trackedArtifactCountOverSoftLimit = Math.max(0, trackedArtifacts.length - trackedArtifactFileCountSoftMax);
+  const trackedArtifactHardLimitRemaining = trackedArtifactFileCountHardMax - trackedArtifacts.length;
+  const softLimitExceeded = trackedArtifacts.length > trackedArtifactFileCountSoftMax;
+  const hardLimitExceeded = trackedArtifacts.length > trackedArtifactFileCountHardMax;
+  const warnings = [];
+  if (softLimitExceeded) {
+    warnings.push({
+      code: "tracked-artifact-soft-cap",
+      message:
+        `Tracked artifact count ${trackedArtifacts.length} exceeds soft target ` +
+        `${trackedArtifactFileCountSoftMax}; keep broad evidence runs paired with an externalization plan.`
+    });
+  }
 
   return {
     generatedAt: new Date().toISOString(),
     recoveryPlanPath,
     trackedArtifactCount: trackedArtifacts.length,
+    trackedArtifactFileCountSoftMax,
+    trackedArtifactFileCountHardMax,
+    trackedArtifactCountOverSoftLimit,
+    trackedArtifactHardLimitRemaining,
+    softLimitExceeded,
+    hardLimitExceeded,
+    artifactHygieneStatus: hardLimitExceeded ? "fail" : softLimitExceeded ? "soft-warning" : "pass",
     trackedArtifactBytes: trackedBytes,
     candidateCount: candidates.length,
     candidateBytes,
     candidateMiB: Number((candidateBytes / 1024 / 1024).toFixed(2)),
     projectedTrackedArtifactCountAfterUntracking: trackedArtifacts.length - candidates.length,
     projectedTrackedArtifactBytesAfterUntracking: trackedBytes - candidateBytes,
+    warnings,
     byClass,
     candidates
   };
@@ -171,6 +194,11 @@ function formatSummary(inventory) {
     `generatedAt=${inventory.generatedAt}`,
     `recoveryPlan=${inventory.recoveryPlanPath}`,
     `trackedArtifactCount=${inventory.trackedArtifactCount}`,
+    `trackedArtifactFileCountSoftMax=${inventory.trackedArtifactFileCountSoftMax}`,
+    `trackedArtifactFileCountHardMax=${inventory.trackedArtifactFileCountHardMax}`,
+    `trackedArtifactCountOverSoftLimit=${inventory.trackedArtifactCountOverSoftLimit}`,
+    `trackedArtifactHardLimitRemaining=${inventory.trackedArtifactHardLimitRemaining}`,
+    `artifactHygieneStatus=${inventory.artifactHygieneStatus}`,
     `trackedArtifactBytes=${inventory.trackedArtifactBytes}`,
     `candidateCount=${inventory.candidateCount}`,
     `candidateBytes=${inventory.candidateBytes}`,

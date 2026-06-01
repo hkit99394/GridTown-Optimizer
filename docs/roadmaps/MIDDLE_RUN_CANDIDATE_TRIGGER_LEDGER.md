@@ -121,6 +121,8 @@ Decision:
 - Candidate-specific evaluator-validity and replay gates.
 - Artifact storage and registry plans.
 
+`npm run quality:governance` is the cheap preflight for this workflow. It runs docs formatting, artifact hygiene status, the candidate intake check, and the trigger scaffold contract without building or running benchmark suites.
+
 Pre-M15 closed diagnostics records are accepted as legacy evidence, but they do not authorize new candidate work without a fresh trigger-ledger record.
 
 ## Decision

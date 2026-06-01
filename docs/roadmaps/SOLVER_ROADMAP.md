@@ -106,7 +106,8 @@ Forward sequence:
 6. **Candidate trigger ledger:** done on 2026-06-01 in [MIDDLE_RUN_CANDIDATE_TRIGGER_LEDGER.md](MIDDLE_RUN_CANDIDATE_TRIGGER_LEDGER.md). Do not open another broad solver candidate just to keep momentum. Reopen Auto/LNS only for a reproducible outside-envelope failure, CP-SAT geometry only for a different runtime-bottleneck hypothesis, learned guidance only for protected/fresh online value coverage, and service-master only for repeatable equal-budget wins.
 7. **Candidate intake automation:** done on 2026-06-01. `npm run candidate-intake:check` now enforces the M15 trigger-ledger gate for new or active M9 intake docs and is part of `quality:evidence`.
 8. **Candidate trigger scaffold:** done on 2026-06-01. `npm run candidate-trigger:scaffold` now generates a trigger-ledger record plus a checkable M9 intake draft from one command.
-9. **Long-run promotion:** once an admitted trigger exists, use M9 intake, same-slice baseline repeat, candidate-specific evaluator validity, CPU/time-to-best review, artifact storage handoff, and decision closeout before changing defaults.
+9. **Governance preflight:** done on 2026-06-01. `npm run quality:governance` now runs docs formatting, artifact hygiene status, candidate intake checks, and the trigger scaffold contract without build or benchmark cost.
+10. **Long-run promotion:** once an admitted trigger exists, use M9 intake, same-slice baseline repeat, candidate-specific evaluator validity, CPU/time-to-best review, artifact storage handoff, and decision closeout before changing defaults.
 
 ## Middle-Run Evidence Checklist
 
@@ -195,6 +196,7 @@ These items make the evidence system current enough that solver candidates can b
 | M15 | Done   | Candidate trigger ledger          | [MIDDLE_RUN_CANDIDATE_TRIGGER_LEDGER.md](MIDDLE_RUN_CANDIDATE_TRIGGER_LEDGER.md)                                                                             | Solver candidates now need a current, reproducible, scoped trigger with baseline-repeat, evaluator-validity, and artifact-storage preflight before M9 intake opens.                              |
 | M16 | Done   | Candidate intake check automation | `candidate-intake:check`, `tests/candidate-intake-check.test.cjs`, and `quality:evidence`                                                                    | New or active M9 intake docs are checked for trigger-ledger admission, artifact hygiene preflight, same-slice baseline-repeat controls, evaluator/replay gates, and artifact storage policy.     |
 | M17 | Done   | Candidate trigger scaffold        | `candidate-trigger:scaffold` and `tests/candidate-trigger-scaffold.test.cjs`                                                                                 | A real trigger can now generate a consistent ledger record and M9 intake draft that already contains the M15/M16-required fields.                                                                |
+| M18 | Done   | Governance preflight              | `quality:governance`, `format:docs:check`, and `tests/governance-scripts.test.cjs`                                                                           | Trigger nomination and artifact-hygiene process checks have a cheap no-build preflight before heavier evidence or solver gates.                                                                  |
 
 ## Closed Evidence Tracks
 
@@ -275,6 +277,7 @@ Recently completed maintenance:
 1. **Candidate trigger ledger:** completed 2026-06-01. [MIDDLE_RUN_CANDIDATE_TRIGGER_LEDGER.md](MIDDLE_RUN_CANDIDATE_TRIGGER_LEDGER.md) records that no solver candidate is open by default, parks current watch signals, and defines the trigger-admission rule before any new M9 intake.
 1. **Candidate intake check automation:** completed 2026-06-01. `npm run candidate-intake:check` checks new or active M9 intake docs for trigger-ledger admission, artifact hygiene preflight, same-slice baseline-repeat controls, evaluator/replay gates, and artifact storage policy; `quality:evidence` now runs it.
 1. **Candidate trigger scaffold:** completed 2026-06-01. `npm run candidate-trigger:scaffold` creates a nomination packet with a trigger-ledger record and checkable M9 intake draft, and `quality:evidence` covers the scaffold contract.
+1. **Governance preflight:** completed 2026-06-01. `npm run quality:governance` runs docs formatting, artifact hygiene status, candidate intake checks, and trigger scaffold validation as the cheap preflight before heavier evidence work.
 
 - **Roadmap restructure:** completed 2026-05-29. The active roadmap was shortened to current posture, active tracks, closed decisions, gated priorities, promotion gates, guardrails, and maintenance backlog. The detailed May evidence narrative moved to [SOLVER_ROADMAP_HISTORY_2026-05.md](SOLVER_ROADMAP_HISTORY_2026-05.md).
 - **First M9 CP-SAT candidate closeout:** completed 2026-05-30. The opt-in `NoOverlap2D` CP-SAT encoding passed evaluator validity but is blocked from promotion by a repeatable protected holdout population regression and worse aggregate time-to-best: [M9_CP_SAT_NO_OVERLAP2D_CLOSEOUT.md](M9_CP_SAT_NO_OVERLAP2D_CLOSEOUT.md).

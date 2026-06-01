@@ -53,6 +53,12 @@ Solver gate:
 npm run quality:solver
 ```
 
+Governance gate:
+
+```bash
+npm run quality:governance
+```
+
 Evidence gate:
 
 ```bash

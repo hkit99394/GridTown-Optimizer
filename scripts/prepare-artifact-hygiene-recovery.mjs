@@ -56,7 +56,9 @@ function parseArgs(argv) {
   const args = new Set(argv);
   return {
     force: args.has("--force"),
-    inventory: args.has("--inventory") || (!args.has("--stage-unindexed-raw") && !args.has("--help")),
+    inventory:
+      args.has("--inventory") || (!args.has("--status") && !args.has("--stage-unindexed-raw") && !args.has("--help")),
+    status: args.has("--status"),
     stageUnindexedRaw: args.has("--stage-unindexed-raw"),
     help: args.has("--help")
   };
@@ -65,9 +67,11 @@ function parseArgs(argv) {
 function printHelp() {
   console.log(`Usage:
   node scripts/prepare-artifact-hygiene-recovery.mjs --inventory
+  node scripts/prepare-artifact-hygiene-recovery.mjs --status
   node scripts/prepare-artifact-hygiene-recovery.mjs --stage-unindexed-raw [--force]
 
 Inventory reports unindexed raw artifact candidates.
+Status prints a concise human-readable cap and externalization summary.
 Staging writes ignored release-assets packages, path lists, checksums, and a local-staging manifest.
 `);
 }
@@ -220,6 +224,34 @@ function formatSummary(inventory) {
   return `${lines.join("\n")}\n`;
 }
 
+function formatStatus(inventory) {
+  const lines = [
+    `artifactHygieneStatus=${inventory.artifactHygieneStatus}`,
+    `trackedArtifactCount=${inventory.trackedArtifactCount}/${inventory.trackedArtifactFileCountHardMax}`,
+    `softTarget=${inventory.trackedArtifactFileCountSoftMax}`,
+    `softOverage=${inventory.trackedArtifactCountOverSoftLimit}`,
+    `hardCapHeadroom=${inventory.trackedArtifactHardLimitRemaining}`,
+    `unindexedRawCandidates=${inventory.candidateCount}`,
+    `unindexedRawCandidateMiB=${inventory.candidateMiB}`
+  ];
+
+  for (const warning of inventory.warnings) {
+    lines.push(`warning[${warning.code}]=${warning.message}`);
+  }
+
+  if (inventory.hardLimitExceeded) {
+    lines.push("nextAction=Run artifact-cap recovery before using evidence gates as promotion or release proof.");
+  } else if (inventory.candidateCount > 0) {
+    lines.push("nextAction=Externalize or intentionally register unindexed raw candidates before broad evidence runs.");
+  } else if (inventory.softLimitExceeded) {
+    lines.push("nextAction=Proceed with focused evidence only; pair broad evidence runs with an externalization plan.");
+  } else {
+    lines.push("nextAction=Proceed; artifact hygiene is inside the soft target.");
+  }
+
+  return `${lines.join("\n")}\n`;
+}
+
 async function sha256File(filePath) {
   const hash = crypto.createHash("sha256");
   await new Promise((resolve, reject) => {
@@ -332,6 +364,14 @@ if (args.help) {
 if (args.inventory) {
   const inventory = buildInventory();
   console.log(JSON.stringify({ ...inventory, candidates: undefined }, null, 2));
+}
+
+if (args.status) {
+  const inventory = buildInventory();
+  process.stdout.write(formatStatus(inventory));
+  if (inventory.hardLimitExceeded) {
+    process.exitCode = 1;
+  }
 }
 
 if (args.stageUnindexedRaw) {

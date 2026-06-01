@@ -108,5 +108,41 @@ function testInventoryReportsSoftCapState() {
   }
 }
 
+function testStatusReportsActionableSoftCapState() {
+  const trackedArtifactCount = gitLsFiles(["artifacts"]).length;
+  const result = childProcess.spawnSync(
+    process.execPath,
+    ["scripts/prepare-artifact-hygiene-recovery.mjs", "--status"],
+    {
+      cwd: repoRoot,
+      encoding: "utf8"
+    }
+  );
+
+  assert.equal(result.status, 0, result.stderr || result.error?.message || "artifact hygiene status failed");
+
+  const softLimitExceeded = trackedArtifactCount > trackedArtifactFileCountSoftMax;
+  assert.match(result.stdout, /artifactHygieneStatus=(pass|soft-warning)/);
+  assert.match(
+    result.stdout,
+    new RegExp(`trackedArtifactCount=${trackedArtifactCount}/${trackedArtifactFileCountMax}`)
+  );
+  assert.match(result.stdout, new RegExp(`softTarget=${trackedArtifactFileCountSoftMax}`));
+  assert.match(
+    result.stdout,
+    new RegExp(`softOverage=${Math.max(0, trackedArtifactCount - trackedArtifactFileCountSoftMax)}`)
+  );
+  assert.match(result.stdout, new RegExp(`hardCapHeadroom=${trackedArtifactFileCountMax - trackedArtifactCount}`));
+  assert.match(result.stdout, /unindexedRawCandidates=\d+/);
+  assert.match(result.stdout, /nextAction=/);
+
+  if (softLimitExceeded) {
+    assert.match(result.stdout, /warning\[tracked-artifact-soft-cap\]=/);
+  } else {
+    assert.doesNotMatch(result.stdout, /warning\[tracked-artifact-soft-cap\]=/);
+  }
+}
+
 testTrackedArtifactsStayBounded();
 testInventoryReportsSoftCapState();
+testStatusReportsActionableSoftCapState();

@@ -120,6 +120,7 @@ This first pass leaves indexed raw files tracked. That is deliberate: the regist
    - `git ls-files -- artifacts` should be at or below 1500 files for first-pass recovery.
    - `npm run artifact-hygiene:check` should pass; a soft-cap warning above 1500 is acceptable when documented.
    - `npm run artifact-hygiene:inventory` should show hard-cap headroom and any soft-cap overage.
+   - `npm run artifact-hygiene:status` should print the current pass/warning/fail state and the next action for broad evidence runs.
    - `node tests/artifact-repository-hygiene.test.cjs` should pass.
    - `node tests/product-corpus-registry.test.cjs` should pass.
    - `npm run experiment-registry:check` should pass.
@@ -227,4 +228,4 @@ Artifact hygiene recovery is complete when:
 
 ## Recommended Next Move
 
-The first-pass migration was committed as `1b75973 Recover artifact hygiene and externalize raw evidence`, planner completed-status resilience followed on 2026-06-01, and `fresh-manual-resume-neighborhood` is now implemented as the next fresh holdout row. Its focused evaluator-validity and `1s/5s/30s/120s` split-lane baseline refresh is complete, the June 1 bundles are registered, [MIDDLE_RUN_AUTO_1S_MANUAL_RESUME_TIMING_TRIAGE.md](MIDDLE_RUN_AUTO_1S_MANUAL_RESUME_TIMING_TRIAGE.md) closes the `1s` Auto timing watch as triaged, and artifact soft-cap automation is live. The next maintenance move is to hold the current 15-case split baseline, keep artifact inventory below the hard cap, and open new solver work only on a gated trigger.
+The first-pass migration was committed as `1b75973 Recover artifact hygiene and externalize raw evidence`, planner completed-status resilience followed on 2026-06-01, and `fresh-manual-resume-neighborhood` is now implemented as the next fresh holdout row. Its focused evaluator-validity and `1s/5s/30s/120s` split-lane baseline refresh is complete, the June 1 bundles are registered, [MIDDLE_RUN_AUTO_1S_MANUAL_RESUME_TIMING_TRIAGE.md](MIDDLE_RUN_AUTO_1S_MANUAL_RESUME_TIMING_TRIAGE.md) closes the `1s` Auto timing watch as triaged, and artifact soft-cap automation is live. `npm run artifact-hygiene:status` is the quick reviewer-facing preflight before broad evidence work. The next maintenance move is to hold the current 15-case split baseline, keep artifact inventory below the hard cap, and open new solver work only on a gated trigger.

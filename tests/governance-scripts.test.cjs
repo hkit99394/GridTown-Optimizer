@@ -15,6 +15,7 @@ function testGovernanceScriptExistsAndStaysFocused() {
   assert.match(scripts["quality:governance"], /npm run format:docs:check/);
   assert.match(scripts["quality:governance"], /npm run artifact-hygiene:status/);
   assert.match(scripts["quality:governance"], /npm run candidate-intake:check/);
+  assert.match(scripts["quality:governance"], /node tests\/candidate-intake-check\.test\.cjs/);
   assert.match(scripts["quality:governance"], /node tests\/candidate-trigger-scaffold\.test\.cjs/);
   assert.doesNotMatch(scripts["quality:governance"], /npm run build/);
   assert.doesNotMatch(scripts["quality:governance"], /benchmark:scorecard/);

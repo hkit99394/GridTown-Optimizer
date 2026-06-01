@@ -107,7 +107,8 @@ Forward sequence:
 7. **Candidate intake automation:** done on 2026-06-01. `npm run candidate-intake:check` now enforces the M15 trigger-ledger gate for new or active M9 intake docs and is part of `quality:evidence`.
 8. **Candidate trigger scaffold:** done on 2026-06-01. `npm run candidate-trigger:scaffold` now generates a trigger-ledger record plus a checkable M9 intake draft from one command.
 9. **Governance preflight:** done on 2026-06-01. `npm run quality:governance` now runs docs formatting, artifact hygiene status, candidate intake checks, and the trigger scaffold contract without build or benchmark cost.
-10. **Long-run promotion:** once an admitted trigger exists, use M9 intake, same-slice baseline repeat, candidate-specific evaluator validity, CPU/time-to-best review, artifact storage handoff, and decision closeout before changing defaults.
+10. **Post-baseline governance backlog:** active on branch `features/post-baseline-trigger-governance` in [POST_BASELINE_TRIGGER_GOVERNANCE_BACKLOG.md](POST_BASELINE_TRIGGER_GOVERNANCE_BACKLOG.md). G1 is complete in [PR10_REVIEWER_GUIDE.md](PR10_REVIEWER_GUIDE.md): keep PR #10 as one draft baseline PR for lane-based review, and split only if reviewers cannot work through the guide.
+11. **Long-run promotion:** once an admitted trigger exists, use M9 intake, same-slice baseline repeat, candidate-specific evaluator validity, CPU/time-to-best review, artifact storage handoff, and decision closeout before changing defaults.
 
 ## Middle-Run Evidence Checklist
 
@@ -267,6 +268,8 @@ Reopen only if the same workflow family falls behind best-of-mode across more th
 ## Maintenance Backlog
 
 These items are not solver-policy candidates. They track planner/runtime reliability follow-ups that protect long-running solve workflows.
+
+Active follow-up: [POST_BASELINE_TRIGGER_GOVERNANCE_BACKLOG.md](POST_BASELINE_TRIGGER_GOVERNANCE_BACKLOG.md) tracks the branch backlog after draft PR #10. It is governance and review-readiness work only; parked solver tasks should remain parked until a trigger is admitted.
 
 Recently completed maintenance:
 

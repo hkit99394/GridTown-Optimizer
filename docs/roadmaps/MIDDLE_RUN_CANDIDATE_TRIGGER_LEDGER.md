@@ -30,6 +30,34 @@ If any item is missing, keep the trigger parked and do not open an M9 candidate.
 | ---------- | ------ | ----------------------------------------------- | --------------- | ---------------------------------------------------------------- |
 | none       | parked | No current reproducible outside-envelope signal | n/a             | Wait for a real current artifact, issue, or product requirement. |
 
+## G7 Start Review
+
+Reviewed on 2026-06-01 after the request to start G7.
+
+Decision: no trigger is admitted. Keep the open trigger ledger at `none`, and do not create an M9 intake yet. The request starts the review workflow, but it does not itself name a candidate source with a reproducible signal, issue, or product requirement.
+
+Reviewed sources:
+
+- [MIDDLE_RUN_CORPUS_COVERAGE_AUDIT.md](MIDDLE_RUN_CORPUS_COVERAGE_AUDIT.md): current 15-case split artifacts cover `180` scorecards and `720` mode runs; Auto ties best on `175/180` rows, all remaining gaps are short-budget only, and Auto ties best on all `30s` and `120s` rows.
+- [M9_AUTO_LNS_EXPANSION_CORRIDOR_CLOSEOUT.md](M9_AUTO_LNS_EXPANSION_CORRIDOR_CLOSEOUT.md): expansion-corridor policies were safe but population-neutral; broad rerun remains blocked unless a new protected or fresh row shows population movement outside the baseline-repeat envelope, or an equal-population time-to-best product target appears.
+- [MIDDLE_RUN_AUTO_1S_MANUAL_RESUME_TIMING_TRIAGE.md](MIDDLE_RUN_AUTO_1S_MANUAL_RESUME_TIMING_TRIAGE.md): manual-resume Auto reaches the hard population cap with valid replay; strict `1s` wall-clock work needs a separate product SLA or missed-population artifact.
+- [M9_CANDIDATE_INTAKE_CP_SAT_SELECTIVE_NO_OVERLAP2D.md](M9_CANDIDATE_INTAKE_CP_SAT_SELECTIVE_NO_OVERLAP2D.md): selective CP-SAT geometry evidence stayed safe but remains diagnostics-only; next geometry work needs a real runtime problem-feature guard trigger.
+
+Admission result:
+
+- Current artifact or issue: none admitted.
+- Reproducible outside-envelope signal: none admitted.
+- Product requirement: none specific enough to open a solver candidate.
+- Artifact hygiene preflight: `soft-warning`, `1501/1600` tracked artifacts, `0` unindexed raw candidates; focused evidence may proceed, broad evidence needs an externalization plan.
+- Scaffold or `--write-intake`: do not run for a real intake until a source satisfies the admission rule.
+
+Next eligible trigger must name one of these:
+
+- a protected or fresh row with repeatable population movement outside the baseline-repeat envelope;
+- a product SLA that makes strict wall-clock or equal-population time-to-best a first-order target;
+- a current issue or artifact showing evaluator invalidity, replay failure, or missed population;
+- a new candidate mechanism with same-slice baseline-repeat, evaluator-validity, CPU/time-to-best, and artifact-policy coverage.
+
 ## Parked Watch Signals
 
 | Watch Signal                             | Current Read                                                                                                           | Reopen Trigger                                                                                                                                  |
@@ -113,6 +141,26 @@ Decision:
 
 `npm run candidate-trigger:scaffold` creates a consistent trigger-ledger record and M9 intake draft. Use `--write-intake` to write the intake draft to `docs/roadmaps/M9_CANDIDATE_INTAKE_<ID>.md`; keep the generated ledger record reviewable before changing the open-trigger table.
 
+Dry-run example:
+
+```bash
+npm run candidate-trigger:scaffold -- \
+  --trigger-id=auto-lns-expansion-corridor-gap \
+  --candidate-id=auto-lns-expansion-corridor-policy \
+  "--source=artifacts/cross-mode-budget-ablations/2026-05-31/expansion-corridor-lns-seed-repair-5s-focused-20260531T180649Z" \
+  --artifact-path=artifacts/cross-mode-budget-ablations/2026-05-31/expansion-corridor-lns-seed-repair-5s-focused-20260531T180649Z \
+  "--candidate-class=Auto/LNS repair policy" \
+  --cases=development-expansion-corridor-service,row0-corridor-repair-pressure,expansion-comparison-replay,fresh-expansion-corridor-service \
+  "--splits=development,holdout,fresh holdout" \
+  --modes=auto,lns \
+  --budgets=5s \
+  --seeds=7,19,37 \
+  "--workflow-tags=expansion-comparison,corridor" \
+  --objective=population
+```
+
+The command above is a dry run because it omits `--write-intake`: it prints the ledger record and intake draft for review, but does not change files. Add `--write-intake` only after the trigger source is current, admission-ready, and worth turning into a real M9 intake file; keep using the printed ledger record as a reviewed edit to this ledger.
+
 `npm run candidate-intake:check` enforces the M15 gate for new or active M9 intake docs. It requires:
 
 - A real trigger source and trigger-ledger link.
@@ -121,7 +169,7 @@ Decision:
 - Candidate-specific evaluator-validity and replay gates.
 - Artifact storage and registry plans.
 
-`npm run quality:governance` is the cheap preflight for this workflow. It runs docs formatting, artifact hygiene status, the candidate intake check, and the trigger scaffold contract without building or running benchmark suites.
+`npm run quality:governance` is the cheap preflight for this workflow. It runs docs formatting, artifact hygiene status, the candidate intake check, and the candidate-intake plus trigger-scaffold contracts without building or running benchmark suites.
 
 Pre-M15 closed diagnostics records are accepted as legacy evidence, but they do not authorize new candidate work without a fresh trigger-ledger record.
 

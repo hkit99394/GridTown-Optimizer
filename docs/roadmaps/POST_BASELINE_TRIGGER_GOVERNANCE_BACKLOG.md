@@ -16,7 +16,7 @@ This backlog starts after draft PR #10 publishes the broad next-stage baseline. 
 
 | ID  | Status  | Task                                     | Goal                                                                                  | Done When                                                                                                                                 |
 | --- | ------- | ---------------------------------------- | ------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| G1  | Planned | PR #10 scope review                      | Decide whether the broad baseline PR is reviewable as one draft or needs split notes. | PR #10 has a short reviewer guide, known risk areas, and an explicit ready-or-split decision.                                             |
+| G1  | Done    | PR #10 scope review                      | Decide whether the broad baseline PR is reviewable as one draft or needs split notes. | [PR10_REVIEWER_GUIDE.md](PR10_REVIEWER_GUIDE.md) records the lane-based reviewer guide, known risk areas, and keep-as-one-draft decision. |
 | G2  | Planned | Governance command README pass           | Make governance commands discoverable without reading roadmap internals.              | `README.md` or `docs/START_HERE.md` names `quality:governance`, `candidate-trigger:scaffold`, and `candidate-intake:check` in one place.  |
 | G3  | Planned | Trigger scaffold dry-run example         | Give future trigger nominations a copy-paste command shape.                           | The trigger ledger or companion doc includes one realistic dry-run command and explains when to use `--write-intake`.                     |
 | G4  | Planned | Candidate-intake checker edge audit      | Confirm the M15/M16 checker fails useful cases and accepts intended legacy docs.      | Tests cover a ledger-linked active intake, a missing artifact preflight, a missing storage plan, and a pre-M15 closed diagnostics record. |
@@ -27,12 +27,11 @@ This backlog starts after draft PR #10 publishes the broad next-stage baseline. 
 
 ## Recommended Sequence
 
-1. **G1 PR #10 scope review.** This is the first move because it decides whether the baseline PR can become ready for review or needs split/guide work.
-2. **G2-G3 governance documentation polish.** Make the new process discoverable and easy to use before adding more enforcement.
-3. **G4 checker edge audit.** Add only targeted tests that protect real review mistakes.
-4. **G5 artifact soft-warning operating rule.** Clarify what reviewers should do while the repo sits one file above the soft target.
-5. **G6 PR review response runbook.** Prepare for review comments without mixing unrelated fixes.
-6. **G7-G8 only on trigger.** Do not start solver implementation from this backlog unless the trigger ledger admits a current signal.
+1. **G2-G3 governance documentation polish.** Make the new process discoverable and easy to use before adding more enforcement.
+2. **G4 checker edge audit.** Add only targeted tests that protect real review mistakes.
+3. **G5 artifact soft-warning operating rule.** Clarify what reviewers should do while the repo sits one file above the soft target.
+4. **G6 PR review response runbook.** Prepare for review comments without mixing unrelated fixes.
+5. **G7-G8 only on trigger.** Do not start solver implementation from this backlog unless the trigger ledger admits a current signal.
 
 ## Guardrails
 

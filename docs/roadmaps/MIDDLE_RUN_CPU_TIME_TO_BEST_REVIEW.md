@@ -17,6 +17,8 @@ This is an evidence review only. It does not promote solver behavior or change r
 - `artifacts/product-corpus/2026-05-31/baseline-fresh-holdout-fast-1s-5s-seeds7-19-37-20260531T191827Z/scorecard.json`
 - `artifacts/product-corpus/2026-05-31/baseline-fresh-holdout-30s-seeds7-19-37-20260531T194631Z/scorecard.json`
 - `artifacts/product-corpus/2026-05-31/baseline-fresh-holdout-120s-seeds7-19-37-20260531T221202Z/scorecard.json`
+- `artifacts/product-corpus/2026-06-01/baseline-fresh-manual-resume-fast-1s-5s-seeds7-19-37-20260601T150511Z/scorecard.json`
+- `artifacts/product-corpus/2026-06-01/baseline-fresh-manual-resume-long-30s-120s-seeds7-19-37-20260601T151447Z/scorecard.json`
 - `src/packages/benchmarks/crossModeTypes.ts`
 - `src/packages/benchmarks/crossModeTelemetry.ts`
 - `src/packages/benchmarks/crossModeSignals.ts`
@@ -40,76 +42,76 @@ Promotion reviewers should use these fields before opening raw trace bundles:
 | Time to best                      | `results[].timeToQuality.bestScoreAtMs` and telemetry `bestScoreSeconds`            | First point where the run reached its final best score.                                                | Equal-population candidates need at least 10% faster time-to-best to matter.                          |
 | First improvement and checkpoints | `results[].timeToQuality.firstImprovementAtMs`, `timeCheckpoints`, `qualityTargets` | Trace-derived quality progression.                                                                     | Diagnose whether the run improves late, plateaus early, or only reaches quality after the budget.     |
 | Product case summary              | `evidence-summary.json` `caseMetrics[]`                                             | Best-of-mode first feasible, time-to-best, Auto score, best score, best mode, and exact-gap context.   | Start here for current product posture before reading per-mode rows.                                  |
-| Fresh telemetry manifest          | Fresh product runs write `telemetry-manifest.json`                                  | Compact per-run timing, score, CPU, stage count, and stage telemetry.                                  | Required for new candidate evidence and present on the current 2026-05-31 split baseline artifacts.   |
+| Fresh telemetry manifest          | Fresh product runs write `telemetry-manifest.json`                                  | Compact per-run timing, score, CPU, stage count, and stage telemetry.                                  | Required for new candidate evidence and present on the current split baseline artifacts.              |
 
 ## Current Product Baseline Summary
 
-The current durable baseline is the 2026-05-31 split-lane product corpus. It covers all 14 workflow cases, all four modes, budgets `1,5,30,120`, and seeds `7,19,37`. Keep these split artifacts as the baseline unless a release process explicitly requires one combined promotion-matrix artifact.
+The current durable baseline is the 2026-05-31 plus 2026-06-01 split-lane product corpus. It covers all 15 workflow cases, all four modes, budgets `1,5,30,120`, and seeds `7,19,37`. Keep these split artifacts as the baseline unless a release process explicitly requires one combined promotion-matrix artifact.
 
-- 14 workflow cases, split into 6 development cases and 8 holdout cases, including 3 fresh product holdout cases.
-- 168 case/budget/seed scorecards.
-- 672 mode runs across `auto`, `greedy`, `lns`, and `cp-sat`.
+- 15 workflow cases, split into 6 development cases and 9 holdout cases, including 4 fresh product holdout cases.
+- 180 case/budget/seed scorecards.
+- 720 mode runs across `auto`, `greedy`, `lns`, and `cp-sat`.
 - Budgets `1,5,30,120` and seeds `7,19,37`.
 
 The 2026-04-30 registered product promotion artifact remains legacy 10-case context. Do not use it as the current baseline for new candidate decisions.
 
-Field completeness across the 2026-05-31 split-lane `scorecard.json` files:
+Field completeness across the 2026-05-31 plus 2026-06-01 split-lane `scorecard.json` files:
 
 | Field                                | Missing Rows | Notes                                                                                 |
 | ------------------------------------ | ------------ | ------------------------------------------------------------------------------------- |
-| `wallClockSeconds`                   | 0/672        | Present for every mode run.                                                           |
-| `workerCpuBudgetSeconds`             | 0/672        | Present for every mode run.                                                           |
-| `timeToQuality.firstFeasibleAtMs`    | 0/672        | Present for every mode run.                                                           |
-| `timeToQuality.bestScoreAtMs`        | 0/672        | Present for every mode run.                                                           |
-| `observedWorkerCpuSeconds`           | 230/672      | Partial by design; Greedy has no observed CPU, CP-SAT has full observed CPU coverage. |
-| Standalone `telemetry-manifest.json` | 0/9 bundles  | Present on each split-lane artifact bundle.                                           |
+| `wallClockSeconds`                   | 0/720        | Present for every mode run.                                                           |
+| `workerCpuBudgetSeconds`             | 0/720        | Present for every mode run.                                                           |
+| `timeToQuality.firstFeasibleAtMs`    | 0/720        | Present for every mode run.                                                           |
+| `timeToQuality.bestScoreAtMs`        | 0/720        | Present for every mode run.                                                           |
+| `observedWorkerCpuSeconds`           | 242/720      | Partial by design; Greedy has no observed CPU, CP-SAT has full observed CPU coverage. |
+| Standalone `telemetry-manifest.json` | 0/11 bundles | Present on each split-lane artifact bundle.                                           |
 
 Best-of-mode product case metrics across the split baseline:
 
 | Metric                   | Value            |
 | ------------------------ | ---------------- |
-| Rows                     | 168              |
-| Auto equal to best       | 163/168          |
-| Auto behind best         | 5/168            |
-| Mean Auto delta to best  | 0.595 population |
+| Rows                     | 180              |
+| Auto equal to best       | 175/180          |
+| Auto behind best         | 5/180            |
+| Mean Auto delta to best  | 0.556 population |
 | Worst Auto delta to best | 35 population    |
 
 Mode-level aggregates from `scorecard.json`:
 
 | Mode     | Runs | Mean Population | Mean Wall | Median Wall | Mean First Feasible | Mean Time To Best | Mean CPU Budget | Observed CPU Coverage | Mean Pop/CPU Budget |
 | -------- | ---- | --------------- | --------- | ----------- | ------------------- | ----------------- | --------------- | --------------------- | ------------------- |
-| `auto`   | 168  | 554.792         | 8.560s    | 5.508s      | 0.087s              | 3.961s            | 39.000s         | 146/168               | 171.676             |
-| `greedy` | 168  | 518.929         | 0.082s    | 0.087s      | 0.051s              | 0.073s            | 39.000s         | 0/168                 | 161.084             |
-| `lns`    | 168  | 550.804         | 5.664s    | 4.150s      | 0.044s              | 0.317s            | 39.000s         | 128/168               | 171.276             |
-| `cp-sat` | 168  | 553.274         | 2.437s    | 1.026s      | 1.032s              | 1.044s            | 39.000s         | 168/168               | 170.063             |
+| `auto`   | 180  | 570.472         | 8.247s    | 5.263s      | 0.088s              | 3.725s            | 39.000s         | 158/180               | 176.579             |
+| `greedy` | 180  | 534.333         | 0.085s    | 0.094s      | 0.053s              | 0.073s            | 39.000s         | 0/180                 | 165.866             |
+| `lns`    | 180  | 560.917         | 5.693s    | 4.105s      | 0.041s              | 0.314s            | 39.000s         | 140/180               | 175.609             |
+| `cp-sat` | 180  | 560.389         | 2.310s    | 0.908s      | 0.966s              | 0.977s            | 39.000s         | 180/180               | 172.383             |
 
 Budget-level aggregates across all modes:
 
 | Budget | Runs | Mean Wall | Mean First Feasible | Mean Time To Best | Mean Pop/CPU Budget |
 | ------ | ---- | --------- | ------------------- | ----------------- | ------------------- |
-| 1s     | 168  | 0.806s    | 0.146s              | 0.268s            | 542.738             |
-| 5s     | 168  | 1.958s    | 0.240s              | 0.664s            | 108.613             |
-| 30s    | 168  | 5.569s    | 0.403s              | 1.842s            | 18.197              |
-| 120s   | 168  | 8.411s    | 0.426s              | 2.621s            | 4.551               |
+| 1s     | 180  | 0.809s    | 0.140s              | 0.269s            | 556.389             |
+| 5s     | 180  | 1.904s    | 0.227s              | 0.629s            | 110.822             |
+| 30s    | 180  | 5.411s    | 0.379s              | 1.727s            | 18.572              |
+| 120s   | 180  | 8.212s    | 0.401s              | 2.464s            | 4.654               |
 
-Budget-allocation signal counts across 672 mode runs:
+Budget-allocation signal counts across 720 mode runs:
 
 | Signal              | Count | Review Meaning                                                                     |
 | ------------------- | ----- | ---------------------------------------------------------------------------------- |
-| `under-used-budget` | 537   | Many rows finish early relative to the configured budget.                          |
-| `over-budget`       | 85    | Some runs exceed the configured budget threshold; compare only on same-slice runs. |
-| `steady`            | 31    | No obvious budget pressure from trace timing.                                      |
+| `under-used-budget` | 577   | Many rows finish early relative to the configured budget.                          |
+| `over-budget`       | 90    | Some runs exceed the configured budget threshold; compare only on same-slice runs. |
+| `steady`            | 34    | No obvious budget pressure from trace timing.                                      |
 | `early-plateau`     | 19    | Best score arrived early, then spent a long tail without beating Auto.             |
 
 Rows where Auto is behind best-of-mode:
 
 | Case                                | Split       | Budget | Seed | Best Mode       | Auto Delta | First Feasible | Time To Best |
 | ----------------------------------- | ----------- | ------ | ---- | --------------- | ---------- | -------------- | ------------ |
-| `typed-footprint-pressure`          | development | 1s     | 19   | `lns`           | 5          | 0.111s         | 0.706s       |
-| `typed-footprint-pressure`          | development | 5s     | 7    | `cp-sat`        | 20         | 2.938s         | 2.938s       |
-| `service-local-neighborhood`        | holdout     | 1s     | 7    | `lns`           | 15         | 0.043s         | 0.380s       |
-| `expansion-comparison-replay`       | holdout     | 1s     | 7    | `lns`           | 35         | 0.000s         | 0.754s       |
-| `fresh-multi-anchor-service-island` | holdout     | 1s     | 7    | `lns`, `cp-sat` | 25         | 0.136s         | 0.623s       |
+| `typed-footprint-pressure`          | development | 1s     | 19   | `lns`           | 5          | 0.142s         | 0.715s       |
+| `typed-footprint-pressure`          | development | 5s     | 7    | `cp-sat`        | 20         | 0.143s         | 0.143s       |
+| `service-local-neighborhood`        | holdout     | 1s     | 7    | `lns`           | 15         | 0.079s         | 0.557s       |
+| `expansion-comparison-replay`       | holdout     | 1s     | 7    | `lns`           | 35         | 0.148s         | 0.173s       |
+| `fresh-multi-anchor-service-island` | holdout     | 1s     | 7    | `lns`, `cp-sat` | 25         | 0.123s         | 0.637s       |
 
 ## Interpretation Rules
 
@@ -132,4 +134,4 @@ Rows where Auto is behind best-of-mode:
 
 ## Decision
 
-M8 is satisfied as a middle-run evidence check. Promotion reviewers can now compare population gains against CPU budget, wall-clock, first-feasible, and time-to-best fields without starting from raw JSON bundles. The current 2026-05-31 split-lane baseline is the comparison baseline for new candidates; candidate-specific scorecards still need same-slice baseline-repeat controls and evaluator-validity evidence before promotion claims.
+M8 is satisfied as a middle-run evidence check. Promotion reviewers can now compare population gains against CPU budget, wall-clock, first-feasible, and time-to-best fields without starting from raw JSON bundles. The current 15-case split-lane baseline is the comparison baseline for new candidates; candidate-specific scorecards still need same-slice baseline-repeat controls and evaluator-validity evidence before promotion claims.

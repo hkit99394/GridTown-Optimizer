@@ -1,6 +1,6 @@
 # Middle-Run Evaluator-Validity Replay Check
 
-Reviewed on 2026-05-30.
+Reviewed on 2026-06-01.
 
 Use this check before treating product workflow evidence as promotion-grade. It clarifies which evidence proves replay compatibility, which evidence proves final-layout evaluator validity, and which claims still need a candidate-specific validation rerun.
 
@@ -8,8 +8,11 @@ This is an evidence posture check only. It does not promote solver behavior or c
 
 ## Evidence Sources
 
+- `artifacts/product-corpus/2026-05-31/baseline-development-fast-1s-5s-seeds7-19-37-20260531T190759Z/evidence-summary.json`
+- `artifacts/product-corpus/2026-05-31/baseline-protected-holdout-fast-1s-5s-seeds7-19-37-20260531T191419Z/evidence-summary.json`
+- `artifacts/product-corpus/2026-06-01/baseline-fresh-manual-resume-fast-1s-5s-seeds7-19-37-20260601T150511Z/evidence-summary.json`
+- `artifacts/product-corpus/2026-06-01/baseline-fresh-manual-resume-long-30s-120s-seeds7-19-37-20260601T151447Z/evidence-summary.json`
 - `artifacts/product-corpus/2026-04-30/promotion-1s-5s-30s-120s-seeds7-19-37/evidence-summary.json`
-- `artifacts/product-corpus/2026-04-30/promotion-1s-5s-30s-120s-seeds7-19-37/registry-entry-draft.json`
 - `artifacts/service-master-shortlist/2026-05-27/service-master-evaluator-validity-5s-30s/service-master-evaluator-validity.json`
 - `src/packages/benchmarks/crossModeProductWorkflows.ts`
 - `src/tools/cli/crossModeBenchmarkArtifacts.ts`
@@ -18,20 +21,22 @@ This is an evidence posture check only. It does not promote solver behavior or c
 
 ## Product Replay Compatibility
 
-The product promotion artifact covers 10 workflow cases across `auto`, `greedy`, `lns`, and `cp-sat`, budgets `1,5,30,120`, and seeds `7,19,37`. It includes 5 development cases and 5 protected holdout cases.
+The current split-lane baseline covers 15 workflow cases across `auto`, `greedy`, `lns`, and `cp-sat`, budgets `1,5,30,120`, and seeds `7,19,37`. It includes 6 development cases and 9 holdout cases, of which 4 are L0 fresh product holdouts. The 2026-04-30 promotion artifact remains legacy 10-case context only.
 
-The 2026-04-30 promotion artifact records replay metrics in `evidence-summary.json`. Fresh product artifact runs also write standalone `workflow-replay.json` and `workflow-replay-telemetry-manifest.json` files through the product artifact writer. The replay harness materializes the reusable LNS seed hint, sends it through the manual layout evaluator path, and records validity, validation error count, reported population, evaluated population, road cleanup, and replay-vs-scorecard deltas.
+Current product artifacts record replay metrics in `evidence-summary.json` and write standalone `workflow-replay.json` and `workflow-replay-telemetry-manifest.json` files through the product artifact writer. The replay harness materializes the reusable LNS seed hint, sends it through the manual layout evaluator path, and records validity, validation error count, reported population, evaluated population, road cleanup, and replay-vs-scorecard deltas.
 
-| Replay Case                       | Split       | Workflow Tag           | API Route              | Scorecards | Valid | Population Delta | Road Cleanup | Current Signal                                                      |
-| --------------------------------- | ----------- | ---------------------- | ---------------------- | ---------- | ----- | ---------------- | ------------ | ------------------------------------------------------------------- |
-| `manual-layout-replay-warm-start` | development | `manual-layout-replay` | `/api/layout/evaluate` | 12         | yes   | 0                | 1 road       | Replay is evaluator-compatible; evaluated population remains `160`. |
-| `expansion-comparison-replay`     | holdout     | `expansion-comparison` | `/api/layout/evaluate` | 12         | yes   | 0                | 2 roads      | Replay is evaluator-compatible; evaluated population remains `115`. |
+| Replay Case                        | Split       | Workflow Tag           | API Route              | Scorecards | Valid | Population Delta | Road Cleanup | Current Signal                                                                                                |
+| ---------------------------------- | ----------- | ---------------------- | ---------------------- | ---------- | ----- | ---------------- | ------------ | ------------------------------------------------------------------------------------------------------------- |
+| `manual-layout-replay-warm-start`  | development | `manual-layout-replay` | `/api/layout/evaluate` | 12         | yes   | 0                | 1 road       | Replay is evaluator-compatible; evaluated population remains `160`.                                           |
+| `expansion-comparison-replay`      | holdout     | `expansion-comparison` | `/api/layout/evaluate` | 12         | yes   | 0                | 2 roads      | Replay is evaluator-compatible; evaluated population remains `115`.                                           |
+| `fresh-manual-resume-neighborhood` | holdout     | `manual-layout-replay` | `/api/layout/evaluate` | 12         | yes   | 0                | 4 roads      | Replay is evaluator-compatible; evaluated population remains `400`; Auto reaches hard cap `790` after resume. |
 
-Current full-promotion replay metric signal:
+Current split-baseline replay metric signal:
 
-- `replayCount`: 2
-- `validReplayCount`: 2
+- `replayCount`: 3 replay families, with `fresh-manual-resume-neighborhood` covered in fast and long lanes
+- `validReplayCount`: all replay entries valid
 - `invalidReplayCount`: 0
+- `populationDeltaFromReported`: 0 for every replay entry
 - `apiRoutes`: `/api/layout/evaluate`
 - `budgetsSeconds`: `1,5,30,120`
 - `seeds`: `7,19,37`
@@ -43,8 +48,8 @@ The key distinction: product workflow replay metrics prove replay compatibility 
 
 | Evidence Surface                  | Current Coverage                                                                                                              | Promotion Meaning                                                                                                             |
 | --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| Product cross-mode scorecards     | 10 cases, 4 modes, 4 budgets, 3 seeds, development plus protected holdout.                                                    | Good score, cost, split, and workflow evidence; not enough by itself to prove every final layout passed the exact evaluator.  |
-| Product workflow replay metrics   | 2 replay cases through `/api/layout/evaluate`; both valid, 0 validation errors, 0 population delta.                           | Enough to block replay-incompatible claims for manual layout and expansion replay workflows.                                  |
+| Product cross-mode scorecards     | 15 cases, 4 modes, 4 budgets, 3 seeds, development plus protected and fresh holdout.                                          | Good score, cost, split, and workflow evidence; not enough by itself to prove every final layout passed the exact evaluator.  |
+| Product workflow replay metrics   | 3 replay families through `/api/layout/evaluate`; all valid, 0 validation errors, 0 population delta.                         | Enough to block replay-incompatible claims for manual layout, manual resume, and expansion replay workflows.                  |
 | Service-master evaluator validity | 120 Greedy rows over product workflow development/holdout, policies `baseline` and `service-master-shortlist`, budgets 5/30s. | Covers that diagnostics-only branch: 120/120 valid, 0 invalid rows, 0 population mismatches, max absolute population delta 0. |
 | Future solver candidate           | Candidate-specific final-layout coverage must be added or rerun for affected modes, policies, cases, budgets, and seeds.      | Required before any default-path promotion claim, especially for Auto, LNS, CP-SAT, portfolio, or learned guidance changes.   |
 
@@ -89,13 +94,14 @@ node dist/crossModeBenchmarkCli.js \
   --product-artifact-dir="${ARTIFACT_DIR}" \
   --product-run-id="product-corpus-replay-validity-smoke-${RUN_STAMP}" \
   --product-decision=benchmark-refresh-replay-validity-smoke \
-  '--product-summary=Replay-validity smoke over product workflow replay cases; no solver default changed.' \
+  '--product-summary=Replay-validity smoke over product workflow replay and manual-resume cases; no solver default changed.' \
   --modes=auto,greedy,lns,cp-sat \
   --budgets=1 \
   --seeds=7 \
   --json \
   manual-layout-replay-warm-start \
-  expansion-comparison-replay
+  expansion-comparison-replay \
+  fresh-manual-resume-neighborhood
 ```
 
 Service-master evaluator-validity rerun:
@@ -118,4 +124,4 @@ For any candidate outside the service-master Greedy branch, use an equivalent ev
 
 ## Decision
 
-M7 is satisfied as a middle-run evidence check. Current product artifacts report replay compatibility clearly enough to block invalid replay claims, and the service-master diagnostics branch has explicit evaluator-validity evidence. Future default-path solver candidates still require candidate-specific final-layout evaluator validity before promotion.
+M7 is satisfied as a middle-run evidence check. Current 15-case product artifacts report replay compatibility clearly enough to block invalid replay claims, and the service-master diagnostics branch has explicit evaluator-validity evidence. Future default-path solver candidates still require candidate-specific final-layout evaluator validity before promotion.

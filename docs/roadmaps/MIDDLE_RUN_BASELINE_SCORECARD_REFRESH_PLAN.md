@@ -366,6 +366,12 @@ npm run experiment-registry -- check
 
 Do not append scratch smoke runs. Append only refreshes that are kept as durable evidence.
 
+Current registry status:
+
+- The 2026-06-01 manual-resume fast-lane, long-lane, and focused timing-triage bundles are appended to `artifacts/experiments/index.jsonl`.
+- The 2026-05-31 split-lane bundles and the June 1 manual-resume bundles together form the durable 15-case baseline.
+- The focused timing-triage bundle is decision-grade diagnostics evidence for the manual-resume `1s` timing watch, not a default-path promotion artifact.
+
 ## Read Order
 
 Review artifacts in this order:

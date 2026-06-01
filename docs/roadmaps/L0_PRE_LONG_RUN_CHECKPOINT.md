@@ -83,7 +83,7 @@ L0 can close for a candidate when:
 
 ## Current Decision
 
-L0 is satisfied for the implemented CP-SAT and Auto/LNS diagnostic lanes that use `fresh-multi-anchor-service-island`, `fresh-typed-footprint-scarcity`, and `fresh-expansion-corridor-service`. The first `cp-sat-no-overlap2d-preflight` candidate did proceed to opt-in diagnostics and is now closed diagnostics-only in [M9_CP_SAT_NO_OVERLAP2D_CLOSEOUT.md](M9_CP_SAT_NO_OVERLAP2D_CLOSEOUT.md). Runtime defaults and promotion claims remain blocked for that candidate because the focused M9 slice found a repeatable protected holdout population regression.
+L0 is satisfied for the implemented CP-SAT, Auto/LNS, and planner-resume diagnostic lanes that use `fresh-multi-anchor-service-island`, `fresh-typed-footprint-scarcity`, `fresh-expansion-corridor-service`, and `fresh-manual-resume-neighborhood`. The first `cp-sat-no-overlap2d-preflight` candidate did proceed to opt-in diagnostics and is now closed diagnostics-only in [M9_CP_SAT_NO_OVERLAP2D_CLOSEOUT.md](M9_CP_SAT_NO_OVERLAP2D_CLOSEOUT.md). Runtime defaults and promotion claims remain blocked for that candidate because the focused M9 slice found a repeatable protected holdout population regression.
 
 Current long-run posture: no candidate has an open promotion path. Future long-run candidates can cite L0 only after they choose the relevant fresh holdout cases, link the candidate-specific evaluator-validity command, and name artifact storage before broad scorecards run. If work shifts toward planner resume, saved-layout reuse, or warm-start behavior, start from a focused `fresh-manual-resume-neighborhood` evaluator-validity and baseline-repeat slice before any broad scorecard run.
 

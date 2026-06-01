@@ -204,4 +204,4 @@ Artifact hygiene recovery is complete when:
 
 ## Recommended Next Move
 
-The first-pass migration was committed as `1b75973 Recover artifact hygiene and externalize raw evidence`, planner completed-status resilience followed on 2026-06-01, and `fresh-manual-resume-neighborhood` is now implemented as the next fresh holdout row. Its focused evaluator-validity and `1s/5s` baseline refresh are complete. The next maintenance move is to run the manual-resume `30s/120s` lanes and keep the `1s` Auto timing overrun on the review list before any candidate touches saved-layout reuse, warm-start behavior, or planner resume flows.
+The first-pass migration was committed as `1b75973 Recover artifact hygiene and externalize raw evidence`, planner completed-status resilience followed on 2026-06-01, and `fresh-manual-resume-neighborhood` is now implemented as the next fresh holdout row. Its focused evaluator-validity and `1s/5s/30s/120s` split-lane baseline refresh is complete. The next maintenance move is a small `1s` Auto timing-overrun triage before any candidate touches saved-layout reuse, warm-start behavior, or planner resume flows.

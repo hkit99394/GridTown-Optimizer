@@ -1,0 +1,95 @@
+{
+  "schemaVersion": 1,
+  "source": "product-workflow-replay",
+  "command": "node dist/crossModeBenchmarkCli.js --product-corpus --product-artifact-dir=artifacts/product-corpus/2026-06-01/baseline-fresh-manual-resume-long-30s-120s-seeds7-19-37-20260601T151447Z --product-run-id=product-corpus-scorecard-20260601T151447Z-baseline-fresh-manual-resume-long-30s-120s-seeds7-19-37 --product-decision=benchmark-refresh-fresh-manual-resume '--product-summary=Baseline fresh manual-resume product holdout long-lane refresh over Auto/Greedy/LNS/CP-SAT at 30s/120s and seeds 7/19/37; no solver default changed.' --modes=auto,greedy,lns,cp-sat --budgets=30,120 --seeds=7,19,37 --json fresh-manual-resume-neighborhood",
+  "generatedAt": "2026-06-01T15:16:53.189Z",
+  "git": {
+    "commit": "ba8ccd68a20aaab3ffb0fd95b926398c049004b8",
+    "branch": "features/next-stage"
+  },
+  "hardware": {
+    "captured": true,
+    "platform": "darwin",
+    "arch": "arm64",
+    "cpuModel": "Apple M1 Pro",
+    "logicalCpuCount": 10,
+    "memoryBytes": 17179869184,
+    "totalMemoryBytes": 17179869184,
+    "gpuUsed": false
+  },
+  "suite": {
+    "caseCount": 1,
+    "replayCount": 1,
+    "validReplayCount": 1,
+    "invalidReplayCount": 0,
+    "apiRoutes": [
+      "/api/layout/evaluate"
+    ],
+    "workflowTags": [
+      "manual-layout-replay"
+    ],
+    "budgetsSeconds": [
+      30,
+      120
+    ],
+    "seeds": [
+      7,
+      19,
+      37
+    ],
+    "modes": [
+      "auto",
+      "cp-sat",
+      "greedy",
+      "lns"
+    ]
+  },
+  "replays": [
+    {
+      "caseName": "fresh-manual-resume-neighborhood",
+      "split": "holdout",
+      "workflowTag": "manual-layout-replay",
+      "apiRoute": "/api/layout/evaluate",
+      "sourceName": "fresh-manual-resume-neighborhood",
+      "scorecardCount": 6,
+      "budgetsSeconds": [
+        30,
+        120
+      ],
+      "seeds": [
+        7,
+        19,
+        37
+      ],
+      "modes": [
+        "auto",
+        "cp-sat",
+        "greedy",
+        "lns"
+      ],
+      "valid": true,
+      "validationErrorCount": 0,
+      "reportedPopulation": 400,
+      "evaluatedPopulation": 400,
+      "populationDeltaFromReported": 0,
+      "reportedRoadCount": 9,
+      "evaluatedRoadCount": 5,
+      "removedRoadCount": 4,
+      "bestScore": 790,
+      "bestScoreSource": {
+        "budgetSeconds": 30,
+        "seed": 7,
+        "mode": "auto"
+      },
+      "bestScoreDeltaFromEvaluated": 390,
+      "autoScore": 790,
+      "autoScoreSource": {
+        "budgetSeconds": 30,
+        "seed": 7,
+        "mode": "auto"
+      },
+      "autoScoreDeltaFromEvaluated": 390,
+      "expansionComparisonLift": null
+    }
+  ]
+}

@@ -85,8 +85,8 @@ Latest current-corpus smoke:
 - Auto ties best on 11 of 14 rows.
 - Auto is behind best on `service-local-neighborhood` by `15`, `fresh-multi-anchor-service-island` by `25`, and `expansion-comparison-replay` by `35`.
 - Follow-up baseline-repeat triage: `artifacts/cross-mode-budget-ablations/2026-05-31/auto-1s-miss-triage-baseline-repeat-20260531T185216Z` showed all three misses are seed `7` only across seeds `7,19,37`.
-- Split fast-lane refreshes cover the previous 14-case corpus at `1s/5s`, seeds `7,19,37`: development, protected holdout, and the first three fresh holdout artifacts listed below. Across those 84 case/budget/seed rows, Auto ties best on 79 rows.
-- This is a smoke refresh only. The 2026-05-31 split-lane baseline is complete for the previous 14-case corpus; the new `fresh-manual-resume-neighborhood` row needs a focused refresh before it is included in current-corpus baseline claims. Create one combined promotion-matrix artifact only when a release process explicitly requires it.
+- Split fast-lane refreshes now cover the current 15-case corpus at `1s/5s`, seeds `7,19,37`: development, protected holdout, the first three fresh holdout artifacts, and the 2026-06-01 manual-resume fast-lane artifact listed below. Across those 90 case/budget/seed rows, Auto ties best on 85 rows.
+- This is a smoke refresh only. The split-lane baseline is complete for the current 15-case corpus through separate artifacts; create one combined promotion-matrix artifact only when a release process explicitly requires it.
 
 ## Development Split Refresh
 
@@ -222,7 +222,7 @@ Latest protected holdout `120s` lane refresh:
 
 ## Fresh Product Holdout Refresh
 
-Current status: runnable for the L0 fresh product holdout set. These cases are in the product workflow corpus as holdout cases, but they should be refreshed separately before candidate claims. The 2026-05-31 durable split baseline covers the first three fresh rows; `fresh-manual-resume-neighborhood` was added on 2026-06-01 and now has a focused `1s/5s` refresh. Its `30s/120s` lanes remain pending before current 15-case full-baseline claims.
+Current status: complete for the L0 fresh product holdout set through split-lane artifacts. These cases are in the product workflow corpus as holdout cases, but they should be refreshed separately before candidate claims. The 2026-05-31 durable split baseline covers the first three fresh rows; `fresh-manual-resume-neighborhood` was added on 2026-06-01 and now has focused `1s/5s` and `30s/120s` refresh artifacts.
 
 ```bash
 FRESH_CASES=(
@@ -275,6 +275,17 @@ Latest fresh manual-resume fast-lane refresh:
 - Standalone LNS ties Auto at `1s` but falls to `635` on the `5s` rows; standalone CP-SAT is stable at `660`; Greedy is stable at `750`.
 - Timing watch: Auto reaches the cap at `1s` but overruns wall clock on all three `1s` rows (`1.319s` to `2.035s`). Auto stays under the `5s` budget (`1.811s` to `1.998s`).
 
+Latest fresh manual-resume long-lane refresh:
+
+- Date: 2026-06-01.
+- Artifact: `artifacts/product-corpus/2026-06-01/baseline-fresh-manual-resume-long-30s-120s-seeds7-19-37-20260601T151447Z`.
+- Shape: 1 fresh manual-resume holdout case, 4 modes, budgets `30,120`, seeds `7,19,37`.
+- Coverage: 6 case/budget/seed scorecards and 24 mode runs.
+- Replay validity: valid through `/api/layout/evaluate`, 0 validation errors, 0 population delta from reported layout.
+- Auto reaches the hard population cap `790` on all 6 rows and keeps Auto on every budget-policy signal.
+- Standalone LNS stays below Auto: `660` on all `30s` rows and `725` on all `120s` rows. Standalone CP-SAT stays at `660`; Greedy stays at `750`.
+- Timing: Auto stays well under both long budgets (`4.471s` to `5.029s` at `30s`; `7.198s` to `7.445s` at `120s`).
+
 Latest fresh holdout `30s` lane refresh:
 
 - Date: 2026-05-31.
@@ -293,26 +304,26 @@ Latest fresh holdout `120s` lane refresh:
 - Auto ties best on all 9 rows.
 - Auto mean wall-clock was `13.899s`; the slowest Auto row was `16.456s`.
 - No Auto row exceeded the `120s` budget by more than 10%.
-- Fresh holdout split has `1s/5s/30s/120s` coverage for the first three 2026-05-31 fresh rows. The newer `fresh-manual-resume-neighborhood` row has focused `1s/5s` coverage; its `30s/120s` lanes are still pending.
+- Fresh holdout split now has `1s/5s/30s/120s` coverage for all four L0 fresh rows through split-lane artifacts.
 
 Current `30s` baseline coverage:
 
-- Development, protected holdout, and fresh holdout `30s` lane refreshes cover the previous 14 product-corpus cases at seeds `7,19,37`.
-- Coverage: 42 case/budget/seed scorecards and 168 mode runs.
-- Auto ties best on all 42 `30s` rows.
+- Development, protected holdout, and fresh holdout `30s` lane refreshes cover all 15 product-corpus cases at seeds `7,19,37`.
+- Coverage: 45 case/budget/seed scorecards and 180 mode runs.
+- Auto ties best on all 45 `30s` rows.
 
 Current full split-baseline coverage:
 
-- Development, protected holdout, and fresh holdout split-lane refreshes cover the previous 14 product-corpus cases, all four modes, budgets `1,5,30,120`, and seeds `7,19,37`.
-- Coverage: 168 case/budget/seed scorecards and 672 mode runs.
-- Auto ties best on 163 of 168 rows.
+- Development, protected holdout, and fresh holdout split-lane refreshes cover all 15 product-corpus cases, all four modes, budgets `1,5,30,120`, and seeds `7,19,37`.
+- Coverage: 180 case/budget/seed scorecards and 720 mode runs.
+- Auto ties best on 175 of 180 rows.
 - The five Auto gaps are short-budget rows only: `typed-footprint-pressure` at `1s` seed `19` and `5s` seed `7`, `service-local-neighborhood` at `1s` seed `7`, `expansion-comparison-replay` at `1s` seed `7`, and `fresh-multi-anchor-service-island` at `1s` seed `7`.
 - Auto ties best on all `30s` and `120s` rows.
-- Decision: keep the split artifacts as the durable baseline for the 2026-05-31 14-case corpus. Do not create a single combined promotion-matrix artifact unless a release process explicitly requires one. The current 15-case corpus has partial added-row coverage: 174 case/budget/seed scorecards and 696 mode runs after the manual-resume `1s/5s` refresh. Finish the manual-resume `30s/120s` lanes before broad current-corpus baseline claims.
+- Decision: keep the split artifacts as the durable current 15-case baseline. Do not create a single combined promotion-matrix artifact unless a release process explicitly requires one.
 
 ## Full Promotion-Matrix Refresh
 
-Use this only when a release process explicitly requires one combined promotion-matrix artifact. The current durable baseline is the split artifact set listed above; after the 2026-06-01 fresh manual-resume row, a new full command covers 15 cases.
+Use this only when a release process explicitly requires one combined promotion-matrix artifact. The current durable baseline is the split artifact set listed above.
 
 ```bash
 ARTIFACT_DIR="${PRODUCT_ROOT}/baseline-promotion-matrix-1s-5s-30s-120s-seeds7-19-37-${RUN_STAMP}"

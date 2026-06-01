@@ -222,7 +222,7 @@ Latest protected holdout `120s` lane refresh:
 
 ## Fresh Product Holdout Refresh
 
-Current status: runnable for the L0 fresh product holdout set. These cases are in the product workflow corpus as holdout cases, but they should be refreshed separately before candidate claims. The 2026-05-31 durable split baseline covers the first three fresh rows; `fresh-manual-resume-neighborhood` was added on 2026-06-01 and needs a focused refresh before it is part of baseline claims.
+Current status: runnable for the L0 fresh product holdout set. These cases are in the product workflow corpus as holdout cases, but they should be refreshed separately before candidate claims. The 2026-05-31 durable split baseline covers the first three fresh rows; `fresh-manual-resume-neighborhood` was added on 2026-06-01 and now has a focused `1s/5s` refresh. Its `30s/120s` lanes remain pending before current 15-case full-baseline claims.
 
 ```bash
 FRESH_CASES=(
@@ -264,6 +264,17 @@ Latest fresh holdout fast-lane refresh:
 - Auto ties best on 17 of 18 rows.
 - Auto is behind best only on `fresh-multi-anchor-service-island` by `25` at `1s`, seed `7`.
 
+Latest fresh manual-resume fast-lane refresh:
+
+- Date: 2026-06-01.
+- Artifact: `artifacts/product-corpus/2026-06-01/baseline-fresh-manual-resume-fast-1s-5s-seeds7-19-37-20260601T150511Z`.
+- Shape: 1 fresh manual-resume holdout case, 4 modes, budgets `1,5`, seeds `7,19,37`.
+- Coverage: 6 case/budget/seed scorecards and 24 mode runs.
+- Replay validity: valid through `/api/layout/evaluate`, 0 validation errors, 0 population delta from reported layout.
+- Auto reaches the hard population cap `790` on all 6 rows and keeps Auto on every budget-policy signal.
+- Standalone LNS ties Auto at `1s` but falls to `635` on the `5s` rows; standalone CP-SAT is stable at `660`; Greedy is stable at `750`.
+- Timing watch: Auto reaches the cap at `1s` but overruns wall clock on all three `1s` rows (`1.319s` to `2.035s`). Auto stays under the `5s` budget (`1.811s` to `1.998s`).
+
 Latest fresh holdout `30s` lane refresh:
 
 - Date: 2026-05-31.
@@ -282,7 +293,7 @@ Latest fresh holdout `120s` lane refresh:
 - Auto ties best on all 9 rows.
 - Auto mean wall-clock was `13.899s`; the slowest Auto row was `16.456s`.
 - No Auto row exceeded the `120s` budget by more than 10%.
-- Fresh holdout split has `1s/5s/30s/120s` coverage for the first three 2026-05-31 fresh rows. The newer `fresh-manual-resume-neighborhood` row still needs a focused refresh.
+- Fresh holdout split has `1s/5s/30s/120s` coverage for the first three 2026-05-31 fresh rows. The newer `fresh-manual-resume-neighborhood` row has focused `1s/5s` coverage; its `30s/120s` lanes are still pending.
 
 Current `30s` baseline coverage:
 
@@ -297,7 +308,7 @@ Current full split-baseline coverage:
 - Auto ties best on 163 of 168 rows.
 - The five Auto gaps are short-budget rows only: `typed-footprint-pressure` at `1s` seed `19` and `5s` seed `7`, `service-local-neighborhood` at `1s` seed `7`, `expansion-comparison-replay` at `1s` seed `7`, and `fresh-multi-anchor-service-island` at `1s` seed `7`.
 - Auto ties best on all `30s` and `120s` rows.
-- Decision: keep the split artifacts as the durable baseline for the 2026-05-31 14-case corpus. Do not create a single combined promotion-matrix artifact unless a release process explicitly requires one. For the current 15-case corpus, refresh `fresh-manual-resume-neighborhood` as a narrow added row before broad baseline claims.
+- Decision: keep the split artifacts as the durable baseline for the 2026-05-31 14-case corpus. Do not create a single combined promotion-matrix artifact unless a release process explicitly requires one. The current 15-case corpus has partial added-row coverage: 174 case/budget/seed scorecards and 696 mode runs after the manual-resume `1s/5s` refresh. Finish the manual-resume `30s/120s` lanes before broad current-corpus baseline claims.
 
 ## Full Promotion-Matrix Refresh
 

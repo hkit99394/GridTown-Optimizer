@@ -2,7 +2,7 @@
 
 Reviewed on 2026-05-30.
 
-Use this template before implementing or benchmarking a solver-policy candidate. Its job is to make the candidate's trigger, hypothesis, evidence slice, expected signal, blockers, and artifact policy explicit before tuning starts.
+Use this template before implementing or benchmarking a solver-policy candidate. Its job is to make the candidate's trigger, hypothesis, evidence slice, expected signal, blockers, and artifact policy explicit before tuning starts. New candidates should first have an admitted trigger in [MIDDLE_RUN_CANDIDATE_TRIGGER_LEDGER.md](MIDDLE_RUN_CANDIDATE_TRIGGER_LEDGER.md).
 
 This is an intake gate only. It does not promote solver behavior or change runtime defaults.
 
@@ -17,7 +17,7 @@ Do not start a default-path implementation until the **Required Before Work Star
 ## Required Before Work Starts
 
 - Candidate ID and owner are named.
-- Trigger is tied to a concrete artifact, row, issue, or roadmap gate.
+- Trigger is tied to a concrete artifact, row, issue, roadmap gate, or admitted trigger-ledger record.
 - Hypothesis states what will improve and why.
 - Affected modes and runtime-default risk are explicit.
 - Case list, split, workflow tags, budgets, and seeds are named.

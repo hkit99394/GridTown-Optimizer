@@ -48,6 +48,8 @@ Split fallback:
 5. Review artifact hygiene migration and registry/index consistency.
 6. Review governance automation and trigger-admission docs.
 
+Use [PR_REVIEW_RESPONSE_RUNBOOK.md](PR_REVIEW_RESPONSE_RUNBOOK.md) when addressing review comments so fixes stay bucketed into docs-only, governance-script, planner, solver, evidence, or artifact work.
+
 ## Validation To Trust
 
 Local checks already run before PR creation:

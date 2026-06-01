@@ -12,6 +12,7 @@ This backlog starts after draft PR #10 publishes the broad next-stage baseline. 
 - Artifact hygiene is in soft-warning posture at `1501/1600` tracked artifacts with zero unindexed raw candidates.
 - `npm run quality:governance` is the cheap preflight before trigger nomination or broad evidence planning.
 - G7 was reviewed on 2026-06-01; no trigger was admitted, so G7 remains parked until a current artifact, issue, or product requirement satisfies the trigger ledger.
+- G8 was reviewed on 2026-06-01; no implementation started because the trigger ledger has no admitted trigger and there is no current M9 intake.
 
 ## Backlog
 
@@ -29,6 +30,27 @@ This backlog starts after draft PR #10 publishes the broad next-stage baseline. 
 ## Recommended Sequence
 
 1. **G7-G8 only on trigger.** Do not start solver implementation from this backlog unless the trigger ledger admits a current signal.
+
+## G8 Gate Review
+
+Reviewed on 2026-06-01 after the request to start G8.
+
+Decision: keep G8 parked. Do not start long-run solver implementation from this backlog yet.
+
+Prerequisite state:
+
+- Open trigger ledger: `none`; no current reproducible outside-envelope signal is admitted.
+- Candidate intake check: `5` docs checked, `0` M15-enforced/current intakes, `5` legacy accepted.
+- G7 trigger nomination: reviewed and parked; no trigger-ledger record was admitted.
+- Implementation preconditions: no same-slice baseline-repeat plan, candidate-specific evaluator-validity plan, CPU/time-to-best plan, artifact policy plan, or decision closeout exists for a new candidate.
+- Artifact posture: soft-warning at `1501/1600` tracked artifacts with `0` unindexed raw candidates; broad evidence still needs an externalization plan first.
+
+Required to unpark G8:
+
+1. Admit a real G7 trigger in [MIDDLE_RUN_CANDIDATE_TRIGGER_LEDGER.md](MIDDLE_RUN_CANDIDATE_TRIGGER_LEDGER.md).
+2. Generate or write a current M9 candidate intake that passes `npm run candidate-intake:check`.
+3. Record same-slice baseline-repeat, evaluator-validity, CPU/time-to-best, artifact-storage, and closeout plans before code changes.
+4. Keep runtime defaults unchanged until promotion gates and decision closeout are complete.
 
 ## Guardrails
 

@@ -26,6 +26,7 @@ Do not start a default-path implementation until the **Required Before Work Star
 - Known blockers and stop conditions are written.
 - Evaluator-validity and replay requirements are written.
 - Artifact storage plan follows the current artifact policy.
+- `npm run candidate-intake:check` passes before implementation or broad evidence work.
 
 ## Intake Record
 
@@ -43,6 +44,10 @@ Runtime default change proposed now: yes | no
 Trigger source:
 
 - Roadmap item, issue, user workflow, benchmark artifact, regression, or focused row:
+
+Trigger-ledger record:
+
+- [MIDDLE_RUN_CANDIDATE_TRIGGER_LEDGER.md](MIDDLE_RUN_CANDIDATE_TRIGGER_LEDGER.md):
 
 Observed problem:
 
@@ -169,6 +174,11 @@ CPU and timing gates:
 - Time-to-best fields to compare:
 - CPU-budget fields to compare:
 - Observed-CPU coverage expectation:
+
+Artifact hygiene preflight:
+
+- `npm run artifact-hygiene:status` result:
+- Externalization required before broad evidence: yes | no
 
 ## Expected Signal
 

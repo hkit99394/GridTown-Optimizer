@@ -106,6 +106,19 @@ Decision:
 3. Confirm the trigger satisfies the admission rule.
 4. Create an M9 intake from [MIDDLE_RUN_CANDIDATE_INTAKE_TEMPLATE.md](MIDDLE_RUN_CANDIDATE_INTAKE_TEMPLATE.md).
 5. Link this ledger record from the intake's `Trigger` section.
+6. Run `npm run candidate-intake:check` before implementation or broad evidence work.
+
+## Automation
+
+`npm run candidate-intake:check` enforces the M15 gate for new or active M9 intake docs. It requires:
+
+- A real trigger source and trigger-ledger link.
+- `npm run artifact-hygiene:status` as the artifact hygiene preflight.
+- Same-slice baseline-repeat controls.
+- Candidate-specific evaluator-validity and replay gates.
+- Artifact storage and registry plans.
+
+Pre-M15 closed diagnostics records are accepted as legacy evidence, but they do not authorize new candidate work without a fresh trigger-ledger record.
 
 ## Decision
 

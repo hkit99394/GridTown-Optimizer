@@ -188,6 +188,7 @@ npm run quality
 
 Start here:
 
+- [docs/STATUS.md](./docs/STATUS.md) - current baseline, active posture, allowed next work, artifact posture, and gates.
 - [docs/START_HERE.md](./docs/START_HERE.md) - planner happy path, CP-SAT readiness, and local quality gates.
 - [docs/requirements/Requirement.md](./docs/requirements/Requirement.md) - product-level problem summary.
 - [docs/requirements/SPEC.md](./docs/requirements/SPEC.md) - formal model, constraints, and objective.
@@ -201,6 +202,7 @@ Design and architecture:
 Roadmaps and decisions:
 
 - [docs/roadmaps/SOLVER_ROADMAP.md](./docs/roadmaps/SOLVER_ROADMAP.md) - active solver posture and promotion gates.
+- [docs/roadmaps/DEEP_REFACTOR_OPPORTUNITY_BACKLOG.md](./docs/roadmaps/DEEP_REFACTOR_OPPORTUNITY_BACKLOG.md) - gated refactor opportunities and review-safe sequencing.
 - [docs/roadmaps/SOLVER_ROADMAP_DELIVERED.md](./docs/roadmaps/SOLVER_ROADMAP_DELIVERED.md) - delivered solver baseline.
 - [docs/roadmaps/SOLVER_ROADMAP_HISTORY_2026-05.md](./docs/roadmaps/SOLVER_ROADMAP_HISTORY_2026-05.md) - archived May 2026 evidence narrative.
 - [docs/roadmaps/CP_SAT_ROADMAP.md](./docs/roadmaps/CP_SAT_ROADMAP.md) - CP-SAT-specific forward plan.

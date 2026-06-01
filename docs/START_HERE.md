@@ -59,6 +59,16 @@ Governance gate:
 npm run quality:governance
 ```
 
+Governance workflow before opening or implementing a new solver candidate:
+
+```bash
+npm run quality:governance
+npm run candidate-trigger:scaffold -- --trigger-id=<trigger-id> --candidate-id=<candidate-id> --source=<current artifact, issue, or product requirement>
+npm run candidate-intake:check
+```
+
+`quality:governance` is the cheap no-build preflight for docs formatting, artifact status, candidate intake checks, and trigger-scaffold contracts. Use `candidate-trigger:scaffold` to print a trigger-ledger record and M9 intake draft, then use `candidate-intake:check` before implementation or broad evidence work.
+
 Evidence gate:
 
 ```bash

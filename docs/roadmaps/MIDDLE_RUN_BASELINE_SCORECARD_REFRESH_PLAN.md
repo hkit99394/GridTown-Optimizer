@@ -274,6 +274,7 @@ Latest fresh manual-resume fast-lane refresh:
 - Auto reaches the hard population cap `790` on all 6 rows and keeps Auto on every budget-policy signal.
 - Standalone LNS ties Auto at `1s` but falls to `635` on the `5s` rows; standalone CP-SAT is stable at `660`; Greedy is stable at `750`.
 - Timing watch: Auto reaches the cap at `1s` but overruns wall clock on all three `1s` rows (`1.319s` to `2.035s`). Auto stays under the `5s` budget (`1.811s` to `1.998s`).
+- Timing triage: `artifacts/product-corpus/2026-06-01/timing-fresh-manual-resume-auto-1s-cap-stop-seeds7-19-37-20260601T160520Z` keeps Auto at cap on all three `1s` rows after CP-SAT now stops on model upper-bound incumbents. Residual wall-clock overrun (`1.256s` to `1.832s`) is CP-SAT bridge/model-build overhead and is tracked as a separate runtime-SLA concern, not a population-quality blocker.
 
 Latest fresh manual-resume long-lane refresh:
 

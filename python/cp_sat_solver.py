@@ -702,6 +702,12 @@ def solve_single_cp_sat(grid, params, cp_sat_options, progress_emitter=None):
                 stopped_by_user = True
                 self.StopSearch()
                 return
+            if (
+                self.last_incumbent_population is not None
+                and self.last_incumbent_population >= built.total_population_upper_bound
+            ):
+                self.StopSearch()
+                return
             schedule_no_improvement_timer()
 
     telemetry_collector = SnapshotTelemetryCollector()

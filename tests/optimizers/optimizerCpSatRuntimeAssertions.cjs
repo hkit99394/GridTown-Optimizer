@@ -802,8 +802,8 @@ grid = [
 ]
 params = {
     "serviceTypes": [{"rows": 1, "cols": 1, "bonus": 30, "range": 1, "avail": 1}],
-    "residentialTypes": [{"w": 2, "h": 2, "min": 10, "max": 40, "avail": 1}],
-    "availableBuildings": {"services": 1, "residentials": 1},
+    "residentialTypes": [{"w": 2, "h": 2, "min": 10, "max": 40, "avail": 3}],
+    "availableBuildings": {"services": 1, "residentials": 3},
 }
 
 result = module.solve_single_cp_sat(grid, params, {

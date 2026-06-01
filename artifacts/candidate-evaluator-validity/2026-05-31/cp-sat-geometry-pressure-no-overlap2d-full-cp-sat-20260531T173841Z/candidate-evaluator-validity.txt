@@ -1,0 +1,16 @@
+=== Candidate Evaluator Validity ===
+Generated: 2026-05-31T17:42:42.802Z
+Candidate: cp-sat-geometry-pressure-no-overlap2d
+Cases: 13
+Modes: cp-sat
+Budgets: 1, 5s
+Seeds: 7, 19, 37
+Coverage: rows=78 valid=78 invalid=0 population-mismatches=0 max-abs-delta=0
+
+- mode=cp-sat: rows=78 valid=78 invalid=0 population-mismatches=0 mean-wall=1.424s
+
+- split=development: rows=30 valid=30 invalid=0 population-mismatches=0
+- split=holdout: rows=48 valid=48 invalid=0 population-mismatches=0
+
+- budget=1s rows=39 valid=39 invalid=0 population-mismatches=0
+- budget=5s rows=39 valid=39 invalid=0 population-mismatches=0

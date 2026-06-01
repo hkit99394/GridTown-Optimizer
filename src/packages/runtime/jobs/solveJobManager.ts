@@ -17,6 +17,7 @@ import {
 } from "./solveProgressLog.js";
 
 export type SolveJobStatus = "running" | "completed" | "stopped" | "failed";
+export type SolveJobClientRole = "primary" | "expansion-comparison";
 
 const DEFAULT_PROGRESS_LOG_INTERVAL_MS = 60 * 1000;
 const DEFAULT_PROGRESS_LOG_POLL_INTERVAL_MS = 5 * 1000;
@@ -35,6 +36,7 @@ export interface SolveJobManagerOptions {
 
 export interface SolveJob {
   requestId: string;
+  clientRole: SolveJobClientRole;
   optimizer: OptimizerName;
   grid: Grid;
   params: SolverParams;
@@ -225,7 +227,12 @@ export class SolveJobManager {
     };
   }
 
-  start(grid: Grid, params: SolverParams, requestId: string): SolveJob {
+  start(
+    grid: Grid,
+    params: SolverParams,
+    requestId: string,
+    options: { clientRole?: SolveJobClientRole } = {}
+  ): SolveJob {
     this.pruneJobs();
     const optimizerAdapter = getOptimizerAdapter(params);
     const optimizer = optimizerAdapter.name;
@@ -244,6 +251,7 @@ export class SolveJobManager {
       });
       job = {
         requestId,
+        clientRole: options.clientRole ?? "primary",
         optimizer,
         grid,
         params,
@@ -290,6 +298,16 @@ export class SolveJobManager {
   get(requestId: string): SolveJob | null {
     this.pruneJobs();
     return this.jobs.get(requestId) ?? null;
+  }
+
+  getActiveRunningJob(options: { clientRole?: SolveJobClientRole } = {}): SolveJob | null {
+    this.pruneJobs();
+    for (const job of this.jobs.values()) {
+      if (job.status === "running" && (options.clientRole === undefined || job.clientRole === options.clientRole)) {
+        return job;
+      }
+    }
+    return null;
   }
 
   replaceIfIdle(requestId: string): SolveJob | null {

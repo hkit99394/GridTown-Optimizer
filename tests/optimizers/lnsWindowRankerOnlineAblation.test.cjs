@@ -802,6 +802,50 @@ function testLnsBenchmarkCliListsOnlineAblationCases() {
   assert.equal(protectedSweepResult.status, 0, protectedSweepResult.stderr);
   assert.match(protectedSweepResult.stdout, /lns-holdout-corridor-weave-pressure/);
   assert.match(protectedSweepResult.stdout, /lns-holdout-anchor-service-shelf-pressure/);
+
+  const ignoredModelFlagResult = childProcess.spawnSync(
+    process.execPath,
+    [cliPath, "--list", "--window-ranker-model=artifacts/fake-model.json"],
+    {
+      cwd: repoRoot,
+      encoding: "utf8"
+    }
+  );
+  assert.notEqual(ignoredModelFlagResult.status, 0);
+  assert.match(
+    ignoredModelFlagResult.stderr,
+    /--window-ranker-model is only available with --window-ranker-online-ablation/
+  );
+
+  for (const flagName of ["window-ranker-run-id", "window-ranker-decision", "window-ranker-summary"]) {
+    const ignoredArtifactMetadataFlagResult = childProcess.spawnSync(
+      process.execPath,
+      [cliPath, "--list", `--${flagName}=ignored`],
+      {
+        cwd: repoRoot,
+        encoding: "utf8"
+      }
+    );
+    assert.notEqual(ignoredArtifactMetadataFlagResult.status, 0);
+    assert.match(
+      ignoredArtifactMetadataFlagResult.stderr,
+      new RegExp(`--${flagName} is only available with --window-ranker-online-ablation`)
+    );
+
+    const ignoredWithoutArtifactResult = childProcess.spawnSync(
+      process.execPath,
+      [cliPath, "--list", "--window-ranker-online-ablation", `--${flagName}=ignored`],
+      {
+        cwd: repoRoot,
+        encoding: "utf8"
+      }
+    );
+    assert.notEqual(ignoredWithoutArtifactResult.status, 0);
+    assert.match(
+      ignoredWithoutArtifactResult.stderr,
+      new RegExp(`--${flagName} requires --window-ranker-artifact-dir`)
+    );
+  }
 }
 
 function testOnlineCalibrationSummarizesThresholdSweep() {
@@ -1098,10 +1142,14 @@ function testTransitionOutcomeFeatureDeltaDiagnostics() {
 }
 
 function testOnlineAblationRejectsObsoleteRankerArtifacts() {
-  const { readWindowRankerModel } = require("../../dist/tools/cli/lnsBenchmarkArtifacts.js");
+  const {
+    readWindowRankerModel,
+    readWindowRankerOnlineScorecard
+  } = require("../../dist/tools/cli/lnsBenchmarkArtifacts.js");
   const tempRoot = `artifacts/tmp-lns-window-ranker-online-${process.pid}`;
   const obsoleteDir = `${tempRoot}/obsolete-model`;
   const obsoleteModelPath = `${obsoleteDir}/model.json`;
+  const obsoleteScorecardPath = `${obsoleteDir}/scorecard.json`;
   fs.rmSync(path.join(repoRoot, tempRoot), { recursive: true, force: true });
   fs.mkdirSync(path.join(repoRoot, obsoleteDir), { recursive: true });
   fs.writeFileSync(path.join(repoRoot, `${obsoleteDir}/OBSOLETE.md`), "Obsolete test bundle.\n");
@@ -1109,11 +1157,16 @@ function testOnlineAblationRejectsObsoleteRankerArtifacts() {
     path.join(repoRoot, obsoleteModelPath),
     `${JSON.stringify({ modelType: "lns-window-linear-pairwise-ranker", featureSchemaVersion: 2, weights: {} })}\n`
   );
+  fs.writeFileSync(path.join(repoRoot, obsoleteScorecardPath), "{}\n");
 
   try {
     assert.throws(
       () => readWindowRankerModel(obsoleteModelPath),
       /--window-ranker-model points to obsolete artifact bundle/
+    );
+    assert.throws(
+      () => readWindowRankerOnlineScorecard(obsoleteScorecardPath),
+      /--window-replay-online-scorecard points to obsolete artifact bundle/
     );
   } finally {
     fs.rmSync(path.join(repoRoot, tempRoot), { recursive: true, force: true });

@@ -21,6 +21,7 @@ export type CrossModeBenchmarkSplit = "development" | "holdout";
 export type CrossModeWorkflowTag =
   | "solver-smoke"
   | "manual-layout-replay"
+  | "manual-resume-neighborhood"
   | "expansion-comparison"
   | "corridor"
   | "gate"
@@ -100,6 +101,8 @@ export interface CrossModeBenchmarkRunOptions {
   greedy?: Partial<GreedyOptions>;
   lns?: Partial<LnsOptions>;
   cpSat?: Partial<CpSatOptions>;
+  cpSatNoOverlap2dWorkflowTags?: readonly CrossModeWorkflowTag[];
+  cpSatNoOverlap2dGeometryPressure?: boolean;
   portfolio?: Partial<CpSatPortfolioOptions>;
   solve?: CrossModeBenchmarkSolve;
 }

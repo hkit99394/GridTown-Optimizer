@@ -7,9 +7,9 @@
     "node dist/lnsBenchmarkCli.js --window-ranker-online-ablation --window-ranker-protected-holdout --window-ranker-model=artifacts/lns-window-ranker/2026-05-08/strict-lns-replay-labels-curated-seeds-v3-final-lift-no-weak-wide-anchor-opportunity-exact-neutral-calibration-lr0.02-cap100/model.json --window-ranker-min-score-delta=1.18 --lns-iterations=1 --seeds=7,19,37 --artifact-dir=artifacts/lns-window-ranker-online/2026-05-08/protected-broadened-coverage-one-iteration-feature-selectivity-min-score-delta-1.18 --window-ranker-run-id=lns-window-ranker-online-2026-05-08-wide-anchor-opportunity-protected-broadened-one-iteration-feature-selectivity-min-score-delta-1-18 --window-ranker-decision=online-lns-window-ranker-wide-anchor-opportunity-protected-broadened-one-iteration-feature-selectivity-diagnostics '--window-ranker-summary=Broadened protected holdout online LNS ranker one-iteration diagnostic at minScoreDelta=1.18 with final-outcome feature-delta selectivity reporting; no solver default changed.' --json"
   ],
   "artifactPaths": [
-    "artifacts/lns-window-ranker-online/2026-05-08/protected-broadened-coverage-one-iteration-feature-selectivity-min-score-delta-1.18/lns-window-ranker-online-ablation.json",
     "artifacts/lns-window-ranker-online/2026-05-08/protected-broadened-coverage-one-iteration-feature-selectivity-min-score-delta-1.18/lns-window-ranker-online-ablation.txt",
-    "artifacts/lns-window-ranker-online/2026-05-08/protected-broadened-coverage-one-iteration-feature-selectivity-min-score-delta-1.18/telemetry-manifest.json"
+    "artifacts/lns-window-ranker-online/2026-05-08/protected-broadened-coverage-one-iteration-feature-selectivity-min-score-delta-1.18/telemetry-manifest.json",
+    "artifacts/external-artifacts/2026-06-01/artifact-hygiene-unindexed-raw-manifest.json"
   ],
   "cases": {
     "development": [],

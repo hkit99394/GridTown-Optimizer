@@ -37,6 +37,7 @@
    */
   function createPlannerManualLayoutModel(options) {
     const { state, cloneJson, pendingManualLayoutError } = options;
+    const MAX_UNBOUNDED_FOOTPRINT_CELLS = 10000;
 
     /**
      * @param {ManualPlacement} placement
@@ -96,16 +97,67 @@
     }
 
     /**
+     * @returns {{ rows: number, cols: number } | null}
+     */
+    function getCurrentGridBounds() {
+      const grid = state.resultContext?.grid;
+      if (!Array.isArray(grid) || grid.length === 0) return null;
+      return { rows: grid.length, cols: grid[0]?.length ?? 0 };
+    }
+
+    /**
+     * @param {ManualPlacement} placement
+     * @param {{ rows: number, cols: number } | null} [gridBounds]
+     * @returns {{ rowStart: number, rowEnd: number, colStart: number, colEnd: number } | null}
+     */
+    function getPlacementCellBounds(placement, gridBounds = getCurrentGridBounds()) {
+      const values = [placement?.r, placement?.c, placement?.rows, placement?.cols];
+      if (!values.every((value) => Number.isSafeInteger(value))) return null;
+      if (placement.rows <= 0 || placement.cols <= 0) return null;
+
+      const rowEnd = placement.r + placement.rows;
+      const colEnd = placement.c + placement.cols;
+      if (!Number.isSafeInteger(rowEnd) || !Number.isSafeInteger(colEnd)) return null;
+      if (!gridBounds) {
+        if (placement.rows * placement.cols > MAX_UNBOUNDED_FOOTPRINT_CELLS) return null;
+        return {
+          rowStart: placement.r,
+          rowEnd,
+          colStart: placement.c,
+          colEnd
+        };
+      }
+      return {
+        rowStart: Math.max(0, placement.r),
+        rowEnd: Math.min(gridBounds.rows, rowEnd),
+        colStart: Math.max(0, placement.c),
+        colEnd: Math.min(gridBounds.cols, colEnd)
+      };
+    }
+
+    /**
+     * @param {ManualPlacement} placement
+     * @param {(cell: ManualLayoutCell) => void} visit
+     * @param {{ rows: number, cols: number } | null} [gridBounds]
+     */
+    function forEachPlacementCell(placement, visit, gridBounds = getCurrentGridBounds()) {
+      const bounds = getPlacementCellBounds(placement, gridBounds);
+      if (!bounds) return;
+      for (let row = bounds.rowStart; row < bounds.rowEnd; row += 1) {
+        for (let col = bounds.colStart; col < bounds.colEnd; col += 1) {
+          visit({ r: row, c: col });
+        }
+      }
+    }
+
+    /**
      * @param {ManualPlacement} placement
      * @returns {ManualLayoutCell[]}
      */
     function footprintCellsForPlacement(placement) {
+      /** @type {ManualLayoutCell[]} */
       const cells = [];
-      for (let dr = 0; dr < placement.rows; dr += 1) {
-        for (let dc = 0; dc < placement.cols; dc += 1) {
-          cells.push({ r: placement.r + dr, c: placement.c + dc });
-        }
-      }
+      forEachPlacementCell(placement, (cell) => cells.push(cell));
       return cells;
     }
 
@@ -144,11 +196,15 @@
         throw new Error("That building would extend beyond the grid.");
       }
 
-      footprintCellsForPlacement(placement).forEach((cell) => {
-        if (grid[cell.r]?.[cell.c] !== 1) {
-          throw new Error("That placement touches a blocked cell.");
-        }
-      });
+      forEachPlacementCell(
+        placement,
+        (cell) => {
+          if (grid[cell.r]?.[cell.c] !== 1) {
+            throw new Error("That placement touches a blocked cell.");
+          }
+        },
+        { rows: grid.length, cols: grid[0]?.length ?? 0 }
+      );
     }
 
     /**

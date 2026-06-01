@@ -18,6 +18,7 @@ function createFakeDomElement(overrides = {}) {
     parentElement: null,
     append() {},
     appendChild() {},
+    click() {},
     setAttribute() {},
     querySelectorAll() {
       return [];
@@ -64,6 +65,24 @@ function loadPlannerSharedModule() {
   }).CityBuilderShared;
 }
 
+function loadPlannerDefaultsModule() {
+  return loadBrowserModule("apps/planner-web/plannerDefaults.js").CityBuilderDefaults;
+}
+
+function loadPlannerSamplePresetsModule() {
+  return loadBrowserModule("apps/planner-web/plannerSamplePresets.js").CityBuilderSamplePresets;
+}
+
+function loadPlannerOnboardingModule(options = {}) {
+  return loadBrowserModule("apps/planner-web/plannerOnboarding.js", {
+    ...options,
+    window: {
+      CityBuilderSamplePresets: loadPlannerSamplePresetsModule(),
+      ...(options.window ?? {})
+    }
+  }).CityBuilderOnboarding;
+}
+
 function loadPlannerRequestBuilderModule(crypto = undefined) {
   return loadBrowserModule("apps/planner-web/plannerRequestBuilder.js", {
     window: {
@@ -79,6 +98,9 @@ function loadPlannerRequestBuilderModule(crypto = undefined) {
 
 function loadPlannerExpansionModule(fetch) {
   return loadBrowserModule("apps/planner-web/plannerExpansion.js", {
+    window: {
+      CityBuilderShared: loadPlannerSharedModule()
+    },
     context: {
       Error,
       fetch,
@@ -94,7 +116,8 @@ function loadPlannerWorkbenchModule() {
   }
   return loadBrowserModule("apps/planner-web/plannerWorkbench.js", {
     window: {
-      CityBuilderShared: loadPlannerSharedModule()
+      CityBuilderShared: loadPlannerSharedModule(),
+      CityBuilderWorkbenchCatalog: loadPlannerWorkbenchCatalogModule()
     },
     context: {
       document: {
@@ -107,14 +130,16 @@ function loadPlannerWorkbenchModule() {
   }).CityBuilderWorkbench;
 }
 
-function loadPlannerSolveRuntimeModule() {
+function loadPlannerSolveRuntimeModule(fetch = undefined) {
   return loadBrowserModule("apps/planner-web/plannerSolveRuntime.js", {
     window: {
       clearInterval,
       setInterval
     },
     context: {
-      Error
+      Error,
+      fetch,
+      URLSearchParams
     }
   }).CityBuilderSolveRuntime;
 }
@@ -139,12 +164,30 @@ function loadPlannerResultProgressModule(options = {}) {
   return loadBrowserModule("apps/planner-web/plannerResultProgress.js", options).PlannerResultProgress;
 }
 
+function loadPlannerResultDiagnosticsModule(options = {}) {
+  return loadBrowserModule("apps/planner-web/plannerResultDiagnostics.js", options).PlannerResultDiagnostics;
+}
+
 function loadPlannerResultAvailabilityModule(options = {}) {
   return loadBrowserModule("apps/planner-web/plannerResultAvailability.js", options).PlannerResultAvailability;
 }
 
 function loadPlannerResultRenderingModule(options = {}) {
-  return loadBrowserModule("apps/planner-web/plannerResultRendering.js", options).PlannerResultRendering;
+  return loadBrowserModule("apps/planner-web/plannerResultRendering.js", {
+    ...options,
+    window: {
+      PlannerResultDiagnostics: loadPlannerResultDiagnosticsModule(options),
+      ...(options.window ?? {})
+    }
+  }).PlannerResultRendering;
+}
+
+function loadPlannerResultStatesModule(options = {}) {
+  return loadBrowserModule("apps/planner-web/plannerResultStates.js", options).PlannerResultStates;
+}
+
+function loadPlannerWorkbenchCatalogModule(options = {}) {
+  return loadBrowserModule("apps/planner-web/plannerWorkbenchCatalog.js", options).CityBuilderWorkbenchCatalog;
 }
 
 function loadPlannerResultsModule(options = {}) {
@@ -156,21 +199,25 @@ function loadPlannerResultsModule(options = {}) {
       PlannerResultAvailability: loadPlannerResultAvailabilityModule(options),
       PlannerResultProgress: loadPlannerResultProgressModule(options),
       PlannerResultRendering: loadPlannerResultRenderingModule(options),
+      PlannerResultStates: loadPlannerResultStatesModule(options),
       ...(options.window ?? {})
     }
   }).CityBuilderResults;
 }
 
-function loadPlannerPersistenceModule(localStorage = undefined) {
+function loadPlannerPersistenceModule(localStorage = undefined, browserApis = {}) {
+  const { URL: urlApi, createElement, Blob: BlobConstructor = globalThis.Blob } = browserApis;
   return loadBrowserModule("apps/planner-web/plannerPersistence.js", {
     window: {
       localStorage,
+      URL: urlApi,
       CityBuilderPersistenceValidation: loadPlannerPersistenceValidationModule()
     },
     context: {
+      Blob: BlobConstructor,
       document: {
         createElement() {
-          return createFakeDomElement();
+          return typeof createElement === "function" ? createElement() : createFakeDomElement();
         }
       }
     }
@@ -179,16 +226,23 @@ function loadPlannerPersistenceModule(localStorage = undefined) {
 
 module.exports = {
   createFakeDomElement,
+  loadPlannerDefaultsModule,
   loadPlannerExpansionModule,
+  loadPlannerManualLayoutModule,
+  loadPlannerOnboardingModule,
   loadPlannerPersistenceModule,
   loadPlannerPersistenceValidationModule,
   loadPlannerResultAvailabilityModule,
+  loadPlannerResultDiagnosticsModule,
   loadPlannerResultProgressModule,
   loadPlannerResultRenderingModule,
+  loadPlannerResultStatesModule,
   loadPlannerRequestBuilderModule,
   loadPlannerResultsModule,
+  loadPlannerSamplePresetsModule,
   loadPlannerSharedModule,
   loadPlannerShellModule,
   loadPlannerSolveRuntimeModule,
+  loadPlannerWorkbenchCatalogModule,
   loadPlannerWorkbenchModule
 };

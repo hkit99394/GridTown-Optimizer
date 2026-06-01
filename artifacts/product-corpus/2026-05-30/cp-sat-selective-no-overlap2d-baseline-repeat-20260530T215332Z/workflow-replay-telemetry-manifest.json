@@ -1,0 +1,85 @@
+{
+  "schemaVersion": 1,
+  "source": "product-workflow-replay",
+  "command": "node dist/crossModeBenchmarkCli.js --product-corpus --product-artifact-dir=artifacts/product-corpus/2026-05-30/cp-sat-selective-no-overlap2d-baseline-repeat-20260530T215332Z --product-run-id=product-corpus-scorecard-20260530T215332Z-cp-sat-selective-no-overlap2d-baseline-repeat --product-decision=benchmark-evidence-only '--product-summary=Baseline-repeat focused slice for selective CP-SAT NoOverlap2D comparison; no solver default changed.' --modes=cp-sat --budgets=1,5 --seeds=7,19,37 --json road-semantics-service-pressure typed-footprint-pressure road-semantics-gate-choke multi-anchor-road-components expansion-comparison-replay fresh-multi-anchor-service-island fresh-typed-footprint-scarcity fresh-expansion-corridor-service",
+  "generatedAt": "2026-05-30T21:56:40.961Z",
+  "git": {
+    "commit": "1e04bb555b71e4610ba0f80c984d1b9588b2c895",
+    "branch": "features/next-stage"
+  },
+  "hardware": {
+    "captured": true,
+    "platform": "darwin",
+    "arch": "arm64",
+    "cpuModel": "Apple M1 Pro",
+    "logicalCpuCount": 10,
+    "memoryBytes": 17179869184,
+    "totalMemoryBytes": 17179869184,
+    "gpuUsed": false
+  },
+  "suite": {
+    "caseCount": 8,
+    "replayCount": 1,
+    "validReplayCount": 1,
+    "invalidReplayCount": 0,
+    "apiRoutes": [
+      "/api/layout/evaluate"
+    ],
+    "workflowTags": [
+      "expansion-comparison"
+    ],
+    "budgetsSeconds": [
+      1,
+      5
+    ],
+    "seeds": [
+      7,
+      19,
+      37
+    ],
+    "modes": [
+      "cp-sat"
+    ]
+  },
+  "replays": [
+    {
+      "caseName": "expansion-comparison-replay",
+      "split": "holdout",
+      "workflowTag": "expansion-comparison",
+      "apiRoute": "/api/layout/evaluate",
+      "sourceName": "expansion-comparison-replay",
+      "scorecardCount": 6,
+      "budgetsSeconds": [
+        1,
+        5
+      ],
+      "seeds": [
+        7,
+        19,
+        37
+      ],
+      "modes": [
+        "cp-sat"
+      ],
+      "valid": true,
+      "validationErrorCount": 0,
+      "reportedPopulation": 115,
+      "evaluatedPopulation": 115,
+      "populationDeltaFromReported": 0,
+      "reportedRoadCount": 5,
+      "evaluatedRoadCount": 3,
+      "removedRoadCount": 2,
+      "bestScore": 780,
+      "bestScoreSource": {
+        "budgetSeconds": 1,
+        "seed": 37,
+        "mode": "cp-sat"
+      },
+      "bestScoreDeltaFromEvaluated": 665,
+      "autoScore": null,
+      "autoScoreSource": null,
+      "autoScoreDeltaFromEvaluated": null,
+      "expansionComparisonLift": 665
+    }
+  ]
+}

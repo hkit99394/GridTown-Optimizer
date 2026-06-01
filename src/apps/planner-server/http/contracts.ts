@@ -2,10 +2,13 @@ import { materializeSerializedSolution } from "../../../packages/core/index.js";
 import { assertValidSerializedSolutionPayload } from "../../../packages/core/index.js";
 import type { Grid, SerializedSolution, SolverParams } from "../../../packages/core/index.js";
 
+export type SolveRequestClientRole = "primary" | "expansion-comparison";
+
 export interface SolveRequest {
   grid: Grid;
   params: SolverParams;
   requestId?: string;
+  clientRole?: SolveRequestClientRole;
 }
 
 export interface LayoutEvaluateRequest {
@@ -20,6 +23,7 @@ export interface CancelSolveRequest {
 
 const LOCAL_RUNTIME_CP_SAT_KEYS = new Set(["pythonExecutable", "scriptPath", "stopFilePath", "snapshotFilePath"]);
 const LOCAL_RUNTIME_SOLVER_KEYS = new Set(["stopFilePath", "snapshotFilePath"]);
+const SOLVE_REQUEST_CLIENT_ROLES = new Set<SolveRequestClientRole>(["primary", "expansion-comparison"]);
 
 const LOCAL_RUNTIME_PARAM_SECTIONS = [
   { key: "cpSat", keysToStrip: LOCAL_RUNTIME_CP_SAT_KEYS },
@@ -45,6 +49,10 @@ export function isSolveRequest(value: unknown): value is SolveRequest {
   if (typeof value !== "object" || value === null) return false;
   const candidate = value as Partial<SolveRequest>;
   return isGrid(candidate.grid) && typeof candidate.params === "object" && candidate.params !== null;
+}
+
+export function resolveSolveRequestClientRole(value: SolveRequest): SolveRequestClientRole {
+  return SOLVE_REQUEST_CLIENT_ROLES.has(value.clientRole as SolveRequestClientRole) ? value.clientRole! : "primary";
 }
 
 export function isCancelSolveRequest(value: unknown): value is CancelSolveRequest {

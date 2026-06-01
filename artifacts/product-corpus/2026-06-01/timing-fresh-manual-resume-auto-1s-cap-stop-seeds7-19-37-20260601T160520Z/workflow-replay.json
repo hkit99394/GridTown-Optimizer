@@ -1,0 +1,44 @@
+[
+  {
+    "caseName": "fresh-manual-resume-neighborhood",
+    "split": "holdout",
+    "workflowTag": "manual-layout-replay",
+    "apiRoute": "/api/layout/evaluate",
+    "sourceName": "fresh-manual-resume-neighborhood",
+    "scorecardCount": 3,
+    "budgetsSeconds": [
+      1
+    ],
+    "seeds": [
+      7,
+      19,
+      37
+    ],
+    "modes": [
+      "auto"
+    ],
+    "valid": true,
+    "validationErrorCount": 0,
+    "reportedPopulation": 400,
+    "evaluatedPopulation": 400,
+    "populationDeltaFromReported": 0,
+    "reportedRoadCount": 9,
+    "evaluatedRoadCount": 5,
+    "removedRoadCount": 4,
+    "bestScore": 790,
+    "bestScoreSource": {
+      "budgetSeconds": 1,
+      "seed": 7,
+      "mode": "auto"
+    },
+    "bestScoreDeltaFromEvaluated": 390,
+    "autoScore": 790,
+    "autoScoreSource": {
+      "budgetSeconds": 1,
+      "seed": 7,
+      "mode": "auto"
+    },
+    "autoScoreDeltaFromEvaluated": 390,
+    "expansionComparisonLift": null
+  }
+]

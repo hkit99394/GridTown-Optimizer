@@ -91,6 +91,7 @@ from cp_sat_grid import (
     service_effect_zone,
     trim_road_eligible_cells,
 )
+from cp_sat_no_overlap import add_no_overlap_2d_occupancy_constraints, use_no_overlap_2d_encoding
 from cp_sat_road_model import (
     add_aggregated_border_capacity_constraints,
     add_border_access_constraints,
@@ -370,23 +371,36 @@ def build_cp_sat_candidate_bundle(grid, params, cell_to_id, placement_maps: Cand
 
 def add_cp_sat_layout_constraints(
     model,
+    params,
     cell_count,
     road_network,
+    id_to_cell,
     service_vars,
     service_candidates,
     residential_vars,
     residential_candidates,
     gate_access_analysis,
 ):
-    add_occupancy_constraints(
-        model,
-        cell_count,
-        road_network.road_vars,
-        service_vars,
-        service_candidates,
-        residential_vars,
-        residential_candidates,
-    )
+    if use_no_overlap_2d_encoding(params):
+        add_no_overlap_2d_occupancy_constraints(
+            model,
+            id_to_cell,
+            road_network.road_vars,
+            service_vars,
+            service_candidates,
+            residential_vars,
+            residential_candidates,
+        )
+    else:
+        add_occupancy_constraints(
+            model,
+            cell_count,
+            road_network.road_vars,
+            service_vars,
+            service_candidates,
+            residential_vars,
+            residential_candidates,
+        )
     add_border_access_constraints(
         model,
         road_network.road_vars,
@@ -455,8 +469,10 @@ def build_model(grid, params) -> BuiltCpSatModel:
 
     add_cp_sat_layout_constraints(
         model,
+        params,
         cell_count,
         road_network,
+        cell_index.id_to_cell,
         service_vars,
         candidates.service_candidates,
         residential_vars,
@@ -684,6 +700,12 @@ def solve_single_cp_sat(grid, params, cp_sat_options, progress_emitter=None):
                 )
             if should_stop():
                 stopped_by_user = True
+                self.StopSearch()
+                return
+            if (
+                self.last_incumbent_population is not None
+                and self.last_incumbent_population >= built.total_population_upper_bound
+            ):
                 self.StopSearch()
                 return
             schedule_no_improvement_timer()

@@ -7,9 +7,9 @@
     "node dist/lnsBenchmarkCli.js --window-ranker-online-ablation --window-ranker-protected-holdout --window-ranker-model=artifacts/lns-window-ranker/2026-05-08/strict-lns-replay-labels-curated-seeds-v3-final-lift-no-weak-broadened-online-decision-feature-selectivity-ignore-baseline-calibration-lr0.02-cap100/model.json --window-ranker-min-score-delta=1.18 --lns-iterations=1 --seeds=7,19,37 --artifact-dir=artifacts/lns-window-ranker-online/2026-05-08/protected-broadened-coverage-one-iteration-broadened-online-decision-feature-selectivity-ignore-baseline-calibration-min-score-delta-1.18 --window-ranker-run-id=lns-window-ranker-online-2026-05-08-broadened-online-decision-feature-selectivity-ignore-baseline-calibration-one-iteration-min-score-delta-1-18 --window-ranker-decision=online-lns-window-ranker-broadened-online-decision-feature-selectivity-ignore-baseline-calibration-one-iteration-diagnostics '--window-ranker-summary=Broadened protected holdout one-iteration online LNS ranker diagnostic for the broadened all-online-decision feature-selectivity ignore-baseline-feature calibrated model at minScoreDelta=1.18; no solver default changed.' --json"
   ],
   "artifactPaths": [
-    "artifacts/lns-window-ranker-online/2026-05-08/protected-broadened-coverage-one-iteration-broadened-online-decision-feature-selectivity-ignore-baseline-calibration-min-score-delta-1.18/lns-window-ranker-online-ablation.json",
     "artifacts/lns-window-ranker-online/2026-05-08/protected-broadened-coverage-one-iteration-broadened-online-decision-feature-selectivity-ignore-baseline-calibration-min-score-delta-1.18/lns-window-ranker-online-ablation.txt",
-    "artifacts/lns-window-ranker-online/2026-05-08/protected-broadened-coverage-one-iteration-broadened-online-decision-feature-selectivity-ignore-baseline-calibration-min-score-delta-1.18/telemetry-manifest.json"
+    "artifacts/lns-window-ranker-online/2026-05-08/protected-broadened-coverage-one-iteration-broadened-online-decision-feature-selectivity-ignore-baseline-calibration-min-score-delta-1.18/telemetry-manifest.json",
+    "artifacts/external-artifacts/2026-06-01/artifact-hygiene-unindexed-raw-manifest.json"
   ],
   "cases": {
     "development": [],

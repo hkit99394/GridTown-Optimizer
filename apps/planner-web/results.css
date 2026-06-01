@@ -462,10 +462,6 @@ textarea:focus {
     grid-template-columns: 1fr;
   }
 
-  .telemetry-panel {
-    grid-template-columns: 1fr;
-  }
-
   #controlStage {
     position: static;
     max-height: none;
@@ -481,7 +477,6 @@ textarea:focus {
     grid-template-columns: 1fr;
   }
 
-  .telemetry-grid,
   .result-metrics {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -501,12 +496,7 @@ textarea:focus {
     font-size: 1.65rem;
   }
 
-  .hero-copy {
-    font-size: 0.94rem;
-  }
-
   .cockpit-title,
-  .telemetry-card,
   .module-head,
   .module-body,
   .drawer-card {
@@ -527,61 +517,18 @@ textarea:focus {
     text-align: left;
   }
 
-  .command-strip,
-  .jump-row,
   .actions-row,
   .solver-button-row,
   .placement-columns,
   .catalog-grid,
   .result-columns,
-  .telemetry-grid,
   .summary-metrics,
   .result-metrics {
     grid-template-columns: 1fr;
   }
 
-  .command-strip,
-  .jump-row,
   .actions-row {
     display: grid;
-  }
-
-  .command-strip {
-    display: none;
-  }
-
-  .jump-row {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px;
-    margin-top: 10px;
-  }
-
-  .jump-link {
-    min-height: 36px;
-    width: 100%;
-  }
-
-  .telemetry-panel {
-    gap: 8px;
-  }
-
-  .telemetry-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px;
-  }
-
-  .telemetry-card {
-    padding-top: 10px;
-    padding-bottom: 10px;
-  }
-
-  .telemetry-card strong {
-    margin-top: 4px;
-    font-size: 0.9rem;
-  }
-
-  .telemetry-card p:not(.eyebrow) {
-    display: none;
   }
 
   .result-storage-inline-row {
@@ -605,6 +552,10 @@ textarea:focus {
   }
 
   .runtime-preset-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .sample-preset-grid {
     grid-template-columns: 1fr;
   }
 

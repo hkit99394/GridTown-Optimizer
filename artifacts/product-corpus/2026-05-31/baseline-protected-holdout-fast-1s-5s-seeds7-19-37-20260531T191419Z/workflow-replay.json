@@ -1,0 +1,48 @@
+[
+  {
+    "caseName": "expansion-comparison-replay",
+    "split": "holdout",
+    "workflowTag": "expansion-comparison",
+    "apiRoute": "/api/layout/evaluate",
+    "sourceName": "expansion-comparison-replay",
+    "scorecardCount": 6,
+    "budgetsSeconds": [
+      1,
+      5
+    ],
+    "seeds": [
+      7,
+      19,
+      37
+    ],
+    "modes": [
+      "auto",
+      "cp-sat",
+      "greedy",
+      "lns"
+    ],
+    "valid": true,
+    "validationErrorCount": 0,
+    "reportedPopulation": 115,
+    "evaluatedPopulation": 115,
+    "populationDeltaFromReported": 0,
+    "reportedRoadCount": 5,
+    "evaluatedRoadCount": 3,
+    "removedRoadCount": 2,
+    "bestScore": 780,
+    "bestScoreSource": {
+      "budgetSeconds": 1,
+      "seed": 7,
+      "mode": "lns"
+    },
+    "bestScoreDeltaFromEvaluated": 665,
+    "autoScore": 780,
+    "autoScoreSource": {
+      "budgetSeconds": 1,
+      "seed": 37,
+      "mode": "auto"
+    },
+    "autoScoreDeltaFromEvaluated": 665,
+    "expansionComparisonLift": 665
+  }
+]

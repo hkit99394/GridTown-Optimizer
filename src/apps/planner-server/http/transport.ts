@@ -20,12 +20,14 @@ export function sendJson(
   res: ServerResponse<IncomingMessage>,
   statusCode: number,
   payload: unknown,
-  headOnly = false
+  headOnly = false,
+  headers: Record<string, string> = {}
 ): void {
   const body = JSON.stringify(payload, null, 2);
   res.writeHead(statusCode, {
     "Content-Type": "application/json; charset=utf-8",
-    "Cache-Control": "no-store"
+    "Cache-Control": "no-store",
+    ...headers
   });
   res.end(headOnly ? undefined : body);
 }

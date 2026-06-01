@@ -7,10 +7,10 @@
     "node scripts/generate-service-braid-replay-artifacts.mjs --bundle=service-braid-generated-grid-right-neighborhood-screen --online-ablation --online-artifact-dir=artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-neighborhood-trajectory-features-final-outcome-narrow-split-anchor-or-gate-two-iteration-min-score-delta-0 --window-ranker-model=artifacts/lns-window-ranker/2026-05-10/strict-lns-replay-labels-curated-seeds-v3-final-lift-no-weak-generated-right-repeatability-trajectory-features-ignore-baseline-conflict-excluded-calibration-lr0.02-cap100/model.json --window-ranker-min-score-delta=0 --lns-iterations=2 '--window-ranker-selected-feature-gate-groups=maxServiceCandidateBonus>=0.12,maxServiceCandidateBonus<=0.12;operatorScore<=9.72,reachableBefore<=0.68;reachableBefore>=0.68,reachableBefore<=0.68,reachableAfter>=0.92,reachableAfter<=0.92' --force-artifact-dir"
   ],
   "artifactPaths": [
-    "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-neighborhood-trajectory-features-final-outcome-narrow-split-anchor-or-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
     "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-neighborhood-trajectory-features-final-outcome-narrow-split-anchor-or-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.txt",
     "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-neighborhood-trajectory-features-final-outcome-narrow-split-anchor-or-gate-two-iteration-min-score-delta-0/telemetry-manifest.json",
-    "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-neighborhood-trajectory-features-final-outcome-narrow-split-anchor-or-gate-two-iteration-min-score-delta-0/manifest.json"
+    "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-neighborhood-trajectory-features-final-outcome-narrow-split-anchor-or-gate-two-iteration-min-score-delta-0/manifest.json",
+    "artifacts/external-artifacts/2026-06-01/artifact-hygiene-unindexed-raw-manifest.json"
   ],
   "cases": {
     "development": [

@@ -7,14 +7,14 @@
     "node scripts/generate-service-braid-replay-artifacts.mjs --bundle=service-braid-generated-grid-family-screen"
   ],
   "artifactPaths": [
-    "artifacts/lns-window-replay-labels/2026-05-10/protected-service-braid-generated-grid-family-screen-roll-forward-2x0.1/lns-window-replay-labels.json",
     "artifacts/lns-window-replay-labels/2026-05-10/protected-service-braid-generated-grid-family-screen-roll-forward-2x0.1/lns-window-replay-labels.txt",
     "artifacts/lns-window-replay-labels/2026-05-10/protected-service-braid-generated-grid-family-screen-roll-forward-2x0.1/repeatability-summary.json",
     "artifacts/lns-window-replay-labels/2026-05-10/protected-service-braid-generated-grid-family-screen-roll-forward-2x0.1/candidate-summary.json",
     "artifacts/lns-window-replay-labels/2026-05-10/protected-service-braid-generated-grid-family-screen-roll-forward-2x0.1/selectivity-summary.json",
     "artifacts/lns-window-replay-labels/2026-05-10/protected-service-braid-generated-grid-family-screen-roll-forward-2x0.1/selectivity-summary.txt",
     "artifacts/lns-window-replay-labels/2026-05-10/protected-service-braid-generated-grid-family-screen-roll-forward-2x0.1/telemetry-manifest.json",
-    "artifacts/lns-window-replay-labels/2026-05-10/protected-service-braid-generated-grid-family-screen-roll-forward-2x0.1/manifest.json"
+    "artifacts/lns-window-replay-labels/2026-05-10/protected-service-braid-generated-grid-family-screen-roll-forward-2x0.1/manifest.json",
+    "artifacts/external-artifacts/2026-06-01/artifact-hygiene-unindexed-raw-manifest.json"
   ],
   "cases": [
     "lns-holdout-service-braid-family-embed-7x8-origin-screen-candidate",

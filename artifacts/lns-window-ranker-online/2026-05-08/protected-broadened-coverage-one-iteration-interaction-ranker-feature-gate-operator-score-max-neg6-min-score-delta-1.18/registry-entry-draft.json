@@ -7,9 +7,9 @@
     "node dist/lnsBenchmarkCli.js --window-ranker-online-ablation --window-ranker-protected-holdout --window-ranker-model=artifacts/lns-window-ranker/2026-05-08/strict-lns-replay-labels-curated-seeds-v3-final-lift-no-weak-wide-anchor-opportunity-exact-neutral-calibration-interactions-lr0.02-cap100/model.json --window-ranker-min-score-delta=1.18 '--window-ranker-feature-delta-gates=operatorScore<=-6' --lns-iterations=1 --seeds=7,19,37 --window-ranker-artifact-dir=artifacts/lns-window-ranker-online/2026-05-08/protected-broadened-coverage-one-iteration-interaction-ranker-feature-gate-operator-score-max-neg6-min-score-delta-1.18 --window-ranker-run-id=lns-window-ranker-online-2026-05-08-interaction-ranker-protected-broadened-one-iteration-feature-gate-operator-score-max-neg6-min-score-delta-1-18 --window-ranker-decision=online-lns-window-ranker-interaction-ranker-protected-broadened-one-iteration-feature-gate-diagnostics-only '--window-ranker-summary=Broadened protected holdout one-iteration scorecard for diagnostics-only pairwise-interaction LNS ranker under the same operator-score feature gate; no solver default changed.' --json"
   ],
   "artifactPaths": [
-    "artifacts/lns-window-ranker-online/2026-05-08/protected-broadened-coverage-one-iteration-interaction-ranker-feature-gate-operator-score-max-neg6-min-score-delta-1.18/lns-window-ranker-online-ablation.json",
     "artifacts/lns-window-ranker-online/2026-05-08/protected-broadened-coverage-one-iteration-interaction-ranker-feature-gate-operator-score-max-neg6-min-score-delta-1.18/lns-window-ranker-online-ablation.txt",
-    "artifacts/lns-window-ranker-online/2026-05-08/protected-broadened-coverage-one-iteration-interaction-ranker-feature-gate-operator-score-max-neg6-min-score-delta-1.18/telemetry-manifest.json"
+    "artifacts/lns-window-ranker-online/2026-05-08/protected-broadened-coverage-one-iteration-interaction-ranker-feature-gate-operator-score-max-neg6-min-score-delta-1.18/telemetry-manifest.json",
+    "artifacts/external-artifacts/2026-06-01/artifact-hygiene-unindexed-raw-manifest.json"
   ],
   "cases": {
     "development": [],

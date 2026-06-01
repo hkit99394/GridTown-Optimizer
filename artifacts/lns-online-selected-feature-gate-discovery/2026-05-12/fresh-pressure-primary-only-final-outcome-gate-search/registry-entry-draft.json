@@ -7,10 +7,10 @@
     "node scripts/discover-lns-online-selected-feature-gates.mjs --source-artifact=artifacts/lns-window-ranker-online/2026-05-12/fresh-pressure-holdout-two-iteration-product-pair-weight0.1-primary-only-no-selected-feature-gate-9seed-min-score-delta-0.5 --artifact-dir=artifacts/lns-online-selected-feature-gate-discovery/2026-05-12/fresh-pressure-primary-only-final-outcome-gate-search --target=final-improved --max-group-size=3 --max-atoms-per-feature=12 --max-total-atoms=160 --top=30 --force-artifact-dir"
   ],
   "artifactPaths": [
-    "artifacts/lns-online-selected-feature-gate-discovery/2026-05-12/fresh-pressure-primary-only-final-outcome-gate-search/online-selected-feature-gate-discovery.json",
     "artifacts/lns-online-selected-feature-gate-discovery/2026-05-12/fresh-pressure-primary-only-final-outcome-gate-search/online-selected-feature-gate-discovery.txt",
     "artifacts/lns-online-selected-feature-gate-discovery/2026-05-12/fresh-pressure-primary-only-final-outcome-gate-search/telemetry-manifest.json",
-    "artifacts/lns-online-selected-feature-gate-discovery/2026-05-12/fresh-pressure-primary-only-final-outcome-gate-search/manifest.json"
+    "artifacts/lns-online-selected-feature-gate-discovery/2026-05-12/fresh-pressure-primary-only-final-outcome-gate-search/manifest.json",
+    "artifacts/external-artifacts/2026-06-01/artifact-hygiene-unindexed-raw-manifest.json"
   ],
   "cases": [
     "lns-fresh-anchor-service-inlet-pressure",

@@ -89,6 +89,28 @@ export function assertArtifactPathNotObsolete(repoRelativePath: string, label: s
   }
 }
 
+function assertNoSymlinkPathSegments(absolutePath: string, label: string): void {
+  const repoRoot = path.resolve(process.cwd());
+  const relativePath = path.relative(repoRoot, absolutePath);
+  const parts = relativePath.split(path.sep).filter((part) => part.length > 0);
+  let currentPath = repoRoot;
+
+  for (const part of parts) {
+    currentPath = path.join(currentPath, part);
+    let stats: fs.Stats;
+    try {
+      stats = fs.lstatSync(currentPath);
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === "ENOENT") return;
+      throw error;
+    }
+    if (stats.isSymbolicLink()) {
+      const displayPath = path.relative(repoRoot, currentPath).split(path.sep).join(path.posix.sep);
+      throw new Error(`${label} must not use symbolic links under artifacts/: ${displayPath}`);
+    }
+  }
+}
+
 export function prepareArtifactBundleDirectory(
   value: string,
   label: string,
@@ -110,6 +132,7 @@ export function prepareArtifactBundleDirectory(
   ) {
     throw new Error(`${label} must be under artifacts/.`);
   }
+  assertNoSymlinkPathSegments(absoluteArtifactDir, label);
 
   if (fs.existsSync(absoluteArtifactDir)) {
     const stats = fs.statSync(absoluteArtifactDir);

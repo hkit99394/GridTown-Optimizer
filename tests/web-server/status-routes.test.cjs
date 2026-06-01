@@ -52,6 +52,7 @@ async function testBackgroundSolveRoutes(handler) {
   assert.equal(finalPayload.jobStatus, "completed");
   assert.equal(finalPayload.stats.totalPopulation, 100);
   assert.equal(finalPayload.solution.residentials.length, 1);
+  assert.equal(finalPayload.validation.populationValidation.mode, "reported-invariants");
   assert.equal(finalPayload.explainability, undefined);
   assert.equal(finalPayload.progressLogFilePath, startResult.payload.progressLogFilePath);
 
@@ -589,6 +590,7 @@ async function testCompletedSolveStatusRecoversFromProgressLogAfterRetention() {
   assert.equal(expiredResult.payload.progressEntry.source, "final-result");
   assert.equal(expiredResult.payload.stats.totalPopulation, 100);
   assert.equal(expiredResult.payload.solution.residentials.length, 1);
+  assert.equal(expiredResult.payload.validation.populationValidation.mode, "reported-invariants");
   assert.equal(expiredResult.payload.explainability, undefined);
   assert.equal(fs.existsSync(startResult.payload.progressLogFilePath), true);
 }
@@ -638,6 +640,7 @@ async function testStoppedProgressLogRecoversCompactSolveResponse() {
   assert.equal(result.payload.stats.totalPopulation, 100);
   assert.equal(result.payload.solution.stoppedByUser, true);
   assert.equal(result.payload.validation.valid, true);
+  assert.equal(result.payload.validation.populationValidation.mode, "reported-invariants");
   assert.equal(result.payload.explainability, undefined);
 }
 
@@ -680,7 +683,6 @@ async function testRecoveredProgressLogValidationReportsControlledTerminalError(
     progressLogRoot,
     invalidPopulationRequestId,
     (payload) => {
-      payload.finalResult.solution.populations[0] += 1;
       payload.finalResult.solution.totalPopulation += 1;
       payload.finalResult.totalPopulation += 1;
     }
@@ -697,9 +699,9 @@ async function testRecoveredProgressLogValidationReportsControlledTerminalError(
   assert.equal(invalidPopulationResult.payload.jobStatus, "completed");
   assert.equal(invalidPopulationResult.payload.progressLogFilePath, invalidPopulationFilePath);
   assert.equal(invalidPopulationResult.payload.validation.valid, false);
-  assert.match(invalidPopulationResult.payload.validation.errors.join("\n"), /reports population/);
   assert.match(invalidPopulationResult.payload.validation.errors.join("\n"), /reports total population/);
   assert.equal(invalidPopulationResult.payload.validation.recomputedTotalPopulation, 100);
+  assert.equal(invalidPopulationResult.payload.validation.populationValidation.mode, "reported-invariants");
   assert.equal(invalidPopulationResult.payload.explainability, undefined);
 
   const malformedSolutionRequestId = "malformed-final-solution-status";

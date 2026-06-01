@@ -1,0 +1,86 @@
+.sample-preset-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+
+body:not(.advanced-mode) .advanced-only {
+  display: none !important;
+}
+
+.advanced-toggle,
+.expert-panel {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.84);
+}
+
+.advanced-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 14px;
+  padding: 12px 14px;
+  font-weight: 800;
+}
+
+.expert-panel {
+  padding: 0;
+  overflow: hidden;
+}
+
+.expert-panel summary {
+  min-height: 46px;
+  padding: 12px 14px;
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.expert-panel > :not(summary) {
+  margin: 0 14px 14px;
+}
+
+.happy-path-card {
+  display: grid;
+  gap: 12px;
+}
+
+.workflow-steps {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: workflow-step;
+}
+
+.workflow-steps li {
+  counter-increment: workflow-step;
+}
+
+.workflow-steps a {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  min-height: 42px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.82);
+  color: var(--ink);
+  font-weight: 800;
+}
+
+.workflow-steps a::before {
+  content: counter(workflow-step);
+  display: inline-grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  color: #f7fbf6;
+  background: var(--accent);
+  font-size: 0.82rem;
+}

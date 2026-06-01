@@ -1,0 +1,161 @@
+{
+  "schemaVersion": 1,
+  "runId": "candidate-evaluator-validity-20260530T215332Z-cp-sat-selective-no-overlap2d-preflight",
+  "artifactType": "ablation-gate",
+  "generatedAt": "2026-05-30T21:59:54.620Z",
+  "commands": [
+    "node scripts/generate-candidate-evaluator-validity.mjs --artifact-dir=artifacts/candidate-evaluator-validity/2026-05-30/cp-sat-selective-no-overlap2d-20260530T215332Z --candidate-id=cp-sat-selective-no-overlap2d-preflight --run-id=candidate-evaluator-validity-20260530T215332Z-cp-sat-selective-no-overlap2d-preflight --decision=candidate-evaluator-validity '--summary=Selective CP-SAT NoOverlap2D final-layout evaluator-validity run; no solver default changed.' '--fresh-holdout-note=Uses L0 fresh holdout cases fresh-multi-anchor-service-island, fresh-typed-footprint-scarcity, and fresh-expansion-corridor-service before promotion claims.' --cp-sat-no-overlap2d-tags=gate,multi-anchor,footprint-pressure --modes=cp-sat --budgets=1,5 --seeds=7,19,37 --cases=road-semantics-service-pressure,typed-footprint-pressure,road-semantics-gate-choke,multi-anchor-road-components,expansion-comparison-replay,fresh-multi-anchor-service-island,fresh-typed-footprint-scarcity,fresh-expansion-corridor-service"
+  ],
+  "artifactPaths": [
+    "artifacts/candidate-evaluator-validity/2026-05-30/cp-sat-selective-no-overlap2d-20260530T215332Z/candidate-evaluator-validity.json",
+    "artifacts/candidate-evaluator-validity/2026-05-30/cp-sat-selective-no-overlap2d-20260530T215332Z/candidate-evaluator-validity.txt",
+    "artifacts/candidate-evaluator-validity/2026-05-30/cp-sat-selective-no-overlap2d-20260530T215332Z/telemetry-manifest.json"
+  ],
+  "cases": {
+    "development": [
+      "road-semantics-service-pressure",
+      "typed-footprint-pressure"
+    ],
+    "holdout": [
+      "expansion-comparison-replay",
+      "fresh-expansion-corridor-service",
+      "fresh-multi-anchor-service-island",
+      "fresh-typed-footprint-scarcity",
+      "multi-anchor-road-components",
+      "road-semantics-gate-choke"
+    ]
+  },
+  "caseFamilies": [
+    "corridor",
+    "expansion-comparison",
+    "footprint-pressure",
+    "gate",
+    "multi-anchor",
+    "service-pressure"
+  ],
+  "seeds": [
+    7,
+    19,
+    37
+  ],
+  "splitStatus": {
+    "splitField": "CrossModeBenchmarkCase.split",
+    "protectedHoldout": true,
+    "caseCount": 8,
+    "casesBySplit": {
+      "development": [
+        "road-semantics-service-pressure",
+        "typed-footprint-pressure"
+      ],
+      "holdout": [
+        "expansion-comparison-replay",
+        "fresh-expansion-corridor-service",
+        "fresh-multi-anchor-service-island",
+        "fresh-typed-footprint-scarcity",
+        "multi-anchor-road-components",
+        "road-semantics-gate-choke"
+      ]
+    },
+    "freshHoldoutNote": "Uses L0 fresh holdout cases fresh-multi-anchor-service-island, fresh-typed-footprint-scarcity, and fresh-expansion-corridor-service before promotion claims.",
+    "leakage": "candidate-specific-fresh-holdout-nomination",
+    "notes": "Candidate evaluator validity validates final layouts for the named candidate, modes, cases, budgets, and seeds. It is an evidence gate only and does not promote solver defaults."
+  },
+  "budget": {
+    "wallClockBudgetsSeconds": [
+      1,
+      5
+    ],
+    "modes": [
+      "cp-sat"
+    ],
+    "caseCount": 8,
+    "seedCount": 3,
+    "validationRowCount": 48,
+    "validRowCount": 48,
+    "invalidRowCount": 0,
+    "observedWallClockSeconds": 87.49291775
+  },
+  "model": {
+    "cpSatUseNoOverlap2d": false,
+    "cpSatNoOverlap2dWorkflowTags": [
+      "gate",
+      "multi-anchor",
+      "footprint-pressure"
+    ]
+  },
+  "decision": "candidate-evaluator-validity",
+  "summary": "Selective CP-SAT NoOverlap2D final-layout evaluator-validity run; no solver default changed.",
+  "summaryMetrics": {
+    "summary": {
+      "rowCount": 48,
+      "validCount": 48,
+      "invalidCount": 0,
+      "populationMismatchCount": 0,
+      "maxAbsPopulationDeltaFromEvaluator": 0,
+      "totalPopulation": 33470,
+      "recomputedTotalPopulation": 33470,
+      "meanWallClockSeconds": 1.8222028671875006
+    },
+    "modeSummaries": [
+      {
+        "mode": "cp-sat",
+        "rowCount": 48,
+        "validCount": 48,
+        "invalidCount": 0,
+        "populationMismatchCount": 0,
+        "maxAbsPopulationDeltaFromEvaluator": 0,
+        "totalPopulation": 33470,
+        "recomputedTotalPopulation": 33470,
+        "meanWallClockSeconds": 1.8222028671875006
+      }
+    ],
+    "splitSummaries": [
+      {
+        "split": "development",
+        "rowCount": 12,
+        "validCount": 12,
+        "invalidCount": 0,
+        "populationMismatchCount": 0,
+        "maxAbsPopulationDeltaFromEvaluator": 0,
+        "totalPopulation": 7565,
+        "recomputedTotalPopulation": 7565,
+        "meanWallClockSeconds": 2.5803785764166673
+      },
+      {
+        "split": "holdout",
+        "rowCount": 36,
+        "validCount": 36,
+        "invalidCount": 0,
+        "populationMismatchCount": 0,
+        "maxAbsPopulationDeltaFromEvaluator": 0,
+        "totalPopulation": 25905,
+        "recomputedTotalPopulation": 25905,
+        "meanWallClockSeconds": 1.569477630777778
+      }
+    ],
+    "budgetSummaries": [
+      {
+        "budgetSeconds": 1,
+        "rowCount": 24,
+        "validCount": 24,
+        "invalidCount": 0,
+        "populationMismatchCount": 0,
+        "maxAbsPopulationDeltaFromEvaluator": 0,
+        "totalPopulation": 16580,
+        "recomputedTotalPopulation": 16580,
+        "meanWallClockSeconds": 1.1654006058750002
+      },
+      {
+        "budgetSeconds": 5,
+        "rowCount": 24,
+        "validCount": 24,
+        "invalidCount": 0,
+        "populationMismatchCount": 0,
+        "maxAbsPopulationDeltaFromEvaluator": 0,
+        "totalPopulation": 16890,
+        "recomputedTotalPopulation": 16890,
+        "meanWallClockSeconds": 2.4790051285000003
+      }
+    ]
+  }
+}

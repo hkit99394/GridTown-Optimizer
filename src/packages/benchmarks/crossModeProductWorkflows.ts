@@ -1,6 +1,11 @@
 import { cloneBenchmarkGrid, cloneBenchmarkSolverParams, selectBenchmarkCasesByName } from "./benchmarkOptions.js";
 import { DEFAULT_CP_SAT_BENCHMARK_CORPUS } from "./cpSat.js";
 import { DEFAULT_CROSS_MODE_BENCHMARK_CORPUS } from "./crossMode.js";
+import {
+  PRODUCT_WORKFLOW_DEVELOPMENT_EXTENSION_CASES,
+  PRODUCT_WORKFLOW_FRESH_HOLDOUT_CASES
+} from "./crossModeProductWorkflowCases.js";
+import { compareModeResults } from "./crossModeResultOrder.js";
 import { DEFAULT_GREEDY_BENCHMARK_CORPUS } from "./greedy.js";
 import { DEFAULT_LNS_BENCHMARK_CORPUS } from "./lns.js";
 import { materializeValidLnsSeedSolution } from "../core/index.js";
@@ -261,6 +266,30 @@ const EXPANSION_COMPARISON_REPLAY_HINT = {
   objectiveLowerBound: 115
 };
 
+const FRESH_MANUAL_RESUME_NEIGHBORHOOD_HINT = {
+  sourceName: "fresh-manual-resume-neighborhood",
+  roads: ["0,0", "0,1", "0,2", "0,3", "1,3", "1,4", "2,4", "3,4", "4,4"],
+  solution: {
+    roads: ["0,0", "0,1", "0,2", "0,3", "1,3", "1,4", "2,4", "3,4", "4,4"],
+    services: [
+      { r: 1, c: 0, rows: 1, cols: 1, range: 1, typeIndex: 0, bonus: 45 },
+      { r: 3, c: 2, rows: 1, cols: 2, range: 2, typeIndex: 1, bonus: 90 }
+    ],
+    residentials: [
+      { r: 1, c: 1, rows: 2, cols: 2, typeIndex: 0, population: 220 },
+      { r: 3, c: 5, rows: 2, cols: 2, typeIndex: 0, population: 180 }
+    ],
+    populations: [220, 180],
+    totalPopulation: 400
+  },
+  objectiveLowerBound: 400,
+  preferStrictImprove: true,
+  repairHint: true,
+  fixVariablesToHintedValue: false,
+  neighborhoodWindow: { top: 2, left: 2, rows: 3, cols: 4 },
+  fixOutsideNeighborhoodToHintedValue: true
+};
+
 const PRODUCT_WORKFLOW_REPLAY_CASES: readonly CrossModeBenchmarkCase[] = Object.freeze([
   {
     name: "manual-layout-replay-warm-start",
@@ -301,6 +330,55 @@ const PRODUCT_WORKFLOW_REPLAY_CASES: readonly CrossModeBenchmarkCase[] = Object.
         exhaustiveServiceSearch: false,
         serviceExactPoolLimit: 6,
         serviceExactMaxCombinations: 64
+      }
+    }
+  },
+  {
+    name: "fresh-manual-resume-neighborhood",
+    description:
+      "Fresh product holdout for saved-layout resume where a valid incumbent seeds neighborhood repair and CP-SAT continuation.",
+    problemSizeBand: "small",
+    split: "holdout",
+    workflowTags: ["manual-layout-replay", "manual-resume-neighborhood"],
+    grid: [
+      [1, 1, 1, 1, 1, 1, 1],
+      [1, 1, 1, 1, 1, 0, 1],
+      [1, 1, 1, 0, 1, 1, 1],
+      [1, 1, 1, 1, 1, 1, 1],
+      [1, 0, 1, 1, 1, 1, 1]
+    ],
+    params: {
+      serviceTypes: [
+        { rows: 1, cols: 1, bonus: 45, range: 1, avail: 1 },
+        { rows: 1, cols: 2, bonus: 90, range: 2, avail: 1 }
+      ],
+      residentialTypes: [
+        { w: 2, h: 2, min: 90, max: 220, avail: 3 },
+        { w: 1, h: 2, min: 60, max: 130, avail: 2 }
+      ],
+      availableBuildings: { services: 2, residentials: 4 },
+      lns: {
+        iterations: 3,
+        maxNoImprovementIterations: 3,
+        neighborhoodRows: 3,
+        neighborhoodCols: 4,
+        repairTimeLimitSeconds: 0.75,
+        seedHint: FRESH_MANUAL_RESUME_NEIGHBORHOOD_HINT
+      },
+      cpSat: {
+        timeLimitSeconds: 1,
+        maxDeterministicTime: 1,
+        warmStartHint: FRESH_MANUAL_RESUME_NEIGHBORHOOD_HINT
+      },
+      greedy: {
+        localSearch: true,
+        randomSeed: 103,
+        restarts: 3,
+        serviceRefineIterations: 2,
+        serviceRefineCandidateLimit: 10,
+        exhaustiveServiceSearch: false,
+        serviceExactPoolLimit: 10,
+        serviceExactMaxCombinations: 256
       }
     }
   },
@@ -388,6 +466,8 @@ function selectProductWorkflowCase(spec: ProductWorkflowCaseSpec): CrossModeBenc
 
 export const DEFAULT_CROSS_MODE_PRODUCT_WORKFLOW_CORPUS: readonly CrossModeBenchmarkCase[] = Object.freeze([
   ...PRODUCT_WORKFLOW_CASE_SPECS.map(selectProductWorkflowCase),
+  ...PRODUCT_WORKFLOW_DEVELOPMENT_EXTENSION_CASES,
+  ...PRODUCT_WORKFLOW_FRESH_HOLDOUT_CASES,
   ...PRODUCT_WORKFLOW_REPLAY_CASES
 ]);
 
@@ -623,8 +703,10 @@ function bestScore(scorecards: readonly CrossModeBenchmarkCaseScorecard[]): Repl
   for (const scorecard of scorecards) {
     if (scorecard.bestScore === null) continue;
     const bestResult =
-      scorecard.results.find((entry) => entry.rank === 1) ??
-      scorecard.results.find((entry) => entry.totalPopulation === scorecard.bestScore);
+      [...scorecard.results.filter((entry) => entry.rank === 1)].sort(compareModeResults)[0] ??
+      [...scorecard.results.filter((entry) => entry.totalPopulation === scorecard.bestScore)].sort(
+        compareModeResults
+      )[0];
     if (bestResult === undefined) continue;
     if (best === null || scorecard.bestScore > best.score) {
       best = {
@@ -760,7 +842,7 @@ export function buildCrossModeProductWorkflowEvidenceSummary(
     workflowTagCounts: tagCounts,
     promotionCoverage: buildPromotionCoverage(result),
     caseMetrics: result.cases.map((scorecard) => {
-      const bestResult = scorecard.results.find((entry) => entry.rank === 1) ?? null;
+      const bestResult = [...scorecard.results.filter((entry) => entry.rank === 1)].sort(compareModeResults)[0] ?? null;
       const autoResult = scorecard.results.find((entry) => entry.mode === "auto") ?? null;
       const firstFeasibleMs = nullableMin(scorecard.results.map((entry) => entry.timeToQuality.firstFeasibleAtMs));
       const bestScoreMs = nullableMin(scorecard.results.map((entry) => entry.timeToQuality.bestScoreAtMs));

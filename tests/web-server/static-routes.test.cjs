@@ -21,13 +21,41 @@ async function testHealthRoute(handler) {
  * @param {RouteTestHandler} handler
  * @returns {Promise<void>}
  */
+async function testCpSatReadinessRoute(handler) {
+  const result = await invoke(handler, { method: "GET", url: "/api/cp-sat/readiness" });
+  assert.equal(result.statusCode, 200);
+  assert.equal(result.payload.ok, true);
+  assert.equal(typeof result.payload.cpSat.ready, "boolean");
+  assert.equal(typeof result.payload.cpSat.pythonExecutable, "string");
+  assert.equal(result.payload.cpSat.setupCommand, "npm run setup:cp-sat");
+  assert.match(result.payload.cpSat.message, /CP-SAT/);
+}
+
+/**
+ * @param {RouteTestHandler} handler
+ * @returns {Promise<void>}
+ */
 async function testStaticPlannerModules(handler) {
   /** @type {Array<[string, RegExp]>} */
   const expectedStaticAssets = [
+    ["/", /plannerPreviewBoot\.js/],
+    ["/legacy", /City Builder Planner/],
+    ["/legacy/", /City Builder Planner/],
+    ["/v2", /plannerPreviewBoot\.js/],
+    ["/v2/", /plannerPreviewBoot\.js/],
+    ["/v2.1", /plannerPreviewBoot\.js/],
+    ["/v2.1/", /plannerPreviewBoot\.js/],
     ["/styles.css", /page-shell/],
+    ["/plannerWorkflow.css", /workflow-steps/],
     ["/results.css", /result-details-body/],
+    ["/plannerV2.css", /v2-state-rail/],
+    ["/plannerV21.css", /v21-result-action-bar/],
+    ["/plannerPreviewBoot.js", /plannerPreview/],
     ["/plannerShell.js", /CityBuilderShell/],
     ["/plannerShared.js", /CityBuilderShared/],
+    ["/plannerDefaults.js", /CityBuilderDefaults/],
+    ["/plannerSamplePresets.js", /CityBuilderSamplePresets/],
+    ["/plannerOnboarding.js", /CityBuilderOnboarding/],
     ["/plannerPersistenceValidation.js", /CityBuilderPersistenceValidation/],
     ["/plannerPersistence.js", /CityBuilderPersistence/],
     ["/plannerSolveRuntime.js", /CityBuilderSolveRuntime/],
@@ -36,10 +64,17 @@ async function testStaticPlannerModules(handler) {
     ["/plannerManualLayout.js", /PlannerManualLayout/],
     ["/plannerResultAvailability.js", /PlannerResultAvailability/],
     ["/plannerResultProgress.js", /PlannerResultProgress/],
+    ["/plannerResultDiagnostics.js", /PlannerResultDiagnostics/],
     ["/plannerResultRendering.js", /PlannerResultRendering/],
+    ["/plannerResultStates.js", /PlannerResultStates/],
     ["/plannerResults.js", /CityBuilderResults/],
     ["/plannerRequestBuilder.js", /CityBuilderRequestBuilder/],
+    ["/plannerWorkbenchCatalog.js", /CityBuilderWorkbenchCatalog/],
     ["/plannerWorkbench.js", /CityBuilderWorkbench/],
+    ["/plannerStaticFragments.js", /data-static-fragment|globalLimits/],
+    ["/plannerAppElements.js", /CityBuilderAppElements/],
+    ["/plannerV2.js", /initPlannerV2/],
+    ["/plannerV21.js", /initPlannerV21/],
     ["/app.js", /const state =/]
   ];
 
@@ -71,14 +106,33 @@ async function testMethodNotAllowed(handler) {
   assert.equal(result.statusCode, 405);
   assert.equal(result.payload.ok, false);
   assert.equal(result.payload.error, "Method not allowed.");
+  assert.equal(result.headers.Allow, "POST");
+}
+
+/**
+ * @param {RouteTestHandler} handler
+ * @returns {Promise<void>}
+ */
+async function testUnknownApiRoutesReturnJsonNotFound(handler) {
+  const getResult = await invoke(handler, { method: "GET", url: "/api/typo" });
+  assert.equal(getResult.statusCode, 404);
+  assert.equal(getResult.payload.ok, false);
+  assert.equal(getResult.payload.error, "Unknown API route.");
+
+  const postResult = await invoke(handler, { method: "POST", url: "/api/typo", json: {} });
+  assert.equal(postResult.statusCode, 404);
+  assert.equal(postResult.payload.ok, false);
+  assert.equal(postResult.payload.error, "Unknown API route.");
 }
 
 async function main() {
   const { handler } = createRouteTestHandler();
   await testHealthRoute(handler);
+  await testCpSatReadinessRoute(handler);
   await testStaticPlannerModules(handler);
   await testUnexpectedStaticServerErrorsReturnInternalServerError();
   await testMethodNotAllowed(handler);
+  await testUnknownApiRoutesReturnJsonNotFound(handler);
 
   console.log("Web server static route tests passed.");
 }

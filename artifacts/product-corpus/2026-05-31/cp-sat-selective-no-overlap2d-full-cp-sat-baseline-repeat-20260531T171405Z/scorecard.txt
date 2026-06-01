@@ -1,0 +1,799 @@
+=== Cross-Mode Benchmark Scorecard ===
+Generated: 2026-05-31T17:19:10.370Z
+Cases: 13
+Modes: CP-SAT
+Equal wall-clock budgets: 1, 5s per mode
+Seeds: 7, 19, 37
+
+- typed-housing-single: Tiny typed-housing case shared by all solver modes.
+  band=tiny split=development workflow=solver-smoke budget=1s seed=7 best=110 capacity-bound=110 winner=CP-SAT grid=4x4
+  CP-SAT: rank=1 score=110 delta=best win-vs-auto=no-auto auto-delta=n/a wall=0.618s cpu-budget=1s observed-cpu=0.009s pop/cpu-budget=110.000 roads=1 services=0 residentials=2
+    attainment=cap=110 gap=0 util=100.0% closed-zero=100.0% baseline=0 closed-baseline=100.0% closed/s=1.619
+    progress=current=110 best=110 stage=cp-sat reuse=none elapsed=0.618s since-improve=0s stop=n/a gap=0
+    quality=first-feasible=0.009s first-improve=0.009s best=110@0.009s improvements=1 time-checkpoints=5.000s:110,30.000s:110,120.000s:110 quality-targets=50%:0.009s,90%:0.009s,100%:0.009s trace-events=3
+    road-semantics=anchor-connected anchor-roads=1 anchor-connected=1 disconnected=0 connected-ratio=1.000 adjacent-buildings=2 unadjacent-buildings=0
+    budget-signal=steady use=61.8% unused=0.382s overrun=0.000s first-improve=0.009s best=0.009s after-best=0.609s improvements/s=1.618 auto-best-delta=n/a
+    reason=CP-SAT OPTIMAL with population gap 0.
+- typed-housing-single: Tiny typed-housing case shared by all solver modes.
+  band=tiny split=development workflow=solver-smoke budget=1s seed=19 best=110 capacity-bound=110 winner=CP-SAT grid=4x4
+  CP-SAT: rank=1 score=110 delta=best win-vs-auto=no-auto auto-delta=n/a wall=0.461s cpu-budget=1s observed-cpu=0.012s pop/cpu-budget=110.000 roads=1 services=0 residentials=2
+    attainment=cap=110 gap=0 util=100.0% closed-zero=100.0% baseline=0 closed-baseline=100.0% closed/s=2.171
+    progress=current=110 best=110 stage=cp-sat reuse=none elapsed=0.461s since-improve=0s stop=n/a gap=0
+    quality=first-feasible=0.012s first-improve=0.012s best=110@0.012s improvements=1 time-checkpoints=5.000s:110,30.000s:110,120.000s:110 quality-targets=50%:0.012s,90%:0.012s,100%:0.012s trace-events=3
+    road-semantics=anchor-connected anchor-roads=1 anchor-connected=1 disconnected=0 connected-ratio=1.000 adjacent-buildings=2 unadjacent-buildings=0
+    budget-signal=under-used-budget use=46.1% unused=0.539s overrun=0.000s first-improve=0.012s best=0.012s after-best=0.449s improvements/s=2.169 auto-best-delta=n/a
+    reason=CP-SAT OPTIMAL with population gap 0.
+- typed-housing-single: Tiny typed-housing case shared by all solver modes.
+  band=tiny split=development workflow=solver-smoke budget=1s seed=37 best=110 capacity-bound=110 winner=CP-SAT grid=4x4
+  CP-SAT: rank=1 score=110 delta=best win-vs-auto=no-auto auto-delta=n/a wall=0.444s cpu-budget=1s observed-cpu=0.010s pop/cpu-budget=110.000 roads=1 services=0 residentials=2
+    attainment=cap=110 gap=0 util=100.0% closed-zero=100.0% baseline=0 closed-baseline=100.0% closed/s=2.252
+    progress=current=110 best=110 stage=cp-sat reuse=none elapsed=0.444s since-improve=0s stop=n/a gap=0
+    quality=first-feasible=0.010s first-improve=0.010s best=110@0.010s improvements=1 time-checkpoints=5.000s:110,30.000s:110,120.000s:110 quality-targets=50%:0.010s,90%:0.010s,100%:0.010s trace-events=3
+    road-semantics=anchor-connected anchor-roads=1 anchor-connected=1 disconnected=0 connected-ratio=1.000 adjacent-buildings=2 unadjacent-buildings=0
+    budget-signal=under-used-budget use=44.4% unused=0.556s overrun=0.000s first-improve=0.010s best=0.010s after-best=0.434s improvements/s=2.252 auto-best-delta=n/a
+    reason=CP-SAT OPTIMAL with population gap 0.
+- typed-housing-single: Tiny typed-housing case shared by all solver modes.
+  band=tiny split=development workflow=solver-smoke budget=5s seed=7 best=110 capacity-bound=110 winner=CP-SAT grid=4x4
+  CP-SAT: rank=1 score=110 delta=best win-vs-auto=no-auto auto-delta=n/a wall=0.477s cpu-budget=5s observed-cpu=0.010s pop/cpu-budget=22.000 roads=1 services=0 residentials=2
+    attainment=cap=110 gap=0 util=100.0% closed-zero=100.0% baseline=0 closed-baseline=100.0% closed/s=2.095
+    progress=current=110 best=110 stage=cp-sat reuse=none elapsed=0.477s since-improve=0s stop=n/a gap=0
+    quality=first-feasible=0.009s first-improve=0.009s best=110@0.009s improvements=1 time-checkpoints=5.000s:110,30.000s:110,120.000s:110 quality-targets=50%:0.009s,90%:0.009s,100%:0.009s trace-events=3
+    road-semantics=anchor-connected anchor-roads=1 anchor-connected=1 disconnected=0 connected-ratio=1.000 adjacent-buildings=2 unadjacent-buildings=0
+    budget-signal=under-used-budget use=9.5% unused=4.523s overrun=0.000s first-improve=0.009s best=0.009s after-best=0.468s improvements/s=2.096 auto-best-delta=n/a
+    reason=CP-SAT OPTIMAL with population gap 0.
+- typed-housing-single: Tiny typed-housing case shared by all solver modes.
+  band=tiny split=development workflow=solver-smoke budget=5s seed=19 best=110 capacity-bound=110 winner=CP-SAT grid=4x4
+  CP-SAT: rank=1 score=110 delta=best win-vs-auto=no-auto auto-delta=n/a wall=0.484s cpu-budget=5s observed-cpu=0.012s pop/cpu-budget=22.000 roads=1 services=0 residentials=2
+    attainment=cap=110 gap=0 util=100.0% closed-zero=100.0% baseline=0 closed-baseline=100.0% closed/s=2.066
+    progress=current=110 best=110 stage=cp-sat reuse=none elapsed=0.484s since-improve=0s stop=n/a gap=0
+    quality=first-feasible=0.012s first-improve=0.012s best=110@0.012s improvements=1 time-checkpoints=5.000s:110,30.000s:110,120.000s:110 quality-targets=50%:0.012s,90%:0.012s,100%:0.012s trace-events=3
+    road-semantics=anchor-connected anchor-roads=1 anchor-connected=1 disconnected=0 connected-ratio=1.000 adjacent-buildings=2 unadjacent-buildings=0
+    budget-signal=under-used-budget use=9.7% unused=4.516s overrun=0.000s first-improve=0.012s best=0.012s after-best=0.472s improvements/s=2.066 auto-best-delta=n/a
+    reason=CP-SAT OPTIMAL with population gap 0.
+- typed-housing-single: Tiny typed-housing case shared by all solver modes.
+  band=tiny split=development workflow=solver-smoke budget=5s seed=37 best=110 capacity-bound=110 winner=CP-SAT grid=4x4
+  CP-SAT: rank=1 score=110 delta=best win-vs-auto=no-auto auto-delta=n/a wall=0.490s cpu-budget=5s observed-cpu=0.009s pop/cpu-budget=22.000 roads=1 services=0 residentials=2
+    attainment=cap=110 gap=0 util=100.0% closed-zero=100.0% baseline=0 closed-baseline=100.0% closed/s=2.042
+    progress=current=110 best=110 stage=cp-sat reuse=none elapsed=0.49s since-improve=0s stop=n/a gap=0
+    quality=first-feasible=0.009s first-improve=0.009s best=110@0.009s improvements=1 time-checkpoints=5.000s:110,30.000s:110,120.000s:110 quality-targets=50%:0.009s,90%:0.009s,100%:0.009s trace-events=3
+    road-semantics=anchor-connected anchor-roads=1 anchor-connected=1 disconnected=0 connected-ratio=1.000 adjacent-buildings=2 unadjacent-buildings=0
+    budget-signal=under-used-budget use=9.8% unused=4.510s overrun=0.000s first-improve=0.009s best=0.009s after-best=0.481s improvements/s=2.041 auto-best-delta=n/a
+    reason=CP-SAT OPTIMAL with population gap 0.
+- row0-corridor-repair-pressure: Sparse road-anchor access case with competing service footprints for Auto/LNS budget ablations.
+  band=small split=holdout workflow=corridor budget=1s seed=7 best=330 capacity-bound=800 winner=CP-SAT grid=6x6
+  CP-SAT: rank=1 score=330 delta=best win-vs-auto=no-auto auto-delta=n/a wall=0.501s cpu-budget=1s observed-cpu=0.065s pop/cpu-budget=330.000 roads=5 services=1 residentials=2
+    attainment=cap=800 gap=470 util=41.3% closed-zero=41.3% baseline=0 closed-baseline=41.3% closed/s=0.824
+    progress=current=330 best=330 stage=cp-sat reuse=none elapsed=0.501s since-improve=0s stop=n/a gap=0
+    quality=first-feasible=0.065s first-improve=0.065s best=330@0.065s improvements=1 time-checkpoints=5.000s:330,30.000s:330,120.000s:330 quality-targets=50%:0.065s,90%:0.065s,100%:0.065s trace-events=3
+    road-semantics=anchor-connected anchor-roads=2 anchor-connected=5 disconnected=0 connected-ratio=1.000 adjacent-buildings=3 unadjacent-buildings=0
+    budget-signal=steady use=50.1% unused=0.499s overrun=0.000s first-improve=0.065s best=0.065s after-best=0.436s improvements/s=1.996 auto-best-delta=n/a
+    reason=CP-SAT OPTIMAL with population gap 0.
+- row0-corridor-repair-pressure: Sparse road-anchor access case with competing service footprints for Auto/LNS budget ablations.
+  band=small split=holdout workflow=corridor budget=1s seed=19 best=330 capacity-bound=800 winner=CP-SAT grid=6x6
+  CP-SAT: rank=1 score=330 delta=best win-vs-auto=no-auto auto-delta=n/a wall=0.456s cpu-budget=1s observed-cpu=0.027s pop/cpu-budget=330.000 roads=5 services=1 residentials=2
+    attainment=cap=800 gap=470 util=41.3% closed-zero=41.3% baseline=0 closed-baseline=41.3% closed/s=0.905
+    progress=current=330 best=330 stage=cp-sat reuse=none elapsed=0.456s since-improve=0s stop=n/a gap=0
+    quality=first-feasible=0.027s first-improve=0.027s best=330@0.027s improvements=1 time-checkpoints=5.000s:330,30.000s:330,120.000s:330 quality-targets=50%:0.027s,90%:0.027s,100%:0.027s trace-events=3
+    road-semantics=anchor-connected anchor-roads=2 anchor-connected=5 disconnected=0 connected-ratio=1.000 adjacent-buildings=3 unadjacent-buildings=0
+    budget-signal=under-used-budget use=45.6% unused=0.544s overrun=0.000s first-improve=0.027s best=0.027s after-best=0.429s improvements/s=2.193 auto-best-delta=n/a
+    reason=CP-SAT OPTIMAL with population gap 0.
+- row0-corridor-repair-pressure: Sparse road-anchor access case with competing service footprints for Auto/LNS budget ablations.
+  band=small split=holdout workflow=corridor budget=1s seed=37 best=330 capacity-bound=800 winner=CP-SAT grid=6x6
+  CP-SAT: rank=1 score=330 delta=best win-vs-auto=no-auto auto-delta=n/a wall=0.484s cpu-budget=1s observed-cpu=0.029s pop/cpu-budget=330.000 roads=5 services=1 residentials=2
+    attainment=cap=800 gap=470 util=41.3% closed-zero=41.3% baseline=0 closed-baseline=41.3% closed/s=0.852
+    progress=current=330 best=330 stage=cp-sat reuse=none elapsed=0.484s since-improve=0.002s stop=n/a gap=0
+    quality=first-feasible=0.027s first-improve=0.027s best=330@0.027s improvements=1 time-checkpoints=5.000s:330,30.000s:330,120.000s:330 quality-targets=50%:0.027s,90%:0.027s,100%:0.027s trace-events=3
+    road-semantics=anchor-connected anchor-roads=2 anchor-connected=5 disconnected=0 connected-ratio=1.000 adjacent-buildings=3 unadjacent-buildings=0
+    budget-signal=under-used-budget use=48.4% unused=0.516s overrun=0.000s first-improve=0.027s best=0.027s after-best=0.457s improvements/s=2.066 auto-best-delta=n/a
+    reason=CP-SAT OPTIMAL with population gap 0.
+- row0-corridor-repair-pressure: Sparse road-anchor access case with competing service footprints for Auto/LNS budget ablations.
+  band=small split=holdout workflow=corridor budget=5s seed=7 best=330 capacity-bound=800 winner=CP-SAT grid=6x6
+  CP-SAT: rank=1 score=330 delta=best win-vs-auto=no-auto auto-delta=n/a wall=0.502s cpu-budget=5s observed-cpu=0.065s pop/cpu-budget=66.000 roads=5 services=1 residentials=2
+    attainment=cap=800 gap=470 util=41.3% closed-zero=41.3% baseline=0 closed-baseline=41.3% closed/s=0.822
+    progress=current=330 best=330 stage=cp-sat reuse=none elapsed=0.502s since-improve=0s stop=n/a gap=0
+    quality=first-feasible=0.065s first-improve=0.065s best=330@0.065s improvements=1 time-checkpoints=5.000s:330,30.000s:330,120.000s:330 quality-targets=50%:0.065s,90%:0.065s,100%:0.065s trace-events=3
+    road-semantics=anchor-connected anchor-roads=2 anchor-connected=5 disconnected=0 connected-ratio=1.000 adjacent-buildings=3 unadjacent-buildings=0
+    budget-signal=under-used-budget use=10.0% unused=4.498s overrun=0.000s first-improve=0.065s best=0.065s after-best=0.437s improvements/s=1.992 auto-best-delta=n/a
+    reason=CP-SAT OPTIMAL with population gap 0.
+- row0-corridor-repair-pressure: Sparse road-anchor access case with competing service footprints for Auto/LNS budget ablations.
+  band=small split=holdout workflow=corridor budget=5s seed=19 best=330 capacity-bound=800 winner=CP-SAT grid=6x6
+  CP-SAT: rank=1 score=330 delta=best win-vs-auto=no-auto auto-delta=n/a wall=0.525s cpu-budget=5s observed-cpu=0.028s pop/cpu-budget=66.000 roads=5 services=1 residentials=2
+    attainment=cap=800 gap=470 util=41.3% closed-zero=41.3% baseline=0 closed-baseline=41.3% closed/s=0.786
+    progress=current=330 best=330 stage=cp-sat reuse=none elapsed=0.525s since-improve=0s stop=n/a gap=0
+    quality=first-feasible=0.028s first-improve=0.028s best=330@0.028s improvements=1 time-checkpoints=5.000s:330,30.000s:330,120.000s:330 quality-targets=50%:0.028s,90%:0.028s,100%:0.028s trace-events=3
+    road-semantics=anchor-connected anchor-roads=2 anchor-connected=5 disconnected=0 connected-ratio=1.000 adjacent-buildings=3 unadjacent-buildings=0
+    budget-signal=under-used-budget use=10.5% unused=4.475s overrun=0.000s first-improve=0.028s best=0.028s after-best=0.497s improvements/s=1.905 auto-best-delta=n/a
+    reason=CP-SAT OPTIMAL with population gap 0.
+- row0-corridor-repair-pressure: Sparse road-anchor access case with competing service footprints for Auto/LNS budget ablations.
+  band=small split=holdout workflow=corridor budget=5s seed=37 best=330 capacity-bound=800 winner=CP-SAT grid=6x6
+  CP-SAT: rank=1 score=330 delta=best win-vs-auto=no-auto auto-delta=n/a wall=0.479s cpu-budget=5s observed-cpu=0.029s pop/cpu-budget=66.000 roads=5 services=1 residentials=2
+    attainment=cap=800 gap=470 util=41.3% closed-zero=41.3% baseline=0 closed-baseline=41.3% closed/s=0.861
+    progress=current=330 best=330 stage=cp-sat reuse=none elapsed=0.479s since-improve=0.002s stop=n/a gap=0
+    quality=first-feasible=0.027s first-improve=0.027s best=330@0.027s improvements=1 time-checkpoints=5.000s:330,30.000s:330,120.000s:330 quality-targets=50%:0.027s,90%:0.027s,100%:0.027s trace-events=3
+    road-semantics=anchor-connected anchor-roads=2 anchor-connected=5 disconnected=0 connected-ratio=1.000 adjacent-buildings=3 unadjacent-buildings=0
+    budget-signal=under-used-budget use=9.6% unused=4.521s overrun=0.000s first-improve=0.027s best=0.027s after-best=0.452s improvements/s=2.088 auto-best-delta=n/a
+    reason=CP-SAT OPTIMAL with population gap 0.
+- typed-footprint-pressure: Typed 2x2 variants share footprints, and a second service keeps the dynamic grouped scorer hot.
+  band=small split=development workflow=footprint-pressure budget=1s seed=7 best=505 capacity-bound=545 winner=CP-SAT grid=6x6
+  CP-SAT: rank=1 score=505 delta=best win-vs-auto=no-auto auto-delta=n/a wall=1.343s cpu-budget=1s observed-cpu=0.898s pop/cpu-budget=505.000 roads=8 services=2 residentials=4
+    attainment=cap=545 gap=40 util=92.7% closed-zero=92.7% baseline=0 closed-baseline=92.7% closed/s=0.690
+    progress=current=505 best=505 stage=cp-sat reuse=none elapsed=1.343s since-improve=0.326s stop=n/a gap=20
+    quality=first-feasible=0.572s first-improve=0.572s best=505@0.572s improvements=1 time-checkpoints=5.000s:505,30.000s:505,120.000s:505 quality-targets=50%:0.572s,90%:0.572s,100%:0.572s trace-events=3
+    road-semantics=anchor-connected anchor-roads=2 anchor-connected=8 disconnected=0 connected-ratio=1.000 adjacent-buildings=6 unadjacent-buildings=0
+    budget-signal=over-budget use=134.3% unused=0.000s overrun=0.343s first-improve=0.572s best=0.572s after-best=0.771s improvements/s=0.745 auto-best-delta=n/a
+    reason=CP-SAT FEASIBLE with population gap 20.
+- typed-footprint-pressure: Typed 2x2 variants share footprints, and a second service keeps the dynamic grouped scorer hot.
+  band=small split=development workflow=footprint-pressure budget=1s seed=19 best=505 capacity-bound=545 winner=CP-SAT grid=6x6
+  CP-SAT: rank=1 score=505 delta=best win-vs-auto=no-auto auto-delta=n/a wall=1.531s cpu-budget=1s observed-cpu=1.000s pop/cpu-budget=505.000 roads=5 services=2 residentials=4
+    attainment=cap=545 gap=40 util=92.7% closed-zero=92.7% baseline=0 closed-baseline=92.7% closed/s=0.605
+    progress=current=505 best=505 stage=cp-sat reuse=none elapsed=1.531s since-improve=0.003s stop=n/a gap=20
+    quality=first-feasible=0.997s first-improve=0.997s best=505@0.997s improvements=1 time-checkpoints=5.000s:505,30.000s:505,120.000s:505 quality-targets=50%:0.997s,90%:0.997s,100%:0.997s trace-events=3
+    road-semantics=anchor-connected anchor-roads=2 anchor-connected=5 disconnected=0 connected-ratio=1.000 adjacent-buildings=6 unadjacent-buildings=0
+    budget-signal=over-budget use=153.1% unused=0.000s overrun=0.531s first-improve=0.997s best=0.997s after-best=0.534s improvements/s=0.653 auto-best-delta=n/a
+    reason=CP-SAT FEASIBLE with population gap 20.
+- typed-footprint-pressure: Typed 2x2 variants share footprints, and a second service keeps the dynamic grouped scorer hot.
+  band=small split=development workflow=footprint-pressure budget=1s seed=37 best=505 capacity-bound=545 winner=CP-SAT grid=6x6
+  CP-SAT: rank=1 score=505 delta=best win-vs-auto=no-auto auto-delta=n/a wall=1.488s cpu-budget=1s observed-cpu=1.000s pop/cpu-budget=505.000 roads=6 services=2 residentials=4
+    attainment=cap=545 gap=40 util=92.7% closed-zero=92.7% baseline=0 closed-baseline=92.7% closed/s=0.623
+    progress=current=505 best=505 stage=cp-sat reuse=none elapsed=1.488s since-improve=0.024s stop=n/a gap=20
+    quality=first-feasible=0.977s first-improve=0.977s best=505@0.977s improvements=1 time-checkpoints=5.000s:505,30.000s:505,120.000s:505 quality-targets=50%:0.977s,90%:0.977s,100%:0.977s trace-events=3
+    road-semantics=anchor-connected anchor-roads=2 anchor-connected=6 disconnected=0 connected-ratio=1.000 adjacent-buildings=6 unadjacent-buildings=0
+    budget-signal=over-budget use=148.8% unused=0.000s overrun=0.488s first-improve=0.977s best=0.977s after-best=0.511s improvements/s=0.672 auto-best-delta=n/a
+    reason=CP-SAT FEASIBLE with population gap 20.
+- typed-footprint-pressure: Typed 2x2 variants share footprints, and a second service keeps the dynamic grouped scorer hot.
+  band=small split=development workflow=footprint-pressure budget=5s seed=7 best=525 capacity-bound=545 winner=CP-SAT grid=6x6
+  CP-SAT: rank=1 score=525 delta=best win-vs-auto=no-auto auto-delta=n/a wall=4.634s cpu-budget=5s observed-cpu=4.153s pop/cpu-budget=105.000 roads=4 services=2 residentials=4
+    attainment=cap=545 gap=20 util=96.3% closed-zero=96.3% baseline=0 closed-baseline=96.3% closed/s=0.208
+    progress=current=525 best=525 stage=cp-sat reuse=none elapsed=4.634s since-improve=0.884s stop=n/a gap=0
+    quality=first-feasible=3.269s first-improve=3.269s best=525@3.269s improvements=1 time-checkpoints=5.000s:525,30.000s:525,120.000s:525 quality-targets=50%:3.269s,90%:3.269s,100%:3.269s trace-events=3
+    road-semantics=anchor-connected anchor-roads=1 anchor-connected=4 disconnected=0 connected-ratio=1.000 adjacent-buildings=6 unadjacent-buildings=0
+    budget-signal=steady use=92.7% unused=0.366s overrun=0.000s first-improve=3.269s best=3.269s after-best=1.365s improvements/s=0.216 auto-best-delta=n/a
+    reason=CP-SAT FEASIBLE with population gap 0.
+- typed-footprint-pressure: Typed 2x2 variants share footprints, and a second service keeps the dynamic grouped scorer hot.
+  band=small split=development workflow=footprint-pressure budget=5s seed=19 best=525 capacity-bound=545 winner=CP-SAT grid=6x6
+  CP-SAT: rank=1 score=525 delta=best win-vs-auto=no-auto auto-delta=n/a wall=4.673s cpu-budget=5s observed-cpu=4.204s pop/cpu-budget=105.000 roads=5 services=2 residentials=4
+    attainment=cap=545 gap=20 util=96.3% closed-zero=96.3% baseline=0 closed-baseline=96.3% closed/s=0.206
+    progress=current=525 best=525 stage=cp-sat reuse=none elapsed=4.673s since-improve=1.399s stop=n/a gap=0
+    quality=first-feasible=2.804s first-improve=2.804s best=525@2.804s improvements=1 time-checkpoints=5.000s:525,30.000s:525,120.000s:525 quality-targets=50%:2.804s,90%:2.804s,100%:2.804s trace-events=3
+    road-semantics=anchor-connected anchor-roads=2 anchor-connected=5 disconnected=0 connected-ratio=1.000 adjacent-buildings=6 unadjacent-buildings=0
+    budget-signal=steady use=93.5% unused=0.327s overrun=0.000s first-improve=2.804s best=2.804s after-best=1.869s improvements/s=0.214 auto-best-delta=n/a
+    reason=CP-SAT FEASIBLE with population gap 0.
+- typed-footprint-pressure: Typed 2x2 variants share footprints, and a second service keeps the dynamic grouped scorer hot.
+  band=small split=development workflow=footprint-pressure budget=5s seed=37 best=525 capacity-bound=545 winner=CP-SAT grid=6x6
+  CP-SAT: rank=1 score=525 delta=best win-vs-auto=no-auto auto-delta=n/a wall=4.448s cpu-budget=5s observed-cpu=3.974s pop/cpu-budget=105.000 roads=6 services=2 residentials=4
+    attainment=cap=545 gap=20 util=96.3% closed-zero=96.3% baseline=0 closed-baseline=96.3% closed/s=0.217
+    progress=current=525 best=525 stage=cp-sat reuse=none elapsed=4.448s since-improve=0.842s stop=n/a gap=0
+    quality=first-feasible=3.132s first-improve=3.132s best=525@3.132s improvements=1 time-checkpoints=5.000s:525,30.000s:525,120.000s:525 quality-targets=50%:3.132s,90%:3.132s,100%:3.132s trace-events=3
+    road-semantics=anchor-connected anchor-roads=1 anchor-connected=6 disconnected=0 connected-ratio=1.000 adjacent-buildings=6 unadjacent-buildings=0
+    budget-signal=steady use=89.0% unused=0.552s overrun=0.000s first-improve=3.132s best=3.132s after-best=1.316s improvements/s=0.225 auto-best-delta=n/a
+    reason=CP-SAT FEASIBLE with population gap 0.
+- service-local-neighborhood: Bounded service local search should evaluate service add/remove/swap moves even when coarse service refinement is disabled.
+  band=small split=holdout workflow=service-pressure budget=1s seed=7 best=440 capacity-bound=1110 winner=CP-SAT grid=6x6
+  CP-SAT: rank=1 score=440 delta=best win-vs-auto=no-auto auto-delta=n/a wall=1.390s cpu-budget=1s observed-cpu=0.939s pop/cpu-budget=440.000 roads=6 services=3 residentials=4
+    attainment=cap=1,110 gap=670 util=39.6% closed-zero=39.6% baseline=0 closed-baseline=39.6% closed/s=0.285
+    progress=current=440 best=440 stage=cp-sat reuse=none elapsed=1.39s since-improve=0.274s stop=n/a gap=213
+    quality=first-feasible=0.665s first-improve=0.665s best=440@0.665s improvements=1 time-checkpoints=5.000s:440,30.000s:440,120.000s:440 quality-targets=50%:0.665s,90%:0.665s,100%:0.665s trace-events=3
+    road-semantics=anchor-connected anchor-roads=1 anchor-connected=6 disconnected=0 connected-ratio=1.000 adjacent-buildings=7 unadjacent-buildings=0
+    budget-signal=over-budget use=139.0% unused=0.000s overrun=0.390s first-improve=0.665s best=0.665s after-best=0.725s improvements/s=0.719 auto-best-delta=n/a
+    reason=CP-SAT FEASIBLE with population gap 213.
+- service-local-neighborhood: Bounded service local search should evaluate service add/remove/swap moves even when coarse service refinement is disabled.
+  band=small split=holdout workflow=service-pressure budget=1s seed=19 best=445 capacity-bound=1110 winner=CP-SAT grid=6x6
+  CP-SAT: rank=1 score=445 delta=best win-vs-auto=no-auto auto-delta=n/a wall=1.312s cpu-budget=1s observed-cpu=0.861s pop/cpu-budget=445.000 roads=6 services=3 residentials=4
+    attainment=cap=1,110 gap=665 util=40.1% closed-zero=40.1% baseline=0 closed-baseline=40.1% closed/s=0.306
+    progress=current=427 best=445 stage=cp-sat reuse=none elapsed=1.312s since-improve=0.058s stop=n/a gap=234
+    quality=first-feasible=0.802s first-improve=0.802s best=445@1.312s improvements=2 time-checkpoints=5.000s:445,30.000s:445,120.000s:445 quality-targets=50%:0.802s,90%:0.802s,100%:1.312s trace-events=3
+    road-semantics=anchor-connected anchor-roads=1 anchor-connected=6 disconnected=0 connected-ratio=1.000 adjacent-buildings=7 unadjacent-buildings=0
+    budget-signal=over-budget use=131.2% unused=0.000s overrun=0.312s first-improve=0.802s best=1.312s after-best=0.000s improvements/s=1.524 auto-best-delta=n/a
+    reason=CP-SAT FEASIBLE with population gap 234.
+- service-local-neighborhood: Bounded service local search should evaluate service add/remove/swap moves even when coarse service refinement is disabled.
+  band=small split=holdout workflow=service-pressure budget=1s seed=37 best=460 capacity-bound=1110 winner=CP-SAT grid=6x6
+  CP-SAT: rank=1 score=460 delta=best win-vs-auto=no-auto auto-delta=n/a wall=1.469s cpu-budget=1s observed-cpu=0.951s pop/cpu-budget=460.000 roads=6 services=3 residentials=4
+    attainment=cap=1,110 gap=650 util=41.4% closed-zero=41.4% baseline=0 closed-baseline=41.4% closed/s=0.282
+    progress=current=460 best=460 stage=cp-sat reuse=none elapsed=1.469s since-improve=0.03s stop=n/a gap=193
+    quality=first-feasible=0.921s first-improve=0.921s best=460@0.921s improvements=1 time-checkpoints=5.000s:460,30.000s:460,120.000s:460 quality-targets=50%:0.921s,90%:0.921s,100%:0.921s trace-events=3
+    road-semantics=anchor-connected anchor-roads=1 anchor-connected=6 disconnected=0 connected-ratio=1.000 adjacent-buildings=7 unadjacent-buildings=0
+    budget-signal=over-budget use=146.9% unused=0.000s overrun=0.469s first-improve=0.921s best=0.921s after-best=0.548s improvements/s=0.681 auto-best-delta=n/a
+    reason=CP-SAT FEASIBLE with population gap 193.
+- service-local-neighborhood: Bounded service local search should evaluate service add/remove/swap moves even when coarse service refinement is disabled.
+  band=small split=holdout workflow=service-pressure budget=5s seed=7 best=470 capacity-bound=1110 winner=CP-SAT grid=6x6
+  CP-SAT: rank=1 score=470 delta=best win-vs-auto=no-auto auto-delta=n/a wall=1.533s cpu-budget=5s observed-cpu=1.045s pop/cpu-budget=94.000 roads=6 services=3 residentials=4
+    attainment=cap=1,110 gap=640 util=42.3% closed-zero=42.3% baseline=0 closed-baseline=42.3% closed/s=0.276
+    progress=current=470 best=470 stage=cp-sat reuse=none elapsed=1.533s since-improve=0.033s stop=n/a gap=0
+    quality=first-feasible=1.012s first-improve=1.012s best=470@1.012s improvements=1 time-checkpoints=5.000s:470,30.000s:470,120.000s:470 quality-targets=50%:1.012s,90%:1.012s,100%:1.012s trace-events=3
+    road-semantics=anchor-connected anchor-roads=1 anchor-connected=6 disconnected=0 connected-ratio=1.000 adjacent-buildings=7 unadjacent-buildings=0
+    budget-signal=under-used-budget use=30.7% unused=3.467s overrun=0.000s first-improve=1.012s best=1.012s after-best=0.521s improvements/s=0.652 auto-best-delta=n/a
+    reason=CP-SAT OPTIMAL with population gap 0.
+- service-local-neighborhood: Bounded service local search should evaluate service add/remove/swap moves even when coarse service refinement is disabled.
+  band=small split=holdout workflow=service-pressure budget=5s seed=19 best=470 capacity-bound=1110 winner=CP-SAT grid=6x6
+  CP-SAT: rank=1 score=470 delta=best win-vs-auto=no-auto auto-delta=n/a wall=2.145s cpu-budget=5s observed-cpu=1.671s pop/cpu-budget=94.000 roads=6 services=3 residentials=4
+    attainment=cap=1,110 gap=640 util=42.3% closed-zero=42.3% baseline=0 closed-baseline=42.3% closed/s=0.197
+    progress=current=470 best=470 stage=cp-sat reuse=none elapsed=2.145s since-improve=0.08s stop=n/a gap=0
+    quality=first-feasible=1.591s first-improve=1.591s best=470@1.591s improvements=1 time-checkpoints=5.000s:470,30.000s:470,120.000s:470 quality-targets=50%:1.591s,90%:1.591s,100%:1.591s trace-events=3
+    road-semantics=anchor-connected anchor-roads=1 anchor-connected=6 disconnected=0 connected-ratio=1.000 adjacent-buildings=7 unadjacent-buildings=0
+    budget-signal=under-used-budget use=42.9% unused=2.855s overrun=0.000s first-improve=1.591s best=1.591s after-best=0.554s improvements/s=0.466 auto-best-delta=n/a
+    reason=CP-SAT OPTIMAL with population gap 0.
+- service-local-neighborhood: Bounded service local search should evaluate service add/remove/swap moves even when coarse service refinement is disabled.
+  band=small split=holdout workflow=service-pressure budget=5s seed=37 best=470 capacity-bound=1110 winner=CP-SAT grid=6x6
+  CP-SAT: rank=1 score=470 delta=best win-vs-auto=no-auto auto-delta=n/a wall=1.821s cpu-budget=5s observed-cpu=1.302s pop/cpu-budget=94.000 roads=6 services=3 residentials=4
+    attainment=cap=1,110 gap=640 util=42.3% closed-zero=42.3% baseline=0 closed-baseline=42.3% closed/s=0.233
+    progress=current=470 best=470 stage=cp-sat reuse=none elapsed=1.821s since-improve=0.2s stop=n/a gap=0
+    quality=first-feasible=1.103s first-improve=1.103s best=470@1.103s improvements=1 time-checkpoints=5.000s:470,30.000s:470,120.000s:470 quality-targets=50%:1.103s,90%:1.103s,100%:1.103s trace-events=3
+    road-semantics=anchor-connected anchor-roads=1 anchor-connected=6 disconnected=0 connected-ratio=1.000 adjacent-buildings=7 unadjacent-buildings=0
+    budget-signal=under-used-budget use=36.4% unused=3.179s overrun=0.000s first-improve=1.103s best=1.103s after-best=0.718s improvements/s=0.549 auto-best-delta=n/a
+    reason=CP-SAT OPTIMAL with population gap 0.
+- seeded-service-anchor-pressure: Seeded LNS case where ranked service anchors find a service move that sliding windows miss.
+  band=small split=development workflow=anchor-service budget=1s seed=7 best=200 capacity-bound=300 winner=CP-SAT grid=6x6
+  CP-SAT: rank=1 score=200 delta=best win-vs-auto=no-auto auto-delta=n/a wall=0.489s cpu-budget=1s observed-cpu=0.036s pop/cpu-budget=200.000 roads=1 services=1 residentials=1
+    attainment=cap=300 gap=100 util=66.7% closed-zero=66.7% baseline=0 closed-baseline=66.7% closed/s=1.365
+    progress=current=200 best=200 stage=cp-sat reuse=none elapsed=0.489s since-improve=0.001s stop=n/a gap=0
+    quality=first-feasible=0.035s first-improve=0.035s best=200@0.035s improvements=1 time-checkpoints=5.000s:200,30.000s:200,120.000s:200 quality-targets=50%:0.035s,90%:0.035s,100%:0.035s trace-events=3
+    road-semantics=anchor-connected anchor-roads=1 anchor-connected=1 disconnected=0 connected-ratio=1.000 adjacent-buildings=2 unadjacent-buildings=0
+    budget-signal=under-used-budget use=48.9% unused=0.511s overrun=0.000s first-improve=0.035s best=0.035s after-best=0.454s improvements/s=2.045 auto-best-delta=n/a
+    reason=CP-SAT OPTIMAL with population gap 0.
+- seeded-service-anchor-pressure: Seeded LNS case where ranked service anchors find a service move that sliding windows miss.
+  band=small split=development workflow=anchor-service budget=1s seed=19 best=200 capacity-bound=300 winner=CP-SAT grid=6x6
+  CP-SAT: rank=1 score=200 delta=best win-vs-auto=no-auto auto-delta=n/a wall=0.476s cpu-budget=1s observed-cpu=0.038s pop/cpu-budget=200.000 roads=1 services=1 residentials=1
+    attainment=cap=300 gap=100 util=66.7% closed-zero=66.7% baseline=0 closed-baseline=66.7% closed/s=1.400
+    progress=current=200 best=200 stage=cp-sat reuse=none elapsed=0.476s since-improve=0.001s stop=n/a gap=0
+    quality=first-feasible=0.037s first-improve=0.037s best=200@0.037s improvements=1 time-checkpoints=5.000s:200,30.000s:200,120.000s:200 quality-targets=50%:0.037s,90%:0.037s,100%:0.037s trace-events=3
+    road-semantics=anchor-connected anchor-roads=1 anchor-connected=1 disconnected=0 connected-ratio=1.000 adjacent-buildings=2 unadjacent-buildings=0
+    budget-signal=under-used-budget use=47.6% unused=0.524s overrun=0.000s first-improve=0.037s best=0.037s after-best=0.439s improvements/s=2.101 auto-best-delta=n/a
+    reason=CP-SAT OPTIMAL with population gap 0.
+- seeded-service-anchor-pressure: Seeded LNS case where ranked service anchors find a service move that sliding windows miss.
+  band=small split=development workflow=anchor-service budget=1s seed=37 best=200 capacity-bound=300 winner=CP-SAT grid=6x6
+  CP-SAT: rank=1 score=200 delta=best win-vs-auto=no-auto auto-delta=n/a wall=0.476s cpu-budget=1s observed-cpu=0.035s pop/cpu-budget=200.000 roads=1 services=1 residentials=1
+    attainment=cap=300 gap=100 util=66.7% closed-zero=66.7% baseline=0 closed-baseline=66.7% closed/s=1.400
+    progress=current=200 best=200 stage=cp-sat reuse=none elapsed=0.476s since-improve=0.001s stop=n/a gap=0
+    quality=first-feasible=0.035s first-improve=0.035s best=200@0.035s improvements=1 time-checkpoints=5.000s:200,30.000s:200,120.000s:200 quality-targets=50%:0.035s,90%:0.035s,100%:0.035s trace-events=3
+    road-semantics=anchor-connected anchor-roads=1 anchor-connected=1 disconnected=0 connected-ratio=1.000 adjacent-buildings=2 unadjacent-buildings=0
+    budget-signal=under-used-budget use=47.6% unused=0.524s overrun=0.000s first-improve=0.035s best=0.035s after-best=0.441s improvements/s=2.101 auto-best-delta=n/a
+    reason=CP-SAT OPTIMAL with population gap 0.
+- seeded-service-anchor-pressure: Seeded LNS case where ranked service anchors find a service move that sliding windows miss.
+  band=small split=development workflow=anchor-service budget=5s seed=7 best=200 capacity-bound=300 winner=CP-SAT grid=6x6
+  CP-SAT: rank=1 score=200 delta=best win-vs-auto=no-auto auto-delta=n/a wall=0.471s cpu-budget=5s observed-cpu=0.037s pop/cpu-budget=40.000 roads=1 services=1 residentials=1
+    attainment=cap=300 gap=100 util=66.7% closed-zero=66.7% baseline=0 closed-baseline=66.7% closed/s=1.416
+    progress=current=200 best=200 stage=cp-sat reuse=none elapsed=0.471s since-improve=0.001s stop=n/a gap=0
+    quality=first-feasible=0.036s first-improve=0.036s best=200@0.036s improvements=1 time-checkpoints=5.000s:200,30.000s:200,120.000s:200 quality-targets=50%:0.036s,90%:0.036s,100%:0.036s trace-events=3
+    road-semantics=anchor-connected anchor-roads=1 anchor-connected=1 disconnected=0 connected-ratio=1.000 adjacent-buildings=2 unadjacent-buildings=0
+    budget-signal=under-used-budget use=9.4% unused=4.529s overrun=0.000s first-improve=0.036s best=0.036s after-best=0.435s improvements/s=2.123 auto-best-delta=n/a
+    reason=CP-SAT OPTIMAL with population gap 0.
+- seeded-service-anchor-pressure: Seeded LNS case where ranked service anchors find a service move that sliding windows miss.
+  band=small split=development workflow=anchor-service budget=5s seed=19 best=200 capacity-bound=300 winner=CP-SAT grid=6x6
+  CP-SAT: rank=1 score=200 delta=best win-vs-auto=no-auto auto-delta=n/a wall=0.476s cpu-budget=5s observed-cpu=0.037s pop/cpu-budget=40.000 roads=1 services=1 residentials=1
+    attainment=cap=300 gap=100 util=66.7% closed-zero=66.7% baseline=0 closed-baseline=66.7% closed/s=1.401
+    progress=current=200 best=200 stage=cp-sat reuse=none elapsed=0.476s since-improve=0.001s stop=n/a gap=0
+    quality=first-feasible=0.037s first-improve=0.037s best=200@0.037s improvements=1 time-checkpoints=5.000s:200,30.000s:200,120.000s:200 quality-targets=50%:0.037s,90%:0.037s,100%:0.037s trace-events=3
+    road-semantics=anchor-connected anchor-roads=1 anchor-connected=1 disconnected=0 connected-ratio=1.000 adjacent-buildings=2 unadjacent-buildings=0
+    budget-signal=under-used-budget use=9.5% unused=4.524s overrun=0.000s first-improve=0.037s best=0.037s after-best=0.439s improvements/s=2.101 auto-best-delta=n/a
+    reason=CP-SAT OPTIMAL with population gap 0.
+- seeded-service-anchor-pressure: Seeded LNS case where ranked service anchors find a service move that sliding windows miss.
+  band=small split=development workflow=anchor-service budget=5s seed=37 best=200 capacity-bound=300 winner=CP-SAT grid=6x6
+  CP-SAT: rank=1 score=200 delta=best win-vs-auto=no-auto auto-delta=n/a wall=0.474s cpu-budget=5s observed-cpu=0.036s pop/cpu-budget=40.000 roads=1 services=1 residentials=1
+    attainment=cap=300 gap=100 util=66.7% closed-zero=66.7% baseline=0 closed-baseline=66.7% closed/s=1.406
+    progress=current=200 best=200 stage=cp-sat reuse=none elapsed=0.474s since-improve=0.001s stop=n/a gap=0
+    quality=first-feasible=0.035s first-improve=0.035s best=200@0.035s improvements=1 time-checkpoints=5.000s:200,30.000s:200,120.000s:200 quality-targets=50%:0.035s,90%:0.035s,100%:0.035s trace-events=3
+    road-semantics=anchor-connected anchor-roads=1 anchor-connected=1 disconnected=0 connected-ratio=1.000 adjacent-buildings=2 unadjacent-buildings=0
+    budget-signal=under-used-budget use=9.5% unused=4.526s overrun=0.000s first-improve=0.035s best=0.035s after-best=0.439s improvements/s=2.110 auto-best-delta=n/a
+    reason=CP-SAT OPTIMAL with population gap 0.
+- road-semantics-gate-choke: Road-semantics scorecard case where a central choke point separates high-value placements.
+  band=small split=holdout workflow=gate budget=1s seed=7 best=540 capacity-bound=710 winner=CP-SAT grid=6x6
+  CP-SAT: rank=1 score=540 delta=best win-vs-auto=no-auto auto-delta=n/a wall=0.471s cpu-budget=1s observed-cpu=0.038s pop/cpu-budget=540.000 roads=1 services=1 residentials=3
+    attainment=cap=710 gap=170 util=76.1% closed-zero=76.1% baseline=0 closed-baseline=76.1% closed/s=1.615
+    progress=current=540 best=540 stage=cp-sat reuse=none elapsed=0.471s since-improve=0.001s stop=n/a gap=0
+    quality=first-feasible=0.038s first-improve=0.038s best=540@0.038s improvements=1 time-checkpoints=5.000s:540,30.000s:540,120.000s:540 quality-targets=50%:0.038s,90%:0.038s,100%:0.038s trace-events=3
+    road-semantics=anchor-connected anchor-roads=1 anchor-connected=1 disconnected=0 connected-ratio=1.000 adjacent-buildings=4 unadjacent-buildings=0
+    budget-signal=under-used-budget use=47.1% unused=0.529s overrun=0.000s first-improve=0.038s best=0.038s after-best=0.433s improvements/s=2.123 auto-best-delta=n/a
+    reason=CP-SAT OPTIMAL with population gap 0.
+- road-semantics-gate-choke: Road-semantics scorecard case where a central choke point separates high-value placements.
+  band=small split=holdout workflow=gate budget=1s seed=19 best=540 capacity-bound=710 winner=CP-SAT grid=6x6
+  CP-SAT: rank=1 score=540 delta=best win-vs-auto=no-auto auto-delta=n/a wall=0.478s cpu-budget=1s observed-cpu=0.039s pop/cpu-budget=540.000 roads=1 services=1 residentials=3
+    attainment=cap=710 gap=170 util=76.1% closed-zero=76.1% baseline=0 closed-baseline=76.1% closed/s=1.590
+    progress=current=540 best=540 stage=cp-sat reuse=none elapsed=0.478s since-improve=0.001s stop=n/a gap=0
+    quality=first-feasible=0.039s first-improve=0.039s best=540@0.039s improvements=1 time-checkpoints=5.000s:540,30.000s:540,120.000s:540 quality-targets=50%:0.039s,90%:0.039s,100%:0.039s trace-events=3
+    road-semantics=anchor-connected anchor-roads=1 anchor-connected=1 disconnected=0 connected-ratio=1.000 adjacent-buildings=4 unadjacent-buildings=0
+    budget-signal=under-used-budget use=47.8% unused=0.522s overrun=0.000s first-improve=0.039s best=0.039s after-best=0.439s improvements/s=2.092 auto-best-delta=n/a
+    reason=CP-SAT OPTIMAL with population gap 0.
+- road-semantics-gate-choke: Road-semantics scorecard case where a central choke point separates high-value placements.
+  band=small split=holdout workflow=gate budget=1s seed=37 best=540 capacity-bound=710 winner=CP-SAT grid=6x6
+  CP-SAT: rank=1 score=540 delta=best win-vs-auto=no-auto auto-delta=n/a wall=0.480s cpu-budget=1s observed-cpu=0.034s pop/cpu-budget=540.000 roads=1 services=1 residentials=3
+    attainment=cap=710 gap=170 util=76.1% closed-zero=76.1% baseline=0 closed-baseline=76.1% closed/s=1.584
+    progress=current=540 best=540 stage=cp-sat reuse=none elapsed=0.48s since-improve=0.001s stop=n/a gap=0
+    quality=first-feasible=0.033s first-improve=0.033s best=540@0.033s improvements=1 time-checkpoints=5.000s:540,30.000s:540,120.000s:540 quality-targets=50%:0.033s,90%:0.033s,100%:0.033s trace-events=3
+    road-semantics=anchor-connected anchor-roads=1 anchor-connected=1 disconnected=0 connected-ratio=1.000 adjacent-buildings=4 unadjacent-buildings=0
+    budget-signal=under-used-budget use=48.0% unused=0.520s overrun=0.000s first-improve=0.033s best=0.033s after-best=0.447s improvements/s=2.083 auto-best-delta=n/a
+    reason=CP-SAT OPTIMAL with population gap 0.
+- road-semantics-gate-choke: Road-semantics scorecard case where a central choke point separates high-value placements.
+  band=small split=holdout workflow=gate budget=5s seed=7 best=540 capacity-bound=710 winner=CP-SAT grid=6x6
+  CP-SAT: rank=1 score=540 delta=best win-vs-auto=no-auto auto-delta=n/a wall=0.476s cpu-budget=5s observed-cpu=0.039s pop/cpu-budget=108.000 roads=1 services=1 residentials=3
+    attainment=cap=710 gap=170 util=76.1% closed-zero=76.1% baseline=0 closed-baseline=76.1% closed/s=1.598
+    progress=current=540 best=540 stage=cp-sat reuse=none elapsed=0.476s since-improve=0.001s stop=n/a gap=0
+    quality=first-feasible=0.038s first-improve=0.038s best=540@0.038s improvements=1 time-checkpoints=5.000s:540,30.000s:540,120.000s:540 quality-targets=50%:0.038s,90%:0.038s,100%:0.038s trace-events=3
+    road-semantics=anchor-connected anchor-roads=1 anchor-connected=1 disconnected=0 connected-ratio=1.000 adjacent-buildings=4 unadjacent-buildings=0
+    budget-signal=under-used-budget use=9.5% unused=4.524s overrun=0.000s first-improve=0.038s best=0.038s after-best=0.438s improvements/s=2.101 auto-best-delta=n/a
+    reason=CP-SAT OPTIMAL with population gap 0.
+- road-semantics-gate-choke: Road-semantics scorecard case where a central choke point separates high-value placements.
+  band=small split=holdout workflow=gate budget=5s seed=19 best=540 capacity-bound=710 winner=CP-SAT grid=6x6
+  CP-SAT: rank=1 score=540 delta=best win-vs-auto=no-auto auto-delta=n/a wall=0.475s cpu-budget=5s observed-cpu=0.040s pop/cpu-budget=108.000 roads=1 services=1 residentials=3
+    attainment=cap=710 gap=170 util=76.1% closed-zero=76.1% baseline=0 closed-baseline=76.1% closed/s=1.600
+    progress=current=540 best=540 stage=cp-sat reuse=none elapsed=0.475s since-improve=0.001s stop=n/a gap=0
+    quality=first-feasible=0.039s first-improve=0.039s best=540@0.039s improvements=1 time-checkpoints=5.000s:540,30.000s:540,120.000s:540 quality-targets=50%:0.039s,90%:0.039s,100%:0.039s trace-events=3
+    road-semantics=anchor-connected anchor-roads=1 anchor-connected=1 disconnected=0 connected-ratio=1.000 adjacent-buildings=4 unadjacent-buildings=0
+    budget-signal=under-used-budget use=9.5% unused=4.525s overrun=0.000s first-improve=0.039s best=0.039s after-best=0.436s improvements/s=2.105 auto-best-delta=n/a
+    reason=CP-SAT OPTIMAL with population gap 0.
+- road-semantics-gate-choke: Road-semantics scorecard case where a central choke point separates high-value placements.
+  band=small split=holdout workflow=gate budget=5s seed=37 best=540 capacity-bound=710 winner=CP-SAT grid=6x6
+  CP-SAT: rank=1 score=540 delta=best win-vs-auto=no-auto auto-delta=n/a wall=0.473s cpu-budget=5s observed-cpu=0.034s pop/cpu-budget=108.000 roads=1 services=1 residentials=3
+    attainment=cap=710 gap=170 util=76.1% closed-zero=76.1% baseline=0 closed-baseline=76.1% closed/s=1.609
+    progress=current=540 best=540 stage=cp-sat reuse=none elapsed=0.473s since-improve=0.001s stop=n/a gap=0
+    quality=first-feasible=0.033s first-improve=0.033s best=540@0.033s improvements=1 time-checkpoints=5.000s:540,30.000s:540,120.000s:540 quality-targets=50%:0.033s,90%:0.033s,100%:0.033s trace-events=3
+    road-semantics=anchor-connected anchor-roads=1 anchor-connected=1 disconnected=0 connected-ratio=1.000 adjacent-buildings=4 unadjacent-buildings=0
+    budget-signal=under-used-budget use=9.5% unused=4.527s overrun=0.000s first-improve=0.033s best=0.033s after-best=0.440s improvements/s=2.114 auto-best-delta=n/a
+    reason=CP-SAT OPTIMAL with population gap 0.
+- road-semantics-service-pressure: Road-semantics scorecard case with overlapping service ranges and scarce premium housing.
+  band=small split=development workflow=service-pressure budget=1s seed=7 best=740 capacity-bound=800 winner=CP-SAT grid=6x6
+  CP-SAT: rank=1 score=740 delta=best win-vs-auto=no-auto auto-delta=n/a wall=1.387s cpu-budget=1s observed-cpu=0.931s pop/cpu-budget=740.000 roads=2 services=2 residentials=3
+    attainment=cap=800 gap=60 util=92.5% closed-zero=92.5% baseline=0 closed-baseline=92.5% closed/s=0.667
+    progress=current=740 best=740 stage=cp-sat reuse=none elapsed=1.387s since-improve=0.472s stop=n/a gap=0
+    quality=first-feasible=0.459s first-improve=0.459s best=740@0.459s improvements=1 time-checkpoints=5.000s:740,30.000s:740,120.000s:740 quality-targets=50%:0.459s,90%:0.459s,100%:0.459s trace-events=3
+    road-semantics=anchor-connected anchor-roads=1 anchor-connected=2 disconnected=0 connected-ratio=1.000 adjacent-buildings=5 unadjacent-buildings=0
+    budget-signal=over-budget use=138.7% unused=0.000s overrun=0.387s first-improve=0.459s best=0.459s after-best=0.928s improvements/s=0.721 auto-best-delta=n/a
+    reason=CP-SAT FEASIBLE with population gap 0.
+- road-semantics-service-pressure: Road-semantics scorecard case with overlapping service ranges and scarce premium housing.
+  band=small split=development workflow=service-pressure budget=1s seed=19 best=740 capacity-bound=800 winner=CP-SAT grid=6x6
+  CP-SAT: rank=1 score=740 delta=best win-vs-auto=no-auto auto-delta=n/a wall=1.468s cpu-budget=1s observed-cpu=1.000s pop/cpu-budget=740.000 roads=3 services=2 residentials=3
+    attainment=cap=800 gap=60 util=92.5% closed-zero=92.5% baseline=0 closed-baseline=92.5% closed/s=0.630
+    progress=current=740 best=740 stage=cp-sat reuse=none elapsed=1.468s since-improve=0.448s stop=n/a gap=0
+    quality=first-feasible=0.553s first-improve=0.553s best=740@0.553s improvements=1 time-checkpoints=5.000s:740,30.000s:740,120.000s:740 quality-targets=50%:0.553s,90%:0.553s,100%:0.553s trace-events=3
+    road-semantics=anchor-connected anchor-roads=2 anchor-connected=3 disconnected=0 connected-ratio=1.000 adjacent-buildings=5 unadjacent-buildings=0
+    budget-signal=over-budget use=146.8% unused=0.000s overrun=0.468s first-improve=0.553s best=0.553s after-best=0.915s improvements/s=0.681 auto-best-delta=n/a
+    reason=CP-SAT FEASIBLE with population gap 0.
+- road-semantics-service-pressure: Road-semantics scorecard case with overlapping service ranges and scarce premium housing.
+  band=small split=development workflow=service-pressure budget=1s seed=37 best=740 capacity-bound=800 winner=CP-SAT grid=6x6
+  CP-SAT: rank=1 score=740 delta=best win-vs-auto=no-auto auto-delta=n/a wall=1.399s cpu-budget=1s observed-cpu=0.903s pop/cpu-budget=740.000 roads=2 services=2 residentials=3
+    attainment=cap=800 gap=60 util=92.5% closed-zero=92.5% baseline=0 closed-baseline=92.5% closed/s=0.661
+    progress=current=740 best=740 stage=cp-sat reuse=none elapsed=1.399s since-improve=0.179s stop=n/a gap=0
+    quality=first-feasible=0.724s first-improve=0.724s best=740@0.724s improvements=1 time-checkpoints=5.000s:740,30.000s:740,120.000s:740 quality-targets=50%:0.724s,90%:0.724s,100%:0.724s trace-events=3
+    road-semantics=anchor-connected anchor-roads=1 anchor-connected=2 disconnected=0 connected-ratio=1.000 adjacent-buildings=5 unadjacent-buildings=0
+    budget-signal=over-budget use=139.9% unused=0.000s overrun=0.399s first-improve=0.724s best=0.724s after-best=0.675s improvements/s=0.715 auto-best-delta=n/a
+    reason=CP-SAT FEASIBLE with population gap 0.
+- road-semantics-service-pressure: Road-semantics scorecard case with overlapping service ranges and scarce premium housing.
+  band=small split=development workflow=service-pressure budget=5s seed=7 best=740 capacity-bound=800 winner=CP-SAT grid=6x6
+  CP-SAT: rank=1 score=740 delta=best win-vs-auto=no-auto auto-delta=n/a wall=1.851s cpu-budget=5s observed-cpu=1.398s pop/cpu-budget=148.000 roads=2 services=2 residentials=3
+    attainment=cap=800 gap=60 util=92.5% closed-zero=92.5% baseline=0 closed-baseline=92.5% closed/s=0.500
+    progress=current=740 best=740 stage=cp-sat reuse=none elapsed=1.851s since-improve=0.935s stop=n/a gap=0
+    quality=first-feasible=0.463s first-improve=0.463s best=740@0.463s improvements=1 time-checkpoints=5.000s:740,30.000s:740,120.000s:740 quality-targets=50%:0.463s,90%:0.463s,100%:0.463s trace-events=3
+    road-semantics=anchor-connected anchor-roads=1 anchor-connected=2 disconnected=0 connected-ratio=1.000 adjacent-buildings=5 unadjacent-buildings=0
+    budget-signal=under-used-budget use=37.0% unused=3.149s overrun=0.000s first-improve=0.463s best=0.463s after-best=1.388s improvements/s=0.540 auto-best-delta=n/a
+    reason=CP-SAT OPTIMAL with population gap 0.
+- road-semantics-service-pressure: Road-semantics scorecard case with overlapping service ranges and scarce premium housing.
+  band=small split=development workflow=service-pressure budget=5s seed=19 best=740 capacity-bound=800 winner=CP-SAT grid=6x6
+  CP-SAT: rank=1 score=740 delta=best win-vs-auto=no-auto auto-delta=n/a wall=2.859s cpu-budget=5s observed-cpu=2.401s pop/cpu-budget=148.000 roads=2 services=2 residentials=3
+    attainment=cap=800 gap=60 util=92.5% closed-zero=92.5% baseline=0 closed-baseline=92.5% closed/s=0.324
+    progress=current=740 best=740 stage=cp-sat reuse=none elapsed=2.859s since-improve=0.555s stop=n/a gap=0
+    quality=first-feasible=1.845s first-improve=1.845s best=740@1.845s improvements=1 time-checkpoints=5.000s:740,30.000s:740,120.000s:740 quality-targets=50%:1.845s,90%:1.845s,100%:1.845s trace-events=3
+    road-semantics=anchor-connected anchor-roads=1 anchor-connected=2 disconnected=0 connected-ratio=1.000 adjacent-buildings=5 unadjacent-buildings=0
+    budget-signal=under-used-budget use=57.2% unused=2.141s overrun=0.000s first-improve=1.845s best=1.845s after-best=1.014s improvements/s=0.350 auto-best-delta=n/a
+    reason=CP-SAT OPTIMAL with population gap 0.
+- road-semantics-service-pressure: Road-semantics scorecard case with overlapping service ranges and scarce premium housing.
+  band=small split=development workflow=service-pressure budget=5s seed=37 best=740 capacity-bound=800 winner=CP-SAT grid=6x6
+  CP-SAT: rank=1 score=740 delta=best win-vs-auto=no-auto auto-delta=n/a wall=2.020s cpu-budget=5s observed-cpu=1.562s pop/cpu-budget=148.000 roads=2 services=2 residentials=3
+    attainment=cap=800 gap=60 util=92.5% closed-zero=92.5% baseline=0 closed-baseline=92.5% closed/s=0.458
+    progress=current=740 best=740 stage=cp-sat reuse=none elapsed=2.02s since-improve=0.836s stop=n/a gap=0
+    quality=first-feasible=0.727s first-improve=0.727s best=740@0.727s improvements=1 time-checkpoints=5.000s:740,30.000s:740,120.000s:740 quality-targets=50%:0.727s,90%:0.727s,100%:0.727s trace-events=3
+    road-semantics=anchor-connected anchor-roads=1 anchor-connected=2 disconnected=0 connected-ratio=1.000 adjacent-buildings=5 unadjacent-buildings=0
+    budget-signal=under-used-budget use=40.4% unused=2.980s overrun=0.000s first-improve=0.727s best=0.727s after-best=1.293s improvements/s=0.495 auto-best-delta=n/a
+    reason=CP-SAT OPTIMAL with population gap 0.
+- multi-anchor-road-components: Disconnected anchor-valid road components should both remain usable under the aligned road formulation.
+  band=small split=holdout workflow=multi-anchor budget=1s seed=7 best=200 capacity-bound=200 winner=CP-SAT grid=3x7
+  CP-SAT: rank=1 score=200 delta=best win-vs-auto=no-auto auto-delta=n/a wall=0.448s cpu-budget=1s observed-cpu=0.005s pop/cpu-budget=200.000 roads=2 services=0 residentials=2
+    attainment=cap=200 gap=0 util=100.0% closed-zero=100.0% baseline=0 closed-baseline=100.0% closed/s=2.234
+    progress=current=200 best=200 stage=cp-sat reuse=none elapsed=0.448s since-improve=0s stop=n/a gap=0
+    quality=first-feasible=0.005s first-improve=0.005s best=200@0.005s improvements=1 time-checkpoints=5.000s:200,30.000s:200,120.000s:200 quality-targets=50%:0.005s,90%:0.005s,100%:0.005s trace-events=3
+    road-semantics=anchor-connected anchor-roads=2 anchor-connected=2 disconnected=0 connected-ratio=1.000 adjacent-buildings=2 unadjacent-buildings=0
+    budget-signal=under-used-budget use=44.8% unused=0.552s overrun=0.000s first-improve=0.005s best=0.005s after-best=0.443s improvements/s=2.232 auto-best-delta=n/a
+    reason=CP-SAT OPTIMAL with population gap 0.
+- multi-anchor-road-components: Disconnected anchor-valid road components should both remain usable under the aligned road formulation.
+  band=small split=holdout workflow=multi-anchor budget=1s seed=19 best=200 capacity-bound=200 winner=CP-SAT grid=3x7
+  CP-SAT: rank=1 score=200 delta=best win-vs-auto=no-auto auto-delta=n/a wall=0.434s cpu-budget=1s observed-cpu=0.004s pop/cpu-budget=200.000 roads=2 services=0 residentials=2
+    attainment=cap=200 gap=0 util=100.0% closed-zero=100.0% baseline=0 closed-baseline=100.0% closed/s=2.302
+    progress=current=200 best=200 stage=cp-sat reuse=none elapsed=0.434s since-improve=0s stop=n/a gap=0
+    quality=first-feasible=0.004s first-improve=0.004s best=200@0.004s improvements=1 time-checkpoints=5.000s:200,30.000s:200,120.000s:200 quality-targets=50%:0.004s,90%:0.004s,100%:0.004s trace-events=3
+    road-semantics=anchor-connected anchor-roads=2 anchor-connected=2 disconnected=0 connected-ratio=1.000 adjacent-buildings=2 unadjacent-buildings=0
+    budget-signal=under-used-budget use=43.4% unused=0.566s overrun=0.000s first-improve=0.004s best=0.004s after-best=0.430s improvements/s=2.304 auto-best-delta=n/a
+    reason=CP-SAT OPTIMAL with population gap 0.
+- multi-anchor-road-components: Disconnected anchor-valid road components should both remain usable under the aligned road formulation.
+  band=small split=holdout workflow=multi-anchor budget=1s seed=37 best=200 capacity-bound=200 winner=CP-SAT grid=3x7
+  CP-SAT: rank=1 score=200 delta=best win-vs-auto=no-auto auto-delta=n/a wall=0.439s cpu-budget=1s observed-cpu=0.004s pop/cpu-budget=200.000 roads=2 services=0 residentials=2
+    attainment=cap=200 gap=0 util=100.0% closed-zero=100.0% baseline=0 closed-baseline=100.0% closed/s=2.278
+    progress=current=200 best=200 stage=cp-sat reuse=none elapsed=0.439s since-improve=0s stop=n/a gap=0
+    quality=first-feasible=0.004s first-improve=0.004s best=200@0.004s improvements=1 time-checkpoints=5.000s:200,30.000s:200,120.000s:200 quality-targets=50%:0.004s,90%:0.004s,100%:0.004s trace-events=3
+    road-semantics=anchor-connected anchor-roads=2 anchor-connected=2 disconnected=0 connected-ratio=1.000 adjacent-buildings=2 unadjacent-buildings=0
+    budget-signal=under-used-budget use=43.9% unused=0.561s overrun=0.000s first-improve=0.004s best=0.004s after-best=0.435s improvements/s=2.278 auto-best-delta=n/a
+    reason=CP-SAT OPTIMAL with population gap 0.
+- multi-anchor-road-components: Disconnected anchor-valid road components should both remain usable under the aligned road formulation.
+  band=small split=holdout workflow=multi-anchor budget=5s seed=7 best=200 capacity-bound=200 winner=CP-SAT grid=3x7
+  CP-SAT: rank=1 score=200 delta=best win-vs-auto=no-auto auto-delta=n/a wall=0.438s cpu-budget=5s observed-cpu=0.004s pop/cpu-budget=40.000 roads=2 services=0 residentials=2
+    attainment=cap=200 gap=0 util=100.0% closed-zero=100.0% baseline=0 closed-baseline=100.0% closed/s=2.285
+    progress=current=200 best=200 stage=cp-sat reuse=none elapsed=0.438s since-improve=0s stop=n/a gap=0
+    quality=first-feasible=0.004s first-improve=0.004s best=200@0.004s improvements=1 time-checkpoints=5.000s:200,30.000s:200,120.000s:200 quality-targets=50%:0.004s,90%:0.004s,100%:0.004s trace-events=3
+    road-semantics=anchor-connected anchor-roads=2 anchor-connected=2 disconnected=0 connected-ratio=1.000 adjacent-buildings=2 unadjacent-buildings=0
+    budget-signal=under-used-budget use=8.8% unused=4.562s overrun=0.000s first-improve=0.004s best=0.004s after-best=0.434s improvements/s=2.283 auto-best-delta=n/a
+    reason=CP-SAT OPTIMAL with population gap 0.
+- multi-anchor-road-components: Disconnected anchor-valid road components should both remain usable under the aligned road formulation.
+  band=small split=holdout workflow=multi-anchor budget=5s seed=19 best=200 capacity-bound=200 winner=CP-SAT grid=3x7
+  CP-SAT: rank=1 score=200 delta=best win-vs-auto=no-auto auto-delta=n/a wall=0.435s cpu-budget=5s observed-cpu=0.004s pop/cpu-budget=40.000 roads=2 services=0 residentials=2
+    attainment=cap=200 gap=0 util=100.0% closed-zero=100.0% baseline=0 closed-baseline=100.0% closed/s=2.299
+    progress=current=200 best=200 stage=cp-sat reuse=none elapsed=0.435s since-improve=0s stop=n/a gap=0
+    quality=first-feasible=0.004s first-improve=0.004s best=200@0.004s improvements=1 time-checkpoints=5.000s:200,30.000s:200,120.000s:200 quality-targets=50%:0.004s,90%:0.004s,100%:0.004s trace-events=3
+    road-semantics=anchor-connected anchor-roads=2 anchor-connected=2 disconnected=0 connected-ratio=1.000 adjacent-buildings=2 unadjacent-buildings=0
+    budget-signal=under-used-budget use=8.7% unused=4.565s overrun=0.000s first-improve=0.004s best=0.004s after-best=0.431s improvements/s=2.299 auto-best-delta=n/a
+    reason=CP-SAT OPTIMAL with population gap 0.
+- multi-anchor-road-components: Disconnected anchor-valid road components should both remain usable under the aligned road formulation.
+  band=small split=holdout workflow=multi-anchor budget=5s seed=37 best=200 capacity-bound=200 winner=CP-SAT grid=3x7
+  CP-SAT: rank=1 score=200 delta=best win-vs-auto=no-auto auto-delta=n/a wall=0.434s cpu-budget=5s observed-cpu=0.004s pop/cpu-budget=40.000 roads=2 services=0 residentials=2
+    attainment=cap=200 gap=0 util=100.0% closed-zero=100.0% baseline=0 closed-baseline=100.0% closed/s=2.302
+    progress=current=200 best=200 stage=cp-sat reuse=none elapsed=0.434s since-improve=0s stop=n/a gap=0
+    quality=first-feasible=0.004s first-improve=0.004s best=200@0.004s improvements=1 time-checkpoints=5.000s:200,30.000s:200,120.000s:200 quality-targets=50%:0.004s,90%:0.004s,100%:0.004s trace-events=3
+    road-semantics=anchor-connected anchor-roads=2 anchor-connected=2 disconnected=0 connected-ratio=1.000 adjacent-buildings=2 unadjacent-buildings=0
+    budget-signal=under-used-budget use=8.7% unused=4.566s overrun=0.000s first-improve=0.004s best=0.004s after-best=0.430s improvements/s=2.304 auto-best-delta=n/a
+    reason=CP-SAT OPTIMAL with population gap 0.
+- fresh-multi-anchor-service-island: Fresh product holdout with multiple road anchors, service reach islands, and road budget pressure for exact geometry and road semantics.
+  band=small split=holdout workflow=multi-anchor,service-pressure,gate budget=1s seed=7 best=1015 capacity-bound=1040 winner=CP-SAT grid=7x7
+  CP-SAT: rank=1 score=1015 delta=best win-vs-auto=no-auto auto-delta=n/a wall=1.447s cpu-budget=1s observed-cpu=1.000s pop/cpu-budget=1015.000 roads=7 services=2 residentials=5
+    attainment=cap=1,040 gap=25 util=97.6% closed-zero=97.6% baseline=0 closed-baseline=97.6% closed/s=0.674
+    progress=current=1,015 best=1,015 stage=cp-sat reuse=none elapsed=1.447s since-improve=0.294s stop=n/a gap=25
+    quality=first-feasible=0.706s first-improve=0.706s best=1015@0.706s improvements=1 time-checkpoints=5.000s:1015,30.000s:1015,120.000s:1015 quality-targets=50%:0.706s,90%:0.706s,100%:0.706s trace-events=3
+    road-semantics=anchor-connected anchor-roads=3 anchor-connected=7 disconnected=0 connected-ratio=1.000 adjacent-buildings=7 unadjacent-buildings=0
+    budget-signal=over-budget use=144.7% unused=0.000s overrun=0.447s first-improve=0.706s best=0.706s after-best=0.741s improvements/s=0.691 auto-best-delta=n/a
+    reason=CP-SAT FEASIBLE with population gap 25.
+- fresh-multi-anchor-service-island: Fresh product holdout with multiple road anchors, service reach islands, and road budget pressure for exact geometry and road semantics.
+  band=small split=holdout workflow=multi-anchor,service-pressure,gate budget=1s seed=19 best=1015 capacity-bound=1040 winner=CP-SAT grid=7x7
+  CP-SAT: rank=1 score=1015 delta=best win-vs-auto=no-auto auto-delta=n/a wall=1.424s cpu-budget=1s observed-cpu=0.981s pop/cpu-budget=1015.000 roads=8 services=2 residentials=5
+    attainment=cap=1,040 gap=25 util=97.6% closed-zero=97.6% baseline=0 closed-baseline=97.6% closed/s=0.685
+    progress=current=994 best=1,015 stage=cp-sat reuse=none elapsed=1.424s since-improve=0.004s stop=n/a gap=46
+    quality=first-feasible=0.977s first-improve=0.977s best=1015@1.424s improvements=2 time-checkpoints=5.000s:1015,30.000s:1015,120.000s:1015 quality-targets=50%:0.977s,90%:0.977s,100%:1.424s trace-events=3
+    road-semantics=anchor-connected anchor-roads=4 anchor-connected=8 disconnected=0 connected-ratio=1.000 adjacent-buildings=7 unadjacent-buildings=0
+    budget-signal=over-budget use=142.4% unused=0.000s overrun=0.424s first-improve=0.977s best=1.424s after-best=0.000s improvements/s=1.404 auto-best-delta=n/a
+    reason=CP-SAT FEASIBLE with population gap 46.
+- fresh-multi-anchor-service-island: Fresh product holdout with multiple road anchors, service reach islands, and road budget pressure for exact geometry and road semantics.
+  band=small split=holdout workflow=multi-anchor,service-pressure,gate budget=1s seed=37 best=1015 capacity-bound=1040 winner=CP-SAT grid=7x7
+  CP-SAT: rank=1 score=1015 delta=best win-vs-auto=no-auto auto-delta=n/a wall=1.425s cpu-budget=1s observed-cpu=0.980s pop/cpu-budget=1015.000 roads=9 services=2 residentials=5
+    attainment=cap=1,040 gap=25 util=97.6% closed-zero=97.6% baseline=0 closed-baseline=97.6% closed/s=0.685
+    progress=current=1,015 best=1,015 stage=cp-sat reuse=none elapsed=1.425s since-improve=0.042s stop=n/a gap=25
+    quality=first-feasible=0.938s first-improve=0.938s best=1015@0.938s improvements=1 time-checkpoints=5.000s:1015,30.000s:1015,120.000s:1015 quality-targets=50%:0.938s,90%:0.938s,100%:0.938s trace-events=3
+    road-semantics=anchor-connected anchor-roads=2 anchor-connected=9 disconnected=0 connected-ratio=1.000 adjacent-buildings=7 unadjacent-buildings=0
+    budget-signal=over-budget use=142.5% unused=0.000s overrun=0.425s first-improve=0.938s best=0.938s after-best=0.487s improvements/s=0.702 auto-best-delta=n/a
+    reason=CP-SAT FEASIBLE with population gap 25.
+- fresh-multi-anchor-service-island: Fresh product holdout with multiple road anchors, service reach islands, and road budget pressure for exact geometry and road semantics.
+  band=small split=holdout workflow=multi-anchor,service-pressure,gate budget=5s seed=7 best=1015 capacity-bound=1040 winner=CP-SAT grid=7x7
+  CP-SAT: rank=1 score=1015 delta=best win-vs-auto=no-auto auto-delta=n/a wall=3.467s cpu-budget=5s observed-cpu=2.957s pop/cpu-budget=203.000 roads=6 services=2 residentials=5
+    attainment=cap=1,040 gap=25 util=97.6% closed-zero=97.6% baseline=0 closed-baseline=97.6% closed/s=0.282
+    progress=current=1,015 best=1,015 stage=cp-sat reuse=none elapsed=3.467s since-improve=1.768s stop=n/a gap=0
+    quality=first-feasible=1.190s first-improve=1.190s best=1015@1.190s improvements=1 time-checkpoints=5.000s:1015,30.000s:1015,120.000s:1015 quality-targets=50%:1.190s,90%:1.190s,100%:1.190s trace-events=3
+    road-semantics=anchor-connected anchor-roads=2 anchor-connected=6 disconnected=0 connected-ratio=1.000 adjacent-buildings=7 unadjacent-buildings=0
+    budget-signal=under-used-budget use=69.3% unused=1.533s overrun=0.000s first-improve=1.190s best=1.190s after-best=2.277s improvements/s=0.288 auto-best-delta=n/a
+    reason=CP-SAT OPTIMAL with population gap 0.
+- fresh-multi-anchor-service-island: Fresh product holdout with multiple road anchors, service reach islands, and road budget pressure for exact geometry and road semantics.
+  band=small split=holdout workflow=multi-anchor,service-pressure,gate budget=5s seed=19 best=1015 capacity-bound=1040 winner=CP-SAT grid=7x7
+  CP-SAT: rank=1 score=1015 delta=best win-vs-auto=no-auto auto-delta=n/a wall=4.347s cpu-budget=5s observed-cpu=3.869s pop/cpu-budget=203.000 roads=6 services=2 residentials=5
+    attainment=cap=1,040 gap=25 util=97.6% closed-zero=97.6% baseline=0 closed-baseline=97.6% closed/s=0.225
+    progress=current=1,015 best=1,015 stage=cp-sat reuse=none elapsed=4.347s since-improve=1.506s stop=n/a gap=25
+    quality=first-feasible=2.363s first-improve=2.363s best=1015@2.363s improvements=1 time-checkpoints=5.000s:1015,30.000s:1015,120.000s:1015 quality-targets=50%:2.363s,90%:2.363s,100%:2.363s trace-events=3
+    road-semantics=anchor-connected anchor-roads=2 anchor-connected=6 disconnected=0 connected-ratio=1.000 adjacent-buildings=7 unadjacent-buildings=0
+    budget-signal=steady use=86.9% unused=0.653s overrun=0.000s first-improve=2.363s best=2.363s after-best=1.984s improvements/s=0.230 auto-best-delta=n/a
+    reason=CP-SAT FEASIBLE with population gap 25.
+- fresh-multi-anchor-service-island: Fresh product holdout with multiple road anchors, service reach islands, and road budget pressure for exact geometry and road semantics.
+  band=small split=holdout workflow=multi-anchor,service-pressure,gate budget=5s seed=37 best=1015 capacity-bound=1040 winner=CP-SAT grid=7x7
+  CP-SAT: rank=1 score=1015 delta=best win-vs-auto=no-auto auto-delta=n/a wall=3.410s cpu-budget=5s observed-cpu=2.948s pop/cpu-budget=203.000 roads=6 services=2 residentials=5
+    attainment=cap=1,040 gap=25 util=97.6% closed-zero=97.6% baseline=0 closed-baseline=97.6% closed/s=0.286
+    progress=current=1,015 best=1,015 stage=cp-sat reuse=none elapsed=3.41s since-improve=1.388s stop=n/a gap=0
+    quality=first-feasible=1.560s first-improve=1.560s best=1015@1.560s improvements=1 time-checkpoints=5.000s:1015,30.000s:1015,120.000s:1015 quality-targets=50%:1.560s,90%:1.560s,100%:1.560s trace-events=3
+    road-semantics=anchor-connected anchor-roads=2 anchor-connected=6 disconnected=0 connected-ratio=1.000 adjacent-buildings=7 unadjacent-buildings=0
+    budget-signal=under-used-budget use=68.2% unused=1.590s overrun=0.000s first-improve=1.560s best=1.560s after-best=1.850s improvements/s=0.293 auto-best-delta=n/a
+    reason=CP-SAT OPTIMAL with population gap 0.
+- fresh-typed-footprint-scarcity: Fresh product holdout with scarce large residential footprints, mixed service reach, and capacity-headroom pressure.
+  band=small split=holdout workflow=footprint-pressure,service-pressure budget=1s seed=7 best=840 capacity-bound=970 winner=CP-SAT grid=6x6
+  CP-SAT: rank=1 score=840 delta=best win-vs-auto=no-auto auto-delta=n/a wall=1.207s cpu-budget=1s observed-cpu=0.720s pop/cpu-budget=840.000 roads=1 services=2 residentials=4
+    attainment=cap=970 gap=130 util=86.6% closed-zero=86.6% baseline=0 closed-baseline=86.6% closed/s=0.718
+    progress=current=840 best=840 stage=cp-sat reuse=none elapsed=1.207s since-improve=0.241s stop=n/a gap=0
+    quality=first-feasible=0.479s first-improve=0.479s best=840@0.479s improvements=1 time-checkpoints=5.000s:840,30.000s:840,120.000s:840 quality-targets=50%:0.479s,90%:0.479s,100%:0.479s trace-events=3
+    road-semantics=anchor-connected anchor-roads=1 anchor-connected=1 disconnected=0 connected-ratio=1.000 adjacent-buildings=6 unadjacent-buildings=0
+    budget-signal=over-budget use=120.7% unused=0.000s overrun=0.207s first-improve=0.479s best=0.479s after-best=0.728s improvements/s=0.829 auto-best-delta=n/a
+    reason=CP-SAT OPTIMAL with population gap 0.
+- fresh-typed-footprint-scarcity: Fresh product holdout with scarce large residential footprints, mixed service reach, and capacity-headroom pressure.
+  band=small split=holdout workflow=footprint-pressure,service-pressure budget=1s seed=19 best=840 capacity-bound=970 winner=CP-SAT grid=6x6
+  CP-SAT: rank=1 score=840 delta=best win-vs-auto=no-auto auto-delta=n/a wall=0.897s cpu-budget=1s observed-cpu=0.451s pop/cpu-budget=840.000 roads=1 services=2 residentials=4
+    attainment=cap=970 gap=130 util=86.6% closed-zero=86.6% baseline=0 closed-baseline=86.6% closed/s=0.966
+    progress=current=840 best=840 stage=cp-sat reuse=none elapsed=0.897s since-improve=0.294s stop=n/a gap=0
+    quality=first-feasible=0.158s first-improve=0.158s best=840@0.158s improvements=1 time-checkpoints=5.000s:840,30.000s:840,120.000s:840 quality-targets=50%:0.158s,90%:0.158s,100%:0.158s trace-events=3
+    road-semantics=anchor-connected anchor-roads=1 anchor-connected=1 disconnected=0 connected-ratio=1.000 adjacent-buildings=6 unadjacent-buildings=0
+    budget-signal=steady use=89.7% unused=0.103s overrun=0.000s first-improve=0.158s best=0.158s after-best=0.739s improvements/s=1.115 auto-best-delta=n/a
+    reason=CP-SAT OPTIMAL with population gap 0.
+- fresh-typed-footprint-scarcity: Fresh product holdout with scarce large residential footprints, mixed service reach, and capacity-headroom pressure.
+  band=small split=holdout workflow=footprint-pressure,service-pressure budget=1s seed=37 best=840 capacity-bound=970 winner=CP-SAT grid=6x6
+  CP-SAT: rank=1 score=840 delta=best win-vs-auto=no-auto auto-delta=n/a wall=1.183s cpu-budget=1s observed-cpu=0.739s pop/cpu-budget=840.000 roads=1 services=2 residentials=4
+    attainment=cap=970 gap=130 util=86.6% closed-zero=86.6% baseline=0 closed-baseline=86.6% closed/s=0.732
+    progress=current=840 best=840 stage=cp-sat reuse=none elapsed=1.183s since-improve=0.639s stop=n/a gap=0
+    quality=first-feasible=0.100s first-improve=0.100s best=840@0.100s improvements=1 time-checkpoints=5.000s:840,30.000s:840,120.000s:840 quality-targets=50%:0.100s,90%:0.100s,100%:0.100s trace-events=3
+    road-semantics=anchor-connected anchor-roads=1 anchor-connected=1 disconnected=0 connected-ratio=1.000 adjacent-buildings=6 unadjacent-buildings=0
+    budget-signal=over-budget use=118.3% unused=0.000s overrun=0.183s first-improve=0.100s best=0.100s after-best=1.083s improvements/s=0.845 auto-best-delta=n/a
+    reason=CP-SAT OPTIMAL with population gap 0.
+- fresh-typed-footprint-scarcity: Fresh product holdout with scarce large residential footprints, mixed service reach, and capacity-headroom pressure.
+  band=small split=holdout workflow=footprint-pressure,service-pressure budget=5s seed=7 best=840 capacity-bound=970 winner=CP-SAT grid=6x6
+  CP-SAT: rank=1 score=840 delta=best win-vs-auto=no-auto auto-delta=n/a wall=1.211s cpu-budget=5s observed-cpu=0.713s pop/cpu-budget=168.000 roads=1 services=2 residentials=4
+    attainment=cap=970 gap=130 util=86.6% closed-zero=86.6% baseline=0 closed-baseline=86.6% closed/s=0.715
+    progress=current=840 best=840 stage=cp-sat reuse=none elapsed=1.211s since-improve=0.238s stop=n/a gap=0
+    quality=first-feasible=0.476s first-improve=0.476s best=840@0.476s improvements=1 time-checkpoints=5.000s:840,30.000s:840,120.000s:840 quality-targets=50%:0.476s,90%:0.476s,100%:0.476s trace-events=3
+    road-semantics=anchor-connected anchor-roads=1 anchor-connected=1 disconnected=0 connected-ratio=1.000 adjacent-buildings=6 unadjacent-buildings=0
+    budget-signal=under-used-budget use=24.2% unused=3.789s overrun=0.000s first-improve=0.476s best=0.476s after-best=0.735s improvements/s=0.826 auto-best-delta=n/a
+    reason=CP-SAT OPTIMAL with population gap 0.
+- fresh-typed-footprint-scarcity: Fresh product holdout with scarce large residential footprints, mixed service reach, and capacity-headroom pressure.
+  band=small split=holdout workflow=footprint-pressure,service-pressure budget=5s seed=19 best=840 capacity-bound=970 winner=CP-SAT grid=6x6
+  CP-SAT: rank=1 score=840 delta=best win-vs-auto=no-auto auto-delta=n/a wall=0.882s cpu-budget=5s observed-cpu=0.452s pop/cpu-budget=168.000 roads=1 services=2 residentials=4
+    attainment=cap=970 gap=130 util=86.6% closed-zero=86.6% baseline=0 closed-baseline=86.6% closed/s=0.982
+    progress=current=840 best=840 stage=cp-sat reuse=none elapsed=0.882s since-improve=0.296s stop=n/a gap=0
+    quality=first-feasible=0.156s first-improve=0.156s best=840@0.156s improvements=1 time-checkpoints=5.000s:840,30.000s:840,120.000s:840 quality-targets=50%:0.156s,90%:0.156s,100%:0.156s trace-events=3
+    road-semantics=anchor-connected anchor-roads=1 anchor-connected=1 disconnected=0 connected-ratio=1.000 adjacent-buildings=6 unadjacent-buildings=0
+    budget-signal=under-used-budget use=17.6% unused=4.118s overrun=0.000s first-improve=0.156s best=0.156s after-best=0.726s improvements/s=1.134 auto-best-delta=n/a
+    reason=CP-SAT OPTIMAL with population gap 0.
+- fresh-typed-footprint-scarcity: Fresh product holdout with scarce large residential footprints, mixed service reach, and capacity-headroom pressure.
+  band=small split=holdout workflow=footprint-pressure,service-pressure budget=5s seed=37 best=840 capacity-bound=970 winner=CP-SAT grid=6x6
+  CP-SAT: rank=1 score=840 delta=best win-vs-auto=no-auto auto-delta=n/a wall=1.212s cpu-budget=5s observed-cpu=0.754s pop/cpu-budget=168.000 roads=1 services=2 residentials=4
+    attainment=cap=970 gap=130 util=86.6% closed-zero=86.6% baseline=0 closed-baseline=86.6% closed/s=0.714
+    progress=current=840 best=840 stage=cp-sat reuse=none elapsed=1.212s since-improve=0.657s stop=n/a gap=0
+    quality=first-feasible=0.098s first-improve=0.098s best=840@0.098s improvements=1 time-checkpoints=5.000s:840,30.000s:840,120.000s:840 quality-targets=50%:0.098s,90%:0.098s,100%:0.098s trace-events=3
+    road-semantics=anchor-connected anchor-roads=1 anchor-connected=1 disconnected=0 connected-ratio=1.000 adjacent-buildings=6 unadjacent-buildings=0
+    budget-signal=under-used-budget use=24.2% unused=3.788s overrun=0.000s first-improve=0.098s best=0.098s after-best=1.114s improvements/s=0.825 auto-best-delta=n/a
+    reason=CP-SAT OPTIMAL with population gap 0.
+- fresh-expansion-corridor-service: Fresh product holdout for expansion planning on a corridor-constrained service layout with competing residential pockets.
+  band=small split=holdout workflow=expansion-comparison,corridor budget=1s seed=7 best=775 capacity-bound=1110 winner=CP-SAT grid=7x8
+  CP-SAT: rank=1 score=775 delta=best win-vs-auto=no-auto auto-delta=n/a wall=1.563s cpu-budget=1s observed-cpu=1.000s pop/cpu-budget=775.000 roads=11 services=2 residentials=5
+    attainment=cap=1,110 gap=335 util=69.8% closed-zero=69.8% baseline=0 closed-baseline=69.8% closed/s=0.447
+    progress=current=756 best=775 stage=cp-sat reuse=none elapsed=1.563s since-improve=0.061s stop=n/a gap=243
+    quality=first-feasible=0.939s first-improve=0.939s best=775@1.563s improvements=2 time-checkpoints=5.000s:775,30.000s:775,120.000s:775 quality-targets=50%:0.939s,90%:0.939s,100%:1.563s trace-events=3
+    road-semantics=anchor-connected anchor-roads=2 anchor-connected=11 disconnected=0 connected-ratio=1.000 adjacent-buildings=7 unadjacent-buildings=0
+    budget-signal=over-budget use=156.3% unused=0.000s overrun=0.563s first-improve=0.939s best=1.563s after-best=0.000s improvements/s=1.280 auto-best-delta=n/a
+    reason=CP-SAT FEASIBLE with population gap 243.
+- fresh-expansion-corridor-service: Fresh product holdout for expansion planning on a corridor-constrained service layout with competing residential pockets.
+  band=small split=holdout workflow=expansion-comparison,corridor budget=1s seed=19 best=895 capacity-bound=1110 winner=CP-SAT grid=7x8
+  CP-SAT: rank=1 score=895 delta=best win-vs-auto=no-auto auto-delta=n/a wall=2.137s cpu-budget=1s observed-cpu=1.000s pop/cpu-budget=895.000 roads=10 services=2 residentials=5
+    attainment=cap=1,110 gap=215 util=80.6% closed-zero=80.6% baseline=0 closed-baseline=80.6% closed/s=0.377
+    progress=current=895 best=895 stage=cp-sat reuse=none elapsed=2.137s since-improve=0.031s stop=n/a gap=105
+    quality=first-feasible=0.969s first-improve=0.969s best=895@0.969s improvements=1 time-checkpoints=5.000s:895,30.000s:895,120.000s:895 quality-targets=50%:0.969s,90%:0.969s,100%:0.969s trace-events=3
+    road-semantics=anchor-connected anchor-roads=4 anchor-connected=10 disconnected=0 connected-ratio=1.000 adjacent-buildings=7 unadjacent-buildings=0
+    budget-signal=over-budget use=213.7% unused=0.000s overrun=1.137s first-improve=0.969s best=0.969s after-best=1.168s improvements/s=0.468 auto-best-delta=n/a
+    reason=CP-SAT FEASIBLE with population gap 105.
+- fresh-expansion-corridor-service: Fresh product holdout for expansion planning on a corridor-constrained service layout with competing residential pockets.
+  band=small split=holdout workflow=expansion-comparison,corridor budget=1s seed=37 best=990 capacity-bound=1110 winner=CP-SAT grid=7x8
+  CP-SAT: rank=1 score=990 delta=best win-vs-auto=no-auto auto-delta=n/a wall=1.959s cpu-budget=1s observed-cpu=0.874s pop/cpu-budget=990.000 roads=8 services=2 residentials=5
+    attainment=cap=1,110 gap=120 util=89.2% closed-zero=89.2% baseline=0 closed-baseline=89.2% closed/s=0.455
+    progress=current=990 best=990 stage=cp-sat reuse=none elapsed=1.959s since-improve=0.04s stop=n/a gap=0
+    quality=first-feasible=0.834s first-improve=0.834s best=990@0.834s improvements=1 time-checkpoints=5.000s:990,30.000s:990,120.000s:990 quality-targets=50%:0.834s,90%:0.834s,100%:0.834s trace-events=3
+    road-semantics=anchor-connected anchor-roads=3 anchor-connected=8 disconnected=0 connected-ratio=1.000 adjacent-buildings=7 unadjacent-buildings=0
+    budget-signal=over-budget use=195.9% unused=0.000s overrun=0.959s first-improve=0.834s best=0.834s after-best=1.125s improvements/s=0.510 auto-best-delta=n/a
+    reason=CP-SAT OPTIMAL with population gap 0.
+- fresh-expansion-corridor-service: Fresh product holdout for expansion planning on a corridor-constrained service layout with competing residential pockets.
+  band=small split=holdout workflow=expansion-comparison,corridor budget=5s seed=7 best=990 capacity-bound=1110 winner=CP-SAT grid=7x8
+  CP-SAT: rank=1 score=990 delta=best win-vs-auto=no-auto auto-delta=n/a wall=3.627s cpu-budget=5s observed-cpu=2.742s pop/cpu-budget=198.000 roads=8 services=2 residentials=5
+    attainment=cap=1,110 gap=120 util=89.2% closed-zero=89.2% baseline=0 closed-baseline=89.2% closed/s=0.246
+    progress=current=990 best=990 stage=cp-sat reuse=none elapsed=3.627s since-improve=0.109s stop=n/a gap=0
+    quality=first-feasible=2.634s first-improve=2.634s best=990@2.634s improvements=1 time-checkpoints=5.000s:990,30.000s:990,120.000s:990 quality-targets=50%:2.634s,90%:2.634s,100%:2.634s trace-events=3
+    road-semantics=anchor-connected anchor-roads=3 anchor-connected=8 disconnected=0 connected-ratio=1.000 adjacent-buildings=7 unadjacent-buildings=0
+    budget-signal=under-used-budget use=72.5% unused=1.373s overrun=0.000s first-improve=2.634s best=2.634s after-best=0.993s improvements/s=0.276 auto-best-delta=n/a
+    reason=CP-SAT OPTIMAL with population gap 0.
+- fresh-expansion-corridor-service: Fresh product holdout for expansion planning on a corridor-constrained service layout with competing residential pockets.
+  band=small split=holdout workflow=expansion-comparison,corridor budget=5s seed=19 best=990 capacity-bound=1110 winner=CP-SAT grid=7x8
+  CP-SAT: rank=1 score=990 delta=best win-vs-auto=no-auto auto-delta=n/a wall=1.585s cpu-budget=5s observed-cpu=1.091s pop/cpu-budget=198.000 roads=8 services=2 residentials=5
+    attainment=cap=1,110 gap=120 util=89.2% closed-zero=89.2% baseline=0 closed-baseline=89.2% closed/s=0.563
+    progress=current=990 best=990 stage=cp-sat reuse=none elapsed=1.585s since-improve=0.089s stop=n/a gap=0
+    quality=first-feasible=1.001s first-improve=1.001s best=990@1.001s improvements=1 time-checkpoints=5.000s:990,30.000s:990,120.000s:990 quality-targets=50%:1.001s,90%:1.001s,100%:1.001s trace-events=3
+    road-semantics=anchor-connected anchor-roads=3 anchor-connected=8 disconnected=0 connected-ratio=1.000 adjacent-buildings=7 unadjacent-buildings=0
+    budget-signal=under-used-budget use=31.7% unused=3.415s overrun=0.000s first-improve=1.001s best=1.001s after-best=0.584s improvements/s=0.631 auto-best-delta=n/a
+    reason=CP-SAT OPTIMAL with population gap 0.
+- fresh-expansion-corridor-service: Fresh product holdout for expansion planning on a corridor-constrained service layout with competing residential pockets.
+  band=small split=holdout workflow=expansion-comparison,corridor budget=5s seed=37 best=990 capacity-bound=1110 winner=CP-SAT grid=7x8
+  CP-SAT: rank=1 score=990 delta=best win-vs-auto=no-auto auto-delta=n/a wall=1.036s cpu-budget=5s observed-cpu=0.584s pop/cpu-budget=198.000 roads=8 services=2 residentials=5
+    attainment=cap=1,110 gap=120 util=89.2% closed-zero=89.2% baseline=0 closed-baseline=89.2% closed/s=0.861
+    progress=current=990 best=990 stage=cp-sat reuse=none elapsed=1.036s since-improve=0.031s stop=n/a gap=0
+    quality=first-feasible=0.552s first-improve=0.552s best=990@0.552s improvements=1 time-checkpoints=5.000s:990,30.000s:990,120.000s:990 quality-targets=50%:0.552s,90%:0.552s,100%:0.552s trace-events=3
+    road-semantics=anchor-connected anchor-roads=3 anchor-connected=8 disconnected=0 connected-ratio=1.000 adjacent-buildings=7 unadjacent-buildings=0
+    budget-signal=under-used-budget use=20.7% unused=3.964s overrun=0.000s first-improve=0.552s best=0.552s after-best=0.484s improvements/s=0.965 auto-best-delta=n/a
+    reason=CP-SAT OPTIMAL with population gap 0.
+- manual-layout-replay-warm-start: Planner manual-layout replay with reusable LNS seed and CP-SAT warm-start hints.
+  band=small split=development workflow=manual-layout-replay budget=1s seed=7 best=240 capacity-bound=280 winner=CP-SAT grid=5x5
+  CP-SAT: rank=1 score=240 delta=best win-vs-auto=no-auto auto-delta=n/a wall=0.533s cpu-budget=1s observed-cpu=0.032s pop/cpu-budget=240.000 roads=1 services=1 residentials=2
+    attainment=cap=280 gap=40 util=85.7% closed-zero=85.7% baseline=0 closed-baseline=85.7% closed/s=1.607
+    progress=current=240 best=240 stage=cp-sat reuse=manual-layout-replay elapsed=0.533s since-improve=0s stop=n/a gap=0
+    quality=first-feasible=0.031s first-improve=0.031s best=240@0.031s improvements=1 time-checkpoints=5.000s:240,30.000s:240,120.000s:240 quality-targets=50%:0.031s,90%:0.031s,100%:0.031s trace-events=3
+    road-semantics=anchor-connected anchor-roads=1 anchor-connected=1 disconnected=0 connected-ratio=1.000 adjacent-buildings=3 unadjacent-buildings=0
+    budget-signal=steady use=53.3% unused=0.467s overrun=0.000s first-improve=0.031s best=0.031s after-best=0.502s improvements/s=1.876 auto-best-delta=n/a
+    reason=CP-SAT OPTIMAL with population gap 0.
+- manual-layout-replay-warm-start: Planner manual-layout replay with reusable LNS seed and CP-SAT warm-start hints.
+  band=small split=development workflow=manual-layout-replay budget=1s seed=19 best=240 capacity-bound=280 winner=CP-SAT grid=5x5
+  CP-SAT: rank=1 score=240 delta=best win-vs-auto=no-auto auto-delta=n/a wall=0.470s cpu-budget=1s observed-cpu=0.026s pop/cpu-budget=240.000 roads=1 services=1 residentials=2
+    attainment=cap=280 gap=40 util=85.7% closed-zero=85.7% baseline=0 closed-baseline=85.7% closed/s=1.824
+    progress=current=240 best=240 stage=cp-sat reuse=manual-layout-replay elapsed=0.47s since-improve=0s stop=n/a gap=0
+    quality=first-feasible=0.026s first-improve=0.026s best=240@0.026s improvements=1 time-checkpoints=5.000s:240,30.000s:240,120.000s:240 quality-targets=50%:0.026s,90%:0.026s,100%:0.026s trace-events=3
+    road-semantics=anchor-connected anchor-roads=1 anchor-connected=1 disconnected=0 connected-ratio=1.000 adjacent-buildings=3 unadjacent-buildings=0
+    budget-signal=under-used-budget use=47.0% unused=0.530s overrun=0.000s first-improve=0.026s best=0.026s after-best=0.444s improvements/s=2.128 auto-best-delta=n/a
+    reason=CP-SAT OPTIMAL with population gap 0.
+- manual-layout-replay-warm-start: Planner manual-layout replay with reusable LNS seed and CP-SAT warm-start hints.
+  band=small split=development workflow=manual-layout-replay budget=1s seed=37 best=240 capacity-bound=280 winner=CP-SAT grid=5x5
+  CP-SAT: rank=1 score=240 delta=best win-vs-auto=no-auto auto-delta=n/a wall=0.572s cpu-budget=1s observed-cpu=0.028s pop/cpu-budget=240.000 roads=1 services=1 residentials=2
+    attainment=cap=280 gap=40 util=85.7% closed-zero=85.7% baseline=0 closed-baseline=85.7% closed/s=1.497
+    progress=current=240 best=240 stage=cp-sat reuse=manual-layout-replay elapsed=0.572s since-improve=0s stop=n/a gap=0
+    quality=first-feasible=0.027s first-improve=0.027s best=240@0.027s improvements=1 time-checkpoints=5.000s:240,30.000s:240,120.000s:240 quality-targets=50%:0.027s,90%:0.027s,100%:0.027s trace-events=3
+    road-semantics=anchor-connected anchor-roads=1 anchor-connected=1 disconnected=0 connected-ratio=1.000 adjacent-buildings=3 unadjacent-buildings=0
+    budget-signal=steady use=57.2% unused=0.428s overrun=0.000s first-improve=0.027s best=0.027s after-best=0.545s improvements/s=1.748 auto-best-delta=n/a
+    reason=CP-SAT OPTIMAL with population gap 0.
+- manual-layout-replay-warm-start: Planner manual-layout replay with reusable LNS seed and CP-SAT warm-start hints.
+  band=small split=development workflow=manual-layout-replay budget=5s seed=7 best=240 capacity-bound=280 winner=CP-SAT grid=5x5
+  CP-SAT: rank=1 score=240 delta=best win-vs-auto=no-auto auto-delta=n/a wall=0.488s cpu-budget=5s observed-cpu=0.028s pop/cpu-budget=48.000 roads=1 services=1 residentials=2
+    attainment=cap=280 gap=40 util=85.7% closed-zero=85.7% baseline=0 closed-baseline=85.7% closed/s=1.756
+    progress=current=240 best=240 stage=cp-sat reuse=manual-layout-replay elapsed=0.488s since-improve=0s stop=n/a gap=0
+    quality=first-feasible=0.027s first-improve=0.027s best=240@0.027s improvements=1 time-checkpoints=5.000s:240,30.000s:240,120.000s:240 quality-targets=50%:0.027s,90%:0.027s,100%:0.027s trace-events=3
+    road-semantics=anchor-connected anchor-roads=1 anchor-connected=1 disconnected=0 connected-ratio=1.000 adjacent-buildings=3 unadjacent-buildings=0
+    budget-signal=under-used-budget use=9.8% unused=4.512s overrun=0.000s first-improve=0.027s best=0.027s after-best=0.461s improvements/s=2.049 auto-best-delta=n/a
+    reason=CP-SAT OPTIMAL with population gap 0.
+- manual-layout-replay-warm-start: Planner manual-layout replay with reusable LNS seed and CP-SAT warm-start hints.
+  band=small split=development workflow=manual-layout-replay budget=5s seed=19 best=240 capacity-bound=280 winner=CP-SAT grid=5x5
+  CP-SAT: rank=1 score=240 delta=best win-vs-auto=no-auto auto-delta=n/a wall=0.455s cpu-budget=5s observed-cpu=0.027s pop/cpu-budget=48.000 roads=1 services=1 residentials=2
+    attainment=cap=280 gap=40 util=85.7% closed-zero=85.7% baseline=0 closed-baseline=85.7% closed/s=1.885
+    progress=current=240 best=240 stage=cp-sat reuse=manual-layout-replay elapsed=0.455s since-improve=0s stop=n/a gap=0
+    quality=first-feasible=0.027s first-improve=0.027s best=240@0.027s improvements=1 time-checkpoints=5.000s:240,30.000s:240,120.000s:240 quality-targets=50%:0.027s,90%:0.027s,100%:0.027s trace-events=3
+    road-semantics=anchor-connected anchor-roads=1 anchor-connected=1 disconnected=0 connected-ratio=1.000 adjacent-buildings=3 unadjacent-buildings=0
+    budget-signal=under-used-budget use=9.1% unused=4.545s overrun=0.000s first-improve=0.027s best=0.027s after-best=0.428s improvements/s=2.198 auto-best-delta=n/a
+    reason=CP-SAT OPTIMAL with population gap 0.
+- manual-layout-replay-warm-start: Planner manual-layout replay with reusable LNS seed and CP-SAT warm-start hints.
+  band=small split=development workflow=manual-layout-replay budget=5s seed=37 best=240 capacity-bound=280 winner=CP-SAT grid=5x5
+  CP-SAT: rank=1 score=240 delta=best win-vs-auto=no-auto auto-delta=n/a wall=0.467s cpu-budget=5s observed-cpu=0.027s pop/cpu-budget=48.000 roads=1 services=1 residentials=2
+    attainment=cap=280 gap=40 util=85.7% closed-zero=85.7% baseline=0 closed-baseline=85.7% closed/s=1.836
+    progress=current=240 best=240 stage=cp-sat reuse=manual-layout-replay elapsed=0.467s since-improve=0s stop=n/a gap=0
+    quality=first-feasible=0.027s first-improve=0.027s best=240@0.027s improvements=1 time-checkpoints=5.000s:240,30.000s:240,120.000s:240 quality-targets=50%:0.027s,90%:0.027s,100%:0.027s trace-events=3
+    road-semantics=anchor-connected anchor-roads=1 anchor-connected=1 disconnected=0 connected-ratio=1.000 adjacent-buildings=3 unadjacent-buildings=0
+    budget-signal=under-used-budget use=9.3% unused=4.533s overrun=0.000s first-improve=0.027s best=0.027s after-best=0.440s improvements/s=2.141 auto-best-delta=n/a
+    reason=CP-SAT OPTIMAL with population gap 0.
+- expansion-comparison-replay: Planner expansion-comparison replay with a saved pre-expansion layout as the incumbent.
+  band=small split=holdout workflow=expansion-comparison budget=1s seed=7 best=745 capacity-bound=820 winner=CP-SAT grid=6x6
+  CP-SAT: rank=1 score=745 delta=best win-vs-auto=no-auto auto-delta=n/a wall=1.451s cpu-budget=1s observed-cpu=1.001s pop/cpu-budget=745.000 roads=4 services=2 residentials=4
+    attainment=cap=820 gap=75 util=90.9% closed-zero=90.9% baseline=0 closed-baseline=90.9% closed/s=0.626
+    progress=current=745 best=745 stage=cp-sat reuse=expansion-comparison-replay elapsed=1.451s since-improve=0.219s stop=n/a gap=35
+    quality=first-feasible=0.782s first-improve=0.782s best=745@0.782s improvements=1 time-checkpoints=5.000s:745,30.000s:745,120.000s:745 quality-targets=50%:0.782s,90%:0.782s,100%:0.782s trace-events=3
+    road-semantics=anchor-connected anchor-roads=1 anchor-connected=4 disconnected=0 connected-ratio=1.000 adjacent-buildings=6 unadjacent-buildings=0
+    budget-signal=over-budget use=145.1% unused=0.000s overrun=0.451s first-improve=0.782s best=0.782s after-best=0.669s improvements/s=0.689 auto-best-delta=n/a
+    reason=CP-SAT FEASIBLE with population gap 35.
+- expansion-comparison-replay: Planner expansion-comparison replay with a saved pre-expansion layout as the incumbent.
+  band=small split=holdout workflow=expansion-comparison budget=1s seed=19 best=745 capacity-bound=820 winner=CP-SAT grid=6x6
+  CP-SAT: rank=1 score=745 delta=best win-vs-auto=no-auto auto-delta=n/a wall=1.403s cpu-budget=1s observed-cpu=0.920s pop/cpu-budget=745.000 roads=7 services=2 residentials=4
+    attainment=cap=820 gap=75 util=90.9% closed-zero=90.9% baseline=0 closed-baseline=90.9% closed/s=0.648
+    progress=current=732 best=745 stage=cp-sat reuse=expansion-comparison-replay elapsed=1.403s since-improve=0.051s stop=n/a gap=48
+    quality=first-feasible=0.869s first-improve=0.869s best=745@1.403s improvements=2 time-checkpoints=5.000s:745,30.000s:745,120.000s:745 quality-targets=50%:0.869s,90%:0.869s,100%:1.403s trace-events=3
+    road-semantics=anchor-connected anchor-roads=2 anchor-connected=7 disconnected=0 connected-ratio=1.000 adjacent-buildings=6 unadjacent-buildings=0
+    budget-signal=over-budget use=140.3% unused=0.000s overrun=0.403s first-improve=0.869s best=1.403s after-best=0.000s improvements/s=1.426 auto-best-delta=n/a
+    reason=CP-SAT FEASIBLE with population gap 48.
+- expansion-comparison-replay: Planner expansion-comparison replay with a saved pre-expansion layout as the incumbent.
+  band=small split=holdout workflow=expansion-comparison budget=1s seed=37 best=780 capacity-bound=820 winner=CP-SAT grid=6x6
+  CP-SAT: rank=1 score=780 delta=best win-vs-auto=no-auto auto-delta=n/a wall=1.447s cpu-budget=1s observed-cpu=1.000s pop/cpu-budget=780.000 roads=10 services=2 residentials=4
+    attainment=cap=820 gap=40 util=95.1% closed-zero=95.1% baseline=0 closed-baseline=95.1% closed/s=0.657
+    progress=current=780 best=780 stage=cp-sat reuse=expansion-comparison-replay elapsed=1.447s since-improve=0.015s stop=n/a gap=0
+    quality=first-feasible=0.985s first-improve=0.985s best=780@0.985s improvements=1 time-checkpoints=5.000s:780,30.000s:780,120.000s:780 quality-targets=50%:0.985s,90%:0.985s,100%:0.985s trace-events=3
+    road-semantics=anchor-connected anchor-roads=3 anchor-connected=10 disconnected=0 connected-ratio=1.000 adjacent-buildings=6 unadjacent-buildings=0
+    budget-signal=over-budget use=144.7% unused=0.000s overrun=0.447s first-improve=0.985s best=0.985s after-best=0.462s improvements/s=0.691 auto-best-delta=n/a
+    reason=CP-SAT FEASIBLE with population gap 0.
+- expansion-comparison-replay: Planner expansion-comparison replay with a saved pre-expansion layout as the incumbent.
+  band=small split=holdout workflow=expansion-comparison budget=5s seed=7 best=780 capacity-bound=820 winner=CP-SAT grid=6x6
+  CP-SAT: rank=1 score=780 delta=best win-vs-auto=no-auto auto-delta=n/a wall=4.290s cpu-budget=5s observed-cpu=3.836s pop/cpu-budget=156.000 roads=4 services=2 residentials=4
+    attainment=cap=820 gap=40 util=95.1% closed-zero=95.1% baseline=0 closed-baseline=95.1% closed/s=0.222
+    progress=current=780 best=780 stage=cp-sat reuse=expansion-comparison-replay elapsed=4.29s since-improve=2.136s stop=n/a gap=0
+    quality=first-feasible=1.700s first-improve=1.700s best=780@1.700s improvements=1 time-checkpoints=5.000s:780,30.000s:780,120.000s:780 quality-targets=50%:1.700s,90%:1.700s,100%:1.700s trace-events=3
+    road-semantics=anchor-connected anchor-roads=2 anchor-connected=4 disconnected=0 connected-ratio=1.000 adjacent-buildings=6 unadjacent-buildings=0
+    budget-signal=early-plateau use=85.8% unused=0.710s overrun=0.000s first-improve=1.700s best=1.700s after-best=2.590s improvements/s=0.233 auto-best-delta=n/a
+    reason=CP-SAT FEASIBLE with population gap 0.
+- expansion-comparison-replay: Planner expansion-comparison replay with a saved pre-expansion layout as the incumbent.
+  band=small split=holdout workflow=expansion-comparison budget=5s seed=19 best=780 capacity-bound=820 winner=CP-SAT grid=6x6
+  CP-SAT: rank=1 score=780 delta=best win-vs-auto=no-auto auto-delta=n/a wall=4.163s cpu-budget=5s observed-cpu=3.693s pop/cpu-budget=156.000 roads=4 services=2 residentials=4
+    attainment=cap=820 gap=40 util=95.1% closed-zero=95.1% baseline=0 closed-baseline=95.1% closed/s=0.229
+    progress=current=780 best=780 stage=cp-sat reuse=expansion-comparison-replay elapsed=4.163s since-improve=1.722s stop=n/a gap=0
+    quality=first-feasible=1.971s first-improve=1.971s best=780@1.971s improvements=1 time-checkpoints=5.000s:780,30.000s:780,120.000s:780 quality-targets=50%:1.971s,90%:1.971s,100%:1.971s trace-events=3
+    road-semantics=anchor-connected anchor-roads=1 anchor-connected=4 disconnected=0 connected-ratio=1.000 adjacent-buildings=6 unadjacent-buildings=0
+    budget-signal=steady use=83.3% unused=0.837s overrun=0.000s first-improve=1.971s best=1.971s after-best=2.192s improvements/s=0.240 auto-best-delta=n/a
+    reason=CP-SAT FEASIBLE with population gap 0.
+- expansion-comparison-replay: Planner expansion-comparison replay with a saved pre-expansion layout as the incumbent.
+  band=small split=holdout workflow=expansion-comparison budget=5s seed=37 best=780 capacity-bound=820 winner=CP-SAT grid=6x6
+  CP-SAT: rank=1 score=780 delta=best win-vs-auto=no-auto auto-delta=n/a wall=4.316s cpu-budget=5s observed-cpu=3.873s pop/cpu-budget=156.000 roads=4 services=2 residentials=4
+    attainment=cap=820 gap=40 util=95.1% closed-zero=95.1% baseline=0 closed-baseline=95.1% closed/s=0.220
+    progress=current=780 best=780 stage=cp-sat reuse=expansion-comparison-replay elapsed=4.316s since-improve=0.76s stop=n/a gap=0
+    quality=first-feasible=3.113s first-improve=3.113s best=780@3.113s improvements=1 time-checkpoints=5.000s:780,30.000s:780,120.000s:780 quality-targets=50%:3.113s,90%:3.113s,100%:3.113s trace-events=3
+    road-semantics=anchor-connected anchor-roads=1 anchor-connected=4 disconnected=0 connected-ratio=1.000 adjacent-buildings=6 unadjacent-buildings=0
+    budget-signal=steady use=86.3% unused=0.684s overrun=0.000s first-improve=3.113s best=3.113s after-best=1.203s improvements/s=0.232 auto-best-delta=n/a
+    reason=CP-SAT FEASIBLE with population gap 0.
+
+Mode summaries:
+- CP-SAT: runs=78 mean=530.4 best=1015 worst=110 seed-stddev=294.8 util-mean=81.6% closed/s-mean=1.025 win-rate-vs-auto=n/a
+
+Budget policy signals:
+- typed-housing-single budget=1s seed=7 recommendation=add-auto-baseline auto=n/a best=CP-SAT:110 auto-gap=n/a lns-vs-auto=n/a auto-lns=n/a/+n/a auto-cp-sat=n/a/+n/a reason=No Auto run is present for this budget; add Auto before comparing budget policy.
+- typed-housing-single budget=1s seed=19 recommendation=add-auto-baseline auto=n/a best=CP-SAT:110 auto-gap=n/a lns-vs-auto=n/a auto-lns=n/a/+n/a auto-cp-sat=n/a/+n/a reason=No Auto run is present for this budget; add Auto before comparing budget policy.
+- typed-housing-single budget=1s seed=37 recommendation=add-auto-baseline auto=n/a best=CP-SAT:110 auto-gap=n/a lns-vs-auto=n/a auto-lns=n/a/+n/a auto-cp-sat=n/a/+n/a reason=No Auto run is present for this budget; add Auto before comparing budget policy.
+- typed-housing-single budget=5s seed=7 recommendation=add-auto-baseline auto=n/a best=CP-SAT:110 auto-gap=n/a lns-vs-auto=n/a auto-lns=n/a/+n/a auto-cp-sat=n/a/+n/a reason=No Auto run is present for this budget; add Auto before comparing budget policy.
+- typed-housing-single budget=5s seed=19 recommendation=add-auto-baseline auto=n/a best=CP-SAT:110 auto-gap=n/a lns-vs-auto=n/a auto-lns=n/a/+n/a auto-cp-sat=n/a/+n/a reason=No Auto run is present for this budget; add Auto before comparing budget policy.
+- typed-housing-single budget=5s seed=37 recommendation=add-auto-baseline auto=n/a best=CP-SAT:110 auto-gap=n/a lns-vs-auto=n/a auto-lns=n/a/+n/a auto-cp-sat=n/a/+n/a reason=No Auto run is present for this budget; add Auto before comparing budget policy.
+- row0-corridor-repair-pressure budget=1s seed=7 recommendation=add-auto-baseline auto=n/a best=CP-SAT:330 auto-gap=n/a lns-vs-auto=n/a auto-lns=n/a/+n/a auto-cp-sat=n/a/+n/a reason=No Auto run is present for this budget; add Auto before comparing budget policy.
+- row0-corridor-repair-pressure budget=1s seed=19 recommendation=add-auto-baseline auto=n/a best=CP-SAT:330 auto-gap=n/a lns-vs-auto=n/a auto-lns=n/a/+n/a auto-cp-sat=n/a/+n/a reason=No Auto run is present for this budget; add Auto before comparing budget policy.
+- row0-corridor-repair-pressure budget=1s seed=37 recommendation=add-auto-baseline auto=n/a best=CP-SAT:330 auto-gap=n/a lns-vs-auto=n/a auto-lns=n/a/+n/a auto-cp-sat=n/a/+n/a reason=No Auto run is present for this budget; add Auto before comparing budget policy.
+- row0-corridor-repair-pressure budget=5s seed=7 recommendation=add-auto-baseline auto=n/a best=CP-SAT:330 auto-gap=n/a lns-vs-auto=n/a auto-lns=n/a/+n/a auto-cp-sat=n/a/+n/a reason=No Auto run is present for this budget; add Auto before comparing budget policy.
+- row0-corridor-repair-pressure budget=5s seed=19 recommendation=add-auto-baseline auto=n/a best=CP-SAT:330 auto-gap=n/a lns-vs-auto=n/a auto-lns=n/a/+n/a auto-cp-sat=n/a/+n/a reason=No Auto run is present for this budget; add Auto before comparing budget policy.
+- row0-corridor-repair-pressure budget=5s seed=37 recommendation=add-auto-baseline auto=n/a best=CP-SAT:330 auto-gap=n/a lns-vs-auto=n/a auto-lns=n/a/+n/a auto-cp-sat=n/a/+n/a reason=No Auto run is present for this budget; add Auto before comparing budget policy.
+- typed-footprint-pressure budget=1s seed=7 recommendation=add-auto-baseline auto=n/a best=CP-SAT:505 auto-gap=n/a lns-vs-auto=n/a auto-lns=n/a/+n/a auto-cp-sat=n/a/+n/a reason=No Auto run is present for this budget; add Auto before comparing budget policy.
+- typed-footprint-pressure budget=1s seed=19 recommendation=add-auto-baseline auto=n/a best=CP-SAT:505 auto-gap=n/a lns-vs-auto=n/a auto-lns=n/a/+n/a auto-cp-sat=n/a/+n/a reason=No Auto run is present for this budget; add Auto before comparing budget policy.
+- typed-footprint-pressure budget=1s seed=37 recommendation=add-auto-baseline auto=n/a best=CP-SAT:505 auto-gap=n/a lns-vs-auto=n/a auto-lns=n/a/+n/a auto-cp-sat=n/a/+n/a reason=No Auto run is present for this budget; add Auto before comparing budget policy.
+- typed-footprint-pressure budget=5s seed=7 recommendation=add-auto-baseline auto=n/a best=CP-SAT:525 auto-gap=n/a lns-vs-auto=n/a auto-lns=n/a/+n/a auto-cp-sat=n/a/+n/a reason=No Auto run is present for this budget; add Auto before comparing budget policy.
+- typed-footprint-pressure budget=5s seed=19 recommendation=add-auto-baseline auto=n/a best=CP-SAT:525 auto-gap=n/a lns-vs-auto=n/a auto-lns=n/a/+n/a auto-cp-sat=n/a/+n/a reason=No Auto run is present for this budget; add Auto before comparing budget policy.
+- typed-footprint-pressure budget=5s seed=37 recommendation=add-auto-baseline auto=n/a best=CP-SAT:525 auto-gap=n/a lns-vs-auto=n/a auto-lns=n/a/+n/a auto-cp-sat=n/a/+n/a reason=No Auto run is present for this budget; add Auto before comparing budget policy.
+- service-local-neighborhood budget=1s seed=7 recommendation=add-auto-baseline auto=n/a best=CP-SAT:440 auto-gap=n/a lns-vs-auto=n/a auto-lns=n/a/+n/a auto-cp-sat=n/a/+n/a reason=No Auto run is present for this budget; add Auto before comparing budget policy.
+- service-local-neighborhood budget=1s seed=19 recommendation=add-auto-baseline auto=n/a best=CP-SAT:445 auto-gap=n/a lns-vs-auto=n/a auto-lns=n/a/+n/a auto-cp-sat=n/a/+n/a reason=No Auto run is present for this budget; add Auto before comparing budget policy.
+- service-local-neighborhood budget=1s seed=37 recommendation=add-auto-baseline auto=n/a best=CP-SAT:460 auto-gap=n/a lns-vs-auto=n/a auto-lns=n/a/+n/a auto-cp-sat=n/a/+n/a reason=No Auto run is present for this budget; add Auto before comparing budget policy.
+- service-local-neighborhood budget=5s seed=7 recommendation=add-auto-baseline auto=n/a best=CP-SAT:470 auto-gap=n/a lns-vs-auto=n/a auto-lns=n/a/+n/a auto-cp-sat=n/a/+n/a reason=No Auto run is present for this budget; add Auto before comparing budget policy.
+- service-local-neighborhood budget=5s seed=19 recommendation=add-auto-baseline auto=n/a best=CP-SAT:470 auto-gap=n/a lns-vs-auto=n/a auto-lns=n/a/+n/a auto-cp-sat=n/a/+n/a reason=No Auto run is present for this budget; add Auto before comparing budget policy.
+- service-local-neighborhood budget=5s seed=37 recommendation=add-auto-baseline auto=n/a best=CP-SAT:470 auto-gap=n/a lns-vs-auto=n/a auto-lns=n/a/+n/a auto-cp-sat=n/a/+n/a reason=No Auto run is present for this budget; add Auto before comparing budget policy.
+- seeded-service-anchor-pressure budget=1s seed=7 recommendation=add-auto-baseline auto=n/a best=CP-SAT:200 auto-gap=n/a lns-vs-auto=n/a auto-lns=n/a/+n/a auto-cp-sat=n/a/+n/a reason=No Auto run is present for this budget; add Auto before comparing budget policy.
+- seeded-service-anchor-pressure budget=1s seed=19 recommendation=add-auto-baseline auto=n/a best=CP-SAT:200 auto-gap=n/a lns-vs-auto=n/a auto-lns=n/a/+n/a auto-cp-sat=n/a/+n/a reason=No Auto run is present for this budget; add Auto before comparing budget policy.
+- seeded-service-anchor-pressure budget=1s seed=37 recommendation=add-auto-baseline auto=n/a best=CP-SAT:200 auto-gap=n/a lns-vs-auto=n/a auto-lns=n/a/+n/a auto-cp-sat=n/a/+n/a reason=No Auto run is present for this budget; add Auto before comparing budget policy.
+- seeded-service-anchor-pressure budget=5s seed=7 recommendation=add-auto-baseline auto=n/a best=CP-SAT:200 auto-gap=n/a lns-vs-auto=n/a auto-lns=n/a/+n/a auto-cp-sat=n/a/+n/a reason=No Auto run is present for this budget; add Auto before comparing budget policy.
+- seeded-service-anchor-pressure budget=5s seed=19 recommendation=add-auto-baseline auto=n/a best=CP-SAT:200 auto-gap=n/a lns-vs-auto=n/a auto-lns=n/a/+n/a auto-cp-sat=n/a/+n/a reason=No Auto run is present for this budget; add Auto before comparing budget policy.
+- seeded-service-anchor-pressure budget=5s seed=37 recommendation=add-auto-baseline auto=n/a best=CP-SAT:200 auto-gap=n/a lns-vs-auto=n/a auto-lns=n/a/+n/a auto-cp-sat=n/a/+n/a reason=No Auto run is present for this budget; add Auto before comparing budget policy.
+- road-semantics-gate-choke budget=1s seed=7 recommendation=add-auto-baseline auto=n/a best=CP-SAT:540 auto-gap=n/a lns-vs-auto=n/a auto-lns=n/a/+n/a auto-cp-sat=n/a/+n/a reason=No Auto run is present for this budget; add Auto before comparing budget policy.
+- road-semantics-gate-choke budget=1s seed=19 recommendation=add-auto-baseline auto=n/a best=CP-SAT:540 auto-gap=n/a lns-vs-auto=n/a auto-lns=n/a/+n/a auto-cp-sat=n/a/+n/a reason=No Auto run is present for this budget; add Auto before comparing budget policy.
+- road-semantics-gate-choke budget=1s seed=37 recommendation=add-auto-baseline auto=n/a best=CP-SAT:540 auto-gap=n/a lns-vs-auto=n/a auto-lns=n/a/+n/a auto-cp-sat=n/a/+n/a reason=No Auto run is present for this budget; add Auto before comparing budget policy.
+- road-semantics-gate-choke budget=5s seed=7 recommendation=add-auto-baseline auto=n/a best=CP-SAT:540 auto-gap=n/a lns-vs-auto=n/a auto-lns=n/a/+n/a auto-cp-sat=n/a/+n/a reason=No Auto run is present for this budget; add Auto before comparing budget policy.
+- road-semantics-gate-choke budget=5s seed=19 recommendation=add-auto-baseline auto=n/a best=CP-SAT:540 auto-gap=n/a lns-vs-auto=n/a auto-lns=n/a/+n/a auto-cp-sat=n/a/+n/a reason=No Auto run is present for this budget; add Auto before comparing budget policy.
+- road-semantics-gate-choke budget=5s seed=37 recommendation=add-auto-baseline auto=n/a best=CP-SAT:540 auto-gap=n/a lns-vs-auto=n/a auto-lns=n/a/+n/a auto-cp-sat=n/a/+n/a reason=No Auto run is present for this budget; add Auto before comparing budget policy.
+- road-semantics-service-pressure budget=1s seed=7 recommendation=add-auto-baseline auto=n/a best=CP-SAT:740 auto-gap=n/a lns-vs-auto=n/a auto-lns=n/a/+n/a auto-cp-sat=n/a/+n/a reason=No Auto run is present for this budget; add Auto before comparing budget policy.
+- road-semantics-service-pressure budget=1s seed=19 recommendation=add-auto-baseline auto=n/a best=CP-SAT:740 auto-gap=n/a lns-vs-auto=n/a auto-lns=n/a/+n/a auto-cp-sat=n/a/+n/a reason=No Auto run is present for this budget; add Auto before comparing budget policy.
+- road-semantics-service-pressure budget=1s seed=37 recommendation=add-auto-baseline auto=n/a best=CP-SAT:740 auto-gap=n/a lns-vs-auto=n/a auto-lns=n/a/+n/a auto-cp-sat=n/a/+n/a reason=No Auto run is present for this budget; add Auto before comparing budget policy.
+- road-semantics-service-pressure budget=5s seed=7 recommendation=add-auto-baseline auto=n/a best=CP-SAT:740 auto-gap=n/a lns-vs-auto=n/a auto-lns=n/a/+n/a auto-cp-sat=n/a/+n/a reason=No Auto run is present for this budget; add Auto before comparing budget policy.
+- road-semantics-service-pressure budget=5s seed=19 recommendation=add-auto-baseline auto=n/a best=CP-SAT:740 auto-gap=n/a lns-vs-auto=n/a auto-lns=n/a/+n/a auto-cp-sat=n/a/+n/a reason=No Auto run is present for this budget; add Auto before comparing budget policy.
+- road-semantics-service-pressure budget=5s seed=37 recommendation=add-auto-baseline auto=n/a best=CP-SAT:740 auto-gap=n/a lns-vs-auto=n/a auto-lns=n/a/+n/a auto-cp-sat=n/a/+n/a reason=No Auto run is present for this budget; add Auto before comparing budget policy.
+- multi-anchor-road-components budget=1s seed=7 recommendation=add-auto-baseline auto=n/a best=CP-SAT:200 auto-gap=n/a lns-vs-auto=n/a auto-lns=n/a/+n/a auto-cp-sat=n/a/+n/a reason=No Auto run is present for this budget; add Auto before comparing budget policy.
+- multi-anchor-road-components budget=1s seed=19 recommendation=add-auto-baseline auto=n/a best=CP-SAT:200 auto-gap=n/a lns-vs-auto=n/a auto-lns=n/a/+n/a auto-cp-sat=n/a/+n/a reason=No Auto run is present for this budget; add Auto before comparing budget policy.
+- multi-anchor-road-components budget=1s seed=37 recommendation=add-auto-baseline auto=n/a best=CP-SAT:200 auto-gap=n/a lns-vs-auto=n/a auto-lns=n/a/+n/a auto-cp-sat=n/a/+n/a reason=No Auto run is present for this budget; add Auto before comparing budget policy.
+- multi-anchor-road-components budget=5s seed=7 recommendation=add-auto-baseline auto=n/a best=CP-SAT:200 auto-gap=n/a lns-vs-auto=n/a auto-lns=n/a/+n/a auto-cp-sat=n/a/+n/a reason=No Auto run is present for this budget; add Auto before comparing budget policy.
+- multi-anchor-road-components budget=5s seed=19 recommendation=add-auto-baseline auto=n/a best=CP-SAT:200 auto-gap=n/a lns-vs-auto=n/a auto-lns=n/a/+n/a auto-cp-sat=n/a/+n/a reason=No Auto run is present for this budget; add Auto before comparing budget policy.
+- multi-anchor-road-components budget=5s seed=37 recommendation=add-auto-baseline auto=n/a best=CP-SAT:200 auto-gap=n/a lns-vs-auto=n/a auto-lns=n/a/+n/a auto-cp-sat=n/a/+n/a reason=No Auto run is present for this budget; add Auto before comparing budget policy.
+- fresh-multi-anchor-service-island budget=1s seed=7 recommendation=add-auto-baseline auto=n/a best=CP-SAT:1015 auto-gap=n/a lns-vs-auto=n/a auto-lns=n/a/+n/a auto-cp-sat=n/a/+n/a reason=No Auto run is present for this budget; add Auto before comparing budget policy.
+- fresh-multi-anchor-service-island budget=1s seed=19 recommendation=add-auto-baseline auto=n/a best=CP-SAT:1015 auto-gap=n/a lns-vs-auto=n/a auto-lns=n/a/+n/a auto-cp-sat=n/a/+n/a reason=No Auto run is present for this budget; add Auto before comparing budget policy.
+- fresh-multi-anchor-service-island budget=1s seed=37 recommendation=add-auto-baseline auto=n/a best=CP-SAT:1015 auto-gap=n/a lns-vs-auto=n/a auto-lns=n/a/+n/a auto-cp-sat=n/a/+n/a reason=No Auto run is present for this budget; add Auto before comparing budget policy.
+- fresh-multi-anchor-service-island budget=5s seed=7 recommendation=add-auto-baseline auto=n/a best=CP-SAT:1015 auto-gap=n/a lns-vs-auto=n/a auto-lns=n/a/+n/a auto-cp-sat=n/a/+n/a reason=No Auto run is present for this budget; add Auto before comparing budget policy.
+- fresh-multi-anchor-service-island budget=5s seed=19 recommendation=add-auto-baseline auto=n/a best=CP-SAT:1015 auto-gap=n/a lns-vs-auto=n/a auto-lns=n/a/+n/a auto-cp-sat=n/a/+n/a reason=No Auto run is present for this budget; add Auto before comparing budget policy.
+- fresh-multi-anchor-service-island budget=5s seed=37 recommendation=add-auto-baseline auto=n/a best=CP-SAT:1015 auto-gap=n/a lns-vs-auto=n/a auto-lns=n/a/+n/a auto-cp-sat=n/a/+n/a reason=No Auto run is present for this budget; add Auto before comparing budget policy.
+- fresh-typed-footprint-scarcity budget=1s seed=7 recommendation=add-auto-baseline auto=n/a best=CP-SAT:840 auto-gap=n/a lns-vs-auto=n/a auto-lns=n/a/+n/a auto-cp-sat=n/a/+n/a reason=No Auto run is present for this budget; add Auto before comparing budget policy.
+- fresh-typed-footprint-scarcity budget=1s seed=19 recommendation=add-auto-baseline auto=n/a best=CP-SAT:840 auto-gap=n/a lns-vs-auto=n/a auto-lns=n/a/+n/a auto-cp-sat=n/a/+n/a reason=No Auto run is present for this budget; add Auto before comparing budget policy.
+- fresh-typed-footprint-scarcity budget=1s seed=37 recommendation=add-auto-baseline auto=n/a best=CP-SAT:840 auto-gap=n/a lns-vs-auto=n/a auto-lns=n/a/+n/a auto-cp-sat=n/a/+n/a reason=No Auto run is present for this budget; add Auto before comparing budget policy.
+- fresh-typed-footprint-scarcity budget=5s seed=7 recommendation=add-auto-baseline auto=n/a best=CP-SAT:840 auto-gap=n/a lns-vs-auto=n/a auto-lns=n/a/+n/a auto-cp-sat=n/a/+n/a reason=No Auto run is present for this budget; add Auto before comparing budget policy.
+- fresh-typed-footprint-scarcity budget=5s seed=19 recommendation=add-auto-baseline auto=n/a best=CP-SAT:840 auto-gap=n/a lns-vs-auto=n/a auto-lns=n/a/+n/a auto-cp-sat=n/a/+n/a reason=No Auto run is present for this budget; add Auto before comparing budget policy.
+- fresh-typed-footprint-scarcity budget=5s seed=37 recommendation=add-auto-baseline auto=n/a best=CP-SAT:840 auto-gap=n/a lns-vs-auto=n/a auto-lns=n/a/+n/a auto-cp-sat=n/a/+n/a reason=No Auto run is present for this budget; add Auto before comparing budget policy.
+- fresh-expansion-corridor-service budget=1s seed=7 recommendation=add-auto-baseline auto=n/a best=CP-SAT:775 auto-gap=n/a lns-vs-auto=n/a auto-lns=n/a/+n/a auto-cp-sat=n/a/+n/a reason=No Auto run is present for this budget; add Auto before comparing budget policy.
+- fresh-expansion-corridor-service budget=1s seed=19 recommendation=add-auto-baseline auto=n/a best=CP-SAT:895 auto-gap=n/a lns-vs-auto=n/a auto-lns=n/a/+n/a auto-cp-sat=n/a/+n/a reason=No Auto run is present for this budget; add Auto before comparing budget policy.
+- fresh-expansion-corridor-service budget=1s seed=37 recommendation=add-auto-baseline auto=n/a best=CP-SAT:990 auto-gap=n/a lns-vs-auto=n/a auto-lns=n/a/+n/a auto-cp-sat=n/a/+n/a reason=No Auto run is present for this budget; add Auto before comparing budget policy.
+- fresh-expansion-corridor-service budget=5s seed=7 recommendation=add-auto-baseline auto=n/a best=CP-SAT:990 auto-gap=n/a lns-vs-auto=n/a auto-lns=n/a/+n/a auto-cp-sat=n/a/+n/a reason=No Auto run is present for this budget; add Auto before comparing budget policy.
+- fresh-expansion-corridor-service budget=5s seed=19 recommendation=add-auto-baseline auto=n/a best=CP-SAT:990 auto-gap=n/a lns-vs-auto=n/a auto-lns=n/a/+n/a auto-cp-sat=n/a/+n/a reason=No Auto run is present for this budget; add Auto before comparing budget policy.
+- fresh-expansion-corridor-service budget=5s seed=37 recommendation=add-auto-baseline auto=n/a best=CP-SAT:990 auto-gap=n/a lns-vs-auto=n/a auto-lns=n/a/+n/a auto-cp-sat=n/a/+n/a reason=No Auto run is present for this budget; add Auto before comparing budget policy.
+- manual-layout-replay-warm-start budget=1s seed=7 recommendation=add-auto-baseline auto=n/a best=CP-SAT:240 auto-gap=n/a lns-vs-auto=n/a auto-lns=n/a/+n/a auto-cp-sat=n/a/+n/a reason=No Auto run is present for this budget; add Auto before comparing budget policy.
+- manual-layout-replay-warm-start budget=1s seed=19 recommendation=add-auto-baseline auto=n/a best=CP-SAT:240 auto-gap=n/a lns-vs-auto=n/a auto-lns=n/a/+n/a auto-cp-sat=n/a/+n/a reason=No Auto run is present for this budget; add Auto before comparing budget policy.
+- manual-layout-replay-warm-start budget=1s seed=37 recommendation=add-auto-baseline auto=n/a best=CP-SAT:240 auto-gap=n/a lns-vs-auto=n/a auto-lns=n/a/+n/a auto-cp-sat=n/a/+n/a reason=No Auto run is present for this budget; add Auto before comparing budget policy.
+- manual-layout-replay-warm-start budget=5s seed=7 recommendation=add-auto-baseline auto=n/a best=CP-SAT:240 auto-gap=n/a lns-vs-auto=n/a auto-lns=n/a/+n/a auto-cp-sat=n/a/+n/a reason=No Auto run is present for this budget; add Auto before comparing budget policy.
+- manual-layout-replay-warm-start budget=5s seed=19 recommendation=add-auto-baseline auto=n/a best=CP-SAT:240 auto-gap=n/a lns-vs-auto=n/a auto-lns=n/a/+n/a auto-cp-sat=n/a/+n/a reason=No Auto run is present for this budget; add Auto before comparing budget policy.
+- manual-layout-replay-warm-start budget=5s seed=37 recommendation=add-auto-baseline auto=n/a best=CP-SAT:240 auto-gap=n/a lns-vs-auto=n/a auto-lns=n/a/+n/a auto-cp-sat=n/a/+n/a reason=No Auto run is present for this budget; add Auto before comparing budget policy.
+- expansion-comparison-replay budget=1s seed=7 recommendation=add-auto-baseline auto=n/a best=CP-SAT:745 auto-gap=n/a lns-vs-auto=n/a auto-lns=n/a/+n/a auto-cp-sat=n/a/+n/a reason=No Auto run is present for this budget; add Auto before comparing budget policy.
+- expansion-comparison-replay budget=1s seed=19 recommendation=add-auto-baseline auto=n/a best=CP-SAT:745 auto-gap=n/a lns-vs-auto=n/a auto-lns=n/a/+n/a auto-cp-sat=n/a/+n/a reason=No Auto run is present for this budget; add Auto before comparing budget policy.
+- expansion-comparison-replay budget=1s seed=37 recommendation=add-auto-baseline auto=n/a best=CP-SAT:780 auto-gap=n/a lns-vs-auto=n/a auto-lns=n/a/+n/a auto-cp-sat=n/a/+n/a reason=No Auto run is present for this budget; add Auto before comparing budget policy.
+- expansion-comparison-replay budget=5s seed=7 recommendation=add-auto-baseline auto=n/a best=CP-SAT:780 auto-gap=n/a lns-vs-auto=n/a auto-lns=n/a/+n/a auto-cp-sat=n/a/+n/a reason=No Auto run is present for this budget; add Auto before comparing budget policy.
+- expansion-comparison-replay budget=5s seed=19 recommendation=add-auto-baseline auto=n/a best=CP-SAT:780 auto-gap=n/a lns-vs-auto=n/a auto-lns=n/a/+n/a auto-cp-sat=n/a/+n/a reason=No Auto run is present for this budget; add Auto before comparing budget policy.
+- expansion-comparison-replay budget=5s seed=37 recommendation=add-auto-baseline auto=n/a best=CP-SAT:780 auto-gap=n/a lns-vs-auto=n/a auto-lns=n/a/+n/a auto-cp-sat=n/a/+n/a reason=No Auto run is present for this budget; add Auto before comparing budget policy.
+
+Portfolio efficiency signals:
+- No paired CP-SAT / CP-SAT portfolio runs.
+
+Problem-size summaries:
+- tiny CP-SAT: mean=110.0 best=110 win-rate-vs-auto=n/a
+- small CP-SAT: mean=565.5 best=1015 win-rate-vs-auto=n/a

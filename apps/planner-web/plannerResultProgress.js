@@ -20,6 +20,9 @@
     const { state, elements, helpers, callbacks } = options;
     const { formatElapsedTime } = helpers;
     const { getOptimizerLabel } = callbacks;
+    const STOP_REASON_LABELS = /** @type {Record<string, string>} */ ({
+      "population-cap-reached": "Population cap reached"
+    });
 
     /**
      * @param {unknown} value
@@ -30,6 +33,23 @@
       if (typeof value !== "number" || !Number.isFinite(value)) return null;
       const { maximumFractionDigits = 0 } = options;
       return Number(value).toLocaleString(undefined, { maximumFractionDigits });
+    }
+
+    /**
+     * @param {unknown} value
+     * @returns {string}
+     */
+    function formatStopReasonLabel(value) {
+      const text = String(value ?? "");
+      return STOP_REASON_LABELS[text] ?? text;
+    }
+
+    /**
+     * @param {unknown} value
+     * @returns {string}
+     */
+    function formatProgressNote(value) {
+      return String(value ?? "").replaceAll("population-cap-reached", "Population cap reached");
     }
 
     /**
@@ -94,7 +114,7 @@
         parts.push(`last improvement ${sinceImprovement}s ago`);
       }
       if (summary.stopReason) {
-        parts.push(`stop ${summary.stopReason}`);
+        parts.push(`stop ${formatStopReasonLabel(summary.stopReason)}`);
       }
       const gap = formatProgressLogNumber(summary.exactGap);
       if (gap !== null) {
@@ -183,14 +203,14 @@
           }
         }
         if (!entry.progressSummary?.stopReason && entry.autoStage?.stopReason) {
-          parts.push(`stop ${entry.autoStage.stopReason}`);
+          parts.push(`stop ${formatStopReasonLabel(entry.autoStage.stopReason)}`);
         }
         if (entry.lnsNeighborhoodStatus) {
           const lnsImprovement = Number(entry.lnsNeighborhoodImprovement ?? 0);
           parts.push(`LNS ${entry.lnsNeighborhoodStatus}${lnsImprovement > 0 ? ` +${lnsImprovement}` : ""}`);
         }
         if (!entry.progressSummary?.stopReason && entry.lnsStopReason && entry.lnsStopReason !== "running") {
-          parts.push(`LNS stop ${entry.lnsStopReason}`);
+          parts.push(`LNS stop ${formatStopReasonLabel(entry.lnsStopReason)}`);
         }
         if (!entry.progressSummary && typeof entry.totalPopulation === "number") {
           parts.push(`${Number(entry.totalPopulation).toLocaleString()} population`);
@@ -214,8 +234,9 @@
         if (improvementLabel !== null) {
           parts.push(`last improvement ${improvementLabel}s ago`);
         }
-        if (entry.note && !parts.includes(entry.note)) {
-          parts.push(entry.note);
+        const note = entry.note ? formatProgressNote(entry.note) : "";
+        if (note && !parts.includes(note)) {
+          parts.push(note);
         }
 
         detail.textContent = parts.join(" • ");

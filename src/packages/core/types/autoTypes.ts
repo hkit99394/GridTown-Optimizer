@@ -17,6 +17,7 @@ export type AutoSolveStopReason =
   | "completed-plan"
   | "weak-cycle-limit"
   | "optimal"
+  | "population-cap-reached"
   | "cancelled"
   | "wall-clock-cap"
   | "stage-error";
@@ -30,6 +31,8 @@ export interface AutoOptions {
   weakCycleImprovementThreshold?: number;
   /** Stop after this many consecutive weak cycles. Defaults to 2. */
   maxConsecutiveWeakCycles?: number;
+  /** Optional extra Auto runtime after a feasible incumbent reaches configured population capacity. Defaults to 0. */
+  continueAfterPopulationCapSeconds?: number;
   /** Default CP-SAT stage runtime when auto is driving exact passes. Defaults to 30 seconds. */
   cpSatStageTimeLimitSeconds?: number;
   /** Share of the global Auto budget reserved for each CP-SAT stage after LNS. Defaults to 20%. */

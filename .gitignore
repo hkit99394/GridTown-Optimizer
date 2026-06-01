@@ -23,6 +23,16 @@ artifacts/tmp-*/
 artifacts/**/tmp-*/
 artifacts/local-*/
 artifacts/**/local-*/
+artifacts/**/raw/
+artifacts/**/external-raw/
+artifacts/**/budget-ablation.json
+artifacts/**/decision-trace.jsonl
+artifacts/**/labels.json
+artifacts/**/lns-window-ranker-online-ablation.json
+artifacts/**/lns-window-replay-labels.json
+artifacts/**/online-selected-feature-gate-discovery.json
+artifacts/**/scorecard.json
+release-assets/
 
 # macOS
 .DS_Store

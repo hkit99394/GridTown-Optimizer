@@ -1,5 +1,5 @@
 /**
- * @param {Window & { CityBuilderExpansion?: unknown }} globalObject
+ * @param {Window & { CityBuilderExpansion?: unknown, CityBuilderShared?: { buildCpSatContinuationPayload?: (checkpoint: Record<string, any>, options?: Record<string, any>) => Record<string, any> } }} globalObject
  */
 (function attachPlannerExpansion(globalObject) {
   /**
@@ -20,6 +20,8 @@
   /**
    * @typedef {object} ExpansionState
    * @property {boolean} isSolving
+   * @property {string} activeSolveRequestId
+   * @property {boolean} isStopping
    * @property {string} optimizer
    * @property {JsonObject | null} result
    * @property {JsonObject | null} resultContext
@@ -43,6 +45,7 @@
   /**
    * @typedef {object} ExpansionHelpers
    * @property {(request: JsonObject) => JsonObject} buildCpSatContinuationModelInput
+   * @property {(checkpoint: JsonObject, options?: JsonObject) => JsonObject} [buildCpSatContinuationPayload]
    * @property {<T>(value: T) => T} cloneJson
    * @property {(modelInput: JsonObject) => string} computeCpSatModelFingerprint
    * @property {() => string} createSolveRequestId
@@ -84,6 +87,7 @@
     const { COMPARISON_PROGRESS_HINT_INTERVAL_MS, SOLVE_STATUS_POLL_INTERVAL_MS } = constants;
     const {
       buildCpSatContinuationModelInput,
+      buildCpSatContinuationPayload: helperBuildCpSatContinuationPayload,
       cloneJson,
       computeCpSatModelFingerprint,
       createSolveRequestId,
@@ -98,6 +102,16 @@
       getOptimizerLabel,
       syncActionAvailability
     } = callbacks;
+    const expansionGlobal =
+      /** @type {Window & { CityBuilderShared?: { buildCpSatContinuationPayload?: (checkpoint: JsonObject, options?: JsonObject) => JsonObject } }} */ (
+        globalObject
+      );
+    const maybeBuildCpSatContinuationPayload =
+      helperBuildCpSatContinuationPayload ?? expansionGlobal.CityBuilderShared?.buildCpSatContinuationPayload;
+    if (typeof maybeBuildCpSatContinuationPayload !== "function") {
+      throw new Error("CityBuilderShared.buildCpSatContinuationPayload must load before plannerExpansion.js.");
+    }
+    const buildCpSatContinuationPayload = maybeBuildCpSatContinuationPayload;
 
     function clearExpansionAdvice() {
       state.expansionAdvice.isRunning = false;
@@ -115,6 +129,23 @@
       if (amount > 0) return `+${amount.toLocaleString()}`;
       if (amount < 0) return `-${Math.abs(amount).toLocaleString()}`;
       return "0";
+    }
+
+    /**
+     * @param {number | null | undefined} value
+     * @returns {string}
+     */
+    function formatPopulation(value) {
+      return Number(value ?? 0).toLocaleString();
+    }
+
+    /**
+     * @param {number} winningDelta
+     * @param {number} losingDelta
+     * @returns {string}
+     */
+    function formatExpansionMargin(winningDelta, losingDelta) {
+      return formatSignedPopulationDelta(winningDelta - losingDelta);
     }
 
     function readExpansionCandidateFlags() {
@@ -177,20 +208,17 @@
 
     /**
      * @param {JsonObject} request
+     * @param {boolean} includeSolution
      * @returns {JsonObject | null}
      */
-    function buildComparisonDisplayedLayoutCheckpointPayload(request) {
+    function buildComparisonDisplayedLayoutCheckpointPayload(request, includeSolution) {
       const checkpoint = getDisplayedLayoutCheckpoint();
       if (!checkpoint || !checkpointMatchesComparisonRequest(checkpoint, request)) return null;
-      return {
+      return buildCpSatContinuationPayload(checkpoint, {
         sourceName: `${getDisplayedLayoutSourceLabel()} (comparison baseline)`,
-        modelFingerprint: checkpoint.compatibility.modelFingerprint,
-        roadKeys: cloneJson(checkpoint.hint.roadKeys),
-        serviceCandidateKeys: cloneJson(checkpoint.hint.serviceCandidateKeys),
-        residentialCandidateKeys: cloneJson(checkpoint.hint.residentialCandidateKeys),
-        solution: cloneJson(checkpoint.hint.solution),
-        hintConflictLimit: 20
-      };
+        hintConflictLimit: 20,
+        includeSolution
+      });
     }
 
     /**
@@ -208,31 +236,38 @@
         return request;
       }
 
-      const payload = buildComparisonDisplayedLayoutCheckpointPayload(request);
-      if (!payload) return request;
-
       if (request.params.optimizer === "cp-sat") {
+        const payload = buildComparisonDisplayedLayoutCheckpointPayload(request, false);
+        if (!payload) return request;
         request.params.cpSat = {
           ...(request.params.cpSat ?? {}),
           warmStartHint: cloneJson(payload)
         };
       } else if (request.params.optimizer === "lns") {
+        const payload = buildComparisonDisplayedLayoutCheckpointPayload(request, true);
+        if (!payload) return request;
         request.params.lns = {
           ...(request.params.lns ?? {}),
           seedHint: cloneJson(payload)
         };
       } else if (request.params.optimizer === "auto") {
         if (state.cpSat.useDisplayedHint) {
-          request.params.cpSat = {
-            ...(request.params.cpSat ?? {}),
-            warmStartHint: cloneJson(payload)
-          };
+          const payload = buildComparisonDisplayedLayoutCheckpointPayload(request, false);
+          if (payload) {
+            request.params.cpSat = {
+              ...(request.params.cpSat ?? {}),
+              warmStartHint: cloneJson(payload)
+            };
+          }
         }
         if (state.lns.useDisplayedSeed) {
-          request.params.lns = {
-            ...(request.params.lns ?? {}),
-            seedHint: cloneJson(payload)
-          };
+          const payload = buildComparisonDisplayedLayoutCheckpointPayload(request, true);
+          if (payload) {
+            request.params.lns = {
+              ...(request.params.lns ?? {}),
+              seedHint: cloneJson(payload)
+            };
+          }
         }
       }
 
@@ -338,46 +373,66 @@
      */
     async function runComparisonSolve(request, candidateName) {
       const requestId = `${createSolveRequestId()}-compare`;
-      const startResponse = await fetch("/api/solve/start", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          ...request,
-          requestId
-        })
-      });
-      const startPayload = await startResponse.json();
-      if (!startResponse.ok || !startPayload.ok) {
-        throw new Error(startPayload.error || "Failed to start the candidate comparison.");
-      }
+      state.isSolving = true;
+      state.isStopping = false;
+      state.activeSolveRequestId = requestId;
+      globalObject.sessionStorage?.setItem("city-builder.activeComparisonRequestId", requestId);
+      syncActionAvailability();
 
-      let nextProgressHintAt = Date.now() + COMPARISON_PROGRESS_HINT_INTERVAL_MS;
-      while (true) {
-        const response = await fetch(`/api/solve/status?${new URLSearchParams({ requestId }).toString()}`, {
-          cache: "no-store"
+      try {
+        const startResponse = await fetch("/api/solve/start", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            ...request,
+            requestId,
+            clientRole: "expansion-comparison"
+          })
         });
-        const payload = await response.json();
-        if (!response.ok || !payload.ok) {
-          throw new Error(payload.error || "Failed to read candidate comparison status.");
+        const startPayload = await startResponse.json();
+        if (!startResponse.ok || !startPayload.ok) {
+          throw new Error(startPayload.error || "Failed to start the candidate comparison.");
         }
 
-        if (payload.jobStatus === "running") {
-          if (Date.now() >= nextProgressHintAt) {
-            state.expansionAdvice.status = buildExpansionProgressMessage(candidateName, payload);
-            renderExpansionAdvice();
-            nextProgressHintAt = Date.now() + COMPARISON_PROGRESS_HINT_INTERVAL_MS;
+        let nextProgressHintAt = Date.now() + COMPARISON_PROGRESS_HINT_INTERVAL_MS;
+        while (true) {
+          const response = await fetch(`/api/solve/status?${new URLSearchParams({ requestId }).toString()}`, {
+            cache: "no-store"
+          });
+          const payload = await response.json();
+          if (!response.ok || !payload.ok) {
+            throw new Error(payload.error || "Failed to read candidate comparison status.");
           }
-          await delay(SOLVE_STATUS_POLL_INTERVAL_MS);
-          continue;
-        }
 
-        if (payload.solution) {
-          return payload;
-        }
+          if (payload.jobStatus === "running") {
+            if (Date.now() >= nextProgressHintAt) {
+              state.expansionAdvice.status = buildExpansionProgressMessage(candidateName, payload);
+              renderExpansionAdvice();
+              nextProgressHintAt = Date.now() + COMPARISON_PROGRESS_HINT_INTERVAL_MS;
+            }
+            await delay(SOLVE_STATUS_POLL_INTERVAL_MS);
+            continue;
+          }
 
-        throw new Error(payload.error || "Candidate comparison failed.");
+          if (payload.cancelRequested || payload.jobStatus === "stopped") {
+            throw new Error(payload.error || "Candidate comparison was stopped.");
+          }
+          if (payload.solution) {
+            return payload;
+          }
+
+          throw new Error(payload.error || "Candidate comparison was stopped.");
+        }
+      } finally {
+        if (state.activeSolveRequestId === requestId) {
+          state.activeSolveRequestId = "";
+          state.isStopping = false;
+          state.isSolving = false;
+          globalObject.sessionStorage?.removeItem("city-builder.activeComparisonRequestId");
+          syncActionAvailability();
+        }
       }
     }
 
@@ -490,47 +545,53 @@
           serviceDelta != null &&
           residentialDelta != null
         ) {
-          detail =
-            `Baseline reaches ${baselinePopulation.toLocaleString()}, ${serviceScenario.candidateName} reaches ` +
-            `${Number(servicePopulation).toLocaleString()} (${formatSignedPopulationDelta(serviceDelta)}), ` +
-            `${residentialScenario.candidateName} reaches ${Number(residentialPopulation).toLocaleString()} ` +
-            `(${formatSignedPopulationDelta(residentialDelta)}).`;
-
           if (serviceDelta <= 0 && residentialDelta <= 0) {
             winner = "Remain current layout";
             detail =
-              `Neither typed addition improves the current ${getOptimizerLabel(baselineScenario.request.params.optimizer)} baseline ` +
-              `of ${baselinePopulation.toLocaleString()}.`;
+              `Hold the current layout: neither typed addition improves the ${getOptimizerLabel(baselineScenario.request.params.optimizer)} ` +
+              `baseline of ${formatPopulation(baselinePopulation)}. ${serviceScenario.candidateName} reaches ` +
+              `${formatPopulation(servicePopulation)} (${formatSignedPopulationDelta(serviceDelta)}); ` +
+              `${residentialScenario.candidateName} reaches ${formatPopulation(residentialPopulation)} ` +
+              `(${formatSignedPopulationDelta(residentialDelta)}).`;
           } else if (serviceDelta > residentialDelta) {
             winner = `Add ${serviceScenario.candidateName}`;
+            detail =
+              `${serviceScenario.candidateName} is the stronger next expansion: ` +
+              `${formatSignedPopulationDelta(serviceDelta)} versus ${formatSignedPopulationDelta(residentialDelta)} ` +
+              `for ${residentialScenario.candidateName}, a ${formatExpansionMargin(serviceDelta, residentialDelta)} ` +
+              `population margin over the residential option.`;
           } else if (residentialDelta > serviceDelta) {
             winner = `Add ${residentialScenario.candidateName}`;
+            detail =
+              `${residentialScenario.candidateName} is the stronger next expansion: ` +
+              `${formatSignedPopulationDelta(residentialDelta)} versus ${formatSignedPopulationDelta(serviceDelta)} ` +
+              `for ${serviceScenario.candidateName}, a ${formatExpansionMargin(residentialDelta, serviceDelta)} ` +
+              `population margin over the service option.`;
           } else {
             winner = "Tie";
             detail =
-              `Both additions improve the current ${getOptimizerLabel(baselineScenario.request.params.optimizer)} baseline by ` +
-              `${formatSignedPopulationDelta(serviceDelta)}.`;
+              `Both additions tie on population at ${formatSignedPopulationDelta(serviceDelta)} over the current ` +
+              `${getOptimizerLabel(baselineScenario.request.params.optimizer)} baseline of ${formatPopulation(baselinePopulation)}; ` +
+              `choose based on footprint, availability, or the expansion path you want to preserve.`;
           }
         } else if (serviceScenario && serviceDelta != null) {
           winner = serviceDelta > 0 ? `Add ${serviceScenario.candidateName}` : "Remain current layout";
           detail =
             serviceDelta > 0
-              ? `${serviceScenario.candidateName} raises the current ${getOptimizerLabel(baselineScenario.request.params.optimizer)} baseline from ` +
-                `${baselinePopulation.toLocaleString()} to ${Number(servicePopulation).toLocaleString()} ` +
+              ? `Add ${serviceScenario.candidateName} next: it raises the current ${getOptimizerLabel(baselineScenario.request.params.optimizer)} ` +
+                `baseline from ${formatPopulation(baselinePopulation)} to ${formatPopulation(servicePopulation)} ` +
                 `(${formatSignedPopulationDelta(serviceDelta)}).`
-              : `${serviceScenario.candidateName} reaches ${Number(servicePopulation).toLocaleString()} ` +
-                `(${formatSignedPopulationDelta(serviceDelta)}), so keeping the current layout is still better than the baseline ` +
-                `of ${baselinePopulation.toLocaleString()}.`;
+              : `Hold the current layout: ${serviceScenario.candidateName} reaches ${formatPopulation(servicePopulation)} ` +
+                `(${formatSignedPopulationDelta(serviceDelta)}) against the baseline of ${formatPopulation(baselinePopulation)}.`;
         } else if (residentialScenario && residentialDelta != null) {
           winner = residentialDelta > 0 ? `Add ${residentialScenario.candidateName}` : "Remain current layout";
           detail =
             residentialDelta > 0
-              ? `${residentialScenario.candidateName} raises the current ${getOptimizerLabel(baselineScenario.request.params.optimizer)} baseline from ` +
-                `${baselinePopulation.toLocaleString()} to ${Number(residentialPopulation).toLocaleString()} ` +
+              ? `Add ${residentialScenario.candidateName} next: it raises the current ${getOptimizerLabel(baselineScenario.request.params.optimizer)} ` +
+                `baseline from ${formatPopulation(baselinePopulation)} to ${formatPopulation(residentialPopulation)} ` +
                 `(${formatSignedPopulationDelta(residentialDelta)}).`
-              : `${residentialScenario.candidateName} reaches ${Number(residentialPopulation).toLocaleString()} ` +
-                `(${formatSignedPopulationDelta(residentialDelta)}), so keeping the current layout is still better than the baseline ` +
-                `of ${baselinePopulation.toLocaleString()}.`;
+              : `Hold the current layout: ${residentialScenario.candidateName} reaches ${formatPopulation(residentialPopulation)} ` +
+                `(${formatSignedPopulationDelta(residentialDelta)}) against the baseline of ${formatPopulation(baselinePopulation)}.`;
         }
 
         state.expansionAdvice.isRunning = false;

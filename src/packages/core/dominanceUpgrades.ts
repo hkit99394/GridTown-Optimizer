@@ -1,4 +1,5 @@
 import { buildServiceEffectZoneSet, normalizeServicePlacement, residentialFootprint } from "./buildings.js";
+import { reachesPopulationCapacityUpperBound } from "./populationBounds.js";
 import { compatibleResidentialTypeIndices, getResidentialBaseMax, NO_TYPE_INDEX } from "./rules.js";
 
 import type { Grid, ServiceTypeSetting, Solution, SolverParams } from "./types.js";
@@ -170,6 +171,9 @@ function applyDeterministicResidentialUpgrades(G: Grid, params: SolverParams, so
 
 export function applyDeterministicDominanceUpgrades(G: Grid, params: SolverParams, solution: Solution): Solution {
   let incumbent = recomputeSolutionPopulationTotals(G, params, solution);
+  if (reachesPopulationCapacityUpperBound(params, incumbent.totalPopulation)) {
+    return incumbent;
+  }
 
   while (true) {
     const afterServiceUpgrades = applyDeterministicServiceUpgrades(G, params, incumbent);
@@ -178,5 +182,8 @@ export function applyDeterministicDominanceUpgrades(G: Grid, params: SolverParam
       return incumbent;
     }
     incumbent = afterResidentialUpgrades;
+    if (reachesPopulationCapacityUpperBound(params, incumbent.totalPopulation)) {
+      return incumbent;
+    }
   }
 }

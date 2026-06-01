@@ -1,4 +1,5 @@
 import type { CpSatContinuationModelInput, Grid, SolverParams } from "./types.js";
+import { getBuildingLimits } from "./rules.js";
 
 function cloneGrid(grid: Grid): Grid {
   return grid.map((row) => [...row]);
@@ -6,6 +7,18 @@ function cloneGrid(grid: Grid): Grid {
 
 function cloneJson<T>(value: T): T {
   return JSON.parse(JSON.stringify(value)) as T;
+}
+
+function canonicalServiceTypes(params: SolverParams): SolverParams["serviceTypes"] | undefined {
+  if (!Array.isArray(params.serviceTypes)) return undefined;
+  return params.serviceTypes.map((serviceType) => ({
+    ...cloneJson(serviceType),
+    allowRotation: serviceType.allowRotation ?? true
+  }));
+}
+
+function canonicalResidentialTypes(params: SolverParams): SolverParams["residentialTypes"] | undefined {
+  return Array.isArray(params.residentialTypes) ? cloneJson(params.residentialTypes) : undefined;
 }
 
 export function stableStringify(value: unknown): string {
@@ -34,16 +47,21 @@ export function buildCpSatContinuationModelInput(request: {
   params: SolverParams;
 }): CpSatContinuationModelInput {
   const params = request.params ?? {};
+  const serviceTypes = canonicalServiceTypes(params);
+  const residentialTypes = canonicalResidentialTypes(params);
+  const buildingLimits = getBuildingLimits(params);
+  const usesResidentialTypes = Boolean(residentialTypes?.length);
   const modelParams: CpSatContinuationModelInput["params"] = {
     optimizer: "cp-sat",
-    ...(Array.isArray(params.serviceTypes) ? { serviceTypes: cloneJson(params.serviceTypes) } : {}),
-    ...(Array.isArray(params.residentialTypes) ? { residentialTypes: cloneJson(params.residentialTypes) } : {}),
-    ...(params.residentialSettings ? { residentialSettings: cloneJson(params.residentialSettings) } : {}),
-    ...(params.basePop != null ? { basePop: params.basePop } : {}),
-    ...(params.maxPop != null ? { maxPop: params.maxPop } : {}),
-    ...(params.availableBuildings ? { availableBuildings: cloneJson(params.availableBuildings) } : {}),
-    ...(params.maxServices != null ? { maxServices: params.maxServices } : {}),
-    ...(params.maxResidentials != null ? { maxResidentials: params.maxResidentials } : {})
+    ...(serviceTypes ? { serviceTypes } : {}),
+    ...(residentialTypes ? { residentialTypes } : {}),
+    ...(!usesResidentialTypes && params.residentialSettings
+      ? { residentialSettings: cloneJson(params.residentialSettings) }
+      : {}),
+    ...(!usesResidentialTypes && params.basePop != null ? { basePop: params.basePop } : {}),
+    ...(!usesResidentialTypes && params.maxPop != null ? { maxPop: params.maxPop } : {}),
+    ...(buildingLimits.maxServices != null ? { maxServices: buildingLimits.maxServices } : {}),
+    ...(buildingLimits.maxResidentials != null ? { maxResidentials: buildingLimits.maxResidentials } : {})
   };
 
   return {

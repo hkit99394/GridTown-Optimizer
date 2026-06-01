@@ -1,0 +1,519 @@
+=== Cross-Mode Benchmark Scorecard ===
+Generated: 2026-05-31T19:44:25.174Z
+Cases: 5
+Modes: Auto, Greedy, LNS, CP-SAT
+Equal wall-clock budgets: 30s per mode
+Seeds: 7, 19, 37
+
+- row0-corridor-repair-pressure: Sparse road-anchor access case with competing service footprints for Auto/LNS budget ablations.
+  band=small split=holdout workflow=corridor budget=30s seed=7 best=330 capacity-bound=800 winner=Auto, LNS, CP-SAT grid=6x6
+  Auto: rank=1 score=330 delta=best win-vs-auto=baseline auto-delta=0 wall=7.518s cpu-budget=30s observed-cpu=0.015s pop/cpu-budget=11.000 roads=5 services=1 residentials=2
+    attainment=cap=800 gap=470 util=41.3% closed-zero=41.3% baseline=0 closed-baseline=41.3% closed/s=0.055
+    progress=current=330 best=330 stage=cp-sat reuse=none elapsed=7.518s since-improve=0.003s stop=optimal gap=0
+    quality=first-feasible=0.027s first-improve=0.027s best=330@6.909s improvements=4 time-checkpoints=5.000s:260,30.000s:330,120.000s:330 quality-targets=50%:0.027s,90%:6.909s,100%:6.909s trace-events=18
+    road-semantics=anchor-connected anchor-roads=2 anchor-connected=5 disconnected=0 connected-ratio=1.000 adjacent-buildings=3 unadjacent-buildings=0
+    budget-signal=under-used-budget use=25.1% unused=22.482s overrun=0.000s first-improve=0.027s best=6.909s after-best=0.609s improvements/s=0.532 auto-best-delta=0.000s
+    reason=CP-SAT OPTIMAL with population gap 0.
+    seed-policy=auto-greedy-seed-limit:29.999s auto-greedy-seed-wall:0.131s auto-greedy-seed-phases:8
+  LNS: rank=1 score=330 delta=best win-vs-auto=tie auto-delta=0 wall=7.107s cpu-budget=30s observed-cpu=0.029s pop/cpu-budget=11.000 roads=5 services=1 residentials=2
+    attainment=cap=800 gap=470 util=41.3% closed-zero=41.3% baseline=330 closed-baseline=0.0% closed/s=0.000
+    progress=current=330 best=330 stage=lns reuse=greedy-seed elapsed=7.107s since-improve=0.001s stop=iteration-limit gap=0
+    quality=first-feasible=0.019s first-improve=0.019s best=330@0.028s improvements=3 time-checkpoints=5.000s:330,30.000s:330,120.000s:330 quality-targets=50%:0.019s,90%:0.028s,100%:0.028s trace-events=18
+    road-semantics=anchor-connected anchor-roads=2 anchor-connected=5 disconnected=0 connected-ratio=1.000 adjacent-buildings=3 unadjacent-buildings=0
+    budget-signal=under-used-budget use=23.7% unused=22.893s overrun=0.000s first-improve=0.019s best=0.028s after-best=7.079s improvements/s=0.422 auto-best-delta=-6.881s
+    reason=CP-SAT OPTIMAL with population gap 0.
+    seed-policy=lns-seed-limit:2.000s lns-seed-wall:0.019s lns-seed-phases:0
+  CP-SAT: rank=1 score=330 delta=best win-vs-auto=tie auto-delta=0 wall=0.606s cpu-budget=30s observed-cpu=0.077s pop/cpu-budget=11.000 roads=5 services=1 residentials=2
+    attainment=cap=800 gap=470 util=41.3% closed-zero=41.3% baseline=330 closed-baseline=0.0% closed/s=0.000
+    progress=current=330 best=330 stage=cp-sat reuse=none elapsed=0.606s since-improve=0s stop=n/a gap=0
+    quality=first-feasible=0.076s first-improve=0.076s best=330@0.076s improvements=1 time-checkpoints=5.000s:330,30.000s:330,120.000s:330 quality-targets=50%:0.076s,90%:0.076s,100%:0.076s trace-events=3
+    road-semantics=anchor-connected anchor-roads=2 anchor-connected=5 disconnected=0 connected-ratio=1.000 adjacent-buildings=3 unadjacent-buildings=0
+    budget-signal=under-used-budget use=2.0% unused=29.394s overrun=0.000s first-improve=0.076s best=0.076s after-best=0.530s improvements/s=1.650 auto-best-delta=-6.833s
+    reason=CP-SAT OPTIMAL with population gap 0.
+  Greedy: rank=4 score=260 delta=-70 win-vs-auto=loss auto-delta=-70 wall=0.046s cpu-budget=30s observed-cpu=n/a pop/cpu-budget=8.667 roads=6 services=1 residentials=1
+    attainment=cap=800 gap=540 util=32.5% closed-zero=32.5% baseline=330 closed-baseline=-14.9% closed/s=-3.256
+    progress=current=260 best=260 stage=greedy reuse=none elapsed=0.046s since-improve=n/a stop=n/a gap=n/a
+    quality=first-feasible=0.029s first-improve=0.029s best=260@0.029s improvements=1 time-checkpoints=5.000s:260,30.000s:260,120.000s:260 quality-targets=50%:0.029s,90%:0.029s,100%:0.029s trace-events=9
+    road-semantics=anchor-connected anchor-roads=1 anchor-connected=6 disconnected=0 connected-ratio=1.000 adjacent-buildings=2 unadjacent-buildings=0
+    budget-signal=under-used-budget use=0.2% unused=29.954s overrun=0.000s first-improve=0.029s best=0.029s after-best=0.017s improvements/s=21.739 auto-best-delta=-6.880s
+    reason=Greedy constructiveCapSearch improved best population by 260.
+- row0-corridor-repair-pressure: Sparse road-anchor access case with competing service footprints for Auto/LNS budget ablations.
+  band=small split=holdout workflow=corridor budget=30s seed=19 best=330 capacity-bound=800 winner=Auto, LNS, CP-SAT grid=6x6
+  Auto: rank=1 score=330 delta=best win-vs-auto=baseline auto-delta=0 wall=13.720s cpu-budget=30s observed-cpu=0.022s pop/cpu-budget=11.000 roads=5 services=1 residentials=2
+    attainment=cap=800 gap=470 util=41.3% closed-zero=41.3% baseline=0 closed-baseline=41.3% closed/s=0.030
+    progress=current=330 best=330 stage=cp-sat reuse=none elapsed=13.72s since-improve=0.007s stop=optimal gap=0
+    quality=first-feasible=0.029s first-improve=0.029s best=330@12.482s improvements=4 time-checkpoints=5.000s:260,30.000s:330,120.000s:330 quality-targets=50%:0.029s,90%:12.482s,100%:12.482s trace-events=18
+    road-semantics=anchor-connected anchor-roads=2 anchor-connected=5 disconnected=0 connected-ratio=1.000 adjacent-buildings=3 unadjacent-buildings=0
+    budget-signal=under-used-budget use=45.7% unused=16.280s overrun=0.000s first-improve=0.029s best=12.482s after-best=1.238s improvements/s=0.292 auto-best-delta=0.000s
+    reason=CP-SAT OPTIMAL with population gap 0.
+    seed-policy=auto-greedy-seed-limit:30.000s auto-greedy-seed-wall:0.150s auto-greedy-seed-phases:8
+  LNS: rank=1 score=330 delta=best win-vs-auto=tie auto-delta=0 wall=8.309s cpu-budget=30s observed-cpu=0.024s pop/cpu-budget=11.000 roads=5 services=1 residentials=2
+    attainment=cap=800 gap=470 util=41.3% closed-zero=41.3% baseline=330 closed-baseline=0.0% closed/s=0.000
+    progress=current=330 best=330 stage=lns reuse=greedy-seed elapsed=8.309s since-improve=0.002s stop=iteration-limit gap=0
+    quality=first-feasible=0.022s first-improve=0.022s best=330@0.022s improvements=3 time-checkpoints=5.000s:330,30.000s:330,120.000s:330 quality-targets=50%:0.022s,90%:0.022s,100%:0.022s trace-events=18
+    road-semantics=anchor-connected anchor-roads=2 anchor-connected=5 disconnected=0 connected-ratio=1.000 adjacent-buildings=3 unadjacent-buildings=0
+    budget-signal=under-used-budget use=27.7% unused=21.691s overrun=0.000s first-improve=0.022s best=0.022s after-best=8.287s improvements/s=0.361 auto-best-delta=-12.460s
+    reason=CP-SAT OPTIMAL with population gap 0.
+    seed-policy=lns-seed-limit:2.000s lns-seed-wall:0.039s lns-seed-phases:0
+  CP-SAT: rank=1 score=330 delta=best win-vs-auto=tie auto-delta=0 wall=0.690s cpu-budget=30s observed-cpu=0.032s pop/cpu-budget=11.000 roads=5 services=1 residentials=2
+    attainment=cap=800 gap=470 util=41.3% closed-zero=41.3% baseline=330 closed-baseline=0.0% closed/s=0.000
+    progress=current=330 best=330 stage=cp-sat reuse=none elapsed=0.69s since-improve=0s stop=n/a gap=0
+    quality=first-feasible=0.032s first-improve=0.032s best=330@0.032s improvements=1 time-checkpoints=5.000s:330,30.000s:330,120.000s:330 quality-targets=50%:0.032s,90%:0.032s,100%:0.032s trace-events=3
+    road-semantics=anchor-connected anchor-roads=2 anchor-connected=5 disconnected=0 connected-ratio=1.000 adjacent-buildings=3 unadjacent-buildings=0
+    budget-signal=under-used-budget use=2.3% unused=29.310s overrun=0.000s first-improve=0.032s best=0.032s after-best=0.658s improvements/s=1.449 auto-best-delta=-12.450s
+    reason=CP-SAT OPTIMAL with population gap 0.
+  Greedy: rank=4 score=260 delta=-70 win-vs-auto=loss auto-delta=-70 wall=0.048s cpu-budget=30s observed-cpu=n/a pop/cpu-budget=8.667 roads=6 services=1 residentials=1
+    attainment=cap=800 gap=540 util=32.5% closed-zero=32.5% baseline=330 closed-baseline=-14.9% closed/s=-3.079
+    progress=current=260 best=260 stage=greedy reuse=none elapsed=0.048s since-improve=n/a stop=n/a gap=n/a
+    quality=first-feasible=0.021s first-improve=0.021s best=260@0.021s improvements=1 time-checkpoints=5.000s:260,30.000s:260,120.000s:260 quality-targets=50%:0.021s,90%:0.021s,100%:0.021s trace-events=9
+    road-semantics=anchor-connected anchor-roads=1 anchor-connected=6 disconnected=0 connected-ratio=1.000 adjacent-buildings=2 unadjacent-buildings=0
+    budget-signal=under-used-budget use=0.2% unused=29.952s overrun=0.000s first-improve=0.021s best=0.021s after-best=0.027s improvements/s=20.833 auto-best-delta=-12.461s
+    reason=Greedy constructiveCapSearch improved best population by 260.
+- row0-corridor-repair-pressure: Sparse road-anchor access case with competing service footprints for Auto/LNS budget ablations.
+  band=small split=holdout workflow=corridor budget=30s seed=37 best=330 capacity-bound=800 winner=Auto, LNS, CP-SAT grid=6x6
+  Auto: rank=1 score=330 delta=best win-vs-auto=baseline auto-delta=0 wall=9.947s cpu-budget=30s observed-cpu=0.013s pop/cpu-budget=11.000 roads=5 services=1 residentials=2
+    attainment=cap=800 gap=470 util=41.3% closed-zero=41.3% baseline=0 closed-baseline=41.3% closed/s=0.041
+    progress=current=330 best=330 stage=cp-sat reuse=none elapsed=9.947s since-improve=0.001s stop=optimal gap=0
+    quality=first-feasible=0.044s first-improve=0.044s best=330@9.084s improvements=4 time-checkpoints=5.000s:260,30.000s:330,120.000s:330 quality-targets=50%:0.044s,90%:9.084s,100%:9.084s trace-events=18
+    road-semantics=anchor-connected anchor-roads=2 anchor-connected=5 disconnected=0 connected-ratio=1.000 adjacent-buildings=3 unadjacent-buildings=0
+    budget-signal=under-used-budget use=33.2% unused=20.053s overrun=0.000s first-improve=0.044s best=9.084s after-best=0.863s improvements/s=0.402 auto-best-delta=0.000s
+    reason=CP-SAT OPTIMAL with population gap 0.
+    seed-policy=auto-greedy-seed-limit:30.000s auto-greedy-seed-wall:0.215s auto-greedy-seed-phases:8
+  LNS: rank=1 score=330 delta=best win-vs-auto=tie auto-delta=0 wall=8.829s cpu-budget=30s observed-cpu=0.032s pop/cpu-budget=11.000 roads=5 services=1 residentials=2
+    attainment=cap=800 gap=470 util=41.3% closed-zero=41.3% baseline=330 closed-baseline=0.0% closed/s=0.000
+    progress=current=330 best=330 stage=lns reuse=greedy-seed elapsed=8.829s since-improve=0.001s stop=iteration-limit gap=0
+    quality=first-feasible=0.025s first-improve=0.025s best=330@0.030s improvements=3 time-checkpoints=5.000s:330,30.000s:330,120.000s:330 quality-targets=50%:0.025s,90%:0.030s,100%:0.030s trace-events=18
+    road-semantics=anchor-connected anchor-roads=2 anchor-connected=5 disconnected=0 connected-ratio=1.000 adjacent-buildings=3 unadjacent-buildings=0
+    budget-signal=under-used-budget use=29.4% unused=21.171s overrun=0.000s first-improve=0.025s best=0.030s after-best=8.799s improvements/s=0.340 auto-best-delta=-9.054s
+    reason=CP-SAT OPTIMAL with population gap 0.
+    seed-policy=lns-seed-limit:2.000s lns-seed-wall:0.025s lns-seed-phases:0
+  CP-SAT: rank=1 score=330 delta=best win-vs-auto=tie auto-delta=0 wall=0.590s cpu-budget=30s observed-cpu=0.031s pop/cpu-budget=11.000 roads=5 services=1 residentials=2
+    attainment=cap=800 gap=470 util=41.3% closed-zero=41.3% baseline=330 closed-baseline=0.0% closed/s=0.000
+    progress=current=330 best=330 stage=cp-sat reuse=none elapsed=0.59s since-improve=0.002s stop=n/a gap=0
+    quality=first-feasible=0.029s first-improve=0.029s best=330@0.029s improvements=1 time-checkpoints=5.000s:330,30.000s:330,120.000s:330 quality-targets=50%:0.029s,90%:0.029s,100%:0.029s trace-events=3
+    road-semantics=anchor-connected anchor-roads=2 anchor-connected=5 disconnected=0 connected-ratio=1.000 adjacent-buildings=3 unadjacent-buildings=0
+    budget-signal=under-used-budget use=2.0% unused=29.410s overrun=0.000s first-improve=0.029s best=0.029s after-best=0.561s improvements/s=1.695 auto-best-delta=-9.055s
+    reason=CP-SAT OPTIMAL with population gap 0.
+  Greedy: rank=4 score=260 delta=-70 win-vs-auto=loss auto-delta=-70 wall=0.036s cpu-budget=30s observed-cpu=n/a pop/cpu-budget=8.667 roads=6 services=1 residentials=1
+    attainment=cap=800 gap=540 util=32.5% closed-zero=32.5% baseline=330 closed-baseline=-14.9% closed/s=-4.158
+    progress=current=260 best=260 stage=greedy reuse=none elapsed=0.036s since-improve=n/a stop=n/a gap=n/a
+    quality=first-feasible=0.020s first-improve=0.020s best=260@0.020s improvements=1 time-checkpoints=5.000s:260,30.000s:260,120.000s:260 quality-targets=50%:0.020s,90%:0.020s,100%:0.020s trace-events=9
+    road-semantics=anchor-connected anchor-roads=1 anchor-connected=6 disconnected=0 connected-ratio=1.000 adjacent-buildings=2 unadjacent-buildings=0
+    budget-signal=under-used-budget use=0.1% unused=29.964s overrun=0.000s first-improve=0.020s best=0.020s after-best=0.016s improvements/s=27.778 auto-best-delta=-9.064s
+    reason=Greedy constructiveCapSearch improved best population by 260.
+- service-local-neighborhood: Bounded service local search should evaluate service add/remove/swap moves even when coarse service refinement is disabled.
+  band=small split=holdout workflow=service-pressure budget=30s seed=7 best=470 capacity-bound=1110 winner=Auto, LNS, CP-SAT grid=6x6
+  Auto: rank=1 score=470 delta=best win-vs-auto=baseline auto-delta=0 wall=10.550s cpu-budget=30s observed-cpu=0.408s pop/cpu-budget=15.667 roads=6 services=3 residentials=4
+    attainment=cap=1,110 gap=640 util=42.3% closed-zero=42.3% baseline=0 closed-baseline=42.3% closed/s=0.040
+    progress=current=470 best=470 stage=cp-sat reuse=none elapsed=10.55s since-improve=0.374s stop=optimal gap=0
+    quality=first-feasible=0.149s first-improve=0.149s best=470@9.618s improvements=4 time-checkpoints=5.000s:395,30.000s:470,120.000s:470 quality-targets=50%:0.149s,90%:9.618s,100%:9.618s trace-events=18
+    road-semantics=anchor-connected anchor-roads=1 anchor-connected=6 disconnected=0 connected-ratio=1.000 adjacent-buildings=7 unadjacent-buildings=0
+    budget-signal=under-used-budget use=35.2% unused=19.450s overrun=0.000s first-improve=0.149s best=9.618s after-best=0.932s improvements/s=0.379 auto-best-delta=0.000s
+    reason=CP-SAT OPTIMAL with population gap 0.
+    seed-policy=auto-greedy-seed-limit:30.000s auto-greedy-seed-wall:0.285s auto-greedy-seed-phases:8
+  LNS: rank=1 score=470 delta=best win-vs-auto=tie auto-delta=0 wall=7.993s cpu-budget=30s observed-cpu=0.495s pop/cpu-budget=15.667 roads=6 services=3 residentials=4
+    attainment=cap=1,110 gap=640 util=42.3% closed-zero=42.3% baseline=470 closed-baseline=0.0% closed/s=0.000
+    progress=current=470 best=470 stage=lns reuse=greedy-seed elapsed=7.993s since-improve=0.135s stop=iteration-limit gap=0
+    quality=first-feasible=0.050s first-improve=0.050s best=470@0.361s improvements=3 time-checkpoints=5.000s:470,30.000s:470,120.000s:470 quality-targets=50%:0.050s,90%:0.361s,100%:0.361s trace-events=18
+    road-semantics=anchor-connected anchor-roads=1 anchor-connected=6 disconnected=0 connected-ratio=1.000 adjacent-buildings=7 unadjacent-buildings=0
+    budget-signal=under-used-budget use=26.6% unused=22.007s overrun=0.000s first-improve=0.050s best=0.361s after-best=7.632s improvements/s=0.375 auto-best-delta=-9.257s
+    reason=CP-SAT OPTIMAL with population gap 0.
+    seed-policy=lns-seed-limit:2.000s lns-seed-wall:0.050s lns-seed-phases:0
+  CP-SAT: rank=1 score=470 delta=best win-vs-auto=tie auto-delta=0 wall=1.742s cpu-budget=30s observed-cpu=1.261s pop/cpu-budget=15.667 roads=6 services=3 residentials=4
+    attainment=cap=1,110 gap=640 util=42.3% closed-zero=42.3% baseline=470 closed-baseline=0.0% closed/s=0.000
+    progress=current=470 best=470 stage=cp-sat reuse=none elapsed=1.742s since-improve=0.027s stop=n/a gap=0
+    quality=first-feasible=1.234s first-improve=1.234s best=470@1.234s improvements=1 time-checkpoints=5.000s:470,30.000s:470,120.000s:470 quality-targets=50%:1.234s,90%:1.234s,100%:1.234s trace-events=3
+    road-semantics=anchor-connected anchor-roads=1 anchor-connected=6 disconnected=0 connected-ratio=1.000 adjacent-buildings=7 unadjacent-buildings=0
+    budget-signal=under-used-budget use=5.8% unused=28.258s overrun=0.000s first-improve=1.234s best=1.234s after-best=0.508s improvements/s=0.574 auto-best-delta=-8.384s
+    reason=CP-SAT OPTIMAL with population gap 0.
+  Greedy: rank=4 score=395 delta=-75 win-vs-auto=loss auto-delta=-75 wall=0.057s cpu-budget=30s observed-cpu=n/a pop/cpu-budget=13.167 roads=5 services=2 residentials=3
+    attainment=cap=1,110 gap=715 util=35.6% closed-zero=35.6% baseline=470 closed-baseline=-11.7% closed/s=-2.068
+    progress=current=395 best=395 stage=greedy reuse=none elapsed=0.057s since-improve=n/a stop=n/a gap=n/a
+    quality=first-feasible=0.053s first-improve=0.053s best=395@0.053s improvements=1 time-checkpoints=5.000s:395,30.000s:395,120.000s:395 quality-targets=50%:0.053s,90%:0.053s,100%:0.053s trace-events=9
+    road-semantics=anchor-connected anchor-roads=1 anchor-connected=5 disconnected=0 connected-ratio=1.000 adjacent-buildings=5 unadjacent-buildings=0
+    budget-signal=under-used-budget use=0.2% unused=29.943s overrun=0.000s first-improve=0.053s best=0.053s after-best=0.004s improvements/s=17.544 auto-best-delta=-9.565s
+    reason=Greedy constructiveCapSearch improved best population by 395.
+- service-local-neighborhood: Bounded service local search should evaluate service add/remove/swap moves even when coarse service refinement is disabled.
+  band=small split=holdout workflow=service-pressure budget=30s seed=19 best=470 capacity-bound=1110 winner=Auto, LNS, CP-SAT grid=6x6
+  Auto: rank=1 score=470 delta=best win-vs-auto=baseline auto-delta=0 wall=8.042s cpu-budget=30s observed-cpu=0.366s pop/cpu-budget=15.667 roads=6 services=3 residentials=4
+    attainment=cap=1,110 gap=640 util=42.3% closed-zero=42.3% baseline=0 closed-baseline=42.3% closed/s=0.053
+    progress=current=470 best=470 stage=cp-sat reuse=none elapsed=8.042s since-improve=0.308s stop=optimal gap=0
+    quality=first-feasible=0.098s first-improve=0.098s best=470@7.172s improvements=4 time-checkpoints=5.000s:395,30.000s:470,120.000s:470 quality-targets=50%:0.098s,90%:7.172s,100%:7.172s trace-events=18
+    road-semantics=anchor-connected anchor-roads=1 anchor-connected=6 disconnected=0 connected-ratio=1.000 adjacent-buildings=7 unadjacent-buildings=0
+    budget-signal=under-used-budget use=26.8% unused=21.958s overrun=0.000s first-improve=0.098s best=7.172s after-best=0.870s improvements/s=0.497 auto-best-delta=0.000s
+    reason=CP-SAT OPTIMAL with population gap 0.
+    seed-policy=auto-greedy-seed-limit:30.000s auto-greedy-seed-wall:0.209s auto-greedy-seed-phases:8
+  LNS: rank=1 score=470 delta=best win-vs-auto=tie auto-delta=0 wall=7.479s cpu-budget=30s observed-cpu=0.238s pop/cpu-budget=15.667 roads=6 services=3 residentials=4
+    attainment=cap=1,110 gap=640 util=42.3% closed-zero=42.3% baseline=470 closed-baseline=0.0% closed/s=0.000
+    progress=current=470 best=470 stage=lns reuse=greedy-seed elapsed=7.479s since-improve=0.037s stop=iteration-limit gap=0
+    quality=first-feasible=0.045s first-improve=0.045s best=470@0.201s improvements=3 time-checkpoints=5.000s:470,30.000s:470,120.000s:470 quality-targets=50%:0.045s,90%:0.201s,100%:0.201s trace-events=18
+    road-semantics=anchor-connected anchor-roads=1 anchor-connected=6 disconnected=0 connected-ratio=1.000 adjacent-buildings=7 unadjacent-buildings=0
+    budget-signal=under-used-budget use=24.9% unused=22.521s overrun=0.000s first-improve=0.045s best=0.201s after-best=7.278s improvements/s=0.401 auto-best-delta=-6.971s
+    reason=CP-SAT OPTIMAL with population gap 0.
+    seed-policy=lns-seed-limit:2.000s lns-seed-wall:0.045s lns-seed-phases:0
+  CP-SAT: rank=1 score=470 delta=best win-vs-auto=tie auto-delta=0 wall=2.251s cpu-budget=30s observed-cpu=1.730s pop/cpu-budget=15.667 roads=6 services=3 residentials=4
+    attainment=cap=1,110 gap=640 util=42.3% closed-zero=42.3% baseline=470 closed-baseline=0.0% closed/s=0.000
+    progress=current=470 best=470 stage=cp-sat reuse=none elapsed=2.251s since-improve=0.084s stop=n/a gap=0
+    quality=first-feasible=1.646s first-improve=1.646s best=470@1.646s improvements=1 time-checkpoints=5.000s:470,30.000s:470,120.000s:470 quality-targets=50%:1.646s,90%:1.646s,100%:1.646s trace-events=3
+    road-semantics=anchor-connected anchor-roads=1 anchor-connected=6 disconnected=0 connected-ratio=1.000 adjacent-buildings=7 unadjacent-buildings=0
+    budget-signal=under-used-budget use=7.5% unused=27.749s overrun=0.000s first-improve=1.646s best=1.646s after-best=0.605s improvements/s=0.444 auto-best-delta=-5.526s
+    reason=CP-SAT OPTIMAL with population gap 0.
+  Greedy: rank=4 score=395 delta=-75 win-vs-auto=loss auto-delta=-75 wall=0.052s cpu-budget=30s observed-cpu=n/a pop/cpu-budget=13.167 roads=5 services=2 residentials=3
+    attainment=cap=1,110 gap=715 util=35.6% closed-zero=35.6% baseline=470 closed-baseline=-11.7% closed/s=-2.274
+    progress=current=395 best=395 stage=greedy reuse=none elapsed=0.052s since-improve=n/a stop=n/a gap=n/a
+    quality=first-feasible=0.047s first-improve=0.047s best=395@0.047s improvements=1 time-checkpoints=5.000s:395,30.000s:395,120.000s:395 quality-targets=50%:0.047s,90%:0.047s,100%:0.047s trace-events=9
+    road-semantics=anchor-connected anchor-roads=1 anchor-connected=5 disconnected=0 connected-ratio=1.000 adjacent-buildings=5 unadjacent-buildings=0
+    budget-signal=under-used-budget use=0.2% unused=29.948s overrun=0.000s first-improve=0.047s best=0.047s after-best=0.005s improvements/s=19.231 auto-best-delta=-7.125s
+    reason=Greedy constructiveCapSearch improved best population by 395.
+- service-local-neighborhood: Bounded service local search should evaluate service add/remove/swap moves even when coarse service refinement is disabled.
+  band=small split=holdout workflow=service-pressure budget=30s seed=37 best=470 capacity-bound=1110 winner=Auto, LNS, CP-SAT grid=6x6
+  Auto: rank=1 score=470 delta=best win-vs-auto=baseline auto-delta=0 wall=8.745s cpu-budget=30s observed-cpu=0.353s pop/cpu-budget=15.667 roads=6 services=3 residentials=4
+    attainment=cap=1,110 gap=640 util=42.3% closed-zero=42.3% baseline=0 closed-baseline=42.3% closed/s=0.048
+    progress=current=470 best=470 stage=cp-sat reuse=none elapsed=8.745s since-improve=0.32s stop=optimal gap=0
+    quality=first-feasible=0.084s first-improve=0.084s best=470@7.827s improvements=4 time-checkpoints=5.000s:395,30.000s:470,120.000s:470 quality-targets=50%:0.084s,90%:7.827s,100%:7.827s trace-events=18
+    road-semantics=anchor-connected anchor-roads=1 anchor-connected=6 disconnected=0 connected-ratio=1.000 adjacent-buildings=7 unadjacent-buildings=0
+    budget-signal=under-used-budget use=29.2% unused=21.255s overrun=0.000s first-improve=0.084s best=7.827s after-best=0.918s improvements/s=0.457 auto-best-delta=0.000s
+    reason=CP-SAT OPTIMAL with population gap 0.
+    seed-policy=auto-greedy-seed-limit:30.000s auto-greedy-seed-wall:0.206s auto-greedy-seed-phases:8
+  LNS: rank=1 score=470 delta=best win-vs-auto=tie auto-delta=0 wall=7.287s cpu-budget=30s observed-cpu=0.416s pop/cpu-budget=15.667 roads=6 services=3 residentials=4
+    attainment=cap=1,110 gap=640 util=42.3% closed-zero=42.3% baseline=470 closed-baseline=0.0% closed/s=0.000
+    progress=current=470 best=470 stage=lns reuse=greedy-seed elapsed=7.287s since-improve=0.027s stop=iteration-limit gap=0
+    quality=first-feasible=0.043s first-improve=0.043s best=470@0.389s improvements=3 time-checkpoints=5.000s:470,30.000s:470,120.000s:470 quality-targets=50%:0.043s,90%:0.389s,100%:0.389s trace-events=18
+    road-semantics=anchor-connected anchor-roads=1 anchor-connected=6 disconnected=0 connected-ratio=1.000 adjacent-buildings=7 unadjacent-buildings=0
+    budget-signal=under-used-budget use=24.3% unused=22.713s overrun=0.000s first-improve=0.043s best=0.389s after-best=6.898s improvements/s=0.412 auto-best-delta=-7.438s
+    reason=CP-SAT OPTIMAL with population gap 0.
+    seed-policy=lns-seed-limit:2.000s lns-seed-wall:0.043s lns-seed-phases:0
+  CP-SAT: rank=1 score=470 delta=best win-vs-auto=tie auto-delta=0 wall=1.645s cpu-budget=30s observed-cpu=1.179s pop/cpu-budget=15.667 roads=6 services=3 residentials=4
+    attainment=cap=1,110 gap=640 util=42.3% closed-zero=42.3% baseline=470 closed-baseline=0.0% closed/s=0.000
+    progress=current=470 best=470 stage=cp-sat reuse=none elapsed=1.645s since-improve=0.121s stop=n/a gap=0
+    quality=first-feasible=1.058s first-improve=1.058s best=470@1.058s improvements=1 time-checkpoints=5.000s:470,30.000s:470,120.000s:470 quality-targets=50%:1.058s,90%:1.058s,100%:1.058s trace-events=3
+    road-semantics=anchor-connected anchor-roads=1 anchor-connected=6 disconnected=0 connected-ratio=1.000 adjacent-buildings=7 unadjacent-buildings=0
+    budget-signal=under-used-budget use=5.5% unused=28.355s overrun=0.000s first-improve=1.058s best=1.058s after-best=0.587s improvements/s=0.608 auto-best-delta=-6.769s
+    reason=CP-SAT OPTIMAL with population gap 0.
+  Greedy: rank=4 score=395 delta=-75 win-vs-auto=loss auto-delta=-75 wall=0.048s cpu-budget=30s observed-cpu=n/a pop/cpu-budget=13.167 roads=5 services=2 residentials=3
+    attainment=cap=1,110 gap=715 util=35.6% closed-zero=35.6% baseline=470 closed-baseline=-11.7% closed/s=-2.430
+    progress=current=395 best=395 stage=greedy reuse=none elapsed=0.048s since-improve=n/a stop=n/a gap=n/a
+    quality=first-feasible=0.045s first-improve=0.045s best=395@0.045s improvements=1 time-checkpoints=5.000s:395,30.000s:395,120.000s:395 quality-targets=50%:0.045s,90%:0.045s,100%:0.045s trace-events=9
+    road-semantics=anchor-connected anchor-roads=1 anchor-connected=5 disconnected=0 connected-ratio=1.000 adjacent-buildings=5 unadjacent-buildings=0
+    budget-signal=under-used-budget use=0.2% unused=29.952s overrun=0.000s first-improve=0.045s best=0.045s after-best=0.003s improvements/s=20.833 auto-best-delta=-7.782s
+    reason=Greedy constructiveCapSearch improved best population by 395.
+- road-semantics-gate-choke: Road-semantics scorecard case where a central choke point separates high-value placements.
+  band=small split=holdout workflow=gate budget=30s seed=7 best=540 capacity-bound=710 winner=Auto, LNS, CP-SAT grid=6x6
+  Auto: rank=1 score=540 delta=best win-vs-auto=baseline auto-delta=0 wall=8.402s cpu-budget=30s observed-cpu=0.039s pop/cpu-budget=18.000 roads=1 services=1 residentials=3
+    attainment=cap=710 gap=170 util=76.1% closed-zero=76.1% baseline=0 closed-baseline=76.1% closed/s=0.091
+    progress=current=540 best=540 stage=cp-sat reuse=none elapsed=8.402s since-improve=0.005s stop=optimal gap=0
+    quality=first-feasible=0.048s first-improve=0.048s best=540@7.744s improvements=4 time-checkpoints=5.000s:470,30.000s:540,120.000s:540 quality-targets=50%:0.048s,90%:7.744s,100%:7.744s trace-events=18
+    road-semantics=anchor-connected anchor-roads=1 anchor-connected=1 disconnected=0 connected-ratio=1.000 adjacent-buildings=4 unadjacent-buildings=0
+    budget-signal=under-used-budget use=28.0% unused=21.598s overrun=0.000s first-improve=0.048s best=7.744s after-best=0.658s improvements/s=0.476 auto-best-delta=0.000s
+    reason=CP-SAT OPTIMAL with population gap 0.
+    seed-policy=auto-greedy-seed-limit:30.000s auto-greedy-seed-wall:0.171s auto-greedy-seed-phases:8
+  LNS: rank=1 score=540 delta=best win-vs-auto=tie auto-delta=0 wall=8.339s cpu-budget=30s observed-cpu=0.007s pop/cpu-budget=18.000 roads=2 services=1 residentials=3
+    attainment=cap=710 gap=170 util=76.1% closed-zero=76.1% baseline=540 closed-baseline=0.0% closed/s=0.000
+    progress=current=540 best=540 stage=lns reuse=greedy-seed elapsed=8.339s since-improve=0s stop=iteration-limit gap=0
+    quality=first-feasible=0.007s first-improve=0.007s best=540@0.007s improvements=2 time-checkpoints=5.000s:540,30.000s:540,120.000s:540 quality-targets=50%:0.007s,90%:0.007s,100%:0.007s trace-events=18
+    road-semantics=anchor-connected anchor-roads=2 anchor-connected=2 disconnected=0 connected-ratio=1.000 adjacent-buildings=4 unadjacent-buildings=0
+    budget-signal=under-used-budget use=27.8% unused=21.661s overrun=0.000s first-improve=0.007s best=0.007s after-best=8.332s improvements/s=0.240 auto-best-delta=-7.737s
+    reason=CP-SAT OPTIMAL with population gap 0.
+    seed-policy=lns-seed-limit:2.000s lns-seed-wall:0.030s lns-seed-phases:0
+  CP-SAT: rank=1 score=540 delta=best win-vs-auto=tie auto-delta=0 wall=0.635s cpu-budget=30s observed-cpu=0.041s pop/cpu-budget=18.000 roads=1 services=1 residentials=3
+    attainment=cap=710 gap=170 util=76.1% closed-zero=76.1% baseline=540 closed-baseline=0.0% closed/s=0.000
+    progress=current=540 best=540 stage=cp-sat reuse=none elapsed=0.635s since-improve=0.001s stop=n/a gap=0
+    quality=first-feasible=0.041s first-improve=0.041s best=540@0.041s improvements=1 time-checkpoints=5.000s:540,30.000s:540,120.000s:540 quality-targets=50%:0.041s,90%:0.041s,100%:0.041s trace-events=3
+    road-semantics=anchor-connected anchor-roads=1 anchor-connected=1 disconnected=0 connected-ratio=1.000 adjacent-buildings=4 unadjacent-buildings=0
+    budget-signal=under-used-budget use=2.1% unused=29.365s overrun=0.000s first-improve=0.041s best=0.041s after-best=0.594s improvements/s=1.575 auto-best-delta=-7.703s
+    reason=CP-SAT OPTIMAL with population gap 0.
+  Greedy: rank=4 score=470 delta=-70 win-vs-auto=loss auto-delta=-70 wall=0.034s cpu-budget=30s observed-cpu=n/a pop/cpu-budget=15.667 roads=1 services=1 residentials=3
+    attainment=cap=710 gap=240 util=66.2% closed-zero=66.2% baseline=540 closed-baseline=-41.2% closed/s=-12.111
+    progress=current=470 best=470 stage=greedy reuse=none elapsed=0.034s since-improve=n/a stop=n/a gap=n/a
+    quality=first-feasible=0.021s first-improve=0.021s best=470@0.021s improvements=1 time-checkpoints=5.000s:470,30.000s:470,120.000s:470 quality-targets=50%:0.021s,90%:0.021s,100%:0.021s trace-events=9
+    road-semantics=anchor-connected anchor-roads=1 anchor-connected=1 disconnected=0 connected-ratio=1.000 adjacent-buildings=4 unadjacent-buildings=0
+    budget-signal=under-used-budget use=0.1% unused=29.966s overrun=0.000s first-improve=0.021s best=0.021s after-best=0.013s improvements/s=29.412 auto-best-delta=-7.723s
+    reason=Greedy constructiveCapSearch improved best population by 470.
+- road-semantics-gate-choke: Road-semantics scorecard case where a central choke point separates high-value placements.
+  band=small split=holdout workflow=gate budget=30s seed=19 best=540 capacity-bound=710 winner=Auto, LNS, CP-SAT grid=6x6
+  Auto: rank=1 score=540 delta=best win-vs-auto=baseline auto-delta=0 wall=9.224s cpu-budget=30s observed-cpu=0.042s pop/cpu-budget=18.000 roads=1 services=1 residentials=3
+    attainment=cap=710 gap=170 util=76.1% closed-zero=76.1% baseline=0 closed-baseline=76.1% closed/s=0.082
+    progress=current=540 best=540 stage=cp-sat reuse=none elapsed=9.224s since-improve=0.003s stop=optimal gap=0
+    quality=first-feasible=0.055s first-improve=0.055s best=540@8.591s improvements=4 time-checkpoints=5.000s:470,30.000s:540,120.000s:540 quality-targets=50%:0.055s,90%:8.591s,100%:8.591s trace-events=18
+    road-semantics=anchor-connected anchor-roads=1 anchor-connected=1 disconnected=0 connected-ratio=1.000 adjacent-buildings=4 unadjacent-buildings=0
+    budget-signal=under-used-budget use=30.7% unused=20.776s overrun=0.000s first-improve=0.055s best=8.591s after-best=0.633s improvements/s=0.434 auto-best-delta=0.000s
+    reason=CP-SAT OPTIMAL with population gap 0.
+    seed-policy=auto-greedy-seed-limit:30.000s auto-greedy-seed-wall:0.219s auto-greedy-seed-phases:8
+  LNS: rank=1 score=540 delta=best win-vs-auto=tie auto-delta=0 wall=7.605s cpu-budget=30s observed-cpu=0.008s pop/cpu-budget=18.000 roads=2 services=1 residentials=3
+    attainment=cap=710 gap=170 util=76.1% closed-zero=76.1% baseline=540 closed-baseline=0.0% closed/s=0.000
+    progress=current=540 best=540 stage=lns reuse=greedy-seed elapsed=7.605s since-improve=0s stop=iteration-limit gap=0
+    quality=first-feasible=0.007s first-improve=0.007s best=540@0.007s improvements=2 time-checkpoints=5.000s:540,30.000s:540,120.000s:540 quality-targets=50%:0.007s,90%:0.007s,100%:0.007s trace-events=18
+    road-semantics=anchor-connected anchor-roads=2 anchor-connected=2 disconnected=0 connected-ratio=1.000 adjacent-buildings=4 unadjacent-buildings=0
+    budget-signal=under-used-budget use=25.4% unused=22.395s overrun=0.000s first-improve=0.007s best=0.007s after-best=7.598s improvements/s=0.263 auto-best-delta=-8.584s
+    reason=CP-SAT OPTIMAL with population gap 0.
+    seed-policy=lns-seed-limit:2.000s lns-seed-wall:0.030s lns-seed-phases:0
+  CP-SAT: rank=1 score=540 delta=best win-vs-auto=tie auto-delta=0 wall=0.517s cpu-budget=30s observed-cpu=0.041s pop/cpu-budget=18.000 roads=1 services=1 residentials=3
+    attainment=cap=710 gap=170 util=76.1% closed-zero=76.1% baseline=540 closed-baseline=0.0% closed/s=0.000
+    progress=current=540 best=540 stage=cp-sat reuse=none elapsed=0.517s since-improve=0.001s stop=n/a gap=0
+    quality=first-feasible=0.040s first-improve=0.040s best=540@0.040s improvements=1 time-checkpoints=5.000s:540,30.000s:540,120.000s:540 quality-targets=50%:0.040s,90%:0.040s,100%:0.040s trace-events=3
+    road-semantics=anchor-connected anchor-roads=1 anchor-connected=1 disconnected=0 connected-ratio=1.000 adjacent-buildings=4 unadjacent-buildings=0
+    budget-signal=under-used-budget use=1.7% unused=29.483s overrun=0.000s first-improve=0.040s best=0.040s after-best=0.477s improvements/s=1.934 auto-best-delta=-8.551s
+    reason=CP-SAT OPTIMAL with population gap 0.
+  Greedy: rank=4 score=470 delta=-70 win-vs-auto=loss auto-delta=-70 wall=0.033s cpu-budget=30s observed-cpu=n/a pop/cpu-budget=15.667 roads=1 services=1 residentials=3
+    attainment=cap=710 gap=240 util=66.2% closed-zero=66.2% baseline=540 closed-baseline=-41.2% closed/s=-12.299
+    progress=current=470 best=470 stage=greedy reuse=none elapsed=0.033s since-improve=n/a stop=n/a gap=n/a
+    quality=first-feasible=0.022s first-improve=0.022s best=470@0.022s improvements=1 time-checkpoints=5.000s:470,30.000s:470,120.000s:470 quality-targets=50%:0.022s,90%:0.022s,100%:0.022s trace-events=9
+    road-semantics=anchor-connected anchor-roads=1 anchor-connected=1 disconnected=0 connected-ratio=1.000 adjacent-buildings=4 unadjacent-buildings=0
+    budget-signal=under-used-budget use=0.1% unused=29.967s overrun=0.000s first-improve=0.022s best=0.022s after-best=0.011s improvements/s=30.303 auto-best-delta=-8.569s
+    reason=Greedy constructiveCapSearch improved best population by 470.
+- road-semantics-gate-choke: Road-semantics scorecard case where a central choke point separates high-value placements.
+  band=small split=holdout workflow=gate budget=30s seed=37 best=540 capacity-bound=710 winner=Auto, LNS, CP-SAT grid=6x6
+  Auto: rank=1 score=540 delta=best win-vs-auto=baseline auto-delta=0 wall=7.569s cpu-budget=30s observed-cpu=0.048s pop/cpu-budget=18.000 roads=1 services=1 residentials=3
+    attainment=cap=710 gap=170 util=76.1% closed-zero=76.1% baseline=0 closed-baseline=76.1% closed/s=0.100
+    progress=current=540 best=540 stage=cp-sat reuse=none elapsed=7.569s since-improve=0.002s stop=optimal gap=0
+    quality=first-feasible=0.050s first-improve=0.050s best=540@7.017s improvements=4 time-checkpoints=5.000s:470,30.000s:540,120.000s:540 quality-targets=50%:0.050s,90%:7.017s,100%:7.017s trace-events=18
+    road-semantics=anchor-connected anchor-roads=1 anchor-connected=1 disconnected=0 connected-ratio=1.000 adjacent-buildings=4 unadjacent-buildings=0
+    budget-signal=under-used-budget use=25.2% unused=22.431s overrun=0.000s first-improve=0.050s best=7.017s after-best=0.552s improvements/s=0.528 auto-best-delta=0.000s
+    reason=CP-SAT OPTIMAL with population gap 0.
+    seed-policy=auto-greedy-seed-limit:30.000s auto-greedy-seed-wall:0.172s auto-greedy-seed-phases:8
+  LNS: rank=1 score=540 delta=best win-vs-auto=tie auto-delta=0 wall=6.666s cpu-budget=30s observed-cpu=0.007s pop/cpu-budget=18.000 roads=2 services=1 residentials=3
+    attainment=cap=710 gap=170 util=76.1% closed-zero=76.1% baseline=540 closed-baseline=0.0% closed/s=0.000
+    progress=current=540 best=540 stage=lns reuse=greedy-seed elapsed=6.666s since-improve=0s stop=iteration-limit gap=0
+    quality=first-feasible=0.006s first-improve=0.006s best=540@0.006s improvements=2 time-checkpoints=5.000s:540,30.000s:540,120.000s:540 quality-targets=50%:0.006s,90%:0.006s,100%:0.006s trace-events=18
+    road-semantics=anchor-connected anchor-roads=2 anchor-connected=2 disconnected=0 connected-ratio=1.000 adjacent-buildings=4 unadjacent-buildings=0
+    budget-signal=under-used-budget use=22.2% unused=23.334s overrun=0.000s first-improve=0.006s best=0.006s after-best=6.660s improvements/s=0.300 auto-best-delta=-7.011s
+    reason=CP-SAT OPTIMAL with population gap 0.
+    seed-policy=lns-seed-limit:2.000s lns-seed-wall:0.027s lns-seed-phases:0
+  CP-SAT: rank=1 score=540 delta=best win-vs-auto=tie auto-delta=0 wall=0.510s cpu-budget=30s observed-cpu=0.035s pop/cpu-budget=18.000 roads=1 services=1 residentials=3
+    attainment=cap=710 gap=170 util=76.1% closed-zero=76.1% baseline=540 closed-baseline=0.0% closed/s=0.000
+    progress=current=540 best=540 stage=cp-sat reuse=none elapsed=0.51s since-improve=0.001s stop=n/a gap=0
+    quality=first-feasible=0.035s first-improve=0.035s best=540@0.035s improvements=1 time-checkpoints=5.000s:540,30.000s:540,120.000s:540 quality-targets=50%:0.035s,90%:0.035s,100%:0.035s trace-events=3
+    road-semantics=anchor-connected anchor-roads=1 anchor-connected=1 disconnected=0 connected-ratio=1.000 adjacent-buildings=4 unadjacent-buildings=0
+    budget-signal=under-used-budget use=1.7% unused=29.490s overrun=0.000s first-improve=0.035s best=0.035s after-best=0.475s improvements/s=1.961 auto-best-delta=-6.982s
+    reason=CP-SAT OPTIMAL with population gap 0.
+  Greedy: rank=4 score=470 delta=-70 win-vs-auto=loss auto-delta=-70 wall=0.027s cpu-budget=30s observed-cpu=n/a pop/cpu-budget=15.667 roads=1 services=1 residentials=3
+    attainment=cap=710 gap=240 util=66.2% closed-zero=66.2% baseline=540 closed-baseline=-41.2% closed/s=-15.436
+    progress=current=470 best=470 stage=greedy reuse=none elapsed=0.027s since-improve=n/a stop=n/a gap=n/a
+    quality=first-feasible=0.017s first-improve=0.017s best=470@0.017s improvements=1 time-checkpoints=5.000s:470,30.000s:470,120.000s:470 quality-targets=50%:0.017s,90%:0.017s,100%:0.017s trace-events=9
+    road-semantics=anchor-connected anchor-roads=1 anchor-connected=1 disconnected=0 connected-ratio=1.000 adjacent-buildings=4 unadjacent-buildings=0
+    budget-signal=under-used-budget use=0.1% unused=29.973s overrun=0.000s first-improve=0.017s best=0.017s after-best=0.010s improvements/s=37.037 auto-best-delta=-7.000s
+    reason=Greedy constructiveCapSearch improved best population by 470.
+- multi-anchor-road-components: Disconnected anchor-valid road components should both remain usable under the aligned road formulation.
+  band=small split=holdout workflow=multi-anchor budget=30s seed=7 best=200 capacity-bound=200 winner=Auto, LNS, CP-SAT grid=3x7
+  Auto: rank=1 score=200 delta=best win-vs-auto=baseline auto-delta=0 wall=4.719s cpu-budget=30s observed-cpu=0.004s pop/cpu-budget=6.667 roads=2 services=0 residentials=2
+    attainment=cap=200 gap=0 util=100.0% closed-zero=100.0% baseline=0 closed-baseline=100.0% closed/s=0.212
+    progress=current=200 best=200 stage=lns reuse=hint elapsed=4.719s since-improve=0s stop=population-cap-reached gap=0
+    quality=first-feasible=0.004s first-improve=0.004s best=200@0.004s improvements=5 time-checkpoints=5.000s:200,30.000s:200,120.000s:200 quality-targets=50%:0.004s,90%:0.004s,100%:0.004s trace-events=26
+    road-semantics=anchor-connected anchor-roads=2 anchor-connected=2 disconnected=0 connected-ratio=1.000 adjacent-buildings=2 unadjacent-buildings=0
+    budget-signal=under-used-budget use=15.7% unused=25.281s overrun=0.000s first-improve=0.004s best=0.004s after-best=4.715s improvements/s=1.060 auto-best-delta=0.000s
+    reason=CP-SAT OPTIMAL with population gap 0.
+    seed-policy=lns-seed-limit:2.000s lns-seed-wall:0.000s lns-seed-phases:0 auto-greedy-seed-limit:30.000s auto-greedy-seed-wall:0.118s auto-greedy-seed-phases:8
+  LNS: rank=1 score=200 delta=best win-vs-auto=tie auto-delta=0 wall=4.185s cpu-budget=30s observed-cpu=0.004s pop/cpu-budget=6.667 roads=2 services=0 residentials=2
+    attainment=cap=200 gap=0 util=100.0% closed-zero=100.0% baseline=200 closed-baseline=n/a closed/s=0.239
+    progress=current=200 best=200 stage=lns reuse=greedy-seed elapsed=4.185s since-improve=0s stop=population-cap-reached gap=0
+    quality=first-feasible=0.000s first-improve=0.000s best=200@0.004s improvements=2 time-checkpoints=5.000s:200,30.000s:200,120.000s:200 quality-targets=50%:0.000s,90%:0.004s,100%:0.004s trace-events=13
+    road-semantics=anchor-connected anchor-roads=2 anchor-connected=2 disconnected=0 connected-ratio=1.000 adjacent-buildings=2 unadjacent-buildings=0
+    budget-signal=under-used-budget use=14.0% unused=25.815s overrun=0.000s first-improve=0.000s best=0.004s after-best=4.181s improvements/s=0.478 auto-best-delta=0.000s
+    reason=CP-SAT OPTIMAL with population gap 0.
+    seed-policy=lns-seed-limit:2.000s lns-seed-wall:0.000s lns-seed-phases:0
+  CP-SAT: rank=1 score=200 delta=best win-vs-auto=tie auto-delta=0 wall=0.452s cpu-budget=30s observed-cpu=0.004s pop/cpu-budget=6.667 roads=2 services=0 residentials=2
+    attainment=cap=200 gap=0 util=100.0% closed-zero=100.0% baseline=200 closed-baseline=n/a closed/s=2.211
+    progress=current=200 best=200 stage=cp-sat reuse=none elapsed=0.452s since-improve=0s stop=n/a gap=0
+    quality=first-feasible=0.004s first-improve=0.004s best=200@0.004s improvements=1 time-checkpoints=5.000s:200,30.000s:200,120.000s:200 quality-targets=50%:0.004s,90%:0.004s,100%:0.004s trace-events=3
+    road-semantics=anchor-connected anchor-roads=2 anchor-connected=2 disconnected=0 connected-ratio=1.000 adjacent-buildings=2 unadjacent-buildings=0
+    budget-signal=under-used-budget use=1.5% unused=29.548s overrun=0.000s first-improve=0.004s best=0.004s after-best=0.448s improvements/s=2.212 auto-best-delta=0.000s
+    reason=CP-SAT OPTIMAL with population gap 0.
+  Greedy: rank=4 score=100 delta=-100 win-vs-auto=loss auto-delta=-100 wall=0.001s cpu-budget=30s observed-cpu=n/a pop/cpu-budget=3.333 roads=1 services=0 residentials=1
+    attainment=cap=200 gap=100 util=50.0% closed-zero=50.0% baseline=200 closed-baseline=n/a closed/s=845.845
+    progress=current=100 best=100 stage=greedy reuse=none elapsed=0.001s since-improve=n/a stop=n/a gap=n/a
+    quality=first-feasible=0.000s first-improve=0.000s best=100@0.000s improvements=1 time-checkpoints=5.000s:100,30.000s:100,120.000s:100 quality-targets=50%:0.000s,90%:0.000s,100%:0.000s trace-events=9
+    road-semantics=anchor-connected anchor-roads=1 anchor-connected=1 disconnected=0 connected-ratio=1.000 adjacent-buildings=1 unadjacent-buildings=0
+    budget-signal=under-used-budget use=0.0% unused=29.999s overrun=0.000s first-improve=0.000s best=0.000s after-best=0.001s improvements/s=1000.000 auto-best-delta=-0.004s
+    reason=Greedy constructiveCapSearch improved best population by 100.
+- multi-anchor-road-components: Disconnected anchor-valid road components should both remain usable under the aligned road formulation.
+  band=small split=holdout workflow=multi-anchor budget=30s seed=19 best=200 capacity-bound=200 winner=Auto, LNS, CP-SAT grid=3x7
+  Auto: rank=1 score=200 delta=best win-vs-auto=baseline auto-delta=0 wall=4.515s cpu-budget=30s observed-cpu=0.004s pop/cpu-budget=6.667 roads=2 services=0 residentials=2
+    attainment=cap=200 gap=0 util=100.0% closed-zero=100.0% baseline=0 closed-baseline=100.0% closed/s=0.221
+    progress=current=200 best=200 stage=lns reuse=hint elapsed=4.515s since-improve=0s stop=population-cap-reached gap=0
+    quality=first-feasible=0.004s first-improve=0.004s best=200@0.004s improvements=5 time-checkpoints=5.000s:200,30.000s:200,120.000s:200 quality-targets=50%:0.004s,90%:0.004s,100%:0.004s trace-events=26
+    road-semantics=anchor-connected anchor-roads=2 anchor-connected=2 disconnected=0 connected-ratio=1.000 adjacent-buildings=2 unadjacent-buildings=0
+    budget-signal=under-used-budget use=15.1% unused=25.485s overrun=0.000s first-improve=0.004s best=0.004s after-best=4.511s improvements/s=1.107 auto-best-delta=0.000s
+    reason=CP-SAT OPTIMAL with population gap 0.
+    seed-policy=lns-seed-limit:2.000s lns-seed-wall:0.000s lns-seed-phases:0 auto-greedy-seed-limit:30.000s auto-greedy-seed-wall:0.110s auto-greedy-seed-phases:8
+  LNS: rank=1 score=200 delta=best win-vs-auto=tie auto-delta=0 wall=4.162s cpu-budget=30s observed-cpu=0.004s pop/cpu-budget=6.667 roads=2 services=0 residentials=2
+    attainment=cap=200 gap=0 util=100.0% closed-zero=100.0% baseline=200 closed-baseline=n/a closed/s=0.240
+    progress=current=200 best=200 stage=lns reuse=greedy-seed elapsed=4.162s since-improve=0s stop=population-cap-reached gap=0
+    quality=first-feasible=0.000s first-improve=0.000s best=200@0.004s improvements=2 time-checkpoints=5.000s:200,30.000s:200,120.000s:200 quality-targets=50%:0.000s,90%:0.004s,100%:0.004s trace-events=13
+    road-semantics=anchor-connected anchor-roads=2 anchor-connected=2 disconnected=0 connected-ratio=1.000 adjacent-buildings=2 unadjacent-buildings=0
+    budget-signal=under-used-budget use=13.9% unused=25.838s overrun=0.000s first-improve=0.000s best=0.004s after-best=4.158s improvements/s=0.481 auto-best-delta=0.000s
+    reason=CP-SAT OPTIMAL with population gap 0.
+    seed-policy=lns-seed-limit:2.000s lns-seed-wall:0.000s lns-seed-phases:0
+  CP-SAT: rank=1 score=200 delta=best win-vs-auto=tie auto-delta=0 wall=0.452s cpu-budget=30s observed-cpu=0.004s pop/cpu-budget=6.667 roads=2 services=0 residentials=2
+    attainment=cap=200 gap=0 util=100.0% closed-zero=100.0% baseline=200 closed-baseline=n/a closed/s=2.213
+    progress=current=200 best=200 stage=cp-sat reuse=none elapsed=0.452s since-improve=0s stop=n/a gap=0
+    quality=first-feasible=0.004s first-improve=0.004s best=200@0.004s improvements=1 time-checkpoints=5.000s:200,30.000s:200,120.000s:200 quality-targets=50%:0.004s,90%:0.004s,100%:0.004s trace-events=3
+    road-semantics=anchor-connected anchor-roads=2 anchor-connected=2 disconnected=0 connected-ratio=1.000 adjacent-buildings=2 unadjacent-buildings=0
+    budget-signal=under-used-budget use=1.5% unused=29.548s overrun=0.000s first-improve=0.004s best=0.004s after-best=0.448s improvements/s=2.212 auto-best-delta=0.000s
+    reason=CP-SAT OPTIMAL with population gap 0.
+  Greedy: rank=4 score=100 delta=-100 win-vs-auto=loss auto-delta=-100 wall=0.000s cpu-budget=30s observed-cpu=n/a pop/cpu-budget=3.333 roads=1 services=0 residentials=1
+    attainment=cap=200 gap=100 util=50.0% closed-zero=50.0% baseline=200 closed-baseline=n/a closed/s=1139.386
+    progress=current=100 best=100 stage=greedy reuse=none elapsed=0s since-improve=n/a stop=n/a gap=n/a
+    quality=first-feasible=0.000s first-improve=0.000s best=100@0.000s improvements=1 time-checkpoints=5.000s:100,30.000s:100,120.000s:100 quality-targets=50%:0.000s,90%:0.000s,100%:0.000s trace-events=9
+    road-semantics=anchor-connected anchor-roads=1 anchor-connected=1 disconnected=0 connected-ratio=1.000 adjacent-buildings=1 unadjacent-buildings=0
+    budget-signal=under-used-budget use=0.0% unused=30.000s overrun=0.000s first-improve=0.000s best=0.000s after-best=0.000s improvements/s=n/a auto-best-delta=-0.004s
+    reason=Greedy constructiveCapSearch improved best population by 100.
+- multi-anchor-road-components: Disconnected anchor-valid road components should both remain usable under the aligned road formulation.
+  band=small split=holdout workflow=multi-anchor budget=30s seed=37 best=200 capacity-bound=200 winner=Auto, LNS, CP-SAT grid=3x7
+  Auto: rank=1 score=200 delta=best win-vs-auto=baseline auto-delta=0 wall=4.394s cpu-budget=30s observed-cpu=0.004s pop/cpu-budget=6.667 roads=2 services=0 residentials=2
+    attainment=cap=200 gap=0 util=100.0% closed-zero=100.0% baseline=0 closed-baseline=100.0% closed/s=0.228
+    progress=current=200 best=200 stage=lns reuse=hint elapsed=4.394s since-improve=0s stop=population-cap-reached gap=0
+    quality=first-feasible=0.004s first-improve=0.004s best=200@0.004s improvements=5 time-checkpoints=5.000s:200,30.000s:200,120.000s:200 quality-targets=50%:0.004s,90%:0.004s,100%:0.004s trace-events=26
+    road-semantics=anchor-connected anchor-roads=2 anchor-connected=2 disconnected=0 connected-ratio=1.000 adjacent-buildings=2 unadjacent-buildings=0
+    budget-signal=under-used-budget use=14.6% unused=25.606s overrun=0.000s first-improve=0.004s best=0.004s after-best=4.390s improvements/s=1.138 auto-best-delta=0.000s
+    reason=CP-SAT OPTIMAL with population gap 0.
+    seed-policy=lns-seed-limit:2.000s lns-seed-wall:0.000s lns-seed-phases:0 auto-greedy-seed-limit:30.000s auto-greedy-seed-wall:0.105s auto-greedy-seed-phases:8
+  LNS: rank=1 score=200 delta=best win-vs-auto=tie auto-delta=0 wall=4.061s cpu-budget=30s observed-cpu=0.004s pop/cpu-budget=6.667 roads=2 services=0 residentials=2
+    attainment=cap=200 gap=0 util=100.0% closed-zero=100.0% baseline=200 closed-baseline=n/a closed/s=0.246
+    progress=current=200 best=200 stage=lns reuse=greedy-seed elapsed=4.061s since-improve=0s stop=population-cap-reached gap=0
+    quality=first-feasible=0.000s first-improve=0.000s best=200@0.004s improvements=2 time-checkpoints=5.000s:200,30.000s:200,120.000s:200 quality-targets=50%:0.000s,90%:0.004s,100%:0.004s trace-events=13
+    road-semantics=anchor-connected anchor-roads=2 anchor-connected=2 disconnected=0 connected-ratio=1.000 adjacent-buildings=2 unadjacent-buildings=0
+    budget-signal=under-used-budget use=13.5% unused=25.939s overrun=0.000s first-improve=0.000s best=0.004s after-best=4.057s improvements/s=0.492 auto-best-delta=0.000s
+    reason=CP-SAT OPTIMAL with population gap 0.
+    seed-policy=lns-seed-limit:2.000s lns-seed-wall:0.000s lns-seed-phases:0
+  CP-SAT: rank=1 score=200 delta=best win-vs-auto=tie auto-delta=0 wall=0.460s cpu-budget=30s observed-cpu=0.004s pop/cpu-budget=6.667 roads=2 services=0 residentials=2
+    attainment=cap=200 gap=0 util=100.0% closed-zero=100.0% baseline=200 closed-baseline=n/a closed/s=2.173
+    progress=current=200 best=200 stage=cp-sat reuse=none elapsed=0.46s since-improve=0s stop=n/a gap=0
+    quality=first-feasible=0.004s first-improve=0.004s best=200@0.004s improvements=1 time-checkpoints=5.000s:200,30.000s:200,120.000s:200 quality-targets=50%:0.004s,90%:0.004s,100%:0.004s trace-events=3
+    road-semantics=anchor-connected anchor-roads=2 anchor-connected=2 disconnected=0 connected-ratio=1.000 adjacent-buildings=2 unadjacent-buildings=0
+    budget-signal=under-used-budget use=1.5% unused=29.540s overrun=0.000s first-improve=0.004s best=0.004s after-best=0.456s improvements/s=2.174 auto-best-delta=0.000s
+    reason=CP-SAT OPTIMAL with population gap 0.
+  Greedy: rank=4 score=100 delta=-100 win-vs-auto=loss auto-delta=-100 wall=0.001s cpu-budget=30s observed-cpu=n/a pop/cpu-budget=3.333 roads=1 services=0 residentials=1
+    attainment=cap=200 gap=100 util=50.0% closed-zero=50.0% baseline=200 closed-baseline=n/a closed/s=938.821
+    progress=current=100 best=100 stage=greedy reuse=none elapsed=0.001s since-improve=n/a stop=n/a gap=n/a
+    quality=first-feasible=0.000s first-improve=0.000s best=100@0.000s improvements=1 time-checkpoints=5.000s:100,30.000s:100,120.000s:100 quality-targets=50%:0.000s,90%:0.000s,100%:0.000s trace-events=9
+    road-semantics=anchor-connected anchor-roads=1 anchor-connected=1 disconnected=0 connected-ratio=1.000 adjacent-buildings=1 unadjacent-buildings=0
+    budget-signal=under-used-budget use=0.0% unused=29.999s overrun=0.000s first-improve=0.000s best=0.000s after-best=0.001s improvements/s=1000.000 auto-best-delta=-0.004s
+    reason=Greedy constructiveCapSearch improved best population by 100.
+- expansion-comparison-replay: Planner expansion-comparison replay with a saved pre-expansion layout as the incumbent.
+  band=small split=holdout workflow=expansion-comparison budget=30s seed=7 best=780 capacity-bound=820 winner=Auto, CP-SAT grid=6x6
+  Auto: rank=1 score=780 delta=best win-vs-auto=baseline auto-delta=0 wall=19.730s cpu-budget=30s observed-cpu=6.630s pop/cpu-budget=26.000 roads=4 services=2 residentials=4
+    attainment=cap=820 gap=40 util=95.1% closed-zero=95.1% baseline=0 closed-baseline=95.1% closed/s=0.048
+    progress=current=780 best=780 stage=cp-sat reuse=expansion-comparison-replay elapsed=19.73s since-improve=6.563s stop=optimal gap=0
+    quality=first-feasible=0.150s first-improve=0.150s best=780@12.586s improvements=6 time-checkpoints=5.000s:745,30.000s:780,120.000s:780 quality-targets=50%:0.150s,90%:0.150s,100%:12.586s trace-events=18
+    road-semantics=anchor-connected anchor-roads=1 anchor-connected=4 disconnected=0 connected-ratio=1.000 adjacent-buildings=6 unadjacent-buildings=0
+    budget-signal=under-used-budget use=65.8% unused=10.270s overrun=0.000s first-improve=0.150s best=12.586s after-best=7.144s improvements/s=0.304 auto-best-delta=0.000s
+    reason=CP-SAT OPTIMAL with population gap 0.
+    seed-policy=auto-greedy-seed-limit:30.000s auto-greedy-seed-wall:0.275s auto-greedy-seed-phases:8
+  CP-SAT: rank=1 score=780 delta=best win-vs-auto=tie auto-delta=0 wall=16.288s cpu-budget=30s observed-cpu=15.828s pop/cpu-budget=26.000 roads=4 services=2 residentials=4
+    attainment=cap=820 gap=40 util=95.1% closed-zero=95.1% baseline=780 closed-baseline=0.0% closed/s=0.000
+    progress=current=780 best=780 stage=cp-sat reuse=expansion-comparison-replay elapsed=16.288s since-improve=14.16s stop=n/a gap=0
+    quality=first-feasible=1.668s first-improve=1.668s best=780@1.668s improvements=1 time-checkpoints=5.000s:780,30.000s:780,120.000s:780 quality-targets=50%:1.668s,90%:1.668s,100%:1.668s trace-events=3
+    road-semantics=anchor-connected anchor-roads=2 anchor-connected=4 disconnected=0 connected-ratio=1.000 adjacent-buildings=6 unadjacent-buildings=0
+    budget-signal=under-used-budget use=54.3% unused=13.712s overrun=0.000s first-improve=1.668s best=1.668s after-best=14.620s improvements/s=0.061 auto-best-delta=-10.918s
+    reason=CP-SAT OPTIMAL with population gap 0.
+  Greedy: rank=3 score=745 delta=-35 win-vs-auto=loss auto-delta=-35 wall=0.129s cpu-budget=30s observed-cpu=n/a pop/cpu-budget=24.833 roads=3 services=2 residentials=4
+    attainment=cap=820 gap=75 util=90.9% closed-zero=90.9% baseline=780 closed-baseline=-87.5% closed/s=-6.777
+    progress=current=745 best=745 stage=greedy reuse=expansion-comparison-replay elapsed=0.129s since-improve=n/a stop=n/a gap=n/a
+    quality=first-feasible=0.106s first-improve=0.106s best=745@0.127s improvements=3 time-checkpoints=5.000s:745,30.000s:745,120.000s:745 quality-targets=50%:0.106s,90%:0.106s,100%:0.127s trace-events=9
+    road-semantics=anchor-connected anchor-roads=1 anchor-connected=3 disconnected=0 connected-ratio=1.000 adjacent-buildings=6 unadjacent-buildings=0
+    budget-signal=under-used-budget use=0.4% unused=29.871s overrun=0.000s first-improve=0.106s best=0.127s after-best=0.002s improvements/s=23.256 auto-best-delta=-12.459s
+    reason=Greedy serviceRefinement improved best population by 35.
+  LNS: rank=3 score=745 delta=-35 win-vs-auto=loss auto-delta=-35 wall=9.603s cpu-budget=30s observed-cpu=0.025s pop/cpu-budget=24.833 roads=5 services=2 residentials=4
+    attainment=cap=820 gap=75 util=90.9% closed-zero=90.9% baseline=780 closed-baseline=-87.5% closed/s=-0.091
+    progress=current=745 best=745 stage=lns reuse=expansion-comparison-replay elapsed=9.603s since-improve=0.004s stop=iteration-limit gap=0
+    quality=first-feasible=0.000s first-improve=0.000s best=745@0.021s improvements=4 time-checkpoints=5.000s:745,30.000s:745,120.000s:745 quality-targets=50%:0.021s,90%:0.021s,100%:0.021s trace-events=18
+    road-semantics=anchor-connected anchor-roads=3 anchor-connected=5 disconnected=0 connected-ratio=1.000 adjacent-buildings=6 unadjacent-buildings=0
+    budget-signal=under-used-budget use=32.0% unused=20.397s overrun=0.000s first-improve=0.000s best=0.021s after-best=9.582s improvements/s=0.417 auto-best-delta=-12.565s
+    reason=CP-SAT OPTIMAL with population gap 0.
+    seed-policy=lns-seed-limit:2.000s lns-seed-wall:0.000s lns-seed-phases:0
+- expansion-comparison-replay: Planner expansion-comparison replay with a saved pre-expansion layout as the incumbent.
+  band=small split=holdout workflow=expansion-comparison budget=30s seed=19 best=780 capacity-bound=820 winner=Auto, LNS, CP-SAT grid=6x6
+  Auto: rank=1 score=780 delta=best win-vs-auto=baseline auto-delta=0 wall=30.857s cpu-budget=30s observed-cpu=4.044s pop/cpu-budget=26.000 roads=4 services=2 residentials=4
+    attainment=cap=820 gap=40 util=95.1% closed-zero=95.1% baseline=0 closed-baseline=95.1% closed/s=0.031
+    progress=current=780 best=780 stage=cp-sat reuse=expansion-comparison-replay elapsed=30.857s since-improve=3.96s stop=wall-clock-cap gap=0
+    quality=first-feasible=0.154s first-improve=0.154s best=780@13.250s improvements=6 time-checkpoints=5.000s:745,30.000s:780,120.000s:780 quality-targets=50%:0.154s,90%:0.154s,100%:13.250s trace-events=22
+    road-semantics=anchor-connected anchor-roads=2 anchor-connected=4 disconnected=0 connected-ratio=1.000 adjacent-buildings=6 unadjacent-buildings=0
+    budget-signal=early-plateau use=102.9% unused=0.000s overrun=0.857s first-improve=0.154s best=13.250s after-best=17.607s improvements/s=0.194 auto-best-delta=0.000s
+    reason=CP-SAT FEASIBLE with population gap 0.
+    seed-policy=auto-greedy-seed-limit:30.000s auto-greedy-seed-wall:0.290s auto-greedy-seed-phases:8
+  LNS: rank=1 score=780 delta=best win-vs-auto=tie auto-delta=0 wall=9.981s cpu-budget=30s observed-cpu=3.000s pop/cpu-budget=26.000 roads=7 services=2 residentials=4
+    attainment=cap=820 gap=40 util=95.1% closed-zero=95.1% baseline=780 closed-baseline=0.0% closed/s=0.000
+    progress=current=780 best=780 stage=lns reuse=expansion-comparison-replay elapsed=9.981s since-improve=0.447s stop=iteration-limit gap=0
+    quality=first-feasible=0.000s first-improve=0.000s best=780@2.554s improvements=4 time-checkpoints=5.000s:780,30.000s:780,120.000s:780 quality-targets=50%:0.611s,90%:1.086s,100%:2.554s trace-events=18
+    road-semantics=anchor-connected anchor-roads=4 anchor-connected=7 disconnected=0 connected-ratio=1.000 adjacent-buildings=6 unadjacent-buildings=0
+    budget-signal=under-used-budget use=33.3% unused=20.019s overrun=0.000s first-improve=0.000s best=2.554s after-best=7.427s improvements/s=0.401 auto-best-delta=-10.696s
+    reason=CP-SAT FEASIBLE with population gap 0.
+    seed-policy=lns-seed-limit:2.000s lns-seed-wall:0.000s lns-seed-phases:0
+  CP-SAT: rank=1 score=780 delta=best win-vs-auto=tie auto-delta=0 wall=11.933s cpu-budget=30s observed-cpu=11.458s pop/cpu-budget=26.000 roads=4 services=2 residentials=4
+    attainment=cap=820 gap=40 util=95.1% closed-zero=95.1% baseline=780 closed-baseline=0.0% closed/s=0.000
+    progress=current=780 best=780 stage=cp-sat reuse=expansion-comparison-replay elapsed=11.933s since-improve=9.375s stop=n/a gap=0
+    quality=first-feasible=2.083s first-improve=2.083s best=780@2.083s improvements=1 time-checkpoints=5.000s:780,30.000s:780,120.000s:780 quality-targets=50%:2.083s,90%:2.083s,100%:2.083s trace-events=3
+    road-semantics=anchor-connected anchor-roads=1 anchor-connected=4 disconnected=0 connected-ratio=1.000 adjacent-buildings=6 unadjacent-buildings=0
+    budget-signal=under-used-budget use=39.8% unused=18.067s overrun=0.000s first-improve=2.083s best=2.083s after-best=9.850s improvements/s=0.084 auto-best-delta=-11.167s
+    reason=CP-SAT OPTIMAL with population gap 0.
+  Greedy: rank=4 score=745 delta=-35 win-vs-auto=loss auto-delta=-35 wall=0.129s cpu-budget=30s observed-cpu=n/a pop/cpu-budget=24.833 roads=3 services=2 residentials=4
+    attainment=cap=820 gap=75 util=90.9% closed-zero=90.9% baseline=780 closed-baseline=-87.5% closed/s=-6.807
+    progress=current=745 best=745 stage=greedy reuse=expansion-comparison-replay elapsed=0.129s since-improve=n/a stop=n/a gap=n/a
+    quality=first-feasible=0.104s first-improve=0.104s best=745@0.125s improvements=3 time-checkpoints=5.000s:745,30.000s:745,120.000s:745 quality-targets=50%:0.104s,90%:0.104s,100%:0.125s trace-events=9
+    road-semantics=anchor-connected anchor-roads=1 anchor-connected=3 disconnected=0 connected-ratio=1.000 adjacent-buildings=6 unadjacent-buildings=0
+    budget-signal=under-used-budget use=0.4% unused=29.871s overrun=0.000s first-improve=0.104s best=0.125s after-best=0.004s improvements/s=23.256 auto-best-delta=-13.125s
+    reason=Greedy serviceRefinement improved best population by 35.
+- expansion-comparison-replay: Planner expansion-comparison replay with a saved pre-expansion layout as the incumbent.
+  band=small split=holdout workflow=expansion-comparison budget=30s seed=37 best=780 capacity-bound=820 winner=Auto, CP-SAT grid=6x6
+  Auto: rank=1 score=780 delta=best win-vs-auto=baseline auto-delta=0 wall=19.744s cpu-budget=30s observed-cpu=6.830s pop/cpu-budget=26.000 roads=4 services=2 residentials=4
+    attainment=cap=820 gap=40 util=95.1% closed-zero=95.1% baseline=0 closed-baseline=95.1% closed/s=0.048
+    progress=current=780 best=780 stage=cp-sat reuse=expansion-comparison-replay elapsed=19.744s since-improve=6.761s stop=optimal gap=0
+    quality=first-feasible=0.150s first-improve=0.150s best=780@12.395s improvements=6 time-checkpoints=5.000s:745,30.000s:780,120.000s:780 quality-targets=50%:0.150s,90%:0.150s,100%:12.395s trace-events=18
+    road-semantics=anchor-connected anchor-roads=1 anchor-connected=4 disconnected=0 connected-ratio=1.000 adjacent-buildings=6 unadjacent-buildings=0
+    budget-signal=under-used-budget use=65.8% unused=10.256s overrun=0.000s first-improve=0.150s best=12.395s after-best=7.349s improvements/s=0.304 auto-best-delta=0.000s
+    reason=CP-SAT OPTIMAL with population gap 0.
+    seed-policy=auto-greedy-seed-limit:30.000s auto-greedy-seed-wall:0.289s auto-greedy-seed-phases:8
+  CP-SAT: rank=1 score=780 delta=best win-vs-auto=tie auto-delta=0 wall=8.626s cpu-budget=30s observed-cpu=8.130s pop/cpu-budget=26.000 roads=4 services=2 residentials=4
+    attainment=cap=820 gap=40 util=95.1% closed-zero=95.1% baseline=780 closed-baseline=0.0% closed/s=0.000
+    progress=current=780 best=780 stage=cp-sat reuse=expansion-comparison-replay elapsed=8.626s since-improve=4.946s stop=n/a gap=0
+    quality=first-feasible=3.183s first-improve=3.183s best=780@3.183s improvements=1 time-checkpoints=5.000s:780,30.000s:780,120.000s:780 quality-targets=50%:3.183s,90%:3.183s,100%:3.183s trace-events=3
+    road-semantics=anchor-connected anchor-roads=1 anchor-connected=4 disconnected=0 connected-ratio=1.000 adjacent-buildings=6 unadjacent-buildings=0
+    budget-signal=under-used-budget use=28.8% unused=21.374s overrun=0.000s first-improve=3.183s best=3.183s after-best=5.443s improvements/s=0.116 auto-best-delta=-9.212s
+    reason=CP-SAT OPTIMAL with population gap 0.
+  Greedy: rank=3 score=745 delta=-35 win-vs-auto=loss auto-delta=-35 wall=0.144s cpu-budget=30s observed-cpu=n/a pop/cpu-budget=24.833 roads=3 services=2 residentials=4
+    attainment=cap=820 gap=75 util=90.9% closed-zero=90.9% baseline=780 closed-baseline=-87.5% closed/s=-6.092
+    progress=current=745 best=745 stage=greedy reuse=expansion-comparison-replay elapsed=0.144s since-improve=n/a stop=n/a gap=n/a
+    quality=first-feasible=0.117s first-improve=0.117s best=745@0.140s improvements=3 time-checkpoints=5.000s:745,30.000s:745,120.000s:745 quality-targets=50%:0.117s,90%:0.117s,100%:0.140s trace-events=9
+    road-semantics=anchor-connected anchor-roads=1 anchor-connected=3 disconnected=0 connected-ratio=1.000 adjacent-buildings=6 unadjacent-buildings=0
+    budget-signal=under-used-budget use=0.5% unused=29.856s overrun=0.000s first-improve=0.117s best=0.140s after-best=0.004s improvements/s=20.833 auto-best-delta=-12.255s
+    reason=Greedy serviceRefinement improved best population by 35.
+  LNS: rank=4 score=710 delta=-70 win-vs-auto=loss auto-delta=-70 wall=7.313s cpu-budget=30s observed-cpu=0.016s pop/cpu-budget=23.667 roads=6 services=2 residentials=4
+    attainment=cap=820 gap=110 util=86.6% closed-zero=86.6% baseline=780 closed-baseline=-175.0% closed/s=-0.239
+    progress=current=710 best=710 stage=lns reuse=expansion-comparison-replay elapsed=7.313s since-improve=0s stop=iteration-limit gap=0
+    quality=first-feasible=0.000s first-improve=0.000s best=710@0.016s improvements=4 time-checkpoints=5.000s:710,30.000s:710,120.000s:710 quality-targets=50%:0.016s,90%:0.016s,100%:0.016s trace-events=18
+    road-semantics=anchor-connected anchor-roads=3 anchor-connected=6 disconnected=0 connected-ratio=1.000 adjacent-buildings=6 unadjacent-buildings=0
+    budget-signal=under-used-budget use=24.4% unused=22.687s overrun=0.000s first-improve=0.000s best=0.016s after-best=7.297s improvements/s=0.547 auto-best-delta=-12.379s
+    reason=CP-SAT OPTIMAL with population gap 0.
+    seed-policy=lns-seed-limit:2.000s lns-seed-wall:0.000s lns-seed-phases:0
+
+Mode summaries:
+- Auto: runs=15 mean=464.0 best=780 worst=200 seed-stddev=196.6 util-mean=71.0% closed/s-mean=0.089 win-rate-vs-auto=n/a
+- Greedy: runs=15 mean=394.0 best=745 worst=100 seed-stddev=216.0 util-mean=55.0% closed/s-mean=189.818 win-rate-vs-auto=0.000
+- LNS: runs=15 mean=457.0 best=780 worst=200 seed-stddev=186.0 util-mean=70.1% closed/s-mean=0.026 win-rate-vs-auto=0.433
+- CP-SAT: runs=15 mean=464.0 best=780 worst=200 seed-stddev=196.6 util-mean=71.0% closed/s-mean=0.440 win-rate-vs-auto=0.500
+
+Budget policy signals:
+- row0-corridor-repair-pressure budget=30s seed=7 recommendation=keep-auto auto=330 best=Auto:330 auto-gap=0 lns-vs-auto=0 auto-lns=6.777s/+70 auto-cp-sat=0.608s/+0 reason=Auto matched the best score 330 at 30s. Auto LNS used 6.777s for +70 accepted population; Auto CP-SAT used 0.608s for +0 accepted population.
+- row0-corridor-repair-pressure budget=30s seed=19 recommendation=keep-auto auto=330 best=Auto:330 auto-gap=0 lns-vs-auto=0 auto-lns=12.332s/+70 auto-cp-sat=1.238s/+0 reason=Auto matched the best score 330 at 30s. Auto LNS used 12.332s for +70 accepted population; Auto CP-SAT used 1.238s for +0 accepted population.
+- row0-corridor-repair-pressure budget=30s seed=37 recommendation=keep-auto auto=330 best=Auto:330 auto-gap=0 lns-vs-auto=0 auto-lns=8.869s/+70 auto-cp-sat=0.862s/+0 reason=Auto matched the best score 330 at 30s. Auto LNS used 8.869s for +70 accepted population; Auto CP-SAT used 0.862s for +0 accepted population.
+- service-local-neighborhood budget=30s seed=7 recommendation=keep-auto auto=470 best=Auto:470 auto-gap=0 lns-vs-auto=0 auto-lns=9.333s/+75 auto-cp-sat=0.931s/+0 reason=Auto matched the best score 470 at 30s. Auto LNS used 9.333s for +75 accepted population; Auto CP-SAT used 0.931s for +0 accepted population.
+- service-local-neighborhood budget=30s seed=19 recommendation=keep-auto auto=470 best=Auto:470 auto-gap=0 lns-vs-auto=0 auto-lns=6.963s/+75 auto-cp-sat=0.870s/+0 reason=Auto matched the best score 470 at 30s. Auto LNS used 6.963s for +75 accepted population; Auto CP-SAT used 0.870s for +0 accepted population.
+- service-local-neighborhood budget=30s seed=37 recommendation=keep-auto auto=470 best=Auto:470 auto-gap=0 lns-vs-auto=0 auto-lns=7.621s/+75 auto-cp-sat=0.918s/+0 reason=Auto matched the best score 470 at 30s. Auto LNS used 7.621s for +75 accepted population; Auto CP-SAT used 0.918s for +0 accepted population.
+- road-semantics-gate-choke budget=30s seed=7 recommendation=keep-auto auto=540 best=Auto:540 auto-gap=0 lns-vs-auto=0 auto-lns=7.573s/+70 auto-cp-sat=0.658s/+0 reason=Auto matched the best score 540 at 30s. Auto LNS used 7.573s for +70 accepted population; Auto CP-SAT used 0.658s for +0 accepted population.
+- road-semantics-gate-choke budget=30s seed=19 recommendation=keep-auto auto=540 best=Auto:540 auto-gap=0 lns-vs-auto=0 auto-lns=8.372s/+70 auto-cp-sat=0.633s/+0 reason=Auto matched the best score 540 at 30s. Auto LNS used 8.372s for +70 accepted population; Auto CP-SAT used 0.633s for +0 accepted population.
+- road-semantics-gate-choke budget=30s seed=37 recommendation=keep-auto auto=540 best=Auto:540 auto-gap=0 lns-vs-auto=0 auto-lns=6.845s/+70 auto-cp-sat=0.552s/+0 reason=Auto matched the best score 540 at 30s. Auto LNS used 6.845s for +70 accepted population; Auto CP-SAT used 0.552s for +0 accepted population.
+- multi-anchor-road-components budget=30s seed=7 recommendation=keep-auto auto=200 best=Auto:200 auto-gap=0 lns-vs-auto=0 auto-lns=4.601s/+100 auto-cp-sat=n/a/+n/a reason=Auto matched the best score 200 at 30s. Auto LNS used 4.601s for +100 accepted population.
+- multi-anchor-road-components budget=30s seed=19 recommendation=keep-auto auto=200 best=Auto:200 auto-gap=0 lns-vs-auto=0 auto-lns=4.405s/+100 auto-cp-sat=n/a/+n/a reason=Auto matched the best score 200 at 30s. Auto LNS used 4.405s for +100 accepted population.
+- multi-anchor-road-components budget=30s seed=37 recommendation=keep-auto auto=200 best=Auto:200 auto-gap=0 lns-vs-auto=0 auto-lns=4.288s/+100 auto-cp-sat=n/a/+n/a reason=Auto matched the best score 200 at 30s. Auto LNS used 4.288s for +100 accepted population.
+- expansion-comparison-replay budget=30s seed=7 recommendation=keep-auto auto=780 best=Auto:780 auto-gap=0 lns-vs-auto=-35 auto-lns=12.311s/+35 auto-cp-sat=7.143s/+0 reason=Auto matched the best score 780 at 30s. Auto LNS used 12.311s for +35 accepted population; Auto CP-SAT used 7.143s for +0 accepted population.
+- expansion-comparison-replay budget=30s seed=19 recommendation=keep-auto auto=780 best=Auto:780 auto-gap=0 lns-vs-auto=0 auto-lns=14.723s/+35 auto-cp-sat=15.842s/+0 reason=Auto matched the best score 780 at 30s. Auto LNS used 14.723s for +35 accepted population; Auto CP-SAT used 15.842s for +0 accepted population.
+- expansion-comparison-replay budget=30s seed=37 recommendation=keep-auto auto=780 best=Auto:780 auto-gap=0 lns-vs-auto=-70 auto-lns=12.106s/+35 auto-cp-sat=7.348s/+0 reason=Auto matched the best score 780 at 30s. Auto LNS used 12.106s for +35 accepted population; Auto CP-SAT used 7.348s for +0 accepted population.
+
+Portfolio efficiency signals:
+- No paired CP-SAT / CP-SAT portfolio runs.
+
+Problem-size summaries:
+- small Auto: mean=464.0 best=780 win-rate-vs-auto=n/a
+- small Greedy: mean=394.0 best=745 win-rate-vs-auto=0.000
+- small LNS: mean=457.0 best=780 win-rate-vs-auto=0.433
+- small CP-SAT: mean=464.0 best=780 win-rate-vs-auto=0.500

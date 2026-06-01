@@ -570,6 +570,30 @@ export function runLnsBenchmarkCli(): void {
   if (args.windowRankerArtifactDir !== undefined && !args.windowRankerOnlineAblation) {
     throw new Error("--window-ranker-artifact-dir is only available with --window-ranker-online-ablation.");
   }
+  if (args.windowRankerRunId !== undefined && !args.windowRankerOnlineAblation) {
+    throw new Error("--window-ranker-run-id is only available with --window-ranker-online-ablation.");
+  }
+  if (args.windowRankerRunId !== undefined && args.windowRankerArtifactDir === undefined) {
+    throw new Error("--window-ranker-run-id requires --window-ranker-artifact-dir.");
+  }
+  if (args.windowRankerDecision !== undefined && !args.windowRankerOnlineAblation) {
+    throw new Error("--window-ranker-decision is only available with --window-ranker-online-ablation.");
+  }
+  if (args.windowRankerDecision !== undefined && args.windowRankerArtifactDir === undefined) {
+    throw new Error("--window-ranker-decision requires --window-ranker-artifact-dir.");
+  }
+  if (args.windowRankerSummary !== undefined && !args.windowRankerOnlineAblation) {
+    throw new Error("--window-ranker-summary is only available with --window-ranker-online-ablation.");
+  }
+  if (args.windowRankerSummary !== undefined && args.windowRankerArtifactDir === undefined) {
+    throw new Error("--window-ranker-summary requires --window-ranker-artifact-dir.");
+  }
+  if (args.windowRankerModelPath !== undefined && !args.windowRankerOnlineAblation) {
+    throw new Error("--window-ranker-model is only available with --window-ranker-online-ablation.");
+  }
+  if (args.windowRankerMinScoreDelta !== undefined && !args.windowRankerOnlineAblation) {
+    throw new Error("--window-ranker-min-score-delta is only available with --window-ranker-online-ablation.");
+  }
   if (args.windowRankerAllowedTransitions !== undefined && !args.windowRankerOnlineAblation) {
     throw new Error("--window-ranker-allowed-transitions is only available with --window-ranker-online-ablation.");
   }

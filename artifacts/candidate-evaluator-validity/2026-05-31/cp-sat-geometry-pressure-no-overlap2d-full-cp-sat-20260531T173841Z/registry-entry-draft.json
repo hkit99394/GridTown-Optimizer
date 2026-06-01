@@ -1,0 +1,170 @@
+{
+  "schemaVersion": 1,
+  "runId": "cp-sat-geometry-pressure-no-overlap2d-full-cp-sat-validity-20260531T173841Z",
+  "artifactType": "ablation-gate",
+  "generatedAt": "2026-05-31T17:42:42.802Z",
+  "commands": [
+    "node scripts/generate-candidate-evaluator-validity.mjs --artifact-dir=artifacts/candidate-evaluator-validity/2026-05-31/cp-sat-geometry-pressure-no-overlap2d-full-cp-sat-20260531T173841Z --candidate-id=cp-sat-geometry-pressure-no-overlap2d --run-id=cp-sat-geometry-pressure-no-overlap2d-full-cp-sat-validity-20260531T173841Z --decision=candidate-evaluator-validity '--summary=Full CP-SAT product-corpus evaluator validity for runtime geometry-pressure NoOverlap2D guard; no solver default changed.' --modes=cp-sat --budgets=1,5 --seeds=7,19,37 --cp-sat-no-overlap2d-geometry-pressure"
+  ],
+  "artifactPaths": [
+    "artifacts/candidate-evaluator-validity/2026-05-31/cp-sat-geometry-pressure-no-overlap2d-full-cp-sat-20260531T173841Z/candidate-evaluator-validity.json",
+    "artifacts/candidate-evaluator-validity/2026-05-31/cp-sat-geometry-pressure-no-overlap2d-full-cp-sat-20260531T173841Z/candidate-evaluator-validity.txt",
+    "artifacts/candidate-evaluator-validity/2026-05-31/cp-sat-geometry-pressure-no-overlap2d-full-cp-sat-20260531T173841Z/telemetry-manifest.json"
+  ],
+  "cases": {
+    "development": [
+      "manual-layout-replay-warm-start",
+      "road-semantics-service-pressure",
+      "seeded-service-anchor-pressure",
+      "typed-footprint-pressure",
+      "typed-housing-single"
+    ],
+    "holdout": [
+      "expansion-comparison-replay",
+      "fresh-expansion-corridor-service",
+      "fresh-multi-anchor-service-island",
+      "fresh-typed-footprint-scarcity",
+      "multi-anchor-road-components",
+      "road-semantics-gate-choke",
+      "row0-corridor-repair-pressure",
+      "service-local-neighborhood"
+    ]
+  },
+  "caseFamilies": [
+    "anchor-service",
+    "corridor",
+    "expansion-comparison",
+    "footprint-pressure",
+    "gate",
+    "manual-layout-replay",
+    "multi-anchor",
+    "service-pressure",
+    "solver-smoke"
+  ],
+  "seeds": [
+    7,
+    19,
+    37
+  ],
+  "splitStatus": {
+    "splitField": "CrossModeBenchmarkCase.split",
+    "protectedHoldout": true,
+    "caseCount": 13,
+    "casesBySplit": {
+      "development": [
+        "manual-layout-replay-warm-start",
+        "road-semantics-service-pressure",
+        "seeded-service-anchor-pressure",
+        "typed-footprint-pressure",
+        "typed-housing-single"
+      ],
+      "holdout": [
+        "expansion-comparison-replay",
+        "fresh-expansion-corridor-service",
+        "fresh-multi-anchor-service-island",
+        "fresh-typed-footprint-scarcity",
+        "multi-anchor-road-components",
+        "road-semantics-gate-choke",
+        "row0-corridor-repair-pressure",
+        "service-local-neighborhood"
+      ]
+    },
+    "freshHoldoutNote": null,
+    "leakage": "product-workflow-development-holdout-splits",
+    "notes": "Candidate evaluator validity validates final layouts for the named candidate, modes, cases, budgets, and seeds. It is an evidence gate only and does not promote solver defaults."
+  },
+  "budget": {
+    "wallClockBudgetsSeconds": [
+      1,
+      5
+    ],
+    "modes": [
+      "cp-sat"
+    ],
+    "caseCount": 13,
+    "seedCount": 3,
+    "validationRowCount": 78,
+    "validRowCount": 78,
+    "invalidRowCount": 0,
+    "observedWallClockSeconds": 111.14143549999999
+  },
+  "model": {
+    "cpSatUseNoOverlap2d": false,
+    "cpSatNoOverlap2dGeometryPressure": true
+  },
+  "decision": "candidate-evaluator-validity",
+  "summary": "Full CP-SAT product-corpus evaluator validity for runtime geometry-pressure NoOverlap2D guard; no solver default changed.",
+  "summaryMetrics": {
+    "summary": {
+      "rowCount": 78,
+      "validCount": 78,
+      "invalidCount": 0,
+      "populationMismatchCount": 0,
+      "maxAbsPopulationDeltaFromEvaluator": 0,
+      "totalPopulation": 41505,
+      "recomputedTotalPopulation": 41505,
+      "meanWallClockSeconds": 1.4244959097692305
+    },
+    "modeSummaries": [
+      {
+        "mode": "cp-sat",
+        "rowCount": 78,
+        "validCount": 78,
+        "invalidCount": 0,
+        "populationMismatchCount": 0,
+        "maxAbsPopulationDeltaFromEvaluator": 0,
+        "totalPopulation": 41505,
+        "recomputedTotalPopulation": 41505,
+        "meanWallClockSeconds": 1.4244959097692305
+      }
+    ],
+    "splitSummaries": [
+      {
+        "split": "development",
+        "rowCount": 30,
+        "validCount": 30,
+        "invalidCount": 0,
+        "populationMismatchCount": 0,
+        "maxAbsPopulationDeltaFromEvaluator": 0,
+        "totalPopulation": 10865,
+        "recomputedTotalPopulation": 10865,
+        "meanWallClockSeconds": 1.3682220361666666
+      },
+      {
+        "split": "holdout",
+        "rowCount": 48,
+        "validCount": 48,
+        "invalidCount": 0,
+        "populationMismatchCount": 0,
+        "maxAbsPopulationDeltaFromEvaluator": 0,
+        "totalPopulation": 30640,
+        "recomputedTotalPopulation": 30640,
+        "meanWallClockSeconds": 1.4596670807708325
+      }
+    ],
+    "budgetSummaries": [
+      {
+        "budgetSeconds": 1,
+        "rowCount": 39,
+        "validCount": 39,
+        "invalidCount": 0,
+        "populationMismatchCount": 0,
+        "maxAbsPopulationDeltaFromEvaluator": 0,
+        "totalPopulation": 20565,
+        "recomputedTotalPopulation": 20565,
+        "meanWallClockSeconds": 0.9954396367948711
+      },
+      {
+        "budgetSeconds": 5,
+        "rowCount": 39,
+        "validCount": 39,
+        "invalidCount": 0,
+        "populationMismatchCount": 0,
+        "maxAbsPopulationDeltaFromEvaluator": 0,
+        "totalPopulation": 20940,
+        "recomputedTotalPopulation": 20940,
+        "meanWallClockSeconds": 1.8535521827435895
+      }
+    ]
+  }
+}

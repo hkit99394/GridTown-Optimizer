@@ -7,9 +7,9 @@
     "node dist/lnsBenchmarkCli.js --window-ranker-online-ablation --window-ranker-protected-holdout --seeds=5,7,11,13,17,19,23,29,37 --window-ranker-model=artifacts/lns-window-ranker/2026-05-10/strict-lns-replay-labels-curated-seeds-v3-final-lift-no-weak-generated-right-repeatability-trajectory-features-ignore-baseline-conflict-excluded-calibration-lr0.02-cap100/model.json --window-ranker-min-score-delta=0 --lns-iterations=2 '--window-ranker-selected-feature-gate-groups=area>=2.1,area<=2.1;residentialHeadroomInside>=0.34,reachableAfter>=1;narrowGateCells>=0.7,reachableBefore<=0.66;residentialCandidatesBlocked>=1.4,residentialCandidatesBlocked<=1.4' --window-ranker-artifact-dir=artifacts/lns-window-ranker-online/2026-05-11/protected-broadened-two-iteration-trajectory-features-final-outcome-discovered-greedy-gate-9seed-min-score-delta-0 --window-ranker-run-id=lns-window-ranker-online-2026-05-11-protected-broadened-two-iteration-trajectory-features-final-outcome-discovered-greedy-gate-9seed-min-score-delta-0 --window-ranker-decision=online-lns-window-ranker-discovered-greedy-gate-9seed-diagnostics-only '--window-ranker-summary=Nine-seed protected broadened two-iteration recheck for the automated final-outcome selected-feature discovery greedy gate. No solver default changed.' --json"
   ],
   "artifactPaths": [
-    "artifacts/lns-window-ranker-online/2026-05-11/protected-broadened-two-iteration-trajectory-features-final-outcome-discovered-greedy-gate-9seed-min-score-delta-0/lns-window-ranker-online-ablation.json",
     "artifacts/lns-window-ranker-online/2026-05-11/protected-broadened-two-iteration-trajectory-features-final-outcome-discovered-greedy-gate-9seed-min-score-delta-0/lns-window-ranker-online-ablation.txt",
-    "artifacts/lns-window-ranker-online/2026-05-11/protected-broadened-two-iteration-trajectory-features-final-outcome-discovered-greedy-gate-9seed-min-score-delta-0/telemetry-manifest.json"
+    "artifacts/lns-window-ranker-online/2026-05-11/protected-broadened-two-iteration-trajectory-features-final-outcome-discovered-greedy-gate-9seed-min-score-delta-0/telemetry-manifest.json",
+    "artifacts/external-artifacts/2026-06-01/artifact-hygiene-unindexed-raw-manifest.json"
   ],
   "cases": {
     "development": [],

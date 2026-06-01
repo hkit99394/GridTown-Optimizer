@@ -1,0 +1,20 @@
+{
+  "artifactDir": "artifacts/candidate-evaluator-validity/2026-05-31/cp-sat-geometry-pressure-no-overlap2d-full-cp-sat-20260531T173841Z",
+  "artifactPaths": {
+    "validityJson": "artifacts/candidate-evaluator-validity/2026-05-31/cp-sat-geometry-pressure-no-overlap2d-full-cp-sat-20260531T173841Z/candidate-evaluator-validity.json",
+    "validityText": "artifacts/candidate-evaluator-validity/2026-05-31/cp-sat-geometry-pressure-no-overlap2d-full-cp-sat-20260531T173841Z/candidate-evaluator-validity.txt",
+    "telemetryManifestJson": "artifacts/candidate-evaluator-validity/2026-05-31/cp-sat-geometry-pressure-no-overlap2d-full-cp-sat-20260531T173841Z/telemetry-manifest.json",
+    "registryEntryDraftJson": "artifacts/candidate-evaluator-validity/2026-05-31/cp-sat-geometry-pressure-no-overlap2d-full-cp-sat-20260531T173841Z/registry-entry-draft.json"
+  },
+  "runId": "cp-sat-geometry-pressure-no-overlap2d-full-cp-sat-validity-20260531T173841Z",
+  "candidateId": "cp-sat-geometry-pressure-no-overlap2d",
+  "candidateOptions": {
+    "cpSatUseNoOverlap2d": false,
+    "cpSatNoOverlap2dGeometryPressure": true
+  },
+  "generatedAt": "2026-05-31T17:42:42.802Z",
+  "rowCount": 78,
+  "validCount": 78,
+  "invalidCount": 0,
+  "populationMismatchCount": 0
+}

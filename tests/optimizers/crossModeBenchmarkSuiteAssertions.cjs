@@ -4,6 +4,7 @@ const {
   buildCrossModeBenchmarkTelemetryManifest,
   buildPopulationAttainmentMetrics,
   DEFAULT_CROSS_MODE_PRODUCT_WORKFLOW_CORPUS,
+  evaluateCpSatNoOverlap2dGeometryPressure,
   formatCrossModeBenchmarkDecisionTraceJsonl,
   formatCrossModeBenchmarkSuite,
   runCrossModeBenchmarkSuite
@@ -75,6 +76,20 @@ async function testCrossModeBenchmarkSuiteAssertions() {
   assert.equal(result.cases[0].results[0].mode, "greedy");
   assert.equal(result.cases[0].results[0].winVsAuto, "no-auto");
   assert.equal(result.cases[0].results[0].scoreDeltaVsAuto, null);
+  const tiedPopulationResult = await runCrossModeBenchmarkSuite([benchmarkCase], {
+    modes: ["greedy", "lns"],
+    budgetsSeconds: [3],
+    seeds: [5],
+    solve: async (_grid, params, context) => {
+      await delay(context.mode === "greedy" ? 30 : 1);
+      return buildMockSolution({ optimizer: params.optimizer, totalPopulation: 42 });
+    }
+  });
+  const tiedGreedy = tiedPopulationResult.cases[0].results.find((entry) => entry.mode === "greedy");
+  const tiedLns = tiedPopulationResult.cases[0].results.find((entry) => entry.mode === "lns");
+  assert.equal(tiedGreedy.rank, 1);
+  assert.equal(tiedLns.rank, 1);
+  assert.deepEqual(tiedPopulationResult.cases[0].winnerModes, ["greedy", "lns"]);
   assert.equal(result.cases[0].results[0].progressSummary.activeStage, "greedy");
   assert.equal(result.cases[0].populationCapacityUpperBound, 1);
   assert.equal(result.cases[0].results[0].attainment.populationCapacityUpperBound, 1);
@@ -115,6 +130,56 @@ async function testCrossModeBenchmarkSuiteAssertions() {
   assert.equal(productWorkflowResult.cases[0].split, "development");
   assert.deepEqual(productWorkflowResult.cases[0].workflowTags, ["manual-layout-replay"]);
   assert.equal(productWorkflowResult.cases[0].bestScore, 160);
+
+  const selectiveNoOverlap2dByCase = new Map();
+  await runCrossModeBenchmarkSuite(DEFAULT_CROSS_MODE_PRODUCT_WORKFLOW_CORPUS, {
+    names: ["fresh-multi-anchor-service-island", "fresh-expansion-corridor-service"],
+    modes: ["cp-sat"],
+    budgetsSeconds: [1],
+    seeds: [7],
+    cpSatNoOverlap2dWorkflowTags: ["multi-anchor"],
+    solve: (_grid, params, context) => {
+      selectiveNoOverlap2dByCase.set(context.benchmarkCase.name, params.cpSat?.useNoOverlap2d);
+      return buildMockSolution({ optimizer: params.optimizer, totalPopulation: 0 });
+    }
+  });
+  assert.equal(selectiveNoOverlap2dByCase.get("fresh-multi-anchor-service-island"), true);
+  assert.equal(selectiveNoOverlap2dByCase.get("fresh-expansion-corridor-service"), false);
+
+  const geometryPressureSignals = new Map(
+    DEFAULT_CROSS_MODE_PRODUCT_WORKFLOW_CORPUS.map((entry) => [
+      entry.name,
+      evaluateCpSatNoOverlap2dGeometryPressure(entry)
+    ])
+  );
+  assert.equal(geometryPressureSignals.get("typed-footprint-pressure").applies, true);
+  assert.equal(geometryPressureSignals.get("road-semantics-service-pressure").applies, true);
+  assert.equal(geometryPressureSignals.get("fresh-multi-anchor-service-island").applies, true);
+  assert.equal(geometryPressureSignals.get("fresh-typed-footprint-scarcity").applies, true);
+  assert.equal(geometryPressureSignals.get("expansion-comparison-replay").reason, "continuation-hint");
+  assert.equal(geometryPressureSignals.get("fresh-expansion-corridor-service").reason, "fragmented-corridor-mask");
+
+  const geometryPressureNoOverlap2dByCase = new Map();
+  await runCrossModeBenchmarkSuite(DEFAULT_CROSS_MODE_PRODUCT_WORKFLOW_CORPUS, {
+    names: [
+      "typed-footprint-pressure",
+      "expansion-comparison-replay",
+      "fresh-expansion-corridor-service",
+      "fresh-typed-footprint-scarcity"
+    ],
+    modes: ["cp-sat"],
+    budgetsSeconds: [1],
+    seeds: [7],
+    cpSatNoOverlap2dGeometryPressure: true,
+    solve: (_grid, params, context) => {
+      geometryPressureNoOverlap2dByCase.set(context.benchmarkCase.name, params.cpSat?.useNoOverlap2d);
+      return buildMockSolution({ optimizer: params.optimizer, totalPopulation: 0 });
+    }
+  });
+  assert.equal(geometryPressureNoOverlap2dByCase.get("typed-footprint-pressure"), true);
+  assert.equal(geometryPressureNoOverlap2dByCase.get("fresh-typed-footprint-scarcity"), true);
+  assert.equal(geometryPressureNoOverlap2dByCase.get("expansion-comparison-replay"), false);
+  assert.equal(geometryPressureNoOverlap2dByCase.get("fresh-expansion-corridor-service"), false);
 
   const mocked = await runCrossModeBenchmarkSuite([benchmarkCase], {
     modes: ["auto", "greedy", "lns", "cp-sat-portfolio"],

@@ -3,63 +3,6 @@
  * @typedef {number[][]} PlannerGrid
  */
 
-const SAMPLE_GRID = [
-  [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-  [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-  [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-  [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-  [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-  [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0],
-  [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0],
-  [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0],
-  [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0],
-  [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0],
-  [0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0],
-  [0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0]
-];
-
-const DEFAULT_SERVICE_TYPES = [
-  { name: "Elementary School", bonus: "126", size: "2x2", effective: "12x12", avail: "1" },
-  { name: "Town Bank", bonus: "224", size: "2x2", effective: "12x12", avail: "1" },
-  { name: "Health Clinic", bonus: "108", size: "2x2", effective: "10x10", avail: "1" },
-  { name: "Gas Station", bonus: "118", size: "2x2", effective: "12x12", avail: "1" },
-  { name: "Townsquare", bonus: "115", size: "2x2", effective: "10x10", avail: "1" },
-  { name: "Fire Station", bonus: "204", size: "2x2", effective: "10x10", avail: "1" },
-  { name: "Mining Museum", bonus: "224", size: "2x2", effective: "12x12", avail: "1" },
-  { name: "Square", bonus: "364", size: "2x3", effective: "10x11", avail: "1" },
-  { name: "Park", bonus: "215", size: "2x3", effective: "12x13", avail: "1" },
-  { name: "Congress Center", bonus: "270", size: "4x2", effective: "14x12", avail: "1" },
-  { name: "Cinema", bonus: "189", size: "2x2", effective: "10x10", avail: "1" },
-  { name: "Supermarket", bonus: "386", size: "3x2", effective: "13x12", avail: "1" }
-];
-
-const DEFAULT_RESIDENTIAL_TYPES = [
-  { name: "Suburban Residence", resident: "150/450", size: "2x2", avail: "3" },
-  { name: "The Belvedere", resident: "520/1560", size: "2x3", avail: "2" },
-  { name: "The Aurora", resident: "600/1800", size: "2x2", avail: "1" },
-  { name: "Radiant Residence", resident: "260/780", size: "2x3", avail: "2" },
-  { name: "The Metropolis", resident: "480/1440", size: "2x3", avail: "2" },
-  { name: "The Rockefeller", resident: "260/780", size: "2x2", avail: "2" },
-  { name: "The Gatsby", resident: "320/960", size: "2x2", avail: "2" },
-  { name: "Monrose Residences", resident: "160/480", size: "2x2", avail: "2" },
-  { name: "The Palisades", resident: "240/720", size: "2x3", avail: "3" },
-  { name: "The Ambassador", resident: "540/1620", size: "2x3", avail: "2" },
-  { name: "Pinnacle suites", resident: "720/2160", size: "2x3", avail: "2" },
-  { name: "The Elysian", resident: "250/750", size: "2x3", avail: "3" },
-  { name: "The Broadway", resident: "750/2250", size: "2x3", avail: "2" },
-  { name: "Opal Vista", resident: "500/1500", size: "2x3", avail: "1" },
-  { name: "The Eisenhower", resident: "280/840", size: "2x2", avail: "2" },
-  { name: "The Grand Eden", resident: "300/900", size: "2x2", avail: "1" },
-  { name: "Celestial", resident: "300/900", size: "2x2", avail: "1" },
-  { name: "The Jetset", resident: "480/1440", size: "2x2", avail: "1" },
-  { name: "The Cosmopolitan", resident: "500/1500", size: "2x3", avail: "2" },
-  { name: "Golden Era Estates", resident: "720/2160", size: "2x3", avail: "2" },
-  { name: "Heritage House", resident: "300/900", size: "2x2", avail: "2" },
-  { name: "Vintage Vista", resident: "140/420", size: "2x2", avail: "2" },
-  { name: "Serenade Pointe", resident: "500/1500", size: "2x2", avail: "1" },
-  { name: "Serene Heights", resident: "150/450", size: "2x2", avail: "1" }
-];
-
 const CONFIG_STORAGE_KEY = "city-builder:planner-configs:v1";
 const LAYOUT_STORAGE_KEY = "city-builder:planner-layouts:v1";
 const SOLVE_STATUS_POLL_INTERVAL_MS = 1000;
@@ -67,26 +10,36 @@ const LIVE_SNAPSHOT_REFRESH_INTERVAL_MS = 5 * 1000;
 const COMPARISON_PROGRESS_HINT_INTERVAL_MS = 60 * 1000;
 
 const plannerWindow =
-  /** @type {Window & { CityBuilderExpansion?: unknown, CityBuilderPersistence?: unknown, CityBuilderRequestBuilder?: unknown, CityBuilderResults?: unknown, CityBuilderShared?: unknown, CityBuilderShell?: unknown, CityBuilderSolveRuntime?: unknown, CityBuilderWorkbench?: unknown, PlannerManualLayout?: unknown }} */
+  /** @type {Window & { CityBuilderAppElements?: unknown, CityBuilderDefaults?: unknown, CityBuilderExpansion?: unknown, CityBuilderOnboarding?: unknown, CityBuilderPersistence?: unknown, CityBuilderRequestBuilder?: unknown, CityBuilderResults?: unknown, CityBuilderSamplePresets?: unknown, CityBuilderShared?: unknown, CityBuilderShell?: unknown, CityBuilderSolveRuntime?: unknown, CityBuilderWorkbench?: unknown, PlannerManualLayout?: unknown }} */
   (window);
 
 const plannerModules = /** @type {Record<string, JsonObject>} */ ({
+  appElements: plannerWindow.CityBuilderAppElements,
+  defaults: plannerWindow.CityBuilderDefaults,
   shell: plannerWindow.CityBuilderShell,
   shared: plannerWindow.CityBuilderShared,
+  onboarding: plannerWindow.CityBuilderOnboarding,
   persistence: plannerWindow.CityBuilderPersistence,
   solveRuntime: plannerWindow.CityBuilderSolveRuntime,
   expansion: plannerWindow.CityBuilderExpansion,
   manualLayout: plannerWindow.PlannerManualLayout,
   results: plannerWindow.CityBuilderResults,
   requestBuilder: plannerWindow.CityBuilderRequestBuilder,
+  samplePresets: plannerWindow.CityBuilderSamplePresets,
   workbench: plannerWindow.CityBuilderWorkbench
 });
 
 if (Object.values(plannerModules).some((module) => !module)) {
   throw new Error(
-    "plannerShell.js, plannerShared.js, plannerPersistence.js, plannerSolveRuntime.js, plannerExpansion.js, plannerManualLayout.js, plannerResults.js, plannerRequestBuilder.js, and plannerWorkbench.js must load before app.js"
+    "plannerAppElements.js, plannerDefaults.js, plannerShell.js, plannerShared.js, plannerOnboarding.js, plannerPersistence.js, plannerSolveRuntime.js, plannerExpansion.js, plannerManualLayout.js, plannerResults.js, plannerRequestBuilder.js, plannerSamplePresets.js, and plannerWorkbench.js must load before app.js"
   );
 }
+
+const plannerDefaults =
+  /** @type {{ DEFAULT_RESIDENTIAL_TYPES: JsonObject[], DEFAULT_SERVICE_TYPES: JsonObject[], SAMPLE_GRID: PlannerGrid }} */ (
+    plannerModules.defaults
+  );
+const { DEFAULT_RESIDENTIAL_TYPES, DEFAULT_SERVICE_TYPES, SAMPLE_GRID } = plannerDefaults;
 
 const {
   buildCpSatContinuationModelInput,
@@ -115,16 +68,25 @@ const {
   serializeServiceTypeForCatalog
 } = plannerModules.shared;
 const { createPlannerShellController } = plannerModules.shell;
+const { createPlannerOnboardingController } = plannerModules.onboarding;
 const { createPlannerPersistence } = plannerModules.persistence;
 const { createSolveRuntime } = plannerModules.solveRuntime;
 const { createExpansionAdviceController } = plannerModules.expansion;
 const { createPlannerResultsController } = plannerModules.results;
 const { createPlannerRequestBuilderController } = plannerModules.requestBuilder;
+const { createSampleProblemPresets } = plannerModules.samplePresets;
 const { createPlannerWorkbenchController } = plannerModules.workbench;
+const { createPlannerAppElements } = plannerModules.appElements;
+const sampleProblemPresets = createSampleProblemPresets({
+  sampleGrid: SAMPLE_GRID,
+  defaultServiceTypes: DEFAULT_SERVICE_TYPES,
+  defaultResidentialTypes: DEFAULT_RESIDENTIAL_TYPES
+});
 
 const state = /** @type {JsonObject} */ ({
   grid: cloneGrid(SAMPLE_GRID),
   paintMode: "toggle",
+  advancedMode: false,
   optimizer: "auto",
   serviceTypes: DEFAULT_SERVICE_TYPES.map((entry) => ({ ...entry })),
   residentialTypes: DEFAULT_RESIDENTIAL_TYPES.map((entry) => ({ ...entry })),
@@ -174,7 +136,8 @@ const state = /** @type {JsonObject} */ ({
     useDisplayedSeed: true
   },
   auto: {
-    wallClockLimitSeconds: ""
+    wallClockLimitSeconds: "",
+    continueAfterPopulationCapSeconds: ""
   },
   isPainting: false,
   isSolving: false,
@@ -212,143 +175,7 @@ const state = /** @type {JsonObject} */ ({
   }
 });
 
-const elements = /** @type {JsonObject} */ ({
-  gridRows: document.querySelector("#gridRows"),
-  gridCols: document.querySelector("#gridCols"),
-  gridEditor: document.querySelector("#gridEditor"),
-  gridStats: document.querySelector("#gridStats"),
-  paintModeToggle: document.querySelector("#paintModeToggle"),
-  solverToggle: document.querySelector("#solverToggle"),
-  runtimePresetButtons: document.querySelector("#runtimePresetButtons"),
-  runtimePresetStatus: document.querySelector("#runtimePresetStatus"),
-  autoPanel: document.querySelector("#autoPanel"),
-  autoWallClockLimitSeconds: document.querySelector("#autoWallClockLimitSeconds"),
-  greedyPanel: document.querySelector("#greedyPanel"),
-  lnsPanel: document.querySelector("#lnsPanel"),
-  cpSatPanel: document.querySelector("#cpSatPanel"),
-  maxServices: document.querySelector("#maxServices"),
-  maxResidentials: document.querySelector("#maxResidentials"),
-  catalogImportText: document.querySelector("#catalogImportText"),
-  importCatalogTextButton: document.querySelector("#importCatalogTextButton"),
-  catalogImportStatus: document.querySelector("#catalogImportStatus"),
-  addServiceTypeButton: document.querySelector("#addServiceTypeButton"),
-  addResidentialTypeButton: document.querySelector("#addResidentialTypeButton"),
-  serviceList: document.querySelector("#serviceList"),
-  residentialList: document.querySelector("#residentialList"),
-  solveButton: document.querySelector("#solveButton"),
-  stopSolveButton: document.querySelector("#stopSolveButton"),
-  solveStatus: document.querySelector("#solveStatus"),
-  solveTimer: document.querySelector("#solveTimer"),
-  configStorageName: document.querySelector("#configStorageName"),
-  saveConfigButton: document.querySelector("#saveConfigButton"),
-  savedConfigsSelect: document.querySelector("#savedConfigsSelect"),
-  loadConfigButton: document.querySelector("#loadConfigButton"),
-  exportConfigsButton: document.querySelector("#exportConfigsButton"),
-  importConfigsButton: document.querySelector("#importConfigsButton"),
-  configImportFileInput: document.querySelector("#configImportFileInput"),
-  deleteConfigButton: document.querySelector("#deleteConfigButton"),
-  configStorageStatus: document.querySelector("#configStorageStatus"),
-  payloadPreview: document.querySelector("#payloadPreview"),
-  summaryGridSize: document.querySelector("#summaryGridSize"),
-  summaryAllowedCells: document.querySelector("#summaryAllowedCells"),
-  summaryServiceTypes: document.querySelector("#summaryServiceTypes"),
-  summaryResidentialTypes: document.querySelector("#summaryResidentialTypes"),
-  summaryOptimizer: document.querySelector("#summaryOptimizer"),
-  resultsEmpty: document.querySelector("#resultsEmpty"),
-  resultsContent: document.querySelector("#resultsContent"),
-  resultBadge: document.querySelector("#resultBadge"),
-  validationNotice: document.querySelector("#validationNotice"),
-  resultPopulation: document.querySelector("#resultPopulation"),
-  resultRoadCount: document.querySelector("#resultRoadCount"),
-  resultServiceCount: document.querySelector("#resultServiceCount"),
-  resultResidentialCount: document.querySelector("#resultResidentialCount"),
-  resultElapsed: document.querySelector("#resultElapsed"),
-  resultSolverStatus: document.querySelector("#resultSolverStatus"),
-  resultProgressSummary: document.querySelector("#resultProgressSummary"),
-  resultProgressLog: document.querySelector("#resultProgressLog"),
-  expansionNextService: document.querySelector("#expansionNextService"),
-  expansionNextResidential: document.querySelector("#expansionNextResidential"),
-  compareExpansionButton: document.querySelector("#compareExpansionButton"),
-  expansionAdviceStatus: document.querySelector("#expansionAdviceStatus"),
-  expansionAdviceMetrics: document.querySelector("#expansionAdviceMetrics"),
-  expansionAdviceWinner: document.querySelector("#expansionAdviceWinner"),
-  expansionAdviceBaseline: document.querySelector("#expansionAdviceBaseline"),
-  expansionAdviceServiceOutcome: document.querySelector("#expansionAdviceServiceOutcome"),
-  expansionAdviceResidentialOutcome: document.querySelector("#expansionAdviceResidentialOutcome"),
-  serviceResultList: document.querySelector("#serviceResultList"),
-  residentialResultList: document.querySelector("#residentialResultList"),
-  remainingServiceList: document.querySelector("#remainingServiceList"),
-  remainingResidentialList: document.querySelector("#remainingResidentialList"),
-  resultMapGrid: document.querySelector("#resultMapGrid"),
-  resultOverlay: document.querySelector("#resultOverlay"),
-  resultHeatmapToggle: document.querySelector("#resultHeatmapToggle"),
-  resultExplainabilityModeToggle: document.querySelector("#resultExplainabilityModeToggle"),
-  layoutEditModeToggle: document.querySelector("#layoutEditModeToggle"),
-  rotatePendingPlacementButton: document.querySelector("#rotatePendingPlacementButton"),
-  validateEditedLayoutButton: document.querySelector("#validateEditedLayoutButton"),
-  layoutEditorStatus: document.querySelector("#layoutEditorStatus"),
-  selectedBuildingTitle: document.querySelector("#selectedBuildingTitle"),
-  selectedBuildingSummary: document.querySelector("#selectedBuildingSummary"),
-  moveSelectedBuildingButton: document.querySelector("#moveSelectedBuildingButton"),
-  removeSelectedBuildingButton: document.querySelector("#removeSelectedBuildingButton"),
-  selectedBuildingFacts: document.querySelector("#selectedBuildingFacts"),
-  selectedBuildingId: document.querySelector("#selectedBuildingId"),
-  selectedBuildingCategory: document.querySelector("#selectedBuildingCategory"),
-  selectedBuildingPosition: document.querySelector("#selectedBuildingPosition"),
-  selectedBuildingFootprint: document.querySelector("#selectedBuildingFootprint"),
-  selectedBuildingEffect: document.querySelector("#selectedBuildingEffect"),
-  selectedBuildingAvailability: document.querySelector("#selectedBuildingAvailability"),
-  layoutStorageName: document.querySelector("#layoutStorageName"),
-  saveLayoutButton: document.querySelector("#saveLayoutButton"),
-  savedLayoutsSelect: document.querySelector("#savedLayoutsSelect"),
-  loadLayoutButton: document.querySelector("#loadLayoutButton"),
-  exportLayoutsButton: document.querySelector("#exportLayoutsButton"),
-  importLayoutsButton: document.querySelector("#importLayoutsButton"),
-  layoutImportFileInput: document.querySelector("#layoutImportFileInput"),
-  deleteLayoutButton: document.querySelector("#deleteLayoutButton"),
-  layoutStorageStatus: document.querySelector("#layoutStorageStatus"),
-  greedyLocalSearch: document.querySelector("#greedyLocalSearch"),
-  greedyRandomSeed: document.querySelector("#greedyRandomSeed"),
-  greedyTimeLimitSeconds: document.querySelector("#greedyTimeLimitSeconds"),
-  greedyProfile: document.querySelector("#greedyProfile"),
-  greedyDensityTieBreaker: document.querySelector("#greedyDensityTieBreaker"),
-  greedyDensityTieBreakerTolerancePercent: document.querySelector("#greedyDensityTieBreakerTolerancePercent"),
-  greedyRestarts: document.querySelector("#greedyRestarts"),
-  greedyServiceRefineIterations: document.querySelector("#greedyServiceRefineIterations"),
-  greedyServiceRefineCandidateLimit: document.querySelector("#greedyServiceRefineCandidateLimit"),
-  greedyExhaustiveServiceSearch: document.querySelector("#greedyExhaustiveServiceSearch"),
-  greedyDiagnostics: document.querySelector("#greedyDiagnostics"),
-  greedyServiceExactPoolLimit: document.querySelector("#greedyServiceExactPoolLimit"),
-  greedyServiceExactMaxCombinations: document.querySelector("#greedyServiceExactMaxCombinations"),
-  greedyDiagnosticsBlock: document.querySelector("#greedyDiagnosticsBlock"),
-  greedyDiagnosticsSummary: document.querySelector("#greedyDiagnosticsSummary"),
-  greedyDiagnosticsServiceList: document.querySelector("#greedyDiagnosticsServiceList"),
-  greedyDiagnosticsResidentialList: document.querySelector("#greedyDiagnosticsResidentialList"),
-  lnsIterations: document.querySelector("#lnsIterations"),
-  lnsMaxNoImprovementIterations: document.querySelector("#lnsMaxNoImprovementIterations"),
-  lnsNeighborhoodRows: document.querySelector("#lnsNeighborhoodRows"),
-  lnsNeighborhoodCols: document.querySelector("#lnsNeighborhoodCols"),
-  lnsRepairTimeLimitSeconds: document.querySelector("#lnsRepairTimeLimitSeconds"),
-  lnsUseDisplayedSeed: document.querySelector("#lnsUseDisplayedSeed"),
-  cpSatTimeLimitSeconds: document.querySelector("#cpSatTimeLimitSeconds"),
-  cpSatNoImprovementTimeoutSeconds: document.querySelector("#cpSatNoImprovementTimeoutSeconds"),
-  cpSatRandomSeed: document.querySelector("#cpSatRandomSeed"),
-  cpSatNumWorkers: document.querySelector("#cpSatNumWorkers"),
-  cpSatLogSearchProgress: document.querySelector("#cpSatLogSearchProgress"),
-  cpSatUseDisplayedHint: document.querySelector("#cpSatUseDisplayedHint"),
-  cpSatPortfolioEnabled: document.querySelector("#cpSatPortfolioEnabled"),
-  cpSatPortfolioWorkerCount: document.querySelector("#cpSatPortfolioWorkerCount"),
-  cpSatPortfolioRandomSeeds: document.querySelector("#cpSatPortfolioRandomSeeds"),
-  cpSatPortfolioPerWorkerTimeLimitSeconds: document.querySelector("#cpSatPortfolioPerWorkerTimeLimitSeconds"),
-  cpSatPortfolioPerWorkerNumWorkers: document.querySelector("#cpSatPortfolioPerWorkerNumWorkers"),
-  cpSatPortfolioRandomizeSearch: document.querySelector("#cpSatPortfolioRandomizeSearch"),
-  lnsSeedStatus: document.querySelector("#lnsSeedStatus"),
-  cpSatHintStatus: document.querySelector("#cpSatHintStatus"),
-  resizeGridButton: document.querySelector("#resizeGridButton"),
-  fillAllowedButton: document.querySelector("#fillAllowedButton"),
-  clearGridButton: document.querySelector("#clearGridButton"),
-  sampleGridButton: document.querySelector("#sampleGridButton")
-});
+const elements = /** @type {JsonObject} */ (createPlannerAppElements(document));
 
 /** @type {JsonObject} */
 let expansionAdviceController = /** @type {JsonObject} */ (/** @type {unknown} */ (null));
@@ -575,6 +402,19 @@ const persistenceController = createPlannerPersistence({
   }
 });
 
+const onboardingController = createPlannerOnboardingController({
+  state,
+  elements,
+  sampleProblemPresets,
+  helpers: {
+    cloneGrid
+  },
+  callbacks: {
+    setSolveState: shellController.setSolveState,
+    syncPlannerFromState: () => workbenchController.syncPlannerFromState()
+  }
+});
+
 function init() {
   solveRuntimeController.resetSolveTimer();
   workbenchController.updateGridDimensionInputs();
@@ -591,6 +431,7 @@ function init() {
   requestBuilderController.updatePayloadPreview();
   resultsController.renderResults();
   shellController.syncActionAvailability();
+  onboardingController.init();
   workbenchController.initResizeHandling();
   requestAnimationFrame(() => workbenchController.refreshMatrixLayouts());
 
@@ -733,6 +574,20 @@ function init() {
     elements.autoWallClockLimitSeconds.addEventListener("input", () => {
       state.auto.wallClockLimitSeconds = elements.autoWallClockLimitSeconds.value;
       requestBuilderController.updatePayloadPreview();
+    });
+  }
+  if (elements.autoContinueAfterPopulationCapSeconds) {
+    elements.autoContinueAfterPopulationCapSeconds.addEventListener("input", () => {
+      state.auto.continueAfterPopulationCapSeconds = elements.autoContinueAfterPopulationCapSeconds.value;
+      requestBuilderController.updatePayloadPreview();
+    });
+  }
+  if (elements.autoPopulationCapGracePresetButton) {
+    elements.autoPopulationCapGracePresetButton.addEventListener("click", () => {
+      state.auto.continueAfterPopulationCapSeconds = "300";
+      workbenchController.syncSolverFields();
+      requestBuilderController.updatePayloadPreview();
+      shellController.setSolveState("Auto will keep exploring for 5 minutes after the population cap is reached.");
     });
   }
 
@@ -888,6 +743,8 @@ function init() {
   elements.stopSolveButton.addEventListener("click", () => {
     solveRuntimeController.requestStopSolve();
   });
+
+  void solveRuntimeController.resumeActiveSolve();
 }
 
 init();

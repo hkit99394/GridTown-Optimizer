@@ -7,9 +7,9 @@
     "node dist/lnsBenchmarkCli.js --window-ranker-online-ablation --window-ranker-product-promotion-holdout --window-ranker-model=artifacts/lns-window-ranker/2026-05-12/strict-lns-replay-labels-curated-seeds-v3-final-lift-no-weak-product-promotion-online-decision-trajectory-ignore-baseline-conflict-excluded-calibration-lr0.02-cap100/model.json --window-ranker-min-score-delta=0 --seeds=7,19,37 --lns-iterations=2 --window-ranker-artifact-dir=artifacts/lns-window-ranker-online/2026-05-12/product-promotion-two-iteration-online-decision-calibrated-trajectory-model-3seed-min-score-delta-0 --window-ranker-run-id=lns-window-ranker-online-2026-05-12-product-promotion-two-iteration-online-decision-calibrated-trajectory-model --window-ranker-decision=online-lns-window-ranker-product-promotion-online-decision-calibration-diagnostic '--window-ranker-summary=Product-promotion protected online A/B for the product-online-decision calibrated trajectory-feature ranker. No solver default changed.'"
   ],
   "artifactPaths": [
-    "artifacts/lns-window-ranker-online/2026-05-12/product-promotion-two-iteration-online-decision-calibrated-trajectory-model-3seed-min-score-delta-0/lns-window-ranker-online-ablation.json",
     "artifacts/lns-window-ranker-online/2026-05-12/product-promotion-two-iteration-online-decision-calibrated-trajectory-model-3seed-min-score-delta-0/lns-window-ranker-online-ablation.txt",
-    "artifacts/lns-window-ranker-online/2026-05-12/product-promotion-two-iteration-online-decision-calibrated-trajectory-model-3seed-min-score-delta-0/telemetry-manifest.json"
+    "artifacts/lns-window-ranker-online/2026-05-12/product-promotion-two-iteration-online-decision-calibrated-trajectory-model-3seed-min-score-delta-0/telemetry-manifest.json",
+    "artifacts/external-artifacts/2026-06-01/artifact-hygiene-unindexed-raw-manifest.json"
   ],
   "cases": {
     "development": [],

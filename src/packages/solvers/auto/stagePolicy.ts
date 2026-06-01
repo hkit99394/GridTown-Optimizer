@@ -24,6 +24,7 @@ export interface NormalizedAutoOptions {
   randomSeed: number | null;
   weakCycleImprovementThreshold: number;
   maxConsecutiveWeakCycles: number;
+  continueAfterPopulationCapSeconds: number;
   cpSatStageTimeLimitSeconds: number;
   cpSatStageReserveRatio: number;
   cpSatStageNoImprovementTimeoutSeconds: number;
@@ -79,6 +80,7 @@ export function normalizeAutoOptions(params: SolverParams): NormalizedAutoOption
       auto.maxConsecutiveWeakCycles,
       DEFAULT_MAX_CONSECUTIVE_WEAK_CYCLES
     ),
+    continueAfterPopulationCapSeconds: Math.max(0, finiteNumberOrDefault(auto.continueAfterPopulationCapSeconds, 0)),
     cpSatStageTimeLimitSeconds: positiveNumberOrDefault(
       auto.cpSatStageTimeLimitSeconds,
       DEFAULT_CP_SAT_STAGE_TIME_LIMIT_SECONDS

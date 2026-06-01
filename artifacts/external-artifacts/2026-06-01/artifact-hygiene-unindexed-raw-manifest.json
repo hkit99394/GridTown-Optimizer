@@ -1,0 +1,91 @@
+{
+  "schemaVersion": 1,
+  "runId": "artifact-hygiene-unindexed-raw-2026-06-01",
+  "generatedAt": "2026-05-31T23:50:00.000Z",
+  "recoveryPlanPath": "docs/roadmaps/ARTIFACT_HYGIENE_RECOVERY_PLAN.md",
+  "source": {
+    "localSourceCommit": "bb28c06",
+    "localSourceBranch": "features/next-stage",
+    "trackedArtifactCountBefore": 1716,
+    "trackedArtifactBytesBefore": 817052193,
+    "rawFileCount": 234,
+    "rawBytes": 615983387,
+    "projectedTrackedArtifactCountAfterUntracking": 1482,
+    "projectedTrackedArtifactBytesAfterUntracking": 201068806,
+    "trackedArtifactCountAfterFirstPass": 1482,
+    "trackedArtifactBytesAfterFirstPass": 201045597
+  },
+  "storage": {
+    "kind": "github-release",
+    "repository": "hkit99394/GridTown-Optimizer",
+    "tag": "solver-evidence-2026-06-01",
+    "uri": "https://github.com/hkit99394/GridTown-Optimizer/releases/tag/solver-evidence-2026-06-01"
+  },
+  "packages": [
+    {
+      "classId": "online-ablation",
+      "role": "online ablation matrices",
+      "asset": "artifact-hygiene-unindexed-raw-online-ablation.tar.gz",
+      "assetUri": "https://github.com/hkit99394/GridTown-Optimizer/releases/download/solver-evidence-2026-06-01/artifact-hygiene-unindexed-raw-online-ablation.tar.gz",
+      "checksumAsset": "artifact-hygiene-unindexed-raw-online-ablation.tar.gz.sha256",
+      "checksumUri": "https://github.com/hkit99394/GridTown-Optimizer/releases/download/solver-evidence-2026-06-01/artifact-hygiene-unindexed-raw-online-ablation.tar.gz.sha256",
+      "rawFileCount": 161,
+      "rawBytes": 427736451,
+      "archiveBytes": 24590037,
+      "sha256": "4ce93cf186262ea0988869716bcf2793771c90655366eccc470a882398b84c1c"
+    },
+    {
+      "classId": "labels",
+      "role": "label bundles",
+      "asset": "artifact-hygiene-unindexed-raw-labels.tar.gz",
+      "assetUri": "https://github.com/hkit99394/GridTown-Optimizer/releases/download/solver-evidence-2026-06-01/artifact-hygiene-unindexed-raw-labels.tar.gz",
+      "checksumAsset": "artifact-hygiene-unindexed-raw-labels.tar.gz.sha256",
+      "checksumUri": "https://github.com/hkit99394/GridTown-Optimizer/releases/download/solver-evidence-2026-06-01/artifact-hygiene-unindexed-raw-labels.tar.gz.sha256",
+      "rawFileCount": 36,
+      "rawBytes": 111849819,
+      "archiveBytes": 2593777,
+      "sha256": "3a7ade665ddc099d5d3fbdb57acf19f4a334c0d8a435eb6e40630784695a7188"
+    },
+    {
+      "classId": "budget-trace",
+      "role": "budget ablation and decision trace raw files",
+      "asset": "artifact-hygiene-unindexed-raw-budget-trace.tar.gz",
+      "assetUri": "https://github.com/hkit99394/GridTown-Optimizer/releases/download/solver-evidence-2026-06-01/artifact-hygiene-unindexed-raw-budget-trace.tar.gz",
+      "checksumAsset": "artifact-hygiene-unindexed-raw-budget-trace.tar.gz.sha256",
+      "checksumUri": "https://github.com/hkit99394/GridTown-Optimizer/releases/download/solver-evidence-2026-06-01/artifact-hygiene-unindexed-raw-budget-trace.tar.gz.sha256",
+      "rawFileCount": 6,
+      "rawBytes": 10785510,
+      "archiveBytes": 719510,
+      "sha256": "2120ce3a5cff146db300f1d8faab037d1f7d5ddc3d2ba0eadabba498c5d5138a"
+    },
+    {
+      "classId": "scorecards",
+      "role": "raw scorecards",
+      "asset": "artifact-hygiene-unindexed-raw-scorecards.tar.gz",
+      "assetUri": "https://github.com/hkit99394/GridTown-Optimizer/releases/download/solver-evidence-2026-06-01/artifact-hygiene-unindexed-raw-scorecards.tar.gz",
+      "checksumAsset": "artifact-hygiene-unindexed-raw-scorecards.tar.gz.sha256",
+      "checksumUri": "https://github.com/hkit99394/GridTown-Optimizer/releases/download/solver-evidence-2026-06-01/artifact-hygiene-unindexed-raw-scorecards.tar.gz.sha256",
+      "rawFileCount": 18,
+      "rawBytes": 28326243,
+      "archiveBytes": 1670964,
+      "sha256": "6f2a93ee4abb67ed501a85733176cddb2982f500db3c02de6f6584314c4c84f9"
+    },
+    {
+      "classId": "feature-gate-discovery",
+      "role": "feature-gate discovery raw matrices",
+      "asset": "artifact-hygiene-unindexed-raw-feature-gate-discovery.tar.gz",
+      "assetUri": "https://github.com/hkit99394/GridTown-Optimizer/releases/download/solver-evidence-2026-06-01/artifact-hygiene-unindexed-raw-feature-gate-discovery.tar.gz",
+      "checksumAsset": "artifact-hygiene-unindexed-raw-feature-gate-discovery.tar.gz.sha256",
+      "checksumUri": "https://github.com/hkit99394/GridTown-Optimizer/releases/download/solver-evidence-2026-06-01/artifact-hygiene-unindexed-raw-feature-gate-discovery.tar.gz.sha256",
+      "rawFileCount": 13,
+      "rawBytes": 37285364,
+      "archiveBytes": 825940,
+      "sha256": "46af74f627d2ee4edd639dcfc6e70a6f4444e331d6f93a17306004b7ffb5d97c"
+    }
+  ],
+  "notes": [
+    "This manifest covers unindexed raw artifacts only; committed experiment-registry index entries were not rewritten.",
+    "The archives contain the original repository-relative paths for recovery.",
+    "Runtime solver defaults are unchanged."
+  ]
+}

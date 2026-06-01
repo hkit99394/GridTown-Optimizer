@@ -1,4 +1,4 @@
-/** @param {Window & { CityBuilderResults?: unknown, PlannerHeatmaps?: any, PlannerManualLayout?: any, PlannerResultAvailability?: any, PlannerResultProgress?: any, PlannerResultRendering?: any }} globalObject */ (function attachPlannerResults(
+/** @param {Window & { CityBuilderResults?: unknown, PlannerHeatmaps?: any, PlannerManualLayout?: any, PlannerResultAvailability?: any, PlannerResultProgress?: any, PlannerResultRendering?: any, PlannerResultStates?: any }} globalObject */ (function attachPlannerResults(
   globalObject
 ) {
   /**
@@ -26,7 +26,7 @@
    */
 
   const resultsGlobal =
-    /** @type {Window & { CityBuilderResults?: unknown, PlannerHeatmaps?: any, PlannerManualLayout?: any, PlannerResultAvailability?: any, PlannerResultProgress?: any, PlannerResultRendering?: any }} */
+    /** @type {Window & { CityBuilderResults?: unknown, PlannerHeatmaps?: any, PlannerManualLayout?: any, PlannerResultAvailability?: any, PlannerResultProgress?: any, PlannerResultRendering?: any, PlannerResultStates?: any }} */
     (globalObject);
 
   /** @param {ResultsOptions} options */ function createPlannerResultsController(options) {
@@ -53,8 +53,14 @@
       "placement-opportunity": "Placement opportunity",
       "connectivity-risk": "Connectivity risk"
     };
+    const STOP_REASON_LABELS = /** @type {Record<string, string>} */ ({
+      "population-cap-reached": "Population cap reached"
+    });
     if (!resultsGlobal.PlannerManualLayout?.createPlannerManualLayoutModel) {
       throw new Error("Planner manual-layout helpers are not loaded.");
+    }
+    if (!resultsGlobal.PlannerResultStates?.createPlannerResultStateRenderer) {
+      throw new Error("Planner result-state helpers are not loaded.");
     }
     const {
       buildPendingManualLayoutResult,
@@ -124,6 +130,7 @@
       formatCpSatSeedStatus,
       refreshResultOverlay,
       renderGreedyDiagnostics,
+      renderPlacementSummaries,
       renderRemainingAvailability,
       renderSelectedBuildingDetail,
       renderSolvedMap
@@ -168,6 +175,18 @@
     }
     function isLayoutEditBusy() {
       return Boolean(state.isSolving || state.layoutEditor.isApplying);
+    }
+    /** @param {unknown} value @returns {string} */ function formatStopReasonLabel(value) {
+      const text = String(value ?? "");
+      return STOP_REASON_LABELS[text] ?? text;
+    }
+    /** @param {JsonObject} stats @returns {string | null} */ function formatAutoStageStatus(stats) {
+      if (stats.optimizer !== "auto" || !stats.activeOptimizer) return null;
+      const activeStageStatus = `Auto -> ${getOptimizerLabel(stats.activeOptimizer)}`;
+      const stopReason = stats.autoStage?.stopReason;
+      return stopReason === "population-cap-reached"
+        ? `${formatStopReasonLabel(stopReason)} (${activeStageStatus})`
+        : activeStageStatus;
     }
     /** @param {string} message */ function setLayoutEditorStatus(message) {
       state.layoutEditor.status = message;
@@ -292,6 +311,20 @@
 
       elements.layoutEditorStatus.textContent = message;
     }
+    const resultStateRenderer = resultsGlobal.PlannerResultStates.createPlannerResultStateRenderer({
+      state,
+      elements,
+      helpers: {
+        formatElapsedTime
+      },
+      callbacks: {
+        clearResultOverlay,
+        renderExpansionAdvice,
+        renderGreedyDiagnostics,
+        renderLayoutEditorControls,
+        renderSelectedBuildingDetail
+      }
+    });
     /** @param {ResultSolution} nextSolution @param {ManualLayoutResultOptions} [options] */ async function evaluateEditedLayout(
       nextSolution,
       options = {}
@@ -557,65 +590,12 @@
     function renderResults() {
       syncActionAvailability();
       if (state.resultError) {
-        state.resultIsLiveSnapshot = false;
-        state.selectedMapBuilding = null;
-        state.selectedMapCell = null;
-        elements.resultsEmpty.hidden = true;
-        elements.resultsContent.hidden = false;
-        elements.resultBadge.textContent = "Error";
-        elements.resultBadge.className = "result-badge error";
-        elements.validationNotice.className = "notice error";
-        elements.validationNotice.textContent = state.resultError;
-        elements.resultPopulation.textContent = "0";
-        elements.resultRoadCount.textContent = "0";
-        elements.resultServiceCount.textContent = "0";
-        elements.resultResidentialCount.textContent = "0";
-        elements.resultElapsed.textContent = formatElapsedTime(state.resultElapsedMs);
-        elements.resultSolverStatus.textContent = "failed";
-        if (elements.resultProgressSummary) {
-          elements.resultProgressSummary.textContent = "The solve failed before a performance history could be shown.";
-        }
-        if (elements.resultProgressLog) {
-          elements.resultProgressLog.innerHTML = "<li>No performance samples are available.</li>";
-        }
-        elements.serviceResultList.innerHTML = "<li>No service placements available.</li>";
-        elements.residentialResultList.innerHTML = "<li>No residential placements available.</li>";
-        elements.remainingServiceList.innerHTML = "<li>No service availability to show.</li>";
-        elements.remainingResidentialList.innerHTML = "<li>No residential availability to show.</li>";
-        renderGreedyDiagnostics(null);
-        elements.resultMapGrid.innerHTML = "";
-        delete elements.resultMapGrid.dataset.cols;
-        clearResultOverlay();
-        renderSelectedBuildingDetail(null);
-        renderLayoutEditorControls();
-        renderExpansionAdvice();
+        resultStateRenderer.renderError();
         return;
       }
 
       if (!state.result) {
-        state.resultIsLiveSnapshot = false;
-        state.selectedMapBuilding = null;
-        state.selectedMapCell = null;
-        elements.resultsEmpty.hidden = false;
-        elements.resultsContent.hidden = true;
-        elements.resultBadge.textContent = "Waiting";
-        elements.resultBadge.className = "result-badge idle";
-        elements.resultElapsed.textContent = "00:00";
-        if (elements.resultProgressSummary) {
-          elements.resultProgressSummary.textContent = "Run the solver to start recording a performance log.";
-        }
-        if (elements.resultProgressLog) {
-          elements.resultProgressLog.innerHTML = "";
-        }
-        elements.remainingServiceList.innerHTML = "<li>No service availability to show.</li>";
-        elements.remainingResidentialList.innerHTML = "<li>No residential availability to show.</li>";
-        renderGreedyDiagnostics(null);
-        elements.resultMapGrid.innerHTML = "";
-        delete elements.resultMapGrid.dataset.cols;
-        clearResultOverlay();
-        renderSelectedBuildingDetail(null);
-        renderLayoutEditorControls();
-        renderExpansionAdvice();
+        resultStateRenderer.renderEmpty();
         return;
       }
 
@@ -671,10 +651,7 @@
       elements.resultResidentialCount.textContent = String(stats.residentialCount);
       elements.resultElapsed.textContent = formatElapsedTime(state.resultElapsedMs);
       const cpSatSeedStatus = manualLayout ? "" : formatCpSatSeedStatus(solution, stats);
-      const autoStageStatus =
-        stats.optimizer === "auto" && stats.activeOptimizer
-          ? `Auto -> ${getOptimizerLabel(stats.activeOptimizer)}`
-          : null;
+      const autoStageStatus = formatAutoStageStatus(stats);
       elements.resultSolverStatus.textContent = manualLayout
         ? pendingManualValidation
           ? "manual edit (pending validation)"
@@ -685,37 +662,7 @@
             ? `${stats.cpSatStatus} (stopped)${cpSatSeedStatus}`
             : `${stats.cpSatStatus || autoStageStatus || (stats.optimizer ?? "n/a")}${cpSatSeedStatus}`;
 
-      elements.serviceResultList.innerHTML = "";
-      if (solution.services.length === 0) {
-        elements.serviceResultList.innerHTML = "<li>No service buildings were placed.</li>";
-      } else {
-        solution.services.forEach((service, index) => {
-          const item = document.createElement("li");
-          const typeLabel = lookupServiceName(solution.serviceTypeIndices[index] ?? -1);
-          item.textContent =
-            `${typeLabel} (S${index + 1}) at (${service.r}, ${service.c}) ` +
-            `${service.rows}x${service.cols}, range ${service.range}, ` +
-            (pendingManualValidation
-              ? "effect pending validation"
-              : `+${solution.servicePopulationIncreases[index] ?? 0}`);
-          elements.serviceResultList.append(item);
-        });
-      }
-
-      elements.residentialResultList.innerHTML = "";
-      if (solution.residentials.length === 0) {
-        elements.residentialResultList.innerHTML = "<li>No residential buildings were placed.</li>";
-      } else {
-        solution.residentials.forEach((residential, index) => {
-          const item = document.createElement("li");
-          const typeLabel = lookupResidentialName(solution.residentialTypeIndices[index] ?? -1);
-          item.textContent =
-            `${typeLabel} (R${index + 1}) at (${residential.r}, ${residential.c}) ` +
-            `${residential.rows}x${residential.cols}, ` +
-            (pendingManualValidation ? "population pending validation" : `pop ${solution.populations[index] ?? 0}`);
-          elements.residentialResultList.append(item);
-        });
-      }
+      renderPlacementSummaries(solution, pendingManualValidation);
 
       const serviceTypes = state.resultContext?.params?.serviceTypes ?? [];
       const residentialTypes = state.resultContext?.params?.residentialTypes ?? [];

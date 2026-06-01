@@ -1,0 +1,87 @@
+{
+  "schemaVersion": 1,
+  "source": "product-workflow-replay",
+  "command": "node dist/crossModeBenchmarkCli.js --product-corpus --product-artifact-dir=artifacts/product-corpus/2026-06-01/timing-fresh-manual-resume-auto-1s-cap-stop-seeds7-19-37-20260601T160520Z --product-run-id=product-corpus-scorecard-20260601T160520Z-timing-fresh-manual-resume-auto-1s-cap-stop-seeds7-19-37 --product-decision=timing-triage-fresh-manual-resume-auto-1s '--product-summary=Focused timing triage for Auto 1s manual-resume holdout after CP-SAT stops on model population upper-bound incumbents and deterministic dominance short-circuits at hard population cap; no solver default changed.' --modes=auto --budgets=1 --seeds=7,19,37 --json fresh-manual-resume-neighborhood",
+  "generatedAt": "2026-06-01T16:05:32.732Z",
+  "git": {
+    "commit": "348b8dbca3dc1e8d6579e32517ffd5db65db0efb",
+    "branch": "features/next-stage"
+  },
+  "hardware": {
+    "captured": true,
+    "platform": "darwin",
+    "arch": "arm64",
+    "cpuModel": "Apple M1 Pro",
+    "logicalCpuCount": 10,
+    "memoryBytes": 17179869184,
+    "totalMemoryBytes": 17179869184,
+    "gpuUsed": false
+  },
+  "suite": {
+    "caseCount": 1,
+    "replayCount": 1,
+    "validReplayCount": 1,
+    "invalidReplayCount": 0,
+    "apiRoutes": [
+      "/api/layout/evaluate"
+    ],
+    "workflowTags": [
+      "manual-layout-replay"
+    ],
+    "budgetsSeconds": [
+      1
+    ],
+    "seeds": [
+      7,
+      19,
+      37
+    ],
+    "modes": [
+      "auto"
+    ]
+  },
+  "replays": [
+    {
+      "caseName": "fresh-manual-resume-neighborhood",
+      "split": "holdout",
+      "workflowTag": "manual-layout-replay",
+      "apiRoute": "/api/layout/evaluate",
+      "sourceName": "fresh-manual-resume-neighborhood",
+      "scorecardCount": 3,
+      "budgetsSeconds": [
+        1
+      ],
+      "seeds": [
+        7,
+        19,
+        37
+      ],
+      "modes": [
+        "auto"
+      ],
+      "valid": true,
+      "validationErrorCount": 0,
+      "reportedPopulation": 400,
+      "evaluatedPopulation": 400,
+      "populationDeltaFromReported": 0,
+      "reportedRoadCount": 9,
+      "evaluatedRoadCount": 5,
+      "removedRoadCount": 4,
+      "bestScore": 790,
+      "bestScoreSource": {
+        "budgetSeconds": 1,
+        "seed": 7,
+        "mode": "auto"
+      },
+      "bestScoreDeltaFromEvaluated": 390,
+      "autoScore": 790,
+      "autoScoreSource": {
+        "budgetSeconds": 1,
+        "seed": 7,
+        "mode": "auto"
+      },
+      "autoScoreDeltaFromEvaluated": 390,
+      "expansionComparisonLift": null
+    }
+  ]
+}

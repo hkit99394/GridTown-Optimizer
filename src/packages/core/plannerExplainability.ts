@@ -1,4 +1,4 @@
-import { residentialFootprint, serviceEffectZone, serviceFootprint } from "./buildings.js";
+import { normalizeServicePlacement, serviceEffectZone } from "./buildings.js";
 import { height, isAllowed, width } from "./grid.js";
 import { computeRoadAnchorReachableEmptyFrontier, measureBuildingConnectivityShadowFromFrontier } from "./roads.js";
 import { getResidentialBaseMax } from "./rules.js";
@@ -15,6 +15,7 @@ import type {
 
 type OccupiedKind = PlannerExplainabilityCell["occupiedKind"];
 type Orientation = { rows: number; cols: number };
+type GridPlacement = { r: number; c: number; rows: number; cols: number };
 
 interface RemainingServiceType {
   type: ServiceTypeSetting;
@@ -106,17 +107,25 @@ function placementFitsTopLeft(
   return true;
 }
 
-function buildOccupiedKindMap(solution: Solution): Map<string, OccupiedKind> {
-  const occupied = new Map<string, OccupiedKind>();
-  for (const service of solution.services ?? []) {
-    for (const key of serviceFootprint(service)) {
-      occupied.set(key, "service");
+function forEachPlacementCellInGrid(grid: Grid, placement: GridPlacement, visit: (key: string) => void): void {
+  const rowStart = Math.max(0, placement.r);
+  const rowEnd = Math.min(height(grid), placement.r + placement.rows);
+  const colStart = Math.max(0, placement.c);
+  const colEnd = Math.min(width(grid), placement.c + placement.cols);
+  for (let r = rowStart; r < rowEnd; r += 1) {
+    for (let c = colStart; c < colEnd; c += 1) {
+      visit(cellKey(r, c));
     }
   }
+}
+
+function buildOccupiedKindMap(grid: Grid, solution: Solution): Map<string, OccupiedKind> {
+  const occupied = new Map<string, OccupiedKind>();
+  for (const service of solution.services ?? []) {
+    forEachPlacementCellInGrid(grid, normalizeServicePlacement(service), (key) => occupied.set(key, "service"));
+  }
   for (const residential of solution.residentials ?? []) {
-    for (const key of residentialFootprint(residential.r, residential.c, residential.rows, residential.cols)) {
-      occupied.set(key, "residential");
-    }
+    forEachPlacementCellInGrid(grid, residential, (key) => occupied.set(key, "residential"));
   }
   for (const roadKey of solution.roads ?? []) {
     if (!occupied.has(roadKey)) {
@@ -126,17 +135,13 @@ function buildOccupiedKindMap(solution: Solution): Map<string, OccupiedKind> {
   return occupied;
 }
 
-function buildBuildingOccupancy(solution: Solution): Set<string> {
+function buildBuildingOccupancy(grid: Grid, solution: Solution): Set<string> {
   const occupied = new Set<string>();
   for (const service of solution.services ?? []) {
-    for (const key of serviceFootprint(service)) {
-      occupied.add(key);
-    }
+    forEachPlacementCellInGrid(grid, normalizeServicePlacement(service), (key) => occupied.add(key));
   }
   for (const residential of solution.residentials ?? []) {
-    for (const key of residentialFootprint(residential.r, residential.c, residential.rows, residential.cols)) {
-      occupied.add(key);
-    }
+    forEachPlacementCellInGrid(grid, residential, (key) => occupied.add(key));
   }
   return occupied;
 }
@@ -199,8 +204,8 @@ export function buildPlannerExplainabilityMap(
 ): PlannerExplainabilityMap {
   const rows = height(grid);
   const cols = width(grid);
-  const occupiedKind = buildOccupiedKindMap(solution);
-  const occupiedBuildings = buildBuildingOccupancy(solution);
+  const occupiedKind = buildOccupiedKindMap(grid, solution);
+  const occupiedBuildings = buildBuildingOccupancy(grid, solution);
   const frontier = computeRoadAnchorReachableEmptyFrontier(grid, occupiedBuildings);
   const serviceValueByCell = buildServiceValueByCell(grid, solution);
   const remainingServiceTypes = buildRemainingServiceTypes(params, solution);

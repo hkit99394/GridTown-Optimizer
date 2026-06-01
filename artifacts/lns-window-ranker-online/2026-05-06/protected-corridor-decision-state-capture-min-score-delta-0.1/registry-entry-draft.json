@@ -7,9 +7,9 @@
     "node dist/lnsBenchmarkCli.js --window-ranker-online-ablation --window-ranker-protected-holdout --window-ranker-model=artifacts/lns-window-ranker/2026-05-05/strict-lns-replay-labels-curated-seeds-v3-roll-forward-1x0.1-final-lift-no-weak-cpu-ranker-lr0.02-cap100/model.json --window-ranker-min-score-delta=0.1 --seeds=7,19,37 --artifact-dir=artifacts/lns-window-ranker-online/2026-05-06/protected-corridor-decision-state-capture-min-score-delta-0.1 --json lns-holdout-corridor-weave-pressure"
   ],
   "artifactPaths": [
-    "artifacts/lns-window-ranker-online/2026-05-06/protected-corridor-decision-state-capture-min-score-delta-0.1/lns-window-ranker-online-ablation.json",
     "artifacts/lns-window-ranker-online/2026-05-06/protected-corridor-decision-state-capture-min-score-delta-0.1/lns-window-ranker-online-ablation.txt",
-    "artifacts/lns-window-ranker-online/2026-05-06/protected-corridor-decision-state-capture-min-score-delta-0.1/telemetry-manifest.json"
+    "artifacts/lns-window-ranker-online/2026-05-06/protected-corridor-decision-state-capture-min-score-delta-0.1/telemetry-manifest.json",
+    "artifacts/external-artifacts/2026-06-01/artifact-hygiene-unindexed-raw-manifest.json"
   ],
   "cases": {
     "development": [],

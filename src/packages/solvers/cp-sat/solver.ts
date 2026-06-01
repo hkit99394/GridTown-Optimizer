@@ -335,6 +335,65 @@ export function defaultPythonExecutable(): string {
   return existsSync(venvPython) ? venvPython : "python3";
 }
 
+export interface CpSatReadiness {
+  ready: boolean;
+  pythonExecutable: string;
+  message: string;
+  ortoolsVersion: string | null;
+  setupCommand: string;
+  detail?: string;
+}
+
+function cpSatSetupHint(): string {
+  return "Run npm run setup:cp-sat, or set CITY_BUILDER_CP_SAT_PYTHON to a Python executable with OR-Tools installed.";
+}
+
+export function checkCpSatReadiness(
+  pythonExecutable = process.env.CITY_BUILDER_CP_SAT_PYTHON ?? defaultPythonExecutable()
+): CpSatReadiness {
+  const setupCommand = "npm run setup:cp-sat";
+  const result = spawnSync(
+    pythonExecutable,
+    ["-c", "import ortools; print(getattr(ortools, '__version__', 'unknown'))"],
+    {
+      encoding: "utf8",
+      timeout: 5000
+    }
+  );
+
+  if (result.error) {
+    return {
+      ready: false,
+      pythonExecutable,
+      setupCommand,
+      ortoolsVersion: null,
+      message: `CP-SAT is not ready: could not launch ${pythonExecutable}. ${cpSatSetupHint()}`,
+      detail: result.error.message
+    };
+  }
+
+  if (result.status !== 0) {
+    const detail = [result.stderr?.trim(), result.stdout?.trim()].filter(Boolean).join(" ");
+    return {
+      ready: false,
+      pythonExecutable,
+      setupCommand,
+      ortoolsVersion: null,
+      message: `CP-SAT is not ready: ${pythonExecutable} cannot import OR-Tools. ${cpSatSetupHint()}`,
+      ...(detail ? { detail } : {})
+    };
+  }
+
+  const ortoolsVersion = result.stdout.trim() || "unknown";
+  return {
+    ready: true,
+    pythonExecutable,
+    setupCommand,
+    ortoolsVersion,
+    message: `CP-SAT is ready with OR-Tools ${ortoolsVersion}.`
+  };
+}
+
 function isSolutionWarmStartHint(value: CpSatWarmStartHint | Solution): value is Solution {
   return value.roads instanceof Set;
 }
@@ -431,7 +490,9 @@ function runCpSatBackend(G: Grid, params: SolverParams) {
   });
 
   if (result.error) {
-    throw new Error(`Failed to launch CP-SAT backend with ${pythonExecutable}: ${result.error.message}`);
+    throw new Error(
+      `Failed to launch CP-SAT backend with ${pythonExecutable}: ${result.error.message}. ${cpSatSetupHint()}`
+    );
   }
 
   if (result.status !== 0) {
@@ -439,7 +500,7 @@ function runCpSatBackend(G: Grid, params: SolverParams) {
     const stdout = result.stdout?.trim();
     const exitDetail = result.status === null ? `signal ${result.signal ?? "unknown"}` : `exit code ${result.status}`;
     throw new Error(
-      `CP-SAT backend failed with ${exitDetail}.${stderr ? ` stderr: ${stderr}` : ""}${stdout ? ` stdout: ${stdout}` : ""}`
+      `CP-SAT backend failed with ${exitDetail}.${stderr ? ` stderr: ${stderr}` : ""}${stdout ? ` stdout: ${stdout}` : ""} ${cpSatSetupHint()}`
     );
   }
 
@@ -528,7 +589,9 @@ async function runCpSatBackendAsync(
       stderr += chunk;
     });
     child.on("error", (error) => {
-      rejectPromise(new Error(`Failed to launch CP-SAT backend with ${pythonExecutable}: ${error.message}`));
+      rejectPromise(
+        new Error(`Failed to launch CP-SAT backend with ${pythonExecutable}: ${error.message}. ${cpSatSetupHint()}`)
+      );
     });
     child.on("close", (code, signal) => {
       if (code !== 0) {
@@ -539,7 +602,7 @@ async function runCpSatBackendAsync(
           new Error(
             `CP-SAT backend failed with ${exitDetail}.${trimmedStderr ? ` stderr: ${trimmedStderr}` : ""}${
               trimmedStdout ? ` stdout: ${trimmedStdout}` : ""
-            }`
+            } ${cpSatSetupHint()}`
           )
         );
         return;

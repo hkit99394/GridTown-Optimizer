@@ -12,6 +12,7 @@
   },
   "include": [
     "apps/planner-web/app.js",
+    "apps/planner-web/plannerAppElements.js",
     "apps/planner-web/plannerExpansion.js",
     "apps/planner-web/plannerHeatmaps.js",
     "apps/planner-web/plannerManualLayout.js",
@@ -19,12 +20,18 @@
     "apps/planner-web/plannerPersistenceValidation.js",
     "apps/planner-web/plannerRequestBuilder.js",
     "apps/planner-web/plannerResultAvailability.js",
+    "apps/planner-web/plannerResultDiagnostics.js",
     "apps/planner-web/plannerResultRendering.js",
     "apps/planner-web/plannerResultProgress.js",
+    "apps/planner-web/plannerResultStates.js",
     "apps/planner-web/plannerResults.js",
     "apps/planner-web/plannerShared.js",
     "apps/planner-web/plannerSolveRuntime.js",
     "apps/planner-web/plannerShell.js",
+    "apps/planner-web/plannerV2.js",
+    "apps/planner-web/plannerPreviewBoot.js",
+    "apps/planner-web/plannerStaticFragments.js",
+    "apps/planner-web/plannerWorkbenchCatalog.js",
     "apps/planner-web/plannerWorkbench.js"
   ]
 }

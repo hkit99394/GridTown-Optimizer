@@ -1,12 +1,23 @@
 import { randomInt } from "node:crypto";
 
-import { assertValidSolveInputs, materializeValidLnsSeedSolution } from "../../core/index.js";
+import {
+  assertValidSolveInputs,
+  materializeValidLnsSeedSolution,
+  reachesPopulationCapacityUpperBound
+} from "../../core/index.js";
 import { solveCpSat } from "../cp-sat/solver.js";
 import { solveLns } from "../lns/solver.js";
 import { solveGreedy } from "../greedy/solver.js";
 import { MAX_STAGE_RANDOM_SEED, normalizeAutoOptions } from "./stagePolicy.js";
 import { stageSeedParams } from "./stageParams.js";
 import { createSyncAutoStopController } from "./stopController.js";
+import {
+  currentAutoDeadlineAtMs,
+  currentAutoDeadlineStopReason,
+  notePopulationCapacityReached,
+  populationCapacityGraceActive,
+  type PopulationCapacityGraceState
+} from "./capGrace.js";
 
 import type {
   AutoGreedySeedStageSummary,
@@ -32,13 +43,15 @@ export {
 } from "./terminal.js";
 export type { AutoTerminalSolutionContext } from "./terminal.js";
 
-interface AutoRuntimeState {
+interface AutoRuntimeState extends PopulationCapacityGraceState {
   activeStage: AutoStageOptimizerName | null;
   stageIndex: number;
   cycleIndex: number;
   consecutiveWeakCycles: number;
   lastCycleImprovementRatio: number | null;
   stopReason: AutoSolveStopReason | null;
+  populationCapacityReachedAtMs: number | null;
+  populationCapacityDeadlineAtMs: number | null;
   generatedSeeds: AutoSolveGeneratedSeed[];
   stageRuns: AutoStageRunSummary[];
   greedySeedStage: AutoGreedySeedStageSummary | null;
@@ -142,6 +155,8 @@ function createAutoRuntimeState(): AutoRuntimeState {
     consecutiveWeakCycles: 0,
     lastCycleImprovementRatio: null,
     stopReason: null,
+    populationCapacityReachedAtMs: null,
+    populationCapacityDeadlineAtMs: null,
     generatedSeeds: [],
     stageRuns: [],
     greedySeedStage: null
@@ -350,11 +365,6 @@ function remainingSeconds(deadlineAtMs: number | null): number | null {
   return Math.max(0, (deadlineAtMs - Date.now()) / 1000);
 }
 
-function deadlineStopReason(deadlineAtMs: number | null): AutoSolveStopReason | null {
-  if (deadlineAtMs === null || Date.now() < deadlineAtMs) return null;
-  return "wall-clock-cap";
-}
-
 function buildSnapshotState(snapshot: Solution | null): BackgroundSolveSnapshotState {
   return {
     hasFeasibleSolution: Boolean(snapshot),
@@ -377,11 +387,12 @@ async function runBackgroundStage(
   startBackgroundSolve: AutoBackgroundStageStarter,
   nextStageSeed: () => number,
   autoStartedAtMs: number,
-  deadlineAtMs: number | null
+  globalDeadlineAtMs: number | null
 ): Promise<Solution | null> {
-  const secondsRemaining = remainingSeconds(deadlineAtMs);
+  const effectiveDeadlineAtMs = currentAutoDeadlineAtMs(globalDeadlineAtMs, state);
+  const secondsRemaining = remainingSeconds(effectiveDeadlineAtMs);
   if (secondsRemaining !== null && secondsRemaining <= 0) {
-    state.stopReason = "wall-clock-cap";
+    state.stopReason = currentAutoDeadlineStopReason(globalDeadlineAtMs, state) ?? "wall-clock-cap";
     return null;
   }
 
@@ -420,7 +431,7 @@ async function runBackgroundStage(
     return strippedSolution;
   } catch (error) {
     const recovered = handle.getLatestSnapshot();
-    const explicitStopReason = state.stopReason ?? deadlineStopReason(deadlineAtMs);
+    const explicitStopReason = state.stopReason ?? currentAutoDeadlineStopReason(globalDeadlineAtMs, state);
     if (recovered) {
       const strippedRecovered = stripAutoMetadata(recovered);
       recordAutoStageRunSummary(
@@ -527,6 +538,23 @@ function shouldStopAfterAutoCpSatStage(cpSatSolution: Solution | null, incumbent
   );
 }
 
+function shouldStopAfterPopulationCapacityReached(params: SolverParams, incumbent: Solution | null): boolean {
+  return Boolean(incumbent && reachesPopulationCapacityUpperBound(params, incumbent.totalPopulation));
+}
+
+function updatePopulationCapacityStop(
+  params: SolverParams,
+  incumbent: Solution | null,
+  state: AutoRuntimeState,
+  options: NormalizedAutoOptions
+): boolean {
+  if (!shouldStopAfterPopulationCapacityReached(params, incumbent)) return false;
+  notePopulationCapacityReached(state, options.continueAfterPopulationCapSeconds);
+  if (populationCapacityGraceActive(state)) return false;
+  state.stopReason = "population-cap-reached";
+  return true;
+}
+
 function finalizeCompletedAutoPlan(incumbent: Solution | null, state: AutoRuntimeState): Solution {
   if (!state.stopReason) {
     state.stopReason = "completed-plan";
@@ -573,6 +601,10 @@ function createAutoPlanStepper(
           nextStage = null;
           return;
         }
+        if (updatePopulationCapacityStop(params, incumbent, state, options)) {
+          nextStage = null;
+          return;
+        }
         cycleIndex = 1;
         cycleStart = incumbent;
         nextStage = "lns";
@@ -586,6 +618,10 @@ function createAutoPlanStepper(
       }
 
       if (request.stage === "lns") {
+        if (updatePopulationCapacityStop(params, incumbent, state, options)) {
+          nextStage = null;
+          return;
+        }
         nextStage = "cp-sat";
         return;
       }
@@ -593,6 +629,18 @@ function createAutoPlanStepper(
       if (shouldStopAfterAutoCpSatStage(stageSolution, incumbent)) {
         state.stopReason = "optimal";
         nextStage = null;
+        return;
+      }
+
+      if (updatePopulationCapacityStop(params, incumbent, state, options)) {
+        nextStage = null;
+        return;
+      }
+
+      if (populationCapacityGraceActive(state)) {
+        cycleIndex += 1;
+        cycleStart = incumbent;
+        nextStage = "lns";
         return;
       }
 
@@ -675,9 +723,10 @@ export function solveAuto(G: Grid, params: SolverParams): Solution {
       cycleIndex: number,
       incumbent: Solution | null
     ): Solution | null => {
-      const secondsRemaining = remainingSeconds(deadlineAtMs);
+      const effectiveDeadlineAtMs = currentAutoDeadlineAtMs(deadlineAtMs, state);
+      const secondsRemaining = remainingSeconds(effectiveDeadlineAtMs);
       if (secondsRemaining !== null && secondsRemaining <= 0) {
-        state.stopReason = "wall-clock-cap";
+        state.stopReason = currentAutoDeadlineStopReason(deadlineAtMs, state) ?? "wall-clock-cap";
         return null;
       }
 
@@ -736,7 +785,8 @@ export function solveAuto(G: Grid, params: SolverParams): Solution {
           startedAtMs,
           stageStartedAtMs
         );
-        const explicitStopReason = stopController.currentStopReason() ?? deadlineStopReason(deadlineAtMs);
+        const explicitStopReason =
+          stopController.currentStopReason() ?? currentAutoDeadlineStopReason(deadlineAtMs, state);
         return applyRecoverableStageError(stage, incumbent, state, error, explicitStopReason);
       }
       const stopReasonAfterStage = stopController.currentStopReason();

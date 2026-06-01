@@ -565,6 +565,12 @@ async function testSolveRoutesRejectInvalidAutoOptionsBeforeStartingBackend(hand
     },
     {
       url: "/api/solve",
+      auto: { continueAfterPopulationCapSeconds: "300" },
+      expectedError:
+        "Invalid solver input: Auto option auto.continueAfterPopulationCapSeconds must be a finite number >= 0 and <= 86400."
+    },
+    {
+      url: "/api/solve",
       auto: { maxConsecutiveWeakCycles: 0 },
       expectedError:
         "Invalid solver input: Auto option auto.maxConsecutiveWeakCycles must be an integer between 1 and 100."

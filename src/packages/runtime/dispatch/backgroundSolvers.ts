@@ -8,6 +8,7 @@ import { startJsonBackgroundSolve } from "../background/runner.js";
 import {
   defaultPythonExecutable,
   buildCpSatRequest,
+  checkCpSatReadiness,
   materializeCpSatSolution,
   parseCpSatRawSolution
 } from "../../solvers/cp-sat/solver.js";
@@ -68,6 +69,12 @@ export function startCpSatSolve(G: Grid, params: SolverParams): CpSatSolveHandle
   const pythonExecutable =
     params.cpSat?.pythonExecutable ?? process.env.CITY_BUILDER_CP_SAT_PYTHON ?? defaultPythonExecutable();
   const scriptPath = params.cpSat?.scriptPath ?? resolve(__dirname, "../../../../python/cp_sat_solver.py");
+  if (!params.cpSat?.scriptPath) {
+    const readiness = checkCpSatReadiness(pythonExecutable);
+    if (!readiness.ready) {
+      throw new Error(readiness.detail ? `${readiness.message} Detail: ${readiness.detail}` : readiness.message);
+    }
+  }
   return startJsonBackgroundSolve({
     solverLabel: "CP-SAT",
     stopDirectoryPrefix: "city-builder-cp-sat-stop-",

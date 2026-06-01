@@ -7,10 +7,10 @@
     "node scripts/discover-lns-online-selected-feature-gates.mjs --source-artifact=artifacts/lns-window-ranker-online/2026-05-10/service-braid-generated-grid-right-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0 --source-artifact=artifacts/lns-window-ranker-online/2026-05-10/protected-broadened-two-iteration-trajectory-features-no-selected-feature-gate-min-score-delta-0 --artifact-dir=artifacts/lns-online-selected-feature-gate-discovery/2026-05-11/trajectory-features-generated-protected-two-iteration-no-gate-final-outcome-search-top200 --target=final-improved --max-group-size=3 --max-atoms-per-feature=20 --max-total-atoms=120 --top=200 --force-artifact-dir"
   ],
   "artifactPaths": [
-    "artifacts/lns-online-selected-feature-gate-discovery/2026-05-11/trajectory-features-generated-protected-two-iteration-no-gate-final-outcome-search-top200/online-selected-feature-gate-discovery.json",
     "artifacts/lns-online-selected-feature-gate-discovery/2026-05-11/trajectory-features-generated-protected-two-iteration-no-gate-final-outcome-search-top200/online-selected-feature-gate-discovery.txt",
     "artifacts/lns-online-selected-feature-gate-discovery/2026-05-11/trajectory-features-generated-protected-two-iteration-no-gate-final-outcome-search-top200/telemetry-manifest.json",
-    "artifacts/lns-online-selected-feature-gate-discovery/2026-05-11/trajectory-features-generated-protected-two-iteration-no-gate-final-outcome-search-top200/manifest.json"
+    "artifacts/lns-online-selected-feature-gate-discovery/2026-05-11/trajectory-features-generated-protected-two-iteration-no-gate-final-outcome-search-top200/manifest.json",
+    "artifacts/external-artifacts/2026-06-01/artifact-hygiene-unindexed-raw-manifest.json"
   ],
   "cases": [
     "lns-holdout-anchor-service-harbor-pressure",

@@ -1,5 +1,5 @@
 /**
- * @param {Window & { CityBuilderShared?: { CP_SAT_PORTFOLIO_CAPABILITY_LIMITS?: Record<string, number> }, CityBuilderWorkbench?: unknown }} globalObject
+ * @param {Window & { CityBuilderShared?: { CP_SAT_PORTFOLIO_CAPABILITY_LIMITS?: Record<string, number> }, CityBuilderWorkbench?: unknown, CityBuilderWorkbenchCatalog?: any }} globalObject
  */
 (function attachPlannerWorkbench(globalObject) {
   /**
@@ -43,7 +43,7 @@
    */
 
   const workbenchBootstrapGlobal =
-    /** @type {Window & { CityBuilderShared?: { CP_SAT_PORTFOLIO_CAPABILITY_LIMITS?: Record<string, number> } }} */
+    /** @type {Window & { CityBuilderShared?: { CP_SAT_PORTFOLIO_CAPABILITY_LIMITS?: Record<string, number> }, CityBuilderWorkbenchCatalog?: any }} */
     (globalObject);
   const CP_SAT_PORTFOLIO_CAPABILITY_LIMITS =
     workbenchBootstrapGlobal.CityBuilderShared?.CP_SAT_PORTFOLIO_CAPABILITY_LIMITS ??
@@ -79,6 +79,9 @@
     } = helpers;
     const { getOptimizerLabel, refreshResultOverlay, renderExpansionAdvice, setSolveState, updatePayloadPreview } =
       callbacks;
+    if (!workbenchBootstrapGlobal.CityBuilderWorkbenchCatalog?.createPlannerWorkbenchCatalogController) {
+      throw new Error("Planner workbench catalog helpers are not loaded.");
+    }
 
     /**
      * @returns {CpSatPortfolioState}
@@ -167,9 +170,9 @@
         };
       }
       state.auto = {
-        ...(state.auto ?? { wallClockLimitSeconds: "" }),
-        wallClockLimitSeconds:
-          params.auto?.wallClockLimitSeconds != null ? String(params.auto.wallClockLimitSeconds) : ""
+        ...state.auto,
+        wallClockLimitSeconds: String(params.auto?.wallClockLimitSeconds ?? ""),
+        continueAfterPopulationCapSeconds: String(params.auto?.continueAfterPopulationCapSeconds ?? "")
       };
 
       if (!preserveCpSatRuntime && params.cpSat) {
@@ -202,8 +205,8 @@
       elements.expansionNextService.value = state.expansionAdvice.nextServiceText;
       elements.expansionNextResidential.value = state.expansionAdvice.nextResidentialText;
       renderGrid();
-      renderServiceTypes();
-      renderResidentialTypes();
+      catalogController.renderServiceTypes();
+      catalogController.renderResidentialTypes();
       updatePayloadPreview();
       updateSummary();
       renderExpansionAdvice();
@@ -493,6 +496,9 @@
       if (elements.autoWallClockLimitSeconds) {
         elements.autoWallClockLimitSeconds.value = state.auto?.wallClockLimitSeconds ?? "";
       }
+      if (elements.autoContinueAfterPopulationCapSeconds) {
+        elements.autoContinueAfterPopulationCapSeconds.value = state.auto?.continueAfterPopulationCapSeconds ?? "";
+      }
 
       elements.greedyLocalSearch.checked = state.greedy.localSearch;
       elements.greedyRandomSeed.disabled = autoOwnsStageSeeds;
@@ -680,123 +686,6 @@
       }
     }
 
-    function renderServiceTypes() {
-      if (state.serviceTypes.length === 0) {
-        elements.serviceList.innerHTML = `
-          <div class="catalog-shell">
-            <div class="catalog-empty">No service types yet. Add one to start the catalog.</div>
-          </div>
-        `;
-        updateSummary();
-        return;
-      }
-
-      const rows = state.serviceTypes
-        .map(
-          (entry, index) => `
-        <tr>
-          <td class="catalog-index">${index + 1}</td>
-          <td><input type="text" value="${escapeHtml(entry.name)}" data-collection="serviceTypes" data-index="${index}" data-field="name" /></td>
-          <td><input type="number" min="0" step="1" value="${escapeHtml(entry.bonus)}" data-collection="serviceTypes" data-index="${index}" data-field="bonus" /></td>
-          <td><input type="text" value="${escapeHtml(entry.size)}" data-collection="serviceTypes" data-index="${index}" data-field="size" /></td>
-          <td><input type="text" value="${escapeHtml(entry.effective)}" data-collection="serviceTypes" data-index="${index}" data-field="effective" /></td>
-          <td><input type="number" min="0" step="1" value="${escapeHtml(entry.avail ?? "1")}" data-collection="serviceTypes" data-index="${index}" data-field="avail" /></td>
-          <td class="catalog-action-cell"><button type="button" class="button ghost compact" data-action="remove-service" data-index="${index}">Remove</button></td>
-        </tr>
-      `
-        )
-        .join("");
-
-      elements.serviceList.innerHTML = `
-        <div class="catalog-shell">
-          <table class="catalog-table">
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Name</th>
-                <th>Bonus</th>
-                <th>Size</th>
-                <th>Effective</th>
-                <th>Avail</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>${rows}</tbody>
-          </table>
-        </div>
-      `;
-      updateSummary();
-    }
-
-    function renderResidentialTypes() {
-      if (state.residentialTypes.length === 0) {
-        elements.residentialList.innerHTML = `
-          <div class="catalog-shell">
-            <div class="catalog-empty">No residential types yet. Add one to start the catalog.</div>
-          </div>
-        `;
-        updateSummary();
-        return;
-      }
-
-      const rows = state.residentialTypes
-        .map(
-          (entry, index) => `
-        <tr>
-          <td class="catalog-index">${index + 1}</td>
-          <td><input type="text" value="${escapeHtml(entry.name)}" data-collection="residentialTypes" data-index="${index}" data-field="name" /></td>
-          <td><input type="text" value="${escapeHtml(entry.resident)}" data-collection="residentialTypes" data-index="${index}" data-field="resident" /></td>
-          <td><input type="text" value="${escapeHtml(entry.size)}" data-collection="residentialTypes" data-index="${index}" data-field="size" /></td>
-          <td><input type="number" min="0" step="1" value="${escapeHtml(entry.avail)}" data-collection="residentialTypes" data-index="${index}" data-field="avail" /></td>
-          <td class="catalog-action-cell"><button type="button" class="button ghost compact" data-action="remove-residential" data-index="${index}">Remove</button></td>
-        </tr>
-      `
-        )
-        .join("");
-
-      elements.residentialList.innerHTML = `
-        <div class="catalog-shell">
-          <table class="catalog-table">
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Name</th>
-                <th>Resident</th>
-                <th>Size</th>
-                <th>Avail</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>${rows}</tbody>
-          </table>
-        </div>
-      `;
-      updateSummary();
-    }
-
-    function importCatalogText() {
-      try {
-        const imported = parseCatalogImportText(elements.catalogImportText.value);
-        if (imported.services) {
-          state.serviceTypes = imported.services.map((entry) => ({ ...entry }));
-          renderServiceTypes();
-        }
-        if (imported.residentials) {
-          state.residentialTypes = imported.residentials.map((entry) => ({ ...entry }));
-          renderResidentialTypes();
-        }
-        updatePayloadPreview();
-        const importedParts = [
-          imported.services ? `${imported.services.length} service rows` : "",
-          imported.residentials ? `${imported.residentials.length} residential rows` : ""
-        ].filter(Boolean);
-        elements.catalogImportStatus.textContent = `Imported ${importedParts.join(" and ")}.`;
-      } catch (error) {
-        elements.catalogImportStatus.textContent =
-          error instanceof Error ? error.message : "Failed to import pasted tables.";
-      }
-    }
-
     function updateSummary() {
       const rows = state.grid.length;
       const cols = state.grid[0]?.length ?? 0;
@@ -807,45 +696,19 @@
       elements.summaryOptimizer.textContent = getOptimizerLabel(state.optimizer);
     }
 
-    /**
-     * @param {Event} event
-     */
-    function handleCatalogInput(event) {
-      const target = event.target;
-      if (!(target instanceof HTMLInputElement)) return;
-      const collectionName = target.dataset.collection;
-      const index = Number(target.dataset.index);
-      const field = target.dataset.field;
-      if (!collectionName || !field || !Number.isInteger(index)) return;
-      if (!Array.isArray(state[collectionName]) || !state[collectionName][index]) return;
-      state[collectionName][index][field] = target.type === "checkbox" ? target.checked : target.value;
-      updateSummary();
-      updatePayloadPreview();
-    }
-
-    /**
-     * @param {Event} event
-     */
-    function handleCatalogClick(event) {
-      const target = event.target;
-      if (!(target instanceof Element)) return;
-      const button = target.closest("[data-action]");
-      if (!(button instanceof HTMLButtonElement)) return;
-      const index = Number(button.dataset.index);
-      if (!Number.isInteger(index)) return;
-
-      if (button.dataset.action === "remove-service") {
-        state.serviceTypes.splice(index, 1);
-        renderServiceTypes();
-      } else if (button.dataset.action === "remove-residential") {
-        state.residentialTypes.splice(index, 1);
-        renderResidentialTypes();
-      } else {
-        return;
-      }
-
-      updatePayloadPreview();
-    }
+    const catalogController =
+      workbenchBootstrapGlobal.CityBuilderWorkbenchCatalog.createPlannerWorkbenchCatalogController({
+        state,
+        elements,
+        helpers: {
+          escapeHtml,
+          parseCatalogImportText
+        },
+        callbacks: {
+          updatePayloadPreview,
+          updateSummary
+        }
+      });
 
     function initResizeHandling() {
       if (typeof ResizeObserver === "undefined") {
@@ -868,14 +731,14 @@
       applyRuntimePreset,
       applySolveRequestToPlanner,
       countAllowedCells,
-      handleCatalogClick,
-      handleCatalogInput,
-      importCatalogText,
+      handleCatalogClick: catalogController.handleCatalogClick,
+      handleCatalogInput: catalogController.handleCatalogInput,
+      importCatalogText: catalogController.importCatalogText,
       initResizeHandling,
       refreshMatrixLayouts,
       renderGrid,
-      renderResidentialTypes,
-      renderServiceTypes,
+      renderResidentialTypes: catalogController.renderResidentialTypes,
+      renderServiceTypes: catalogController.renderServiceTypes,
       resizeGrid,
       setOptimizer,
       setPaintMode,

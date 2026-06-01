@@ -1,0 +1,1166 @@
+{
+  "caseCount": 1,
+  "modeCount": 4,
+  "budgetsSeconds": [
+    30,
+    120
+  ],
+  "seeds": [
+    7,
+    19,
+    37
+  ],
+  "splitCaseCounts": {
+    "development": 0,
+    "holdout": 1
+  },
+  "workflowTagCounts": {
+    "manual-layout-replay": 6,
+    "manual-resume-neighborhood": 6
+  },
+  "promotionCoverage": {
+    "requiredCaseNames": [
+      "typed-housing-single",
+      "row0-corridor-repair-pressure",
+      "typed-footprint-pressure",
+      "service-local-neighborhood",
+      "seeded-service-anchor-pressure",
+      "road-semantics-gate-choke",
+      "road-semantics-service-pressure",
+      "multi-anchor-road-components",
+      "development-expansion-corridor-service",
+      "fresh-multi-anchor-service-island",
+      "fresh-typed-footprint-scarcity",
+      "fresh-expansion-corridor-service",
+      "manual-layout-replay-warm-start",
+      "fresh-manual-resume-neighborhood",
+      "expansion-comparison-replay"
+    ],
+    "missingCaseNames": [
+      "typed-housing-single",
+      "row0-corridor-repair-pressure",
+      "typed-footprint-pressure",
+      "service-local-neighborhood",
+      "seeded-service-anchor-pressure",
+      "road-semantics-gate-choke",
+      "road-semantics-service-pressure",
+      "multi-anchor-road-components",
+      "development-expansion-corridor-service",
+      "fresh-multi-anchor-service-island",
+      "fresh-typed-footprint-scarcity",
+      "fresh-expansion-corridor-service",
+      "manual-layout-replay-warm-start",
+      "expansion-comparison-replay"
+    ],
+    "splitMismatches": [],
+    "requiredModes": [
+      "auto",
+      "greedy",
+      "lns",
+      "cp-sat"
+    ],
+    "missingModes": [],
+    "requiredBudgetsSeconds": [
+      1,
+      5,
+      30,
+      120
+    ],
+    "missingBudgetsSeconds": [
+      1,
+      5
+    ],
+    "requiredSeeds": [
+      7,
+      19,
+      37
+    ],
+    "missingSeeds": [],
+    "unexpectedSeeds": [],
+    "expectedScorecardCount": 180,
+    "actualScorecardCount": 6,
+    "missingScorecards": [
+      {
+        "caseName": "typed-housing-single",
+        "budgetSeconds": 1,
+        "seed": 7
+      },
+      {
+        "caseName": "typed-housing-single",
+        "budgetSeconds": 1,
+        "seed": 19
+      },
+      {
+        "caseName": "typed-housing-single",
+        "budgetSeconds": 1,
+        "seed": 37
+      },
+      {
+        "caseName": "typed-housing-single",
+        "budgetSeconds": 5,
+        "seed": 7
+      },
+      {
+        "caseName": "typed-housing-single",
+        "budgetSeconds": 5,
+        "seed": 19
+      },
+      {
+        "caseName": "typed-housing-single",
+        "budgetSeconds": 5,
+        "seed": 37
+      },
+      {
+        "caseName": "typed-housing-single",
+        "budgetSeconds": 30,
+        "seed": 7
+      },
+      {
+        "caseName": "typed-housing-single",
+        "budgetSeconds": 30,
+        "seed": 19
+      },
+      {
+        "caseName": "typed-housing-single",
+        "budgetSeconds": 30,
+        "seed": 37
+      },
+      {
+        "caseName": "typed-housing-single",
+        "budgetSeconds": 120,
+        "seed": 7
+      },
+      {
+        "caseName": "typed-housing-single",
+        "budgetSeconds": 120,
+        "seed": 19
+      },
+      {
+        "caseName": "typed-housing-single",
+        "budgetSeconds": 120,
+        "seed": 37
+      },
+      {
+        "caseName": "row0-corridor-repair-pressure",
+        "budgetSeconds": 1,
+        "seed": 7
+      },
+      {
+        "caseName": "row0-corridor-repair-pressure",
+        "budgetSeconds": 1,
+        "seed": 19
+      },
+      {
+        "caseName": "row0-corridor-repair-pressure",
+        "budgetSeconds": 1,
+        "seed": 37
+      },
+      {
+        "caseName": "row0-corridor-repair-pressure",
+        "budgetSeconds": 5,
+        "seed": 7
+      },
+      {
+        "caseName": "row0-corridor-repair-pressure",
+        "budgetSeconds": 5,
+        "seed": 19
+      },
+      {
+        "caseName": "row0-corridor-repair-pressure",
+        "budgetSeconds": 5,
+        "seed": 37
+      },
+      {
+        "caseName": "row0-corridor-repair-pressure",
+        "budgetSeconds": 30,
+        "seed": 7
+      },
+      {
+        "caseName": "row0-corridor-repair-pressure",
+        "budgetSeconds": 30,
+        "seed": 19
+      },
+      {
+        "caseName": "row0-corridor-repair-pressure",
+        "budgetSeconds": 30,
+        "seed": 37
+      },
+      {
+        "caseName": "row0-corridor-repair-pressure",
+        "budgetSeconds": 120,
+        "seed": 7
+      },
+      {
+        "caseName": "row0-corridor-repair-pressure",
+        "budgetSeconds": 120,
+        "seed": 19
+      },
+      {
+        "caseName": "row0-corridor-repair-pressure",
+        "budgetSeconds": 120,
+        "seed": 37
+      },
+      {
+        "caseName": "typed-footprint-pressure",
+        "budgetSeconds": 1,
+        "seed": 7
+      },
+      {
+        "caseName": "typed-footprint-pressure",
+        "budgetSeconds": 1,
+        "seed": 19
+      },
+      {
+        "caseName": "typed-footprint-pressure",
+        "budgetSeconds": 1,
+        "seed": 37
+      },
+      {
+        "caseName": "typed-footprint-pressure",
+        "budgetSeconds": 5,
+        "seed": 7
+      },
+      {
+        "caseName": "typed-footprint-pressure",
+        "budgetSeconds": 5,
+        "seed": 19
+      },
+      {
+        "caseName": "typed-footprint-pressure",
+        "budgetSeconds": 5,
+        "seed": 37
+      },
+      {
+        "caseName": "typed-footprint-pressure",
+        "budgetSeconds": 30,
+        "seed": 7
+      },
+      {
+        "caseName": "typed-footprint-pressure",
+        "budgetSeconds": 30,
+        "seed": 19
+      },
+      {
+        "caseName": "typed-footprint-pressure",
+        "budgetSeconds": 30,
+        "seed": 37
+      },
+      {
+        "caseName": "typed-footprint-pressure",
+        "budgetSeconds": 120,
+        "seed": 7
+      },
+      {
+        "caseName": "typed-footprint-pressure",
+        "budgetSeconds": 120,
+        "seed": 19
+      },
+      {
+        "caseName": "typed-footprint-pressure",
+        "budgetSeconds": 120,
+        "seed": 37
+      },
+      {
+        "caseName": "service-local-neighborhood",
+        "budgetSeconds": 1,
+        "seed": 7
+      },
+      {
+        "caseName": "service-local-neighborhood",
+        "budgetSeconds": 1,
+        "seed": 19
+      },
+      {
+        "caseName": "service-local-neighborhood",
+        "budgetSeconds": 1,
+        "seed": 37
+      },
+      {
+        "caseName": "service-local-neighborhood",
+        "budgetSeconds": 5,
+        "seed": 7
+      },
+      {
+        "caseName": "service-local-neighborhood",
+        "budgetSeconds": 5,
+        "seed": 19
+      },
+      {
+        "caseName": "service-local-neighborhood",
+        "budgetSeconds": 5,
+        "seed": 37
+      },
+      {
+        "caseName": "service-local-neighborhood",
+        "budgetSeconds": 30,
+        "seed": 7
+      },
+      {
+        "caseName": "service-local-neighborhood",
+        "budgetSeconds": 30,
+        "seed": 19
+      },
+      {
+        "caseName": "service-local-neighborhood",
+        "budgetSeconds": 30,
+        "seed": 37
+      },
+      {
+        "caseName": "service-local-neighborhood",
+        "budgetSeconds": 120,
+        "seed": 7
+      },
+      {
+        "caseName": "service-local-neighborhood",
+        "budgetSeconds": 120,
+        "seed": 19
+      },
+      {
+        "caseName": "service-local-neighborhood",
+        "budgetSeconds": 120,
+        "seed": 37
+      },
+      {
+        "caseName": "seeded-service-anchor-pressure",
+        "budgetSeconds": 1,
+        "seed": 7
+      },
+      {
+        "caseName": "seeded-service-anchor-pressure",
+        "budgetSeconds": 1,
+        "seed": 19
+      },
+      {
+        "caseName": "seeded-service-anchor-pressure",
+        "budgetSeconds": 1,
+        "seed": 37
+      },
+      {
+        "caseName": "seeded-service-anchor-pressure",
+        "budgetSeconds": 5,
+        "seed": 7
+      },
+      {
+        "caseName": "seeded-service-anchor-pressure",
+        "budgetSeconds": 5,
+        "seed": 19
+      },
+      {
+        "caseName": "seeded-service-anchor-pressure",
+        "budgetSeconds": 5,
+        "seed": 37
+      },
+      {
+        "caseName": "seeded-service-anchor-pressure",
+        "budgetSeconds": 30,
+        "seed": 7
+      },
+      {
+        "caseName": "seeded-service-anchor-pressure",
+        "budgetSeconds": 30,
+        "seed": 19
+      },
+      {
+        "caseName": "seeded-service-anchor-pressure",
+        "budgetSeconds": 30,
+        "seed": 37
+      },
+      {
+        "caseName": "seeded-service-anchor-pressure",
+        "budgetSeconds": 120,
+        "seed": 7
+      },
+      {
+        "caseName": "seeded-service-anchor-pressure",
+        "budgetSeconds": 120,
+        "seed": 19
+      },
+      {
+        "caseName": "seeded-service-anchor-pressure",
+        "budgetSeconds": 120,
+        "seed": 37
+      },
+      {
+        "caseName": "road-semantics-gate-choke",
+        "budgetSeconds": 1,
+        "seed": 7
+      },
+      {
+        "caseName": "road-semantics-gate-choke",
+        "budgetSeconds": 1,
+        "seed": 19
+      },
+      {
+        "caseName": "road-semantics-gate-choke",
+        "budgetSeconds": 1,
+        "seed": 37
+      },
+      {
+        "caseName": "road-semantics-gate-choke",
+        "budgetSeconds": 5,
+        "seed": 7
+      },
+      {
+        "caseName": "road-semantics-gate-choke",
+        "budgetSeconds": 5,
+        "seed": 19
+      },
+      {
+        "caseName": "road-semantics-gate-choke",
+        "budgetSeconds": 5,
+        "seed": 37
+      },
+      {
+        "caseName": "road-semantics-gate-choke",
+        "budgetSeconds": 30,
+        "seed": 7
+      },
+      {
+        "caseName": "road-semantics-gate-choke",
+        "budgetSeconds": 30,
+        "seed": 19
+      },
+      {
+        "caseName": "road-semantics-gate-choke",
+        "budgetSeconds": 30,
+        "seed": 37
+      },
+      {
+        "caseName": "road-semantics-gate-choke",
+        "budgetSeconds": 120,
+        "seed": 7
+      },
+      {
+        "caseName": "road-semantics-gate-choke",
+        "budgetSeconds": 120,
+        "seed": 19
+      },
+      {
+        "caseName": "road-semantics-gate-choke",
+        "budgetSeconds": 120,
+        "seed": 37
+      },
+      {
+        "caseName": "road-semantics-service-pressure",
+        "budgetSeconds": 1,
+        "seed": 7
+      },
+      {
+        "caseName": "road-semantics-service-pressure",
+        "budgetSeconds": 1,
+        "seed": 19
+      },
+      {
+        "caseName": "road-semantics-service-pressure",
+        "budgetSeconds": 1,
+        "seed": 37
+      },
+      {
+        "caseName": "road-semantics-service-pressure",
+        "budgetSeconds": 5,
+        "seed": 7
+      },
+      {
+        "caseName": "road-semantics-service-pressure",
+        "budgetSeconds": 5,
+        "seed": 19
+      },
+      {
+        "caseName": "road-semantics-service-pressure",
+        "budgetSeconds": 5,
+        "seed": 37
+      },
+      {
+        "caseName": "road-semantics-service-pressure",
+        "budgetSeconds": 30,
+        "seed": 7
+      },
+      {
+        "caseName": "road-semantics-service-pressure",
+        "budgetSeconds": 30,
+        "seed": 19
+      },
+      {
+        "caseName": "road-semantics-service-pressure",
+        "budgetSeconds": 30,
+        "seed": 37
+      },
+      {
+        "caseName": "road-semantics-service-pressure",
+        "budgetSeconds": 120,
+        "seed": 7
+      },
+      {
+        "caseName": "road-semantics-service-pressure",
+        "budgetSeconds": 120,
+        "seed": 19
+      },
+      {
+        "caseName": "road-semantics-service-pressure",
+        "budgetSeconds": 120,
+        "seed": 37
+      },
+      {
+        "caseName": "multi-anchor-road-components",
+        "budgetSeconds": 1,
+        "seed": 7
+      },
+      {
+        "caseName": "multi-anchor-road-components",
+        "budgetSeconds": 1,
+        "seed": 19
+      },
+      {
+        "caseName": "multi-anchor-road-components",
+        "budgetSeconds": 1,
+        "seed": 37
+      },
+      {
+        "caseName": "multi-anchor-road-components",
+        "budgetSeconds": 5,
+        "seed": 7
+      },
+      {
+        "caseName": "multi-anchor-road-components",
+        "budgetSeconds": 5,
+        "seed": 19
+      },
+      {
+        "caseName": "multi-anchor-road-components",
+        "budgetSeconds": 5,
+        "seed": 37
+      },
+      {
+        "caseName": "multi-anchor-road-components",
+        "budgetSeconds": 30,
+        "seed": 7
+      },
+      {
+        "caseName": "multi-anchor-road-components",
+        "budgetSeconds": 30,
+        "seed": 19
+      },
+      {
+        "caseName": "multi-anchor-road-components",
+        "budgetSeconds": 30,
+        "seed": 37
+      },
+      {
+        "caseName": "multi-anchor-road-components",
+        "budgetSeconds": 120,
+        "seed": 7
+      },
+      {
+        "caseName": "multi-anchor-road-components",
+        "budgetSeconds": 120,
+        "seed": 19
+      },
+      {
+        "caseName": "multi-anchor-road-components",
+        "budgetSeconds": 120,
+        "seed": 37
+      },
+      {
+        "caseName": "development-expansion-corridor-service",
+        "budgetSeconds": 1,
+        "seed": 7
+      },
+      {
+        "caseName": "development-expansion-corridor-service",
+        "budgetSeconds": 1,
+        "seed": 19
+      },
+      {
+        "caseName": "development-expansion-corridor-service",
+        "budgetSeconds": 1,
+        "seed": 37
+      },
+      {
+        "caseName": "development-expansion-corridor-service",
+        "budgetSeconds": 5,
+        "seed": 7
+      },
+      {
+        "caseName": "development-expansion-corridor-service",
+        "budgetSeconds": 5,
+        "seed": 19
+      },
+      {
+        "caseName": "development-expansion-corridor-service",
+        "budgetSeconds": 5,
+        "seed": 37
+      },
+      {
+        "caseName": "development-expansion-corridor-service",
+        "budgetSeconds": 30,
+        "seed": 7
+      },
+      {
+        "caseName": "development-expansion-corridor-service",
+        "budgetSeconds": 30,
+        "seed": 19
+      },
+      {
+        "caseName": "development-expansion-corridor-service",
+        "budgetSeconds": 30,
+        "seed": 37
+      },
+      {
+        "caseName": "development-expansion-corridor-service",
+        "budgetSeconds": 120,
+        "seed": 7
+      },
+      {
+        "caseName": "development-expansion-corridor-service",
+        "budgetSeconds": 120,
+        "seed": 19
+      },
+      {
+        "caseName": "development-expansion-corridor-service",
+        "budgetSeconds": 120,
+        "seed": 37
+      },
+      {
+        "caseName": "fresh-multi-anchor-service-island",
+        "budgetSeconds": 1,
+        "seed": 7
+      },
+      {
+        "caseName": "fresh-multi-anchor-service-island",
+        "budgetSeconds": 1,
+        "seed": 19
+      },
+      {
+        "caseName": "fresh-multi-anchor-service-island",
+        "budgetSeconds": 1,
+        "seed": 37
+      },
+      {
+        "caseName": "fresh-multi-anchor-service-island",
+        "budgetSeconds": 5,
+        "seed": 7
+      },
+      {
+        "caseName": "fresh-multi-anchor-service-island",
+        "budgetSeconds": 5,
+        "seed": 19
+      },
+      {
+        "caseName": "fresh-multi-anchor-service-island",
+        "budgetSeconds": 5,
+        "seed": 37
+      },
+      {
+        "caseName": "fresh-multi-anchor-service-island",
+        "budgetSeconds": 30,
+        "seed": 7
+      },
+      {
+        "caseName": "fresh-multi-anchor-service-island",
+        "budgetSeconds": 30,
+        "seed": 19
+      },
+      {
+        "caseName": "fresh-multi-anchor-service-island",
+        "budgetSeconds": 30,
+        "seed": 37
+      },
+      {
+        "caseName": "fresh-multi-anchor-service-island",
+        "budgetSeconds": 120,
+        "seed": 7
+      },
+      {
+        "caseName": "fresh-multi-anchor-service-island",
+        "budgetSeconds": 120,
+        "seed": 19
+      },
+      {
+        "caseName": "fresh-multi-anchor-service-island",
+        "budgetSeconds": 120,
+        "seed": 37
+      },
+      {
+        "caseName": "fresh-typed-footprint-scarcity",
+        "budgetSeconds": 1,
+        "seed": 7
+      },
+      {
+        "caseName": "fresh-typed-footprint-scarcity",
+        "budgetSeconds": 1,
+        "seed": 19
+      },
+      {
+        "caseName": "fresh-typed-footprint-scarcity",
+        "budgetSeconds": 1,
+        "seed": 37
+      },
+      {
+        "caseName": "fresh-typed-footprint-scarcity",
+        "budgetSeconds": 5,
+        "seed": 7
+      },
+      {
+        "caseName": "fresh-typed-footprint-scarcity",
+        "budgetSeconds": 5,
+        "seed": 19
+      },
+      {
+        "caseName": "fresh-typed-footprint-scarcity",
+        "budgetSeconds": 5,
+        "seed": 37
+      },
+      {
+        "caseName": "fresh-typed-footprint-scarcity",
+        "budgetSeconds": 30,
+        "seed": 7
+      },
+      {
+        "caseName": "fresh-typed-footprint-scarcity",
+        "budgetSeconds": 30,
+        "seed": 19
+      },
+      {
+        "caseName": "fresh-typed-footprint-scarcity",
+        "budgetSeconds": 30,
+        "seed": 37
+      },
+      {
+        "caseName": "fresh-typed-footprint-scarcity",
+        "budgetSeconds": 120,
+        "seed": 7
+      },
+      {
+        "caseName": "fresh-typed-footprint-scarcity",
+        "budgetSeconds": 120,
+        "seed": 19
+      },
+      {
+        "caseName": "fresh-typed-footprint-scarcity",
+        "budgetSeconds": 120,
+        "seed": 37
+      },
+      {
+        "caseName": "fresh-expansion-corridor-service",
+        "budgetSeconds": 1,
+        "seed": 7
+      },
+      {
+        "caseName": "fresh-expansion-corridor-service",
+        "budgetSeconds": 1,
+        "seed": 19
+      },
+      {
+        "caseName": "fresh-expansion-corridor-service",
+        "budgetSeconds": 1,
+        "seed": 37
+      },
+      {
+        "caseName": "fresh-expansion-corridor-service",
+        "budgetSeconds": 5,
+        "seed": 7
+      },
+      {
+        "caseName": "fresh-expansion-corridor-service",
+        "budgetSeconds": 5,
+        "seed": 19
+      },
+      {
+        "caseName": "fresh-expansion-corridor-service",
+        "budgetSeconds": 5,
+        "seed": 37
+      },
+      {
+        "caseName": "fresh-expansion-corridor-service",
+        "budgetSeconds": 30,
+        "seed": 7
+      },
+      {
+        "caseName": "fresh-expansion-corridor-service",
+        "budgetSeconds": 30,
+        "seed": 19
+      },
+      {
+        "caseName": "fresh-expansion-corridor-service",
+        "budgetSeconds": 30,
+        "seed": 37
+      },
+      {
+        "caseName": "fresh-expansion-corridor-service",
+        "budgetSeconds": 120,
+        "seed": 7
+      },
+      {
+        "caseName": "fresh-expansion-corridor-service",
+        "budgetSeconds": 120,
+        "seed": 19
+      },
+      {
+        "caseName": "fresh-expansion-corridor-service",
+        "budgetSeconds": 120,
+        "seed": 37
+      },
+      {
+        "caseName": "manual-layout-replay-warm-start",
+        "budgetSeconds": 1,
+        "seed": 7
+      },
+      {
+        "caseName": "manual-layout-replay-warm-start",
+        "budgetSeconds": 1,
+        "seed": 19
+      },
+      {
+        "caseName": "manual-layout-replay-warm-start",
+        "budgetSeconds": 1,
+        "seed": 37
+      },
+      {
+        "caseName": "manual-layout-replay-warm-start",
+        "budgetSeconds": 5,
+        "seed": 7
+      },
+      {
+        "caseName": "manual-layout-replay-warm-start",
+        "budgetSeconds": 5,
+        "seed": 19
+      },
+      {
+        "caseName": "manual-layout-replay-warm-start",
+        "budgetSeconds": 5,
+        "seed": 37
+      },
+      {
+        "caseName": "manual-layout-replay-warm-start",
+        "budgetSeconds": 30,
+        "seed": 7
+      },
+      {
+        "caseName": "manual-layout-replay-warm-start",
+        "budgetSeconds": 30,
+        "seed": 19
+      },
+      {
+        "caseName": "manual-layout-replay-warm-start",
+        "budgetSeconds": 30,
+        "seed": 37
+      },
+      {
+        "caseName": "manual-layout-replay-warm-start",
+        "budgetSeconds": 120,
+        "seed": 7
+      },
+      {
+        "caseName": "manual-layout-replay-warm-start",
+        "budgetSeconds": 120,
+        "seed": 19
+      },
+      {
+        "caseName": "manual-layout-replay-warm-start",
+        "budgetSeconds": 120,
+        "seed": 37
+      },
+      {
+        "caseName": "fresh-manual-resume-neighborhood",
+        "budgetSeconds": 1,
+        "seed": 7
+      },
+      {
+        "caseName": "fresh-manual-resume-neighborhood",
+        "budgetSeconds": 1,
+        "seed": 19
+      },
+      {
+        "caseName": "fresh-manual-resume-neighborhood",
+        "budgetSeconds": 1,
+        "seed": 37
+      },
+      {
+        "caseName": "fresh-manual-resume-neighborhood",
+        "budgetSeconds": 5,
+        "seed": 7
+      },
+      {
+        "caseName": "fresh-manual-resume-neighborhood",
+        "budgetSeconds": 5,
+        "seed": 19
+      },
+      {
+        "caseName": "fresh-manual-resume-neighborhood",
+        "budgetSeconds": 5,
+        "seed": 37
+      },
+      {
+        "caseName": "expansion-comparison-replay",
+        "budgetSeconds": 1,
+        "seed": 7
+      },
+      {
+        "caseName": "expansion-comparison-replay",
+        "budgetSeconds": 1,
+        "seed": 19
+      },
+      {
+        "caseName": "expansion-comparison-replay",
+        "budgetSeconds": 1,
+        "seed": 37
+      },
+      {
+        "caseName": "expansion-comparison-replay",
+        "budgetSeconds": 5,
+        "seed": 7
+      },
+      {
+        "caseName": "expansion-comparison-replay",
+        "budgetSeconds": 5,
+        "seed": 19
+      },
+      {
+        "caseName": "expansion-comparison-replay",
+        "budgetSeconds": 5,
+        "seed": 37
+      },
+      {
+        "caseName": "expansion-comparison-replay",
+        "budgetSeconds": 30,
+        "seed": 7
+      },
+      {
+        "caseName": "expansion-comparison-replay",
+        "budgetSeconds": 30,
+        "seed": 19
+      },
+      {
+        "caseName": "expansion-comparison-replay",
+        "budgetSeconds": 30,
+        "seed": 37
+      },
+      {
+        "caseName": "expansion-comparison-replay",
+        "budgetSeconds": 120,
+        "seed": 7
+      },
+      {
+        "caseName": "expansion-comparison-replay",
+        "budgetSeconds": 120,
+        "seed": 19
+      },
+      {
+        "caseName": "expansion-comparison-replay",
+        "budgetSeconds": 120,
+        "seed": 37
+      }
+    ],
+    "scorecardsMissingModes": [],
+    "minimumSeedCount": 3,
+    "seedCount": 3,
+    "fullCorpus": false,
+    "requiredSplitCoverage": true,
+    "requiredModeCoverage": true,
+    "requiredBudgetCoverage": false,
+    "requiredSeedCoverage": true,
+    "requiredScorecardCoverage": false,
+    "requiredScorecardModeCoverage": true,
+    "protectedHoldout": false
+  },
+  "caseMetrics": [
+    {
+      "caseName": "fresh-manual-resume-neighborhood",
+      "split": "holdout",
+      "workflowTags": [
+        "manual-layout-replay",
+        "manual-resume-neighborhood"
+      ],
+      "budgetSeconds": 30,
+      "seed": 7,
+      "bestScore": 790,
+      "bestMode": "auto",
+      "autoScore": 790,
+      "autoDeltaToBest": 0,
+      "timeToFirstFeasibleSeconds": 0,
+      "timeToBestSeconds": 0.02,
+      "reuseSources": [
+        "fresh-manual-resume-neighborhood"
+      ],
+      "cpSatStatuses": [
+        "OPTIMAL"
+      ],
+      "minimumExactGap": 0,
+      "manualReplayCoverage": "scorecard-replay-case",
+      "expansionComparisonLift": null
+    },
+    {
+      "caseName": "fresh-manual-resume-neighborhood",
+      "split": "holdout",
+      "workflowTags": [
+        "manual-layout-replay",
+        "manual-resume-neighborhood"
+      ],
+      "budgetSeconds": 30,
+      "seed": 19,
+      "bestScore": 790,
+      "bestMode": "auto",
+      "autoScore": 790,
+      "autoDeltaToBest": 0,
+      "timeToFirstFeasibleSeconds": 0,
+      "timeToBestSeconds": 0.021,
+      "reuseSources": [
+        "fresh-manual-resume-neighborhood"
+      ],
+      "cpSatStatuses": [
+        "OPTIMAL"
+      ],
+      "minimumExactGap": 0,
+      "manualReplayCoverage": "scorecard-replay-case",
+      "expansionComparisonLift": null
+    },
+    {
+      "caseName": "fresh-manual-resume-neighborhood",
+      "split": "holdout",
+      "workflowTags": [
+        "manual-layout-replay",
+        "manual-resume-neighborhood"
+      ],
+      "budgetSeconds": 30,
+      "seed": 37,
+      "bestScore": 790,
+      "bestMode": "auto",
+      "autoScore": 790,
+      "autoDeltaToBest": 0,
+      "timeToFirstFeasibleSeconds": 0,
+      "timeToBestSeconds": 0.015,
+      "reuseSources": [
+        "fresh-manual-resume-neighborhood"
+      ],
+      "cpSatStatuses": [
+        "OPTIMAL"
+      ],
+      "minimumExactGap": 0,
+      "manualReplayCoverage": "scorecard-replay-case",
+      "expansionComparisonLift": null
+    },
+    {
+      "caseName": "fresh-manual-resume-neighborhood",
+      "split": "holdout",
+      "workflowTags": [
+        "manual-layout-replay",
+        "manual-resume-neighborhood"
+      ],
+      "budgetSeconds": 120,
+      "seed": 7,
+      "bestScore": 790,
+      "bestMode": "auto",
+      "autoScore": 790,
+      "autoDeltaToBest": 0,
+      "timeToFirstFeasibleSeconds": 0,
+      "timeToBestSeconds": 0.037,
+      "reuseSources": [
+        "fresh-manual-resume-neighborhood"
+      ],
+      "cpSatStatuses": [
+        "OPTIMAL"
+      ],
+      "minimumExactGap": 0,
+      "manualReplayCoverage": "scorecard-replay-case",
+      "expansionComparisonLift": null
+    },
+    {
+      "caseName": "fresh-manual-resume-neighborhood",
+      "split": "holdout",
+      "workflowTags": [
+        "manual-layout-replay",
+        "manual-resume-neighborhood"
+      ],
+      "budgetSeconds": 120,
+      "seed": 19,
+      "bestScore": 790,
+      "bestMode": "auto",
+      "autoScore": 790,
+      "autoDeltaToBest": 0,
+      "timeToFirstFeasibleSeconds": 0,
+      "timeToBestSeconds": 0.034,
+      "reuseSources": [
+        "fresh-manual-resume-neighborhood"
+      ],
+      "cpSatStatuses": [
+        "OPTIMAL"
+      ],
+      "minimumExactGap": 0,
+      "manualReplayCoverage": "scorecard-replay-case",
+      "expansionComparisonLift": null
+    },
+    {
+      "caseName": "fresh-manual-resume-neighborhood",
+      "split": "holdout",
+      "workflowTags": [
+        "manual-layout-replay",
+        "manual-resume-neighborhood"
+      ],
+      "budgetSeconds": 120,
+      "seed": 37,
+      "bestScore": 790,
+      "bestMode": "auto",
+      "autoScore": 790,
+      "autoDeltaToBest": 0,
+      "timeToFirstFeasibleSeconds": 0,
+      "timeToBestSeconds": 0.038,
+      "reuseSources": [
+        "fresh-manual-resume-neighborhood"
+      ],
+      "cpSatStatuses": [
+        "OPTIMAL"
+      ],
+      "minimumExactGap": 0,
+      "manualReplayCoverage": "scorecard-replay-case",
+      "expansionComparisonLift": null
+    }
+  ],
+  "replayMetrics": [
+    {
+      "caseName": "fresh-manual-resume-neighborhood",
+      "split": "holdout",
+      "workflowTag": "manual-layout-replay",
+      "apiRoute": "/api/layout/evaluate",
+      "sourceName": "fresh-manual-resume-neighborhood",
+      "scorecardCount": 6,
+      "budgetsSeconds": [
+        30,
+        120
+      ],
+      "seeds": [
+        7,
+        19,
+        37
+      ],
+      "modes": [
+        "auto",
+        "cp-sat",
+        "greedy",
+        "lns"
+      ],
+      "valid": true,
+      "validationErrorCount": 0,
+      "reportedPopulation": 400,
+      "evaluatedPopulation": 400,
+      "populationDeltaFromReported": 0,
+      "reportedRoadCount": 9,
+      "evaluatedRoadCount": 5,
+      "removedRoadCount": 4,
+      "bestScore": 790,
+      "bestScoreSource": {
+        "budgetSeconds": 30,
+        "seed": 7,
+        "mode": "auto"
+      },
+      "bestScoreDeltaFromEvaluated": 390,
+      "autoScore": 790,
+      "autoScoreSource": {
+        "budgetSeconds": 30,
+        "seed": 7,
+        "mode": "auto"
+      },
+      "autoScoreDeltaFromEvaluated": 390,
+      "expansionComparisonLift": null
+    }
+  ]
+}

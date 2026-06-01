@@ -61,15 +61,29 @@ function readJson(relativePath) {
 function testProductCorpusListingIsStableAndMetadataRich() {
   const names = listCrossModeBenchmarkCaseNames(DEFAULT_CROSS_MODE_PRODUCT_WORKFLOW_CORPUS);
 
-  assert.equal(names.length, 10);
+  assert.equal(names.length, 15);
   assert.equal(new Set(names).size, names.length);
-  assert.deepEqual(names.slice(-2), ["manual-layout-replay-warm-start", "expansion-comparison-replay"]);
+  assert.deepEqual(names.slice(-3), [
+    "manual-layout-replay-warm-start",
+    "fresh-manual-resume-neighborhood",
+    "expansion-comparison-replay"
+  ]);
+  assert.equal(names.includes("development-expansion-corridor-service"), true);
+  assert.equal(names.includes("fresh-multi-anchor-service-island"), true);
+  assert.equal(names.includes("fresh-typed-footprint-scarcity"), true);
+  assert.equal(names.includes("fresh-expansion-corridor-service"), true);
+  assert.equal(names.includes("fresh-manual-resume-neighborhood"), true);
 
   const splitNames = casesBySplit(DEFAULT_CROSS_MODE_PRODUCT_WORKFLOW_CORPUS);
   assert.equal(splitNames.development.length > 0, true);
   assert.equal(splitNames.holdout.length > 0, true);
   assert.equal(splitNames.development.includes("manual-layout-replay-warm-start"), true);
+  assert.equal(splitNames.development.includes("development-expansion-corridor-service"), true);
   assert.equal(splitNames.holdout.includes("expansion-comparison-replay"), true);
+  assert.equal(splitNames.holdout.includes("fresh-multi-anchor-service-island"), true);
+  assert.equal(splitNames.holdout.includes("fresh-typed-footprint-scarcity"), true);
+  assert.equal(splitNames.holdout.includes("fresh-expansion-corridor-service"), true);
+  assert.equal(splitNames.holdout.includes("fresh-manual-resume-neighborhood"), true);
 
   assert.deepEqual(workflowTags(DEFAULT_CROSS_MODE_PRODUCT_WORKFLOW_CORPUS), [
     "anchor-service",
@@ -78,6 +92,7 @@ function testProductCorpusListingIsStableAndMetadataRich() {
     "footprint-pressure",
     "gate",
     "manual-layout-replay",
+    "manual-resume-neighborhood",
     "multi-anchor",
     "service-pressure",
     "solver-smoke"
@@ -88,6 +103,7 @@ function testProductCorpusListingIsStableAndMetadataRich() {
     replayMetrics.map((metric) => [metric.caseName, metric.workflowTag, metric.apiRoute]),
     [
       ["manual-layout-replay-warm-start", "manual-layout-replay", "/api/layout/evaluate"],
+      ["fresh-manual-resume-neighborhood", "manual-layout-replay", "/api/layout/evaluate"],
       ["expansion-comparison-replay", "expansion-comparison", "/api/layout/evaluate"]
     ]
   );
@@ -165,7 +181,11 @@ function testProductPromotionMatrixFlagGuardsLongRunArgs() {
 }
 
 async function testProductCorpusScorecardCarriesRegistryCoverageMetadata() {
-  const selectedNames = ["manual-layout-replay-warm-start", "expansion-comparison-replay"];
+  const selectedNames = [
+    "manual-layout-replay-warm-start",
+    "fresh-manual-resume-neighborhood",
+    "expansion-comparison-replay"
+  ];
   const result = await runCrossModeBenchmarkSuite(DEFAULT_CROSS_MODE_PRODUCT_WORKFLOW_CORPUS, {
     names: selectedNames,
     modes: ["greedy"],
@@ -182,17 +202,32 @@ async function testProductCorpusScorecardCarriesRegistryCoverageMetadata() {
   const scorecardByName = new Map(result.cases.map((scorecard) => [scorecard.name, scorecard]));
   assert.equal(scorecardByName.get("manual-layout-replay-warm-start").split, "development");
   assert.deepEqual(scorecardByName.get("manual-layout-replay-warm-start").workflowTags, ["manual-layout-replay"]);
+  assert.equal(scorecardByName.get("fresh-manual-resume-neighborhood").split, "holdout");
+  assert.deepEqual(scorecardByName.get("fresh-manual-resume-neighborhood").workflowTags, [
+    "manual-layout-replay",
+    "manual-resume-neighborhood"
+  ]);
   assert.equal(scorecardByName.get("expansion-comparison-replay").split, "holdout");
   assert.deepEqual(scorecardByName.get("expansion-comparison-replay").workflowTags, ["expansion-comparison"]);
 
   const evidence = buildCrossModeProductWorkflowEvidenceSummary(result);
-  assert.deepEqual(evidence.splitCaseCounts, { development: 1, holdout: 1 });
-  assert.equal(evidence.workflowTagCounts["manual-layout-replay"], 2);
+  assert.deepEqual(evidence.splitCaseCounts, { development: 1, holdout: 2 });
+  assert.equal(evidence.workflowTagCounts["manual-layout-replay"], 4);
+  assert.equal(evidence.workflowTagCounts["manual-resume-neighborhood"], 2);
   assert.equal(evidence.workflowTagCounts["expansion-comparison"], 2);
-  assert.equal(evidence.caseMetrics[0].manualReplayCoverage, "scorecard-replay-case");
-  assert.equal(evidence.caseMetrics[0].expansionComparisonLift, null);
-  assert.equal(evidence.caseMetrics[2].manualReplayCoverage, "not-applicable");
-  assert.equal(evidence.caseMetrics[2].expansionComparisonLift, null);
+  const evidenceMetricByCaseName = new Map(evidence.caseMetrics.map((metric) => [metric.caseName, metric]));
+  assert.equal(
+    evidenceMetricByCaseName.get("manual-layout-replay-warm-start").manualReplayCoverage,
+    "scorecard-replay-case"
+  );
+  assert.equal(evidenceMetricByCaseName.get("manual-layout-replay-warm-start").expansionComparisonLift, null);
+  assert.equal(
+    evidenceMetricByCaseName.get("fresh-manual-resume-neighborhood").manualReplayCoverage,
+    "scorecard-replay-case"
+  );
+  assert.equal(evidenceMetricByCaseName.get("fresh-manual-resume-neighborhood").expansionComparisonLift, null);
+  assert.equal(evidenceMetricByCaseName.get("expansion-comparison-replay").manualReplayCoverage, "not-applicable");
+  assert.equal(evidenceMetricByCaseName.get("expansion-comparison-replay").expansionComparisonLift, null);
   assert.equal(evidence.promotionCoverage.protectedHoldout, false);
   assert.deepEqual(evidence.promotionCoverage.missingModes, ["auto", "lns", "cp-sat"]);
   assert.deepEqual(evidence.promotionCoverage.missingBudgetsSeconds, [30, 120]);
@@ -208,6 +243,7 @@ async function testProductCorpusScorecardCarriesRegistryCoverageMetadata() {
     ]),
     [
       ["manual-layout-replay-warm-start", "manual-layout-replay", 160, 160],
+      ["fresh-manual-resume-neighborhood", "fresh-manual-resume-neighborhood", 400, 400],
       ["expansion-comparison-replay", "expansion-comparison-replay", 115, 115]
     ]
   );
@@ -217,30 +253,31 @@ async function testProductCorpusScorecardCarriesRegistryCoverageMetadata() {
   assert.deepEqual(evidence.replayMetrics[0].modes, ["greedy"]);
   assert.deepEqual(evidence.replayMetrics[0].bestScoreSource, { budgetSeconds: 1, seed: 7, mode: "greedy" });
   assert.equal(evidence.replayMetrics[0].validationErrorCount, 0);
-  assert.equal(evidence.replayMetrics[1].expansionComparisonLift, -115);
+  assert.equal(evidence.replayMetrics[1].validationErrorCount, 0);
+  assert.equal(evidence.replayMetrics[2].expansionComparisonLift, -115);
 
   const draft = buildCrossModeProductWorkflowRegistryEntryDraft(result, {
     runId: "product-corpus-scorecard-2026-04-30-test",
     commands: [
-      "node dist/crossModeBenchmarkCli.js --product-corpus --modes=greedy --budgets=1,5 --seeds=7 --json manual-layout-replay-warm-start expansion-comparison-replay"
+      "node dist/crossModeBenchmarkCli.js --product-corpus --modes=greedy --budgets=1,5 --seeds=7 --json manual-layout-replay-warm-start fresh-manual-resume-neighborhood expansion-comparison-replay"
     ],
     artifactPaths: ["artifacts/product-corpus/2026-04-30/scorecard.json"],
     decision: "benchmark-evidence-only"
   });
   assert.deepEqual(draft.cases, {
     development: ["manual-layout-replay-warm-start"],
-    holdout: ["expansion-comparison-replay"]
+    holdout: ["fresh-manual-resume-neighborhood", "expansion-comparison-replay"]
   });
-  assert.deepEqual(draft.caseFamilies, ["expansion-comparison", "manual-layout-replay"]);
+  assert.deepEqual(draft.caseFamilies, ["expansion-comparison", "manual-layout-replay", "manual-resume-neighborhood"]);
   assert.equal(draft.splitStatus.protectedHoldout, false);
   assert.equal(draft.splitStatus.leakage, "not-evaluated");
   assert.equal(draft.splitStatus.promotionCoverage.protectedHoldout, false);
   assert.deepEqual(draft.budget.wallClockBudgetsSeconds, [1, 5]);
-  assert.equal(draft.budget.totalRuns, 4);
+  assert.equal(draft.budget.totalRuns, 6);
   assert.deepEqual(draft.summaryMetrics.modes, ["greedy"]);
-  assert.equal(draft.summaryMetrics.caseMetricCount, 4);
+  assert.equal(draft.summaryMetrics.caseMetricCount, 6);
   assert.equal(draft.summaryMetrics.caseMetrics[0].caseName, "manual-layout-replay-warm-start");
-  assert.equal(draft.summaryMetrics.replayMetricCount, 2);
+  assert.equal(draft.summaryMetrics.replayMetricCount, 3);
   assert.equal(draft.summaryMetrics.replayMetrics[0].apiRoute, "/api/layout/evaluate");
 
   const partialDraft = buildCrossModeProductWorkflowRegistryEntryDraft(
@@ -341,17 +378,27 @@ async function testFullPromotionMatrixIsRequiredForProtectedHoldout() {
   });
   assert.equal(draft.splitStatus.protectedHoldout, true);
   assert.equal(draft.splitStatus.leakage, "none");
-  assert.equal(draft.budget.totalRuns, 480);
+  assert.equal(
+    draft.budget.totalRuns,
+    DEFAULT_CROSS_MODE_PRODUCT_WORKFLOW_CORPUS.length *
+      PRODUCT_WORKFLOW_PROMOTION_BUDGETS_SECONDS.length *
+      PRODUCT_WORKFLOW_PROMOTION_SEEDS.length *
+      PRODUCT_WORKFLOW_PROMOTION_MODES.length
+  );
 
   const metadataOnlyResult = {
     ...result,
     cases: result.cases.filter((scorecard) => scorecard.budgetSeconds === 1 && scorecard.seed === 7)
   };
+  const metadataOnlyScorecardCount = DEFAULT_CROSS_MODE_PRODUCT_WORKFLOW_CORPUS.length;
   const metadataOnlyEvidence = buildCrossModeProductWorkflowEvidenceSummary(metadataOnlyResult);
   assert.equal(metadataOnlyEvidence.promotionCoverage.protectedHoldout, false);
-  assert.equal(metadataOnlyEvidence.promotionCoverage.expectedScorecardCount, 120);
-  assert.equal(metadataOnlyEvidence.promotionCoverage.actualScorecardCount, 10);
-  assert.equal(metadataOnlyEvidence.promotionCoverage.missingScorecards.length, 110);
+  assert.equal(metadataOnlyEvidence.promotionCoverage.expectedScorecardCount, expectedScorecardCount);
+  assert.equal(metadataOnlyEvidence.promotionCoverage.actualScorecardCount, metadataOnlyScorecardCount);
+  assert.equal(
+    metadataOnlyEvidence.promotionCoverage.missingScorecards.length,
+    expectedScorecardCount - metadataOnlyScorecardCount
+  );
 
   const wrongSeedResult = {
     ...result,

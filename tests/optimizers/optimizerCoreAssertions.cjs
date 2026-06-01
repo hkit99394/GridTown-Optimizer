@@ -48,6 +48,7 @@ const {
   serviceFootprint
 } = require("./optimizerHarnessDeps.cjs");
 const { startGreedySolve, startLnsSolve } = require("../../dist/packages/runtime/dispatch/backgroundSolvers.js");
+const { computeCpSatRequestFingerprint } = require("../../dist/packages/core/cpSatContinuation.js");
 
 function testOptimizerRegistry() {
   assert.equal(OMITTED_SOLVER_OPTIMIZER, "auto");
@@ -578,6 +579,14 @@ async function testDirectSolverEntrypointsValidateSharedInputs() {
     () =>
       solveCpSat(grid, {
         optimizer: "cp-sat",
+        cpSat: { useNoOverlap2d: "yes" }
+      }),
+    /Invalid solver input: CP-SAT experimental option cpSat\.useNoOverlap2d must be a boolean\./
+  );
+  assert.throws(
+    () =>
+      solveCpSat(grid, {
+        optimizer: "cp-sat",
         cpSat: {
           warmStartHint: {
             solution: {
@@ -591,6 +600,60 @@ async function testDirectSolverEntrypointsValidateSharedInputs() {
         }
       }),
     /Invalid solver input: CP-SAT warm-start hint cpSat\.warmStartHint\.solution\.roads\[0\] must be a road key like "r,c"\./
+  );
+  assert.throws(
+    () =>
+      solveCpSat(grid, {
+        optimizer: "cp-sat",
+        cpSat: {
+          warmStartHint: {
+            roads: new Set(["0,0"])
+          }
+        }
+      }),
+    /Invalid solver input: CP-SAT warm-start hint cpSat\.warmStartHint\.services must be an array\./
+  );
+  assert.throws(
+    () =>
+      solveCpSat(grid, {
+        optimizer: "cp-sat",
+        cpSat: {
+          warmStartHint: {
+            modelFingerprint: computeCpSatRequestFingerprint(grid, { optimizer: "cp-sat" }),
+            serviceCandidateKeys: ["service:-2:0:0:1:1"]
+          }
+        }
+      }),
+    /Invalid solver input: CP-SAT warm-start hint cpSat\.warmStartHint\.serviceCandidateKeys\[0\] must be a service candidate key\./
+  );
+  assert.throws(
+    () =>
+      solveCpSat(grid, {
+        optimizer: "cp-sat",
+        cpSat: {
+          warmStartHint: {
+            modelFingerprint: computeCpSatRequestFingerprint(grid, { optimizer: "cp-sat" }),
+            residentialCandidateKeys: ["residential:0:00:0:1:1"]
+          }
+        }
+      }),
+    /Invalid solver input: CP-SAT warm-start hint cpSat\.warmStartHint\.residentialCandidateKeys\[0\] must be a residential candidate key\./
+  );
+  assert.equal(
+    computeCpSatRequestFingerprint(grid, {
+      optimizer: "cp-sat",
+      residentialTypes: [{ w: 1, h: 1, min: 1, max: 2, avail: 1 }],
+      residentialSettings: { "1x1": { min: 99, max: 100 } },
+      basePop: 99,
+      maxPop: 100,
+      availableBuildings: { residentials: 1 },
+      maxResidentials: 99
+    }),
+    computeCpSatRequestFingerprint(grid, {
+      optimizer: "cp-sat",
+      residentialTypes: [{ w: 1, h: 1, min: 1, max: 2, avail: 1 }],
+      availableBuildings: { residentials: 1 }
+    })
   );
   await assert.rejects(
     () => solveCpSatAsync(grid, { ...invalidParams, optimizer: "cp-sat" }),

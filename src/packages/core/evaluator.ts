@@ -7,6 +7,7 @@ import type {
   LayoutEvaluationInput,
   LayoutEvaluationResult,
   EvaluatedResidentialResult,
+  Grid,
   Solution,
   SolutionValidationInput,
   SolutionValidationResult,
@@ -14,7 +15,7 @@ import type {
   EvaluatedServicePlacement
 } from "./types.js";
 import { cellFromKey, parseCellKey } from "./types.js";
-import { isAllowed } from "./grid.js";
+import { height, isAllowed, width } from "./grid.js";
 import {
   serviceFootprint,
   residentialFootprint,
@@ -114,15 +115,44 @@ function validateResidentialPlacementGeometry(
   return errors;
 }
 
-function collectLayoutPlacementGeometryErrors(
-  input: Pick<LayoutEvaluationInput, "services" | "residentials">
+function validatePlacementWithinGrid(
+  grid: Grid,
+  placement: { r: number; c: number; rows: number; cols: number },
+  label: string
+): string | null {
+  const gridRows = height(grid);
+  const gridCols = width(grid);
+  if (placement.r > gridRows - placement.rows || placement.c > gridCols - placement.cols) {
+    return `${label} extends beyond the grid (${gridRows}x${gridCols}).`;
+  }
+  return null;
+}
+
+function collectLayoutPlacementGeometryOrBoundsErrors(
+  input: Pick<LayoutEvaluationInput, "grid" | "services" | "residentials">
 ): string[] {
   const errors: string[] = [];
   input.services.forEach((service, index) => {
-    errors.push(...validateServicePlacementGeometry(service, index));
+    const geometryErrors = validateServicePlacementGeometry(service, index);
+    errors.push(...geometryErrors);
+    if (geometryErrors.length > 0) return;
+    const boundsError = validatePlacementWithinGrid(
+      input.grid,
+      service,
+      `Service at (${service.r},${service.c}) size ${service.rows}x${service.cols}`
+    );
+    if (boundsError) errors.push(boundsError);
   });
   input.residentials.forEach((residential, index) => {
-    errors.push(...validateResidentialPlacementGeometry(residential, index));
+    const geometryErrors = validateResidentialPlacementGeometry(residential, index);
+    errors.push(...geometryErrors);
+    if (geometryErrors.length > 0) return;
+    const boundsError = validatePlacementWithinGrid(
+      input.grid,
+      residential,
+      `Residential at (${residential.r},${residential.c}) size ${residential.rows}x${residential.cols}`
+    );
+    if (boundsError) errors.push(boundsError);
   });
   return errors;
 }
@@ -242,6 +272,11 @@ export function validateLayoutConstraints(input: LayoutEvaluationInput): LayoutC
       errors.push(...geometryErrors);
       continue;
     }
+    const boundsError = validatePlacementWithinGrid(grid, s, `Service at (${s.r},${s.c}) size ${s.rows}x${s.cols}`);
+    if (boundsError) {
+      errors.push(boundsError);
+      continue;
+    }
     for (const k of serviceFootprint(s)) {
       const [r, c] = k.split(",").map(Number);
       if (!isAllowed(grid, r, c)) {
@@ -260,6 +295,15 @@ export function validateLayoutConstraints(input: LayoutEvaluationInput): LayoutC
     const geometryErrors = validateResidentialPlacementGeometry(res, i);
     if (geometryErrors.length > 0) {
       errors.push(...geometryErrors);
+      continue;
+    }
+    const boundsError = validatePlacementWithinGrid(
+      grid,
+      res,
+      `Residential at (${res.r},${res.c}) size ${res.rows}x${res.cols}`
+    );
+    if (boundsError) {
+      errors.push(boundsError);
       continue;
     }
     for (const k of residentialFootprint(res.r, res.c, res.rows, res.cols)) {
@@ -312,6 +356,7 @@ export function validateLayoutConstraints(input: LayoutEvaluationInput): LayoutC
   for (let i = 0; i < services.length; i++) {
     const s = services[i];
     if (validateServicePlacementGeometry(s, i).length > 0) continue;
+    if (validatePlacementWithinGrid(grid, s, `Service at (${s.r},${s.c}) size ${s.rows}x${s.cols}`)) continue;
     const normalized = normalizeServicePlacement(s);
     if (!isAdjacentToRoads(canonicalRoads, normalized.r, normalized.c, normalized.rows, normalized.cols)) {
       errors.push(`Service at (${s.r},${s.c}) is not adjacent to a road.`);
@@ -320,6 +365,9 @@ export function validateLayoutConstraints(input: LayoutEvaluationInput): LayoutC
   for (let i = 0; i < residentials.length; i++) {
     const res = residentials[i];
     if (validateResidentialPlacementGeometry(res, i).length > 0) continue;
+    if (validatePlacementWithinGrid(grid, res, `Residential at (${res.r},${res.c}) size ${res.rows}x${res.cols}`)) {
+      continue;
+    }
     if (!isAdjacentToRoads(canonicalRoads, res.r, res.c, res.rows, res.cols)) {
       errors.push(`Residential at (${res.r},${res.c}) size ${res.rows}x${res.cols} is not adjacent to a road.`);
     }
@@ -346,7 +394,7 @@ export function evaluateLayout(input: LayoutEvaluationInput): LayoutEvaluationRe
 
   const constraintValidation = validateLayoutConstraints(input);
   const errors = [...constraintValidation.errors];
-  if (collectLayoutPlacementGeometryErrors(input).length > 0) {
+  if (collectLayoutPlacementGeometryOrBoundsErrors(input).length > 0) {
     return {
       valid: false,
       errors,
@@ -546,6 +594,39 @@ function recomputeSolutionPopulations(solution: Solution, params: SolverParams, 
   });
 }
 
+function evaluateSolutionLayoutWithAssignedTypes(
+  input: LayoutEvaluationInput,
+  solution: Solution
+): LayoutEvaluationResult {
+  const constraintValidation = validateLayoutConstraints(input);
+  const placementErrors = collectLayoutPlacementGeometryOrBoundsErrors(input);
+  if (placementErrors.length > 0 || solution.residentialTypeIndices.length !== solution.residentials.length) {
+    return {
+      valid: constraintValidation.valid,
+      errors: constraintValidation.errors,
+      populations: [],
+      totalPopulation: 0,
+      boosts: []
+    };
+  }
+
+  const boosts = computeResidentialBoosts(input.grid, input.services, input.residentials);
+  const recomputedPopulations = recomputeSolutionPopulations(solution, input.params, boosts);
+  const populations = input.residentials.map((residential, index) => ({
+    ...residential,
+    population: recomputedPopulations[index] ?? 0
+  }));
+  const totalPopulation = recomputedPopulations.reduce((sum, population) => sum + population, 0);
+
+  return {
+    valid: constraintValidation.valid,
+    errors: constraintValidation.errors,
+    populations,
+    totalPopulation,
+    boosts
+  };
+}
+
 export function validateSolution(
   input: SolutionValidationInput,
   options: SolutionValidationOptions = {}
@@ -590,21 +671,20 @@ export function validateSolution(
     ...service,
     bonus: solution.servicePopulationIncreases[index] ?? 0
   }));
-  const layoutEvaluation = evaluateLayout({
-    grid,
-    roads: solution.roads,
-    services,
-    residentials: solution.residentials,
-    params
-  });
+  const layoutEvaluation = evaluateSolutionLayoutWithAssignedTypes(
+    {
+      grid,
+      roads: solution.roads,
+      services,
+      residentials: solution.residentials,
+      params
+    },
+    solution
+  );
 
   for (const error of layoutEvaluation.errors) errors.push(error);
 
-  const recomputedPopulations =
-    solution.residentialTypeIndices.length === solution.residentials.length &&
-    layoutEvaluation.boosts.length === solution.residentials.length
-      ? recomputeSolutionPopulations(solution, params, layoutEvaluation.boosts)
-      : layoutEvaluation.populations.map((row) => row.population);
+  const recomputedPopulations = layoutEvaluation.populations.map((row) => row.population);
   const recomputedTotalPopulation = recomputedPopulations.reduce((sum, population) => sum + population, 0);
 
   if (!options.ignoreReportedPopulation && solution.populations.length === recomputedPopulations.length) {

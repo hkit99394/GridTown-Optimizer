@@ -1,0 +1,93 @@
+{
+  "schemaVersion": 1,
+  "source": "product-workflow-replay",
+  "command": "node dist/crossModeBenchmarkCli.js --product-corpus --product-artifact-dir=artifacts/product-corpus/2026-05-31/baseline-protected-holdout-30s-seeds7-19-37-20260531T193849Z --product-run-id=product-corpus-scorecard-20260531T193849Z-baseline-protected-holdout-30s-seeds7-19-37 --product-decision=benchmark-refresh-protected-holdout-30s-lane '--product-summary=Baseline protected-holdout long-budget product-corpus refresh over Auto/Greedy/LNS/CP-SAT at 30s and seeds 7/19/37; no solver default changed.' --modes=auto,greedy,lns,cp-sat --budgets=30 --seeds=7,19,37 --json row0-corridor-repair-pressure service-local-neighborhood road-semantics-gate-choke multi-anchor-road-components expansion-comparison-replay",
+  "generatedAt": "2026-05-31T19:44:25.174Z",
+  "git": {
+    "commit": "1e04bb555b71e4610ba0f80c984d1b9588b2c895",
+    "branch": "features/next-stage"
+  },
+  "hardware": {
+    "captured": true,
+    "platform": "darwin",
+    "arch": "arm64",
+    "cpuModel": "Apple M1 Pro",
+    "logicalCpuCount": 10,
+    "memoryBytes": 17179869184,
+    "totalMemoryBytes": 17179869184,
+    "gpuUsed": false
+  },
+  "suite": {
+    "caseCount": 5,
+    "replayCount": 1,
+    "validReplayCount": 1,
+    "invalidReplayCount": 0,
+    "apiRoutes": [
+      "/api/layout/evaluate"
+    ],
+    "workflowTags": [
+      "expansion-comparison"
+    ],
+    "budgetsSeconds": [
+      30
+    ],
+    "seeds": [
+      7,
+      19,
+      37
+    ],
+    "modes": [
+      "auto",
+      "cp-sat",
+      "greedy",
+      "lns"
+    ]
+  },
+  "replays": [
+    {
+      "caseName": "expansion-comparison-replay",
+      "split": "holdout",
+      "workflowTag": "expansion-comparison",
+      "apiRoute": "/api/layout/evaluate",
+      "sourceName": "expansion-comparison-replay",
+      "scorecardCount": 3,
+      "budgetsSeconds": [
+        30
+      ],
+      "seeds": [
+        7,
+        19,
+        37
+      ],
+      "modes": [
+        "auto",
+        "cp-sat",
+        "greedy",
+        "lns"
+      ],
+      "valid": true,
+      "validationErrorCount": 0,
+      "reportedPopulation": 115,
+      "evaluatedPopulation": 115,
+      "populationDeltaFromReported": 0,
+      "reportedRoadCount": 5,
+      "evaluatedRoadCount": 3,
+      "removedRoadCount": 2,
+      "bestScore": 780,
+      "bestScoreSource": {
+        "budgetSeconds": 30,
+        "seed": 7,
+        "mode": "auto"
+      },
+      "bestScoreDeltaFromEvaluated": 665,
+      "autoScore": 780,
+      "autoScoreSource": {
+        "budgetSeconds": 30,
+        "seed": 7,
+        "mode": "auto"
+      },
+      "autoScoreDeltaFromEvaluated": 665,
+      "expansionComparisonLift": 665
+    }
+  ]
+}

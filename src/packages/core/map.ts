@@ -20,6 +20,18 @@ function paintCell(cell: string[][], r: number, c: number, value: string): void 
   row[c] = value;
 }
 
+function paintRectangle(cell: string[][], r: number, c: number, rows: number, cols: number, value: string): void {
+  const rowStart = Math.max(0, r);
+  const rowEnd = Math.min(cell.length, r + rows);
+  const colStart = Math.max(0, c);
+  const colEnd = Math.min(cell[0]?.length ?? 0, c + cols);
+  for (let row = rowStart; row < rowEnd; row += 1) {
+    for (let col = colStart; col < colEnd; col += 1) {
+      paintCell(cell, row, col, value);
+    }
+  }
+}
+
 /** Render ASCII map: # = blocked, R = road, S = service, H = residential, . = empty allowed */
 export function renderSolutionMap(grid: Grid, solution: Solution): string[] {
   const h = height(grid);
@@ -38,18 +50,10 @@ export function renderSolutionMap(grid: Grid, solution: Solution): string[] {
   }
   for (const service of solution.services) {
     const normalized = normalizeServicePlacement(service);
-    for (let dr = 0; dr < normalized.rows; dr++) {
-      for (let dc = 0; dc < normalized.cols; dc++) {
-        paintCell(cell, normalized.r + dr, normalized.c + dc, "S");
-      }
-    }
+    paintRectangle(cell, normalized.r, normalized.c, normalized.rows, normalized.cols, "S");
   }
   for (const residential of solution.residentials) {
-    for (let dr = 0; dr < residential.rows; dr++) {
-      for (let dc = 0; dc < residential.cols; dc++) {
-        paintCell(cell, residential.r + dr, residential.c + dc, "H");
-      }
-    }
+    paintRectangle(cell, residential.r, residential.c, residential.rows, residential.cols, "H");
   }
 
   const rows: string[] = [];

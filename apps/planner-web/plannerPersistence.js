@@ -442,7 +442,7 @@
         greedy: cloneJson(state.greedy),
         cpSat: cloneJson(state.cpSat),
         lns: cloneJson(state.lns),
-        auto: cloneJson(state.auto ?? { wallClockLimitSeconds: "" })
+        auto: cloneJson(state.auto ?? { wallClockLimitSeconds: "", continueAfterPopulationCapSeconds: "" })
       };
     }
 
@@ -483,7 +483,7 @@
         ...(snapshot?.lns ?? {})
       };
       state.auto = {
-        ...(state.auto ?? { wallClockLimitSeconds: "" }),
+        ...(state.auto ?? { wallClockLimitSeconds: "", continueAfterPopulationCapSeconds: "" }),
         ...(snapshot?.auto ?? {})
       };
     }

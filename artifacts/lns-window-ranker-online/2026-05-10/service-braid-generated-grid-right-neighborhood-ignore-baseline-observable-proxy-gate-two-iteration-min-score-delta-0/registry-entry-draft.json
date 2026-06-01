@@ -7,10 +7,10 @@
     "node scripts/generate-service-braid-replay-artifacts.mjs --bundle=service-braid-generated-grid-right-neighborhood-screen --online-ablation --online-artifact-dir=artifacts/lns-window-ranker-online/2026-05-10/service-braid-generated-grid-right-neighborhood-ignore-baseline-observable-proxy-gate-two-iteration-min-score-delta-0 --window-ranker-model=artifacts/lns-window-ranker/2026-05-08/strict-lns-replay-labels-curated-seeds-v3-final-lift-no-weak-broadened-online-decision-feature-selectivity-ignore-baseline-calibration-lr0.02-cap100/lns-window-ranker.json --window-ranker-min-score-delta=0 --lns-iterations=2 '--window-ranker-selected-feature-gate-groups=area>=0.6,area<=0.6,serviceCandidateBonus>=5.58,residentialCandidatesBlocked>=0.65;area>=0.6,area<=0.6,emptyComponentsBefore>=0.3,emptyComponentsBefore<=0.3,operatorScore<=9.75' --force-artifact-dir"
   ],
   "artifactPaths": [
-    "artifacts/lns-window-ranker-online/2026-05-10/service-braid-generated-grid-right-neighborhood-ignore-baseline-observable-proxy-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
     "artifacts/lns-window-ranker-online/2026-05-10/service-braid-generated-grid-right-neighborhood-ignore-baseline-observable-proxy-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.txt",
     "artifacts/lns-window-ranker-online/2026-05-10/service-braid-generated-grid-right-neighborhood-ignore-baseline-observable-proxy-gate-two-iteration-min-score-delta-0/telemetry-manifest.json",
-    "artifacts/lns-window-ranker-online/2026-05-10/service-braid-generated-grid-right-neighborhood-ignore-baseline-observable-proxy-gate-two-iteration-min-score-delta-0/manifest.json"
+    "artifacts/lns-window-ranker-online/2026-05-10/service-braid-generated-grid-right-neighborhood-ignore-baseline-observable-proxy-gate-two-iteration-min-score-delta-0/manifest.json",
+    "artifacts/external-artifacts/2026-06-01/artifact-hygiene-unindexed-raw-manifest.json"
   ],
   "cases": {
     "development": [

@@ -7,10 +7,10 @@
     "node scripts/discover-lns-online-selected-feature-gates.mjs --source-artifact=artifacts/lns-window-ranker-online/2026-05-10/service-braid-generated-grid-right-neighborhood-ignore-baseline-no-selected-feature-gate-min-score-delta-0 --source-artifact=artifacts/lns-window-ranker-online/2026-05-10/service-braid-generated-grid-right-neighborhood-ignore-baseline-no-selected-feature-gate-two-iteration-min-score-delta-0 --artifact-dir=artifacts/lns-window-ranker-online-gate-discovery/2026-05-10/right-neighborhood-ignore-baseline-no-gate-selected-feature-discovery --max-group-size=3 --max-atoms-per-feature=10 --top=30 --feature-allowlist=area,emptyComponentsBefore,operatorScore,serviceCandidateBonus,residentialCandidatesBlocked,serviceCandidatesIntersecting,residentialCandidatesIntersecting,serviceCandidatesBlocked,allowedWindowCells,anchorReachableWindowCells,narrowGateCells,clearedFootprint,newlyReachable --force-artifact-dir"
   ],
   "artifactPaths": [
-    "artifacts/lns-window-ranker-online-gate-discovery/2026-05-10/right-neighborhood-ignore-baseline-no-gate-selected-feature-discovery/online-selected-feature-gate-discovery.json",
     "artifacts/lns-window-ranker-online-gate-discovery/2026-05-10/right-neighborhood-ignore-baseline-no-gate-selected-feature-discovery/online-selected-feature-gate-discovery.txt",
     "artifacts/lns-window-ranker-online-gate-discovery/2026-05-10/right-neighborhood-ignore-baseline-no-gate-selected-feature-discovery/telemetry-manifest.json",
-    "artifacts/lns-window-ranker-online-gate-discovery/2026-05-10/right-neighborhood-ignore-baseline-no-gate-selected-feature-discovery/manifest.json"
+    "artifacts/lns-window-ranker-online-gate-discovery/2026-05-10/right-neighborhood-ignore-baseline-no-gate-selected-feature-discovery/manifest.json",
+    "artifacts/external-artifacts/2026-06-01/artifact-hygiene-unindexed-raw-manifest.json"
   ],
   "cases": [
     "lns-holdout-service-braid-family-embed-7x8-right-choke-inward-neighborhood-candidate",

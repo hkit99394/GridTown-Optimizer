@@ -7,10 +7,10 @@
     "node scripts/discover-lns-online-selected-feature-gates.mjs --source-artifact=artifacts/lns-window-ranker-online/2026-05-12/product-promotion-two-iteration-product-pair-weight0.1-runtime-suppressor-weight20-9seed-min-score-delta-0.5-suppression-delta-21.3 --source-artifact=artifacts/lns-window-ranker-online/2026-05-12/protected-holdout-two-iteration-product-pair-weight0.1-runtime-suppressor-weight20-9seed-min-score-delta-0.5-suppression-delta-21.3 --artifact-dir=artifacts/lns-online-selected-feature-gate-discovery/2026-05-12/product-protected-runtime-suppressor-weight20-final-outcome-pressure-gate-search --target=final-improved --max-group-size=2 --max-atoms-per-feature=12 --max-total-atoms=40 --top=10 --feature-allowlist=serviceCandidatesIntersecting,residentialCandidateHeadroom --force-artifact-dir"
   ],
   "artifactPaths": [
-    "artifacts/lns-online-selected-feature-gate-discovery/2026-05-12/product-protected-runtime-suppressor-weight20-final-outcome-pressure-gate-search/online-selected-feature-gate-discovery.json",
     "artifacts/lns-online-selected-feature-gate-discovery/2026-05-12/product-protected-runtime-suppressor-weight20-final-outcome-pressure-gate-search/online-selected-feature-gate-discovery.txt",
     "artifacts/lns-online-selected-feature-gate-discovery/2026-05-12/product-protected-runtime-suppressor-weight20-final-outcome-pressure-gate-search/telemetry-manifest.json",
-    "artifacts/lns-online-selected-feature-gate-discovery/2026-05-12/product-protected-runtime-suppressor-weight20-final-outcome-pressure-gate-search/manifest.json"
+    "artifacts/lns-online-selected-feature-gate-discovery/2026-05-12/product-protected-runtime-suppressor-weight20-final-outcome-pressure-gate-search/manifest.json",
+    "artifacts/external-artifacts/2026-06-01/artifact-hygiene-unindexed-raw-manifest.json"
   ],
   "cases": [
     "lns-holdout-anchor-service-harbor-pressure",

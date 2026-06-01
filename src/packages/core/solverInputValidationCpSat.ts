@@ -149,6 +149,7 @@ export function assertValidCpSatOptions(params: SolverParams, optimizer: Optimiz
     1,
     CP_SAT_MAX_NUM_WORKERS
   );
+  requireOptionalBoolean(cpSat, "useNoOverlap2d", "CP-SAT experimental option cpSat.useNoOverlap2d");
   requireOptionalIntegerInRange(
     cpSat,
     "randomSeed",

@@ -11,6 +11,7 @@ This backlog starts after draft PR #10 publishes the broad next-stage baseline. 
 - No default-path solver candidate is active.
 - Artifact hygiene is in soft-warning posture at `1501/1600` tracked artifacts with zero unindexed raw candidates.
 - `npm run quality:governance` is the cheap preflight before trigger nomination or broad evidence planning.
+- G7 was reviewed on 2026-06-01; no trigger was admitted, so G7 remains parked until a current artifact, issue, or product requirement satisfies the trigger ledger.
 
 ## Backlog
 

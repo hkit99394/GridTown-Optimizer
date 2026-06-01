@@ -30,6 +30,34 @@ If any item is missing, keep the trigger parked and do not open an M9 candidate.
 | ---------- | ------ | ----------------------------------------------- | --------------- | ---------------------------------------------------------------- |
 | none       | parked | No current reproducible outside-envelope signal | n/a             | Wait for a real current artifact, issue, or product requirement. |
 
+## G7 Start Review
+
+Reviewed on 2026-06-01 after the request to start G7.
+
+Decision: no trigger is admitted. Keep the open trigger ledger at `none`, and do not create an M9 intake yet. The request starts the review workflow, but it does not itself name a candidate source with a reproducible signal, issue, or product requirement.
+
+Reviewed sources:
+
+- [MIDDLE_RUN_CORPUS_COVERAGE_AUDIT.md](MIDDLE_RUN_CORPUS_COVERAGE_AUDIT.md): current 15-case split artifacts cover `180` scorecards and `720` mode runs; Auto ties best on `175/180` rows, all remaining gaps are short-budget only, and Auto ties best on all `30s` and `120s` rows.
+- [M9_AUTO_LNS_EXPANSION_CORRIDOR_CLOSEOUT.md](M9_AUTO_LNS_EXPANSION_CORRIDOR_CLOSEOUT.md): expansion-corridor policies were safe but population-neutral; broad rerun remains blocked unless a new protected or fresh row shows population movement outside the baseline-repeat envelope, or an equal-population time-to-best product target appears.
+- [MIDDLE_RUN_AUTO_1S_MANUAL_RESUME_TIMING_TRIAGE.md](MIDDLE_RUN_AUTO_1S_MANUAL_RESUME_TIMING_TRIAGE.md): manual-resume Auto reaches the hard population cap with valid replay; strict `1s` wall-clock work needs a separate product SLA or missed-population artifact.
+- [M9_CANDIDATE_INTAKE_CP_SAT_SELECTIVE_NO_OVERLAP2D.md](M9_CANDIDATE_INTAKE_CP_SAT_SELECTIVE_NO_OVERLAP2D.md): selective CP-SAT geometry evidence stayed safe but remains diagnostics-only; next geometry work needs a real runtime problem-feature guard trigger.
+
+Admission result:
+
+- Current artifact or issue: none admitted.
+- Reproducible outside-envelope signal: none admitted.
+- Product requirement: none specific enough to open a solver candidate.
+- Artifact hygiene preflight: `soft-warning`, `1501/1600` tracked artifacts, `0` unindexed raw candidates; focused evidence may proceed, broad evidence needs an externalization plan.
+- Scaffold or `--write-intake`: do not run for a real intake until a source satisfies the admission rule.
+
+Next eligible trigger must name one of these:
+
+- a protected or fresh row with repeatable population movement outside the baseline-repeat envelope;
+- a product SLA that makes strict wall-clock or equal-population time-to-best a first-order target;
+- a current issue or artifact showing evaluator invalidity, replay failure, or missed population;
+- a new candidate mechanism with same-slice baseline-repeat, evaluator-validity, CPU/time-to-best, and artifact-policy coverage.
+
 ## Parked Watch Signals
 
 | Watch Signal                             | Current Read                                                                                                           | Reopen Trigger                                                                                                                                  |

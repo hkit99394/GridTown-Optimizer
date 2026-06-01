@@ -101,14 +101,17 @@ Decision:
 
 ## How To Open Intake
 
-1. Add or update a trigger record in this ledger.
-2. Run `npm run artifact-hygiene:status` and record whether broad evidence needs an externalization plan.
-3. Confirm the trigger satisfies the admission rule.
-4. Create an M9 intake from [MIDDLE_RUN_CANDIDATE_INTAKE_TEMPLATE.md](MIDDLE_RUN_CANDIDATE_INTAKE_TEMPLATE.md).
-5. Link this ledger record from the intake's `Trigger` section.
-6. Run `npm run candidate-intake:check` before implementation or broad evidence work.
+1. Generate a nomination packet with `npm run candidate-trigger:scaffold -- --trigger-id=<trigger-id> --candidate-id=<candidate-id> --source=<current artifact, issue, or product requirement>`.
+2. Add or update the generated trigger record in this ledger.
+3. Run `npm run artifact-hygiene:status` and record whether broad evidence needs an externalization plan.
+4. Confirm the trigger satisfies the admission rule.
+5. Create the M9 intake from the generated draft or from [MIDDLE_RUN_CANDIDATE_INTAKE_TEMPLATE.md](MIDDLE_RUN_CANDIDATE_INTAKE_TEMPLATE.md).
+6. Link this ledger record from the intake's `Trigger` section.
+7. Run `npm run candidate-intake:check` before implementation or broad evidence work.
 
 ## Automation
+
+`npm run candidate-trigger:scaffold` creates a consistent trigger-ledger record and M9 intake draft. Use `--write-intake` to write the intake draft to `docs/roadmaps/M9_CANDIDATE_INTAKE_<ID>.md`; keep the generated ledger record reviewable before changing the open-trigger table.
 
 `npm run candidate-intake:check` enforces the M15 gate for new or active M9 intake docs. It requires:
 

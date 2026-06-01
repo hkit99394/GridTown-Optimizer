@@ -2,7 +2,7 @@
 
 Reviewed on 2026-05-30.
 
-Use this template before implementing or benchmarking a solver-policy candidate. Its job is to make the candidate's trigger, hypothesis, evidence slice, expected signal, blockers, and artifact policy explicit before tuning starts. New candidates should first have an admitted trigger in [MIDDLE_RUN_CANDIDATE_TRIGGER_LEDGER.md](MIDDLE_RUN_CANDIDATE_TRIGGER_LEDGER.md).
+Use this template before implementing or benchmarking a solver-policy candidate. Its job is to make the candidate's trigger, hypothesis, evidence slice, expected signal, blockers, and artifact policy explicit before tuning starts. New candidates should first have an admitted trigger in [MIDDLE_RUN_CANDIDATE_TRIGGER_LEDGER.md](MIDDLE_RUN_CANDIDATE_TRIGGER_LEDGER.md). Prefer `npm run candidate-trigger:scaffold -- --trigger-id=<trigger-id> --candidate-id=<candidate-id> --source=<source>` for new nominations so the trigger record and intake draft stay aligned.
 
 This is an intake gate only. It does not promote solver behavior or change runtime defaults.
 

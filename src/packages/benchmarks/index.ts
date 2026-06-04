@@ -6,6 +6,7 @@
  */
 
 export * from "./greedy.js";
+export * from "./artifactMetadata.js";
 export * from "./benchmarkOptions.js";
 export * from "./populationAttainment.js";
 export * from "./benchmarkSeeds.js";

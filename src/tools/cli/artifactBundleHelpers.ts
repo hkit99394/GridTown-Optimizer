@@ -3,12 +3,14 @@ import path from "node:path";
 
 import {
   buildExperimentRegistryEntry,
+  captureExperimentRegistryHardwareMetadata,
   ExperimentRegistryValidationError,
+  resolveExperimentRegistryGitMetadata,
   validateExperimentRegistryEntry,
   validateExperimentRegistryFile
 } from "../../benchmarkApi.js";
 
-import type { ExperimentRegistryEntry } from "../../benchmarkApi.js";
+import type { BenchmarkArtifactRunMetadata, ExperimentRegistryEntry } from "../../benchmarkApi.js";
 
 export interface ArtifactBundleDirectory {
   artifactDir: string;
@@ -163,6 +165,19 @@ export function quoteCommandArg(value: string): string {
 
 export function defaultCliReplayCommand(cliPath: string, argv: readonly string[]): string {
   return ["node", cliPath, ...argv].map(quoteCommandArg).join(" ");
+}
+
+export function buildCliArtifactRunMetadata(
+  cliPath: string,
+  argv: readonly string[],
+  options: { filterArg?: (arg: string) => boolean } = {}
+): BenchmarkArtifactRunMetadata {
+  const replayArgs = options.filterArg ? argv.filter(options.filterArg) : argv;
+  return {
+    command: defaultCliReplayCommand(cliPath, replayArgs),
+    git: resolveExperimentRegistryGitMetadata(),
+    hardware: captureExperimentRegistryHardwareMetadata()
+  };
 }
 
 export function writeTextArtifact(filePath: string, value: string, options: ArtifactWriteOptions = {}): void {

@@ -4,17 +4,16 @@ import {
   buildCrossModeProductWorkflowRegistryEntryDraft,
   buildCrossModeProductWorkflowReplayMetrics,
   buildCrossModeProductWorkflowReplayTelemetryManifest,
-  captureExperimentRegistryHardwareMetadata,
+  buildBenchmarkArtifactRunId,
   DEFAULT_EXPERIMENT_REGISTRY_PATH,
   formatCrossModeBenchmarkBudgetAblationDecisionTraceJsonl,
   formatCrossModeBenchmarkBudgetAblations,
-  formatCrossModeBenchmarkSuite,
-  resolveExperimentRegistryGitMetadata
+  formatCrossModeBenchmarkSuite
 } from "../../benchmarkApi.js";
 import type { CrossModeBenchmarkBudgetAblationSuiteResult, CrossModeBenchmarkSuiteResult } from "../../benchmarkApi.js";
 import {
+  buildCliArtifactRunMetadata,
   completeAppendableRegistryEntry,
-  defaultCliReplayCommand,
   normalizeRepoRelativePath,
   prepareArtifactBundleDirectory,
   writeJsonArtifact,
@@ -110,17 +109,7 @@ interface BudgetAblationArtifactBundlePaths {
   absoluteArtifactPath(fileName: string): string;
 }
 
-function defaultBenchmarkCommand(argv: readonly string[]): string {
-  return defaultCliReplayCommand("dist/crossModeBenchmarkCli.js", argv);
-}
-
-function defaultProductRegistryCommand(argv: readonly string[]): string {
-  const replayArgs = argv.filter(
-    (arg) =>
-      arg !== "--product-register" && arg !== "--product-register-dry-run" && !arg.startsWith("--product-registry=")
-  );
-  return defaultBenchmarkCommand(replayArgs);
-}
+const CROSS_MODE_BENCHMARK_CLI_PATH = "dist/crossModeBenchmarkCli.js";
 
 function prepareScorecardArtifactBundlePaths(
   artifactDirValue: string,
@@ -182,10 +171,11 @@ export function writeScorecardArtifactBundle(
     throw new Error("Scorecard artifact directory is required.");
   }
   const artifacts = prepareScorecardArtifactBundlePaths(args.artifactDir, "--artifact-dir", args.forceArtifactDir);
+  const metadata = buildCliArtifactRunMetadata(CROSS_MODE_BENCHMARK_CLI_PATH, argv);
   const telemetryManifest = buildCrossModeBenchmarkTelemetryManifest(result, {
-    command: defaultBenchmarkCommand(argv),
-    git: resolveExperimentRegistryGitMetadata(),
-    hardware: captureExperimentRegistryHardwareMetadata()
+    command: metadata.command,
+    git: metadata.git,
+    hardware: metadata.hardware
   });
 
   writeScorecardArtifactFiles(result, artifacts, telemetryManifest, args.forceArtifactDir);
@@ -247,19 +237,21 @@ export function writeProductArtifactBundle(
   const workflowReplayTelemetryManifestJson = artifacts.artifactPath("workflow-replay-telemetry-manifest.json");
   const registryEntryDraftJson = artifacts.artifactPath("registry-entry-draft.json");
   const evidenceSummary = buildCrossModeProductWorkflowEvidenceSummary(result);
-  const command = args.productRegistryCommand ?? defaultProductRegistryCommand(argv);
-  const git = resolveExperimentRegistryGitMetadata();
-  const hardware = captureExperimentRegistryHardwareMetadata();
+  const metadata = buildCliArtifactRunMetadata(CROSS_MODE_BENCHMARK_CLI_PATH, argv, {
+    filterArg: (arg) =>
+      arg !== "--product-register" && arg !== "--product-register-dry-run" && !arg.startsWith("--product-registry=")
+  });
+  const command = args.productRegistryCommand ?? metadata.command;
   const telemetryManifest = buildCrossModeBenchmarkTelemetryManifest(result, {
     command,
-    git,
-    hardware
+    git: metadata.git,
+    hardware: metadata.hardware
   });
   const workflowReplay = buildCrossModeProductWorkflowReplayMetrics({ result });
   const workflowReplayTelemetryManifest = buildCrossModeProductWorkflowReplayTelemetryManifest(result, {
     command,
-    git,
-    hardware
+    git: metadata.git,
+    hardware: metadata.hardware
   });
   const registryEntryDraft = buildCrossModeProductWorkflowRegistryEntryDraft(result, {
     runId: args.productRunId,
@@ -319,12 +311,6 @@ export function writeProductArtifactBundle(
     seeds: [...result.seeds],
     registry
   };
-}
-
-function dateSlug(value: string): string {
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) return value.slice(0, 10) || "unknown-date";
-  return parsed.toISOString().slice(0, 10);
 }
 
 function budgetAblationCasesBySplit(result: CrossModeBenchmarkBudgetAblationSuiteResult): Record<string, string[]> {
@@ -434,7 +420,7 @@ function buildBudgetAblationRegistryEntryDraft(
   const budgetSummaries = result.policies.map(budgetAblationPolicySummary);
   return {
     schemaVersion: 1,
-    runId: args.ablationRunId ?? `cross-mode-budget-ablation-${dateSlug(result.generatedAt)}`,
+    runId: args.ablationRunId ?? buildBenchmarkArtifactRunId("cross-mode-budget-ablation", result.generatedAt),
     artifactType: "ablation-gate",
     generatedAt: result.generatedAt,
     commands: [command],
@@ -488,15 +474,18 @@ export function writeBudgetAblationArtifactBundle(
     throw new Error("Budget ablation artifact directory is required.");
   }
   const artifacts = prepareBudgetAblationArtifactBundlePaths(args.artifactDir, "--artifact-dir", args.forceArtifactDir);
-  const command = defaultBenchmarkCommand(argv);
-  const git = resolveExperimentRegistryGitMetadata();
-  const hardware = captureExperimentRegistryHardwareMetadata();
+  const metadata = buildCliArtifactRunMetadata(CROSS_MODE_BENCHMARK_CLI_PATH, argv);
   const telemetryManifest = buildBudgetAblationTelemetryManifest(result, {
-    command,
-    git,
-    hardware
+    command: metadata.command,
+    git: metadata.git,
+    hardware: metadata.hardware
   });
-  const registryEntryDraft = buildBudgetAblationRegistryEntryDraft(result, artifacts.artifactPaths, args, command);
+  const registryEntryDraft = buildBudgetAblationRegistryEntryDraft(
+    result,
+    artifacts.artifactPaths,
+    args,
+    metadata.command
+  );
 
   writeJsonArtifact(artifacts.absoluteArtifactPath("budget-ablation.json"), result, { force: args.forceArtifactDir });
   writeTextArtifact(

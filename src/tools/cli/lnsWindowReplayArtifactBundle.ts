@@ -1,13 +1,12 @@
 import {
+  buildBenchmarkArtifactRunId,
   buildModelExperimentFingerprint,
-  captureExperimentRegistryHardwareMetadata,
   createLnsWindowReplaySnapshot,
   formatLnsWindowReplayLabels,
-  resolveExperimentRegistryGitMetadata,
   summarizeLnsWindowReplayRepeatability
 } from "../../benchmarkApi.js";
 import {
-  defaultCliReplayCommand,
+  buildCliArtifactRunMetadata,
   prepareArtifactBundleDirectory,
   writeJsonArtifact,
   writeTextArtifact
@@ -70,10 +69,6 @@ export interface LnsWindowReplayArtifactManifest {
   selectedCaseNames: string[];
   pressureFamilies: string[];
   repeatabilitySummary: LnsWindowReplayRepeatabilitySummary;
-}
-
-function dateSlug(value: string): string {
-  return value.slice(0, 10);
 }
 
 function uniqueValues(values: readonly string[]): string[] {
@@ -149,7 +144,8 @@ export function buildLnsWindowReplayRegistryEntryDraft(
   return {
     schemaVersion: 1,
     runId:
-      options.runId ?? `lns-window-replay-diagnostics-${dateSlug(result.generatedAt)}-${labelFingerprint.slice(-8)}`,
+      options.runId ??
+      buildBenchmarkArtifactRunId("lns-window-replay-diagnostics", result.generatedAt, labelFingerprint.slice(-8)),
     artifactType: "label-bundle",
     generatedAt: result.generatedAt,
     commands: [...options.commands],
@@ -215,7 +211,7 @@ export function writeLnsWindowReplayArtifactBundle(
     force: options.force
   });
   const repeatabilitySummary = summarizeLnsWindowReplayRepeatability(result);
-  const command = defaultCliReplayCommand("dist/lnsBenchmarkCli.js", argv);
+  const metadata = buildCliArtifactRunMetadata("dist/lnsBenchmarkCli.js", argv);
   const outputArtifactPaths = [
     artifacts.artifactPath("lns-window-replay-labels.json"),
     artifacts.artifactPath("lns-window-replay-labels.txt"),
@@ -224,13 +220,13 @@ export function writeLnsWindowReplayArtifactBundle(
     artifacts.artifactPath("telemetry-manifest.json")
   ];
   const telemetryManifest = buildLnsWindowReplayTelemetryManifest(result, {
-    command,
-    git: resolveExperimentRegistryGitMetadata(),
-    hardware: captureExperimentRegistryHardwareMetadata(),
+    command: metadata.command,
+    git: metadata.git,
+    hardware: metadata.hardware,
     outputArtifacts: outputArtifactPaths
   });
   const registryEntryDraft = buildLnsWindowReplayRegistryEntryDraft(result, {
-    commands: [command],
+    commands: [metadata.command],
     artifactPaths: outputArtifactPaths
   });
   const manifest: LnsWindowReplayArtifactManifest = {
@@ -243,7 +239,7 @@ export function writeLnsWindowReplayArtifactBundle(
       registryEntryDraftJson: artifacts.artifactPath("registry-entry-draft.json"),
       manifestJson: artifacts.artifactPath("manifest.json")
     },
-    command,
+    command: metadata.command,
     generatedAt: result.generatedAt,
     inputFingerprint: telemetryManifest.inputFingerprint,
     labelFingerprint: telemetryManifest.labelFingerprint,

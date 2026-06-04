@@ -6,6 +6,10 @@ const path = require("node:path");
 
 const {
   appendExperimentRegistryEntry,
+  buildBenchmarkArtifactDateSlug,
+  buildBenchmarkArtifactRunId,
+  cloneBenchmarkArtifactPaths,
+  cloneBenchmarkArtifactRecord,
   buildModelExperimentRegistryEntryDraft,
   buildModelExperimentTelemetryManifest,
   checkExperimentRegistryFile,
@@ -129,6 +133,22 @@ function testRegistryRejectsOutOfRangeSeeds() {
 }
 
 function testModelExperimentManifestAndRegistryDraft() {
+  assert.equal(buildBenchmarkArtifactDateSlug("2026-05-01T00:00:00.000Z"), "2026-05-01");
+  assert.equal(buildBenchmarkArtifactDateSlug("not-a-date-value"), "not-a-date");
+  assert.equal(buildBenchmarkArtifactDateSlug(""), "unknown-date");
+  assert.equal(
+    buildBenchmarkArtifactRunId("model-experiment", "2026-05-01T00:00:00.000Z", "abc123"),
+    "model-experiment-2026-05-01-abc123"
+  );
+  const artifactPaths = ["artifacts/models/test/model.json"];
+  const clonedPaths = cloneBenchmarkArtifactPaths(artifactPaths);
+  assert.deepEqual(clonedPaths, artifactPaths);
+  assert.notEqual(clonedPaths, artifactPaths);
+  const metadataRecord = { nested: { ok: true } };
+  const clonedRecord = cloneBenchmarkArtifactRecord(metadataRecord);
+  assert.deepEqual(clonedRecord, metadataRecord);
+  assert.notEqual(clonedRecord.nested, metadataRecord.nested);
+
   const telemetryManifest = buildModelExperimentTelemetryManifest({
     command: "python python/ml/train.py --config=config.json",
     generatedAt: "2026-05-01T00:00:00.000Z",
@@ -155,9 +175,11 @@ function testModelExperimentManifestAndRegistryDraft() {
   const inferredDraft = buildModelExperimentRegistryEntryDraft({
     commands: [telemetryManifest.command],
     artifactPaths: ["artifacts/models/test/model.json"],
+    generatedAt: telemetryManifest.generatedAt,
     model: { trained: true, version: "test-model-v1", format: "json" }
   });
   assert.equal(inferredTelemetryManifest.modelFingerprint, inferredDraft.modelFingerprint);
+  assert.equal(inferredDraft.runId, "model-experiment-2026-05-01");
 
   const draft = buildModelExperimentRegistryEntryDraft({
     runId: "model-experiment-test",

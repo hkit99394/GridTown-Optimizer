@@ -3,15 +3,14 @@ import {
   buildLnsWindowRankerOnlineAblationTelemetryManifest,
   buildLnsWindowRankerOnlineCalibrationRegistryEntryDraft,
   buildLnsWindowRankerOnlineCalibrationTelemetryManifest,
-  captureExperimentRegistryHardwareMetadata,
   createLnsWindowRankerOnlineAblationSnapshot,
   createLnsWindowRankerOnlineCalibrationSnapshot,
   DEFAULT_EXPERIMENT_REGISTRY_PATH,
   formatLnsWindowRankerOnlineAblation,
-  formatLnsWindowRankerOnlineCalibration,
-  resolveExperimentRegistryGitMetadata
+  formatLnsWindowRankerOnlineCalibration
 } from "../../benchmarkApi.js";
 import type {
+  BenchmarkArtifactRunMetadata,
   LnsWindowRankerOnlineAblationSnapshot,
   LnsWindowRankerOnlineAblationSuiteResult,
   LnsWindowRankerOnlineCalibrationSuiteResult,
@@ -19,8 +18,8 @@ import type {
   runLnsWindowRankerOnlineAblation
 } from "../../benchmarkApi.js";
 import {
+  buildCliArtifactRunMetadata,
   completeAppendableRegistryEntry,
-  defaultCliReplayCommand,
   normalizeRepoRelativePath,
   prepareArtifactBundleDirectory,
   readJsonRepoInputArtifact,
@@ -94,7 +93,7 @@ interface WindowRankerOnlineArtifactBundlePaths {
   artifactDir: string;
   artifactPaths: LnsWindowRankerOnlineArtifactManifest["artifactPaths"];
   absoluteArtifactPaths: LnsWindowRankerOnlineArtifactManifest["artifactPaths"];
-  command: string;
+  runMetadata: BenchmarkArtifactRunMetadata;
   modelPath: string;
   suppressionModelPath?: string;
 }
@@ -123,12 +122,7 @@ export function readWindowRankerOnlineScorecard(scorecardPath: string): LnsWindo
   ).value;
 }
 
-function defaultWindowRankerOnlineArtifactCommand(argv: readonly string[]): string {
-  const replayArgs = argv.filter(
-    (arg) => arg !== "--window-ranker-register-dry-run" && !arg.startsWith("--window-ranker-registry=")
-  );
-  return defaultCliReplayCommand("dist/lnsBenchmarkCli.js", replayArgs);
-}
+const LNS_BENCHMARK_CLI_PATH = "dist/lnsBenchmarkCli.js";
 
 function registerWindowRankerOnlineArtifacts(
   registryEntryDraft: Record<string, unknown>,
@@ -260,7 +254,9 @@ function prepareWindowRankerOnlineArtifactBundle(
       telemetryManifestJson: artifacts.absoluteArtifactPath("telemetry-manifest.json"),
       registryEntryDraftJson: artifacts.absoluteArtifactPath("registry-entry-draft.json")
     },
-    command: defaultWindowRankerOnlineArtifactCommand(argv),
+    runMetadata: buildCliArtifactRunMetadata(LNS_BENCHMARK_CLI_PATH, argv, {
+      filterArg: (arg) => arg !== "--window-ranker-register-dry-run" && !arg.startsWith("--window-ranker-registry=")
+    }),
     modelPath: resolveRepoInputArtifactPath(args.windowRankerModelPath, "--window-ranker-model", { mustExist: true }),
     ...(args.windowRankerSuppressionModelPath === undefined
       ? {}
@@ -295,9 +291,9 @@ export function writeWindowRankerOnlineArtifactBundle(
 ): LnsWindowRankerOnlineArtifactManifest {
   const paths = prepareWindowRankerOnlineArtifactBundle(args, argv, "lns-window-ranker-online-ablation");
   const telemetryManifest = buildLnsWindowRankerOnlineAblationTelemetryManifest(result, {
-    command: paths.command,
-    git: resolveExperimentRegistryGitMetadata(),
-    hardware: captureExperimentRegistryHardwareMetadata(),
+    command: paths.runMetadata.command,
+    git: paths.runMetadata.git,
+    hardware: paths.runMetadata.hardware,
     inputArtifacts: [
       paths.modelPath,
       ...(paths.suppressionModelPath === undefined ? [] : [paths.suppressionModelPath])
@@ -310,7 +306,7 @@ export function writeWindowRankerOnlineArtifactBundle(
   });
   const registryEntryDraft = buildLnsWindowRankerOnlineAblationRegistryEntryDraft(result, {
     runId: args.windowRankerRunId,
-    commands: [paths.command],
+    commands: [paths.runMetadata.command],
     artifactPaths: [
       paths.artifactPaths.scorecardJson,
       paths.artifactPaths.scorecardText,
@@ -373,9 +369,9 @@ export function writeWindowRankerOnlineCalibrationArtifactBundle(
 ): LnsWindowRankerOnlineArtifactManifest {
   const paths = prepareWindowRankerOnlineArtifactBundle(args, argv, "lns-window-ranker-online-calibration");
   const telemetryManifest = buildLnsWindowRankerOnlineCalibrationTelemetryManifest(result, {
-    command: paths.command,
-    git: resolveExperimentRegistryGitMetadata(),
-    hardware: captureExperimentRegistryHardwareMetadata(),
+    command: paths.runMetadata.command,
+    git: paths.runMetadata.git,
+    hardware: paths.runMetadata.hardware,
     model,
     inputArtifacts: [
       paths.modelPath,
@@ -389,7 +385,7 @@ export function writeWindowRankerOnlineCalibrationArtifactBundle(
   });
   const registryEntryDraft = buildLnsWindowRankerOnlineCalibrationRegistryEntryDraft(result, {
     runId: args.windowRankerRunId,
-    commands: [paths.command],
+    commands: [paths.runMetadata.command],
     artifactPaths: [
       paths.artifactPaths.scorecardJson,
       paths.artifactPaths.scorecardText,

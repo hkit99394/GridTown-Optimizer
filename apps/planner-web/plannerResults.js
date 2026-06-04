@@ -31,7 +31,7 @@
 
   /** @param {ResultsOptions} options */ function createPlannerResultsController(options) {
     const { state, elements, constants = {}, helpers, callbacks } = options;
-    const { LIVE_SNAPSHOT_REFRESH_INTERVAL_MS = 5 * 1000 } = constants;
+    const { LIVE_SNAPSHOT_REFRESH_INTERVAL_MS = 30 * 1000 } = constants;
     const { cloneJson, formatElapsedTime } = helpers;
     const {
       applyMatrixLayout,

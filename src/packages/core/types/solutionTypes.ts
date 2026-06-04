@@ -20,6 +20,7 @@ import type {
 } from "./cpSatTypes.js";
 import type { GreedyDiagnostics, GreedyProfile } from "./greedyTypes.js";
 import type { LnsNeighborhoodOutcomeStatus, LnsStopReason, LnsTelemetry } from "./lnsTypes.js";
+import type { SolveProgressSampleSource, SolverLifecycleSnapshotState } from "./solverLifecycleTypes.js";
 import type { SolverParams } from "./solverParamTypes.js";
 
 export interface Solution {
@@ -63,13 +64,7 @@ export interface Solution {
 }
 
 /** Shared progress snapshot returned by long-running background solvers. */
-export interface BackgroundSolveSnapshotState {
-  hasFeasibleSolution: boolean;
-  totalPopulation: number | null;
-  activeOptimizer?: AutoStageOptimizerName | null;
-  autoStage?: AutoSolveStageMetadata | null;
-  cpSatStatus?: string | null;
-}
+export interface BackgroundSolveSnapshotState extends SolverLifecycleSnapshotState {}
 
 /** Shared contract for cancellable background solver runs. */
 export interface BackgroundSolveHandle {
@@ -156,7 +151,7 @@ export interface SolveProgressLogEntry {
   lastCapturedAt?: string;
   /** Latest elapsed time covered by this entry when unchanged progress snapshots are compacted. */
   lastElapsedMs?: number;
-  source: "live-snapshot" | "final-result";
+  source: SolveProgressSampleSource;
   optimizer: OptimizerName | null;
   activeOptimizer?: AutoStageOptimizerName | null;
   autoStage?: AutoSolveStageMetadata | null;

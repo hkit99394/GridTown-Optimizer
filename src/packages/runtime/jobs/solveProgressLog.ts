@@ -1,18 +1,30 @@
-import { mkdirSync, readFileSync, readdirSync, renameSync, unlinkSync, writeFileSync } from "node:fs";
+import { mkdirSync, renameSync, unlinkSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 
-import { isOptimizerName, renderSolutionMap } from "../../core/index.js";
+import {
+  renderSolutionMap,
+  SOLVE_PROGRESS_SAMPLE_SOURCE_FINAL_RESULT,
+  SOLVE_PROGRESS_SAMPLE_SOURCE_LIVE_SNAPSHOT,
+  SOLVE_RUN_STATUS_RUNNING
+} from "../../core/index.js";
 import { buildEmptySolverProgressSummary, buildSolverProgressSummary } from "../../core/index.js";
 import type {
+  BackgroundSolveSnapshotState,
   Grid,
   OptimizerName,
   SerializedSolution,
   Solution,
+  SolveProgressSampleSource,
   SolveProgressLogEntry,
+  SolveRunStatus,
+  SolverProgressSummary,
   SolverParams
 } from "../../core/index.js";
+import { DEFAULT_PROGRESS_LOG_ROOT } from "./solveProgressLogRead.js";
 
-export type PersistedSolveStatus = "running" | "completed" | "stopped" | "failed";
+export { readLatestSolveProgressLogByRequestId } from "./solveProgressLogRead.js";
+
+export type PersistedSolveStatus = SolveRunStatus;
 
 export interface SolveProgressLogDocument {
   version: 2;
@@ -59,7 +71,7 @@ export interface SolveProgressLogWriterOptions {
 }
 
 export interface AppendProgressLogEntryOptions {
-  source: SolveProgressLogEntry["source"];
+  source: SolveProgressSampleSource;
   capturedAt?: string;
   elapsedMs: number;
 }
@@ -69,9 +81,6 @@ export interface AppendPendingProgressLogEntryOptions {
   elapsedMs: number;
   note?: string;
 }
-
-const DEFAULT_PROGRESS_LOG_ROOT = resolve(process.cwd(), "artifacts", "solve-progress");
-const PERSISTED_SOLVE_STATUSES = new Set<PersistedSolveStatus>(["running", "completed", "stopped", "failed"]);
 
 function sanitizeFileNameSegment(value: string, fallback: string): string {
   const sanitized = value
@@ -157,6 +166,21 @@ export function progressLogSolutionSampleChanged(lastEntry: SolveProgressLogEntr
   );
 }
 
+export function progressLogSnapshotStateSampleChanged(
+  lastEntry: SolveProgressLogEntry | null,
+  snapshotState: BackgroundSolveSnapshotState
+): boolean {
+  if (!lastEntry || !lastEntry.hasFeasibleSolution) return snapshotState.hasFeasibleSolution;
+  return (
+    lastEntry.totalPopulation !== snapshotState.totalPopulation ||
+    (lastEntry.activeOptimizer ?? null) !== (snapshotState.activeOptimizer ?? null) ||
+    lastEntry.cpSatStatus !== (snapshotState.cpSatStatus ?? null) ||
+    lastEntry.bestPopulationUpperBound !== (snapshotState.bestPopulationUpperBound ?? null) ||
+    lastEntry.populationGapUpperBound !== (snapshotState.populationGapUpperBound ?? null) ||
+    !progressLogPayloadsEqual(lastEntry.autoStage, snapshotState.autoStage)
+  );
+}
+
 function cloneProgressLogInput<T>(value: T): T {
   return structuredClone(value);
 }
@@ -165,178 +189,8 @@ function resolveCapturedAt(value: string | undefined): string {
   return typeof value === "string" && value.trim() ? value : new Date().toISOString();
 }
 
-function isPersistedSolveStatus(value: unknown): value is PersistedSolveStatus {
-  return typeof value === "string" && PERSISTED_SOLVE_STATUSES.has(value as PersistedSolveStatus);
-}
-
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
-}
-
-function isNonNegativeFiniteNumber(value: unknown): value is number {
-  return typeof value === "number" && Number.isFinite(value) && value >= 0;
-}
-
-function isNullableNonNegativeFiniteNumber(value: unknown): value is number | null {
-  return value === null || isNonNegativeFiniteNumber(value);
-}
-
-function isNullableString(value: unknown): value is string | null {
-  return value === null || typeof value === "string";
-}
-
-function isStringArray(value: unknown): value is string[] {
-  return Array.isArray(value) && value.every((entry) => typeof entry === "string");
-}
-
-function isProgressLogDateString(value: unknown): value is string {
-  return typeof value === "string" && Number.isFinite(Date.parse(value));
-}
-
-function isProgressLogGridSummary(value: unknown): value is SolveProgressLogDocument["grid"] {
-  if (!isRecord(value)) return false;
-  return (
-    Number.isInteger(value.rows) &&
-    Number(value.rows) >= 0 &&
-    Number.isInteger(value.cols) &&
-    Number(value.cols) >= 0 &&
-    Number.isInteger(value.allowedCells) &&
-    Number(value.allowedCells) >= 0
-  );
-}
-
-function isProgressLogInput(value: unknown): value is SolveProgressLogDocument["input"] {
-  if (!isRecord(value)) return false;
-  return "grid" in value && "params" in value;
-}
-
-function isProgressLogEntry(value: unknown): value is SolveProgressLogEntry {
-  if (!isRecord(value)) return false;
-  if (!isProgressLogDateString(value.capturedAt)) return false;
-  if (!isNonNegativeFiniteNumber(value.elapsedMs)) return false;
-  if ("lastCapturedAt" in value && value.lastCapturedAt !== undefined) {
-    if (!isProgressLogDateString(value.lastCapturedAt)) return false;
-  }
-  if ("lastElapsedMs" in value && value.lastElapsedMs !== undefined) {
-    if (!isNonNegativeFiniteNumber(value.lastElapsedMs) || Number(value.lastElapsedMs) < Number(value.elapsedMs)) {
-      return false;
-    }
-  }
-  if (value.source !== "live-snapshot" && value.source !== "final-result") return false;
-  if (value.optimizer !== null && !isOptimizerName(value.optimizer)) return false;
-  if ("activeOptimizer" in value && value.activeOptimizer !== null && !isOptimizerName(value.activeOptimizer)) {
-    return false;
-  }
-  if ("autoStage" in value && value.autoStage !== null && !isRecord(value.autoStage)) return false;
-  if (typeof value.hasFeasibleSolution !== "boolean") return false;
-  if (!isNullableNonNegativeFiniteNumber(value.totalPopulation)) return false;
-  if (!isNullableString(value.cpSatStatus)) return false;
-  if ("lnsStopReason" in value && !isNullableString(value.lnsStopReason)) return false;
-  if ("lnsNeighborhoodStatus" in value && !isNullableString(value.lnsNeighborhoodStatus)) return false;
-  if ("lnsNeighborhoodImprovement" in value && !isNullableNonNegativeFiniteNumber(value.lnsNeighborhoodImprovement)) {
-    return false;
-  }
-  if ("lnsNeighborhoodsCompleted" in value && !isNullableNonNegativeFiniteNumber(value.lnsNeighborhoodsCompleted)) {
-    return false;
-  }
-  if ("progressSummary" in value && value.progressSummary !== undefined && !isRecord(value.progressSummary)) {
-    return false;
-  }
-  if (!isNullableNonNegativeFiniteNumber(value.bestPopulationUpperBound)) return false;
-  if (!isNullableNonNegativeFiniteNumber(value.populationGapUpperBound)) return false;
-  if (!isNullableNonNegativeFiniteNumber(value.solveWallTimeSeconds)) return false;
-  if (!isNullableNonNegativeFiniteNumber(value.lastImprovementAtSeconds)) return false;
-  if (!isNullableNonNegativeFiniteNumber(value.secondsSinceLastImprovement)) return false;
-  if ("note" in value && !isNullableString(value.note)) return false;
-  return true;
-}
-
-function isProgressLogFinalResult(value: unknown): value is NonNullable<SolveProgressLogDocument["finalResult"]> {
-  if (!isRecord(value)) return false;
-  return (
-    isNullableNonNegativeFiniteNumber(value.totalPopulation) &&
-    isNullableString(value.cpSatStatus) &&
-    typeof value.stoppedByUser === "boolean" &&
-    isRecord(value.solution) &&
-    isStringArray(value.mapRows) &&
-    typeof value.mapText === "string" &&
-    value.mapText === value.mapRows.join("\n")
-  );
-}
-
-function parseSolveProgressLogDocument(value: unknown): SolveProgressLogDocument | null {
-  if (!isRecord(value)) return null;
-  if (value.version !== 2) return null;
-  if (typeof value.requestId !== "string" || !value.requestId.trim()) return null;
-  if (!isOptimizerName(value.optimizer)) return null;
-  if (!isProgressLogDateString(value.createdAt) || !isProgressLogDateString(value.updatedAt)) return null;
-  if (value.finishedAt !== null && !isProgressLogDateString(value.finishedAt)) return null;
-  if (!isPersistedSolveStatus(value.status)) return null;
-  if (!isProgressLogGridSummary(value.grid)) return null;
-  if (!isProgressLogInput(value.input)) return null;
-  if (!Array.isArray(value.entries) || !value.entries.every(isProgressLogEntry)) return null;
-  if (!isNullableString(value.message) || !isNullableString(value.error)) return null;
-
-  if (value.status === "running") {
-    if (value.finishedAt !== null || value.finalResult !== null) return null;
-    if (value.entries.some((entry) => entry.source === "final-result")) return null;
-  }
-  if (value.status === "failed" && value.finalResult !== null) return null;
-
-  if (value.finalResult !== null) {
-    if (
-      (value.status as PersistedSolveStatus) !== "completed" &&
-      (value.status as PersistedSolveStatus) !== "stopped"
-    ) {
-      return null;
-    }
-    if (!isProgressLogFinalResult(value.finalResult)) return null;
-    const finalEntry = value.entries[value.entries.length - 1] ?? null;
-    if (!finalEntry || finalEntry.source !== "final-result" || !finalEntry.hasFeasibleSolution) return null;
-  }
-
-  return value as unknown as SolveProgressLogDocument;
-}
-
-export function readLatestSolveProgressLogByRequestId(
-  rootDirectory: string | undefined,
-  requestId: string
-): SolveProgressLogReadResult | null {
-  const normalizedRequestId = requestId.trim();
-  if (!normalizedRequestId) return null;
-
-  const resolvedRoot = resolve(rootDirectory ?? DEFAULT_PROGRESS_LOG_ROOT);
-  let fileNames: string[];
-  try {
-    fileNames = readdirSync(resolvedRoot);
-  } catch {
-    return null;
-  }
-
-  let latestResult: SolveProgressLogReadResult | null = null;
-  let latestUpdatedAtMs = -1;
-  for (const fileName of fileNames) {
-    if (!fileName.endsWith(".json")) continue;
-    const filePath = join(resolvedRoot, fileName);
-    let parsed: unknown;
-    try {
-      parsed = JSON.parse(readFileSync(filePath, "utf8"));
-    } catch {
-      continue;
-    }
-    const document = parseSolveProgressLogDocument(parsed);
-    if (!document || document.requestId !== normalizedRequestId) continue;
-
-    const updatedAtMs = Date.parse(document.updatedAt) || Date.parse(document.createdAt) || 0;
-    if (updatedAtMs <= latestUpdatedAtMs) continue;
-    latestUpdatedAtMs = updatedAtMs;
-    latestResult = {
-      filePath,
-      document
-    };
-  }
-
-  return latestResult;
 }
 
 function solveStartedAtElapsedMsFromTelemetry(solution: Solution, elapsedMs: number): number | null {
@@ -546,6 +400,103 @@ function buildProgressEntry(
   };
 }
 
+function buildSnapshotStateProgressSummary(
+  snapshotState: BackgroundSolveSnapshotState,
+  optimizer: OptimizerName,
+  solveWallTimeSeconds: number | null
+): SolverProgressSummary {
+  return {
+    currentScore: snapshotState.totalPopulation,
+    bestScore: snapshotState.totalPopulation,
+    activeStage: snapshotState.activeOptimizer ?? optimizer,
+    reuseSource: null,
+    elapsedTimeSeconds: roundTelemetrySeconds(solveWallTimeSeconds),
+    timeSinceImprovementSeconds: roundTelemetrySeconds(snapshotState.secondsSinceLastImprovement ?? null),
+    stopReason: null,
+    exactGap:
+      typeof snapshotState.populationGapUpperBound === "number" &&
+      Number.isFinite(snapshotState.populationGapUpperBound)
+        ? snapshotState.populationGapUpperBound
+        : null,
+    portfolioWorkerSummary: null
+  };
+}
+
+function buildSnapshotStateProgressEntry(
+  snapshotState: BackgroundSolveSnapshotState,
+  optimizer: OptimizerName,
+  options: AppendProgressLogEntryOptions,
+  state: {
+    solveStartedAtElapsedMs: number | null;
+  }
+): SolveProgressLogEntry {
+  const elapsedMs = normalizeElapsedMs(options.elapsedMs);
+  const snapshotSolveWallTimeSeconds =
+    typeof snapshotState.solveWallTimeSeconds === "number" && Number.isFinite(snapshotState.solveWallTimeSeconds)
+      ? snapshotState.solveWallTimeSeconds
+      : null;
+  let solveWallTimeSeconds = snapshotSolveWallTimeSeconds;
+  if (state.solveStartedAtElapsedMs !== null) {
+    const derivedSolveWallTimeSeconds = Math.max(0, (elapsedMs - state.solveStartedAtElapsedMs) / 1000);
+    solveWallTimeSeconds =
+      snapshotSolveWallTimeSeconds === null
+        ? derivedSolveWallTimeSeconds
+        : Math.max(snapshotSolveWallTimeSeconds, derivedSolveWallTimeSeconds);
+  }
+
+  const lastImprovementAtSeconds =
+    typeof snapshotState.lastImprovementAtSeconds === "number" &&
+    Number.isFinite(snapshotState.lastImprovementAtSeconds)
+      ? snapshotState.lastImprovementAtSeconds
+      : null;
+  const snapshotSecondsSinceLastImprovement =
+    typeof snapshotState.secondsSinceLastImprovement === "number" &&
+    Number.isFinite(snapshotState.secondsSinceLastImprovement)
+      ? snapshotState.secondsSinceLastImprovement
+      : null;
+  let secondsSinceLastImprovement = snapshotSecondsSinceLastImprovement;
+  if (lastImprovementAtSeconds !== null && solveWallTimeSeconds !== null) {
+    secondsSinceLastImprovement = Math.max(0, solveWallTimeSeconds - lastImprovementAtSeconds);
+  } else if (snapshotSecondsSinceLastImprovement !== null && solveWallTimeSeconds !== null) {
+    secondsSinceLastImprovement = Math.max(
+      0,
+      snapshotSecondsSinceLastImprovement +
+        Math.max(0, solveWallTimeSeconds - (snapshotSolveWallTimeSeconds ?? solveWallTimeSeconds))
+    );
+  }
+
+  const roundedSolveWallTimeSeconds = roundTelemetrySeconds(solveWallTimeSeconds);
+  const roundedLastImprovementAtSeconds = roundTelemetrySeconds(lastImprovementAtSeconds);
+  const roundedSecondsSinceLastImprovement = roundTelemetrySeconds(secondsSinceLastImprovement);
+
+  return {
+    capturedAt: resolveCapturedAt(options.capturedAt),
+    elapsedMs,
+    source: options.source,
+    optimizer,
+    ...(snapshotState.activeOptimizer ? { activeOptimizer: snapshotState.activeOptimizer } : {}),
+    ...(snapshotState.autoStage ? { autoStage: snapshotState.autoStage } : {}),
+    hasFeasibleSolution: snapshotState.hasFeasibleSolution,
+    totalPopulation: snapshotState.totalPopulation,
+    cpSatStatus: snapshotState.cpSatStatus ?? null,
+    progressSummary: buildSnapshotStateProgressSummary(snapshotState, optimizer, roundedSolveWallTimeSeconds),
+    bestPopulationUpperBound:
+      typeof snapshotState.bestPopulationUpperBound === "number" &&
+      Number.isFinite(snapshotState.bestPopulationUpperBound)
+        ? snapshotState.bestPopulationUpperBound
+        : null,
+    populationGapUpperBound:
+      typeof snapshotState.populationGapUpperBound === "number" &&
+      Number.isFinite(snapshotState.populationGapUpperBound)
+        ? snapshotState.populationGapUpperBound
+        : null,
+    solveWallTimeSeconds: roundedSolveWallTimeSeconds,
+    lastImprovementAtSeconds: roundedLastImprovementAtSeconds,
+    secondsSinceLastImprovement: roundedSecondsSinceLastImprovement,
+    note: null
+  };
+}
+
 function progressSummaryStablePayload(summary: unknown): unknown {
   if (!isRecord(summary)) return summary ?? null;
   const {
@@ -645,7 +596,7 @@ export class SolveProgressLogWriter {
       createdAt: new Date(options.createdAtMs).toISOString(),
       updatedAt: new Date(options.createdAtMs).toISOString(),
       finishedAt: null,
-      status: "running",
+      status: SOLVE_RUN_STATUS_RUNNING,
       grid: {
         rows: options.grid.length,
         cols: options.grid[0]?.length ?? 0,
@@ -711,11 +662,33 @@ export class SolveProgressLogWriter {
     );
   }
 
+  buildSnapshotStateSample(
+    snapshotState: BackgroundSolveSnapshotState,
+    options: AppendProgressLogEntryOptions
+  ): SolveProgressLogEntry {
+    const elapsedMs = normalizeElapsedMs(options.elapsedMs);
+    return buildSnapshotStateProgressEntry(
+      snapshotState,
+      this.optimizer,
+      {
+        ...options,
+        elapsedMs
+      },
+      {
+        solveStartedAtElapsedMs: this.solveStartedAtElapsedMs
+      }
+    );
+  }
+
+  appendSnapshotStateSample(snapshotState: BackgroundSolveSnapshotState, options: AppendProgressLogEntryOptions): void {
+    this.appendEntry(this.buildSnapshotStateSample(snapshotState, options));
+  }
+
   appendPendingSample(options: AppendPendingProgressLogEntryOptions): void {
     this.appendEntry({
       capturedAt: resolveCapturedAt(options.capturedAt),
       elapsedMs: normalizeElapsedMs(options.elapsedMs),
-      source: "live-snapshot",
+      source: SOLVE_PROGRESS_SAMPLE_SOURCE_LIVE_SNAPSHOT,
       optimizer: this.optimizer,
       hasFeasibleSolution: false,
       totalPopulation: null,
@@ -768,7 +741,7 @@ export class SolveProgressLogWriter {
         {
           capturedAt: options.capturedAt ?? finishedAt,
           elapsedMs,
-          source: "final-result"
+          source: SOLVE_PROGRESS_SAMPLE_SOURCE_FINAL_RESULT
         },
         {
           solveStartedAtElapsedMs: this.solveStartedAtElapsedMs,

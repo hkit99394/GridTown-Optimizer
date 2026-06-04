@@ -301,7 +301,7 @@ async function testLiveSnapshotStatusValidatesReportedPopulationInvariants(handl
         getLatestSnapshotState() {
           return {
             hasFeasibleSolution: true,
-            totalPopulation: inconsistentSnapshot.totalPopulation,
+            totalPopulation: backgroundSolution.totalPopulation,
             activeOptimizer: null,
             autoStage: null,
             cpSatStatus: null
@@ -329,6 +329,9 @@ async function testLiveSnapshotStatusValidatesReportedPopulationInvariants(handl
 
     assert.equal(snapshotStatusResult.statusCode, 200);
     assert.equal(snapshotStatusResult.payload.liveSnapshot, true);
+    assert.equal(snapshotStatusResult.payload.bestTotalPopulation, 101);
+    assert.equal(snapshotStatusResult.payload.solverTotalPopulation, 100);
+    assert.equal(snapshotStatusResult.payload.layoutTotalPopulation, 101);
     assert.equal(snapshotStatusResult.payload.validation.valid, false);
     assert.equal(snapshotStatusResult.payload.validation.populationValidation.mode, "reported-invariants");
     assert.equal(snapshotStatusResult.payload.validation.populationValidation.reportedTotalPopulation, 101);
@@ -537,6 +540,86 @@ async function testShutdownRecoversLatestSnapshotBeforeFinalizing() {
     assert.equal(persistedLog.finalResult.solution.stoppedByUser, true);
   } finally {
     optimizerRegistry.getOptimizerAdapter = originalGetOptimizerAdapter;
+  }
+}
+
+async function testProgressTickerUsesSnapshotStateWithoutMaterializing() {
+  const solvePayload = buildTinySolvePayload();
+  const backgroundSolution = solve(solvePayload.grid, solvePayload.params);
+  const progressLogRoot = fs.mkdtempSync(path.join(os.tmpdir(), "planner-progress-state-"));
+  const manager = new SolveJobManager({
+    progressLogRoot,
+    progressLogIntervalMs: 20,
+    progressLogPollIntervalMs: 5
+  });
+  const originalGetOptimizerAdapter = optimizerRegistry.getOptimizerAdapter;
+  const deferred = createDeferred();
+  const requestId = "progress-ticker-uses-state";
+  let getLatestSnapshotCalls = 0;
+  let getLatestSnapshotStateCalls = 0;
+
+  optimizerRegistry.getOptimizerAdapter = () => ({
+    name: "cp-sat",
+    solve() {
+      throw new Error("Progress ticker state test should use the background adapter.");
+    },
+    startBackgroundSolve() {
+      return {
+        promise: deferred.promise,
+        cancel() {},
+        getLatestSnapshot() {
+          getLatestSnapshotCalls++;
+          return backgroundSolution;
+        },
+        getLatestSnapshotState() {
+          getLatestSnapshotStateCalls++;
+          return {
+            hasFeasibleSolution: true,
+            totalPopulation: 123,
+            cpSatStatus: "FEASIBLE",
+            bestPopulationUpperBound: 200,
+            populationGapUpperBound: 77,
+            solveWallTimeSeconds: 2.5,
+            lastImprovementAtSeconds: 2,
+            secondsSinceLastImprovement: 0.5
+          };
+        }
+      };
+    }
+  });
+
+  try {
+    const job = manager.start(solvePayload.grid, { ...solvePayload.params, optimizer: "cp-sat" }, requestId);
+
+    for (let attempt = 0; attempt < 50; attempt++) {
+      const document = /** @type {{ entries: Array<Record<string, unknown> & { hasFeasibleSolution: boolean }> }} */ (
+        JSON.parse(fs.readFileSync(job.progressLogFilePath, "utf8"))
+      );
+      if (document.entries.some((entry) => entry.hasFeasibleSolution)) break;
+      await new Promise((resolve) => setTimeout(resolve, 10));
+    }
+
+    const document = /** @type {{ entries: Array<Record<string, unknown> & { hasFeasibleSolution: boolean }> }} */ (
+      JSON.parse(fs.readFileSync(job.progressLogFilePath, "utf8"))
+    );
+    const feasibleEntry = document.entries.find((entry) => entry.hasFeasibleSolution);
+    assert.equal(feasibleEntry?.totalPopulation, 123);
+    assert.equal(feasibleEntry?.cpSatStatus, "FEASIBLE");
+    assert.equal(feasibleEntry?.bestPopulationUpperBound, 200);
+    assert.equal(feasibleEntry?.populationGapUpperBound, 77);
+    assert.equal(getLatestSnapshotStateCalls > 0, true);
+    assert.equal(getLatestSnapshotCalls, 0);
+
+    deferred.resolve(backgroundSolution);
+    await deferred.promise;
+    await new Promise((resolve) => setTimeout(resolve, 20));
+  } finally {
+    if (manager.get(requestId)?.status === "running") {
+      manager.shutdownRunningSolves("Progress ticker state test cleanup.");
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    }
+    optimizerRegistry.getOptimizerAdapter = originalGetOptimizerAdapter;
+    fs.rmSync(progressLogRoot, { recursive: true, force: true });
   }
 }
 
@@ -833,6 +916,7 @@ async function main() {
   await testLiveSnapshotStatusValidatesReportedPopulationInvariants(handler);
   await testRecoveredAutoFailureNormalizesTerminalMetadata();
   await testShutdownRecoversLatestSnapshotBeforeFinalizing();
+  await testProgressTickerUsesSnapshotStateWithoutMaterializing();
   await testCancelMissingSolveRoute(handler);
   await testCompletedSolveStatusRecoversFromProgressLogAfterRetention();
   await testStoppedProgressLogRecoversCompactSolveResponse();

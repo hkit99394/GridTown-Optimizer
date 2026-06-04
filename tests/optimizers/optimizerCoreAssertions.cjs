@@ -730,6 +730,100 @@ function testBackgroundSolveCleansTempDirectoryWhenRequestBuildFails() {
   assert.deepEqual(leakedDirectories, []);
 }
 
+async function testBackgroundSolveCachesUnchangedSnapshots() {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "city-builder-bg-cache-"));
+  const workerScriptPath = path.join(tempDir, "snapshot-worker.cjs");
+  const readyPath = path.join(tempDir, "ready.txt");
+  let parseCount = 0;
+  let materializeCount = 0;
+  let snapshotFilePath = null;
+
+  fs.writeFileSync(
+    workerScriptPath,
+    `
+const fs = require("node:fs");
+let input = "";
+process.stdin.setEncoding("utf8");
+process.stdin.on("data", (chunk) => {
+  input += chunk;
+});
+process.stdin.on("end", () => {
+  const request = JSON.parse(input || "{}");
+  fs.writeFileSync(request.snapshotFilePath, JSON.stringify({ totalPopulation: 10, status: "FEASIBLE" }));
+  fs.writeFileSync(request.readyPath, "ready");
+  setInterval(() => {}, 1000);
+});
+`,
+    "utf8"
+  );
+
+  const handle = startJsonBackgroundSolve({
+    solverLabel: "Test snapshot cache",
+    stopDirectoryPrefix: "city-builder-bg-cache-test-",
+    command: process.execPath,
+    args: [workerScriptPath],
+    buildRequest: (paths) => {
+      snapshotFilePath = paths.snapshotFilePath;
+      return {
+        snapshotFilePath: paths.snapshotFilePath,
+        readyPath
+      };
+    },
+    parseRaw: (text) => {
+      parseCount++;
+      return JSON.parse(text);
+    },
+    materializeSolution: (raw, stoppedByUser) => {
+      materializeCount++;
+      return buildMockSolution({
+        optimizer: "cp-sat",
+        totalPopulation: raw.totalPopulation,
+        cpSatStatus: raw.status,
+        stoppedByUser
+      });
+    },
+    getSnapshotState: (raw) => ({
+      hasFeasibleSolution: Boolean(raw),
+      totalPopulation: raw?.totalPopulation ?? null,
+      cpSatStatus: raw?.status ?? null
+    }),
+    stoppedBeforeFeasibleMessage: "Test snapshot cache stopped before feasible.",
+    noSolutionMessage: "Test snapshot cache returned no solution.",
+    forcedTerminationDelayMs: 20
+  });
+
+  try {
+    await waitForFile(readyPath);
+
+    assert.equal(handle.getLatestSnapshotState().totalPopulation, 10);
+    assert.equal(parseCount, 1);
+
+    assert.equal(handle.getLatestSnapshotState().totalPopulation, 10);
+    assert.equal(parseCount, 1);
+
+    const firstSnapshot = handle.getLatestSnapshot();
+    const secondSnapshot = handle.getLatestSnapshot();
+    assert.equal(firstSnapshot?.totalPopulation, 10);
+    assert.strictEqual(secondSnapshot, firstSnapshot);
+    assert.equal(materializeCount, 1);
+    assert.equal(parseCount, 1);
+
+    assert.equal(typeof snapshotFilePath, "string");
+    fs.writeFileSync(snapshotFilePath, JSON.stringify({ totalPopulation: 25, status: "FEASIBLE" }), "utf8");
+
+    assert.equal(handle.getLatestSnapshotState().totalPopulation, 25);
+    assert.equal(parseCount, 2);
+    const updatedSnapshot = handle.getLatestSnapshot();
+    assert.equal(updatedSnapshot?.totalPopulation, 25);
+    assert.notStrictEqual(updatedSnapshot, firstSnapshot);
+    assert.equal(materializeCount, 2);
+  } finally {
+    handle.forceKill?.();
+    await handle.promise.catch(() => {});
+    fs.rmSync(tempDir, { recursive: true, force: true });
+  }
+}
+
 async function testBackgroundSolveCancellationKillsProcessGroupChildren() {
   if (process.platform === "win32") {
     console.log("Skipping process-group cancellation regression on Windows.");
@@ -835,6 +929,7 @@ async function runCoreOptimizerTests() {
   await testDirectSolverEntrypointsValidateSharedInputs();
   testBackgroundSolverStartersValidateSharedInputs();
   testBackgroundSolveCleansTempDirectoryWhenRequestBuildFails();
+  await testBackgroundSolveCachesUnchangedSnapshots();
   await testBackgroundSolveCancellationKillsProcessGroupChildren();
 }
 
@@ -860,5 +955,6 @@ module.exports = {
   testDirectSolverEntrypointsValidateSharedInputs,
   testBackgroundSolverStartersValidateSharedInputs,
   testBackgroundSolveCleansTempDirectoryWhenRequestBuildFails,
+  testBackgroundSolveCachesUnchangedSnapshots,
   testBackgroundSolveCancellationKillsProcessGroupChildren
 };

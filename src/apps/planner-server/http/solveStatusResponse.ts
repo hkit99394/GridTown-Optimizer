@@ -1,4 +1,10 @@
-import { assertValidSolveInputs } from "../../../packages/core/index.js";
+import {
+  assertValidSolveInputs,
+  SOLVE_PROGRESS_SAMPLE_SOURCE_LIVE_SNAPSHOT,
+  SOLVE_RUN_STATUS_FAILED,
+  SOLVE_RUN_STATUS_RUNNING,
+  SOLVE_RUN_STATUS_STOPPED
+} from "../../../packages/core/index.js";
 import {
   type SolveJob,
   type SolveJobStatusView,
@@ -45,6 +51,19 @@ function buildSolveJobInput(job: Pick<SolveJob, "grid" | "params">) {
   };
 }
 
+function readLayoutTotalPopulation(solution: Solution | null): number | null {
+  return typeof solution?.totalPopulation === "number" && Number.isFinite(solution.totalPopulation)
+    ? solution.totalPopulation
+    : null;
+}
+
+function readSolverTotalPopulation(solution: Solution | null): number | null {
+  const incumbentPopulation = solution?.cpSatTelemetry?.incumbentPopulation;
+  return typeof incumbentPopulation === "number" && Number.isFinite(incumbentPopulation)
+    ? incumbentPopulation
+    : readLayoutTotalPopulation(solution);
+}
+
 export function buildActiveSolveResponse(job: SolveJob) {
   const progressEntry = job.progressLogWriter.getLastEntry();
   const snapshotState = job.handle?.getLatestSnapshotState() ?? {
@@ -58,6 +77,8 @@ export function buildActiveSolveResponse(job: SolveJob) {
     input: buildSolveJobInput(job),
     hasFeasibleSolution: snapshotState.hasFeasibleSolution,
     bestTotalPopulation: snapshotState.totalPopulation,
+    solverTotalPopulation: snapshotState.totalPopulation,
+    layoutTotalPopulation: null,
     activeOptimizer: snapshotState.activeOptimizer ?? null,
     autoStage: snapshotState.autoStage ?? null,
     ...(progressEntry ? { progressEntry } : {}),
@@ -68,7 +89,7 @@ export function buildActiveSolveResponse(job: SolveJob) {
 function buildLiveProgressEntry(job: SolveJob, solution: Solution) {
   return job.progressLogWriter.buildSolutionSample(solution, {
     elapsedMs: Date.now() - job.createdAt,
-    source: "live-snapshot"
+    source: SOLVE_PROGRESS_SAMPLE_SOURCE_LIVE_SNAPSHOT
   });
 }
 
@@ -79,7 +100,7 @@ function buildProgressLogStatusResponseBase(progressLog: SolveProgressLogReadRes
     requestId: document.requestId,
     optimizer: document.optimizer,
     jobStatus: document.status,
-    cancelRequested: document.status === "stopped" || Boolean(document.finalResult?.stoppedByUser),
+    cancelRequested: document.status === SOLVE_RUN_STATUS_STOPPED || Boolean(document.finalResult?.stoppedByUser),
     progressLogFilePath: filePath
   };
 }
@@ -92,9 +113,9 @@ function buildTerminalProgressLogError(progressLog: SolveProgressLogReadResult):
   const { status, error } = progressLog.document;
   return (
     error ??
-    (status === "stopped"
+    (status === SOLVE_RUN_STATUS_STOPPED
       ? "Solve was stopped."
-      : status === "failed"
+      : status === SOLVE_RUN_STATUS_FAILED
         ? "Solve failed."
         : "Solve completed without a persisted final result.")
   );
@@ -124,7 +145,7 @@ export function buildRecoveredProgressLogStatusResponse(
 ): SolveStatusProjection {
   const { document, filePath } = progressLog;
   const progressEntry = document.entries[document.entries.length - 1] ?? null;
-  if (document.status !== "running") {
+  if (document.status !== SOLVE_RUN_STATUS_RUNNING) {
     if (document.finalResult) {
       let compactResponse: ReturnType<typeof buildCompactSolveResponse>;
       try {
@@ -177,7 +198,7 @@ export function buildRecoveredProgressLogStatusResponse(
       ok: false,
       requestId: document.requestId,
       optimizer: document.optimizer,
-      jobStatus: document.status === "running" ? "failed" : document.status,
+      jobStatus: document.status === SOLVE_RUN_STATUS_RUNNING ? SOLVE_RUN_STATUS_FAILED : document.status,
       cancelRequested: false,
       progressLogFilePath: filePath,
       ...(progressEntry ? { progressEntry } : {}),
@@ -191,10 +212,16 @@ export function buildSolveStatusResponse(jobStatus: SolveJobStatusView): SolveSt
 
   if (job.solution) {
     const progressEntry = job.progressLogWriter.getLastEntry();
+    const solverTotalPopulation = readSolverTotalPopulation(job.solution);
+    const layoutTotalPopulation = readLayoutTotalPopulation(job.solution);
     return {
       statusCode: 200,
       payload: {
         ...buildSolveJobResponseBase(job),
+        hasFeasibleSolution: true,
+        bestTotalPopulation: layoutTotalPopulation,
+        solverTotalPopulation,
+        layoutTotalPopulation,
         ...(job.message ? { message: job.message } : {}),
         ...(progressEntry ? { progressEntry } : {}),
         ...buildCompactSolveResponse(job.grid, job.params, job.solution, { validationMode: "lightweight" })
@@ -202,24 +229,28 @@ export function buildSolveStatusResponse(jobStatus: SolveJobStatusView): SolveSt
     };
   }
 
-  if (job.status !== "running") {
+  if (job.status !== SOLVE_RUN_STATUS_RUNNING) {
     return {
       statusCode: 200,
       payload: {
         ...buildSolveJobResponseBase(job),
-        error: job.error ?? (job.status === "stopped" ? "Solve was stopped." : "Solve failed.")
+        error: job.error ?? (job.status === SOLVE_RUN_STATUS_STOPPED ? "Solve was stopped." : "Solve failed.")
       }
     };
   }
 
   if (liveSnapshot) {
     const progressEntry = buildLiveProgressEntry(job, liveSnapshot);
+    const solverTotalPopulation = snapshotState.totalPopulation;
+    const layoutTotalPopulation = readLayoutTotalPopulation(liveSnapshot);
     return {
       statusCode: 200,
       payload: {
         ...buildSolveJobResponseBase(job),
-        hasFeasibleSolution: snapshotState.hasFeasibleSolution,
-        bestTotalPopulation: snapshotState.totalPopulation,
+        hasFeasibleSolution: true,
+        bestTotalPopulation: layoutTotalPopulation,
+        solverTotalPopulation,
+        layoutTotalPopulation,
         activeOptimizer: snapshotState.activeOptimizer ?? null,
         autoStage: snapshotState.autoStage ?? null,
         progressEntry,
@@ -237,6 +268,8 @@ export function buildSolveStatusResponse(jobStatus: SolveJobStatusView): SolveSt
       ...buildSolveJobResponseBase(job),
       hasFeasibleSolution: snapshotState.hasFeasibleSolution,
       bestTotalPopulation: snapshotState.totalPopulation,
+      solverTotalPopulation: snapshotState.totalPopulation,
+      layoutTotalPopulation: null,
       activeOptimizer: snapshotState.activeOptimizer ?? null,
       autoStage: snapshotState.autoStage ?? null,
       ...(progressEntry ? { progressEntry } : {})

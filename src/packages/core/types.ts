@@ -7,6 +7,7 @@
 
 export * from "./types/baseTypes.js";
 export * from "./types/autoTypes.js";
+export * from "./types/solverLifecycleTypes.js";
 export * from "./types/cpSatTypes.js";
 export * from "./types/greedyTypes.js";
 export * from "./types/lnsTypes.js";

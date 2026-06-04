@@ -1,5 +1,10 @@
 import { benchmarkGeneratedAt } from "./benchmarkOptions.js";
 import { hashString, stableStringify } from "../core/cpSatContinuation.js";
+import {
+  buildBenchmarkArtifactRunId,
+  cloneBenchmarkArtifactPaths,
+  cloneBenchmarkArtifactRecord
+} from "./artifactMetadata.js";
 
 export interface ModelExperimentTelemetryManifestOptions {
   command: string;
@@ -56,18 +61,10 @@ export interface ModelExperimentRegistryEntryDraftOptions {
   summaryMetrics?: Record<string, unknown>;
 }
 
-function dateSlug(value: string): string {
-  return value.slice(0, 10);
-}
-
 function assertNonEmptyStringList(values: readonly string[], label: string): void {
   if (values.length === 0 || values.some((value) => typeof value !== "string" || value.trim().length === 0)) {
     throw new Error(`Model experiment ${label} must include at least one non-empty string.`);
   }
-}
-
-function cloneRecord(value: Record<string, unknown>): Record<string, unknown> {
-  return structuredClone(value);
 }
 
 export function buildModelExperimentFingerprint(value: unknown): string {
@@ -78,7 +75,7 @@ export function buildModelExperimentTelemetryManifest(
   options: ModelExperimentTelemetryManifestOptions
 ): ModelExperimentTelemetryManifest {
   const generatedAt = options.generatedAt ?? benchmarkGeneratedAt();
-  const model = cloneRecord(options.model);
+  const model = cloneBenchmarkArtifactRecord(options.model);
   const modelFingerprint = options.modelFingerprint ?? buildModelExperimentFingerprint(model);
   return {
     schemaVersion: 1,
@@ -88,12 +85,12 @@ export function buildModelExperimentTelemetryManifest(
     git: options.git ?? null,
     hardware: options.hardware ?? { captured: false, gpuUsed: false },
     model,
-    inputArtifacts: [...(options.inputArtifacts ?? [])],
-    outputArtifacts: [...(options.outputArtifacts ?? [])],
+    inputArtifacts: cloneBenchmarkArtifactPaths(options.inputArtifacts ?? []),
+    outputArtifacts: cloneBenchmarkArtifactPaths(options.outputArtifacts ?? []),
     ...(options.labelFingerprint === undefined ? {} : { labelFingerprint: options.labelFingerprint }),
     ...(options.datasetFingerprint === undefined ? {} : { datasetFingerprint: options.datasetFingerprint }),
     modelFingerprint,
-    metrics: cloneRecord(options.metrics ?? {}),
+    metrics: cloneBenchmarkArtifactRecord(options.metrics ?? {}),
     ...(options.notes === undefined ? {} : { notes: options.notes })
   };
 }
@@ -104,21 +101,21 @@ export function buildModelExperimentRegistryEntryDraft(
   assertNonEmptyStringList([...options.commands], "commands");
   assertNonEmptyStringList([...options.artifactPaths], "artifact paths");
   const generatedAt = options.generatedAt ?? benchmarkGeneratedAt();
-  const model = cloneRecord(options.model);
+  const model = cloneBenchmarkArtifactRecord(options.model);
   const modelFingerprint = options.modelFingerprint ?? buildModelExperimentFingerprint(model);
   return {
     schemaVersion: 1,
-    runId: options.runId ?? `model-experiment-${dateSlug(generatedAt)}`,
+    runId: options.runId ?? buildBenchmarkArtifactRunId("model-experiment", generatedAt),
     artifactType: "model-experiment",
     generatedAt,
-    commands: [...options.commands],
-    artifactPaths: [...options.artifactPaths],
+    commands: cloneBenchmarkArtifactPaths(options.commands),
+    artifactPaths: cloneBenchmarkArtifactPaths(options.artifactPaths),
     cases: options.cases ?? null,
     caseFamilies:
       options.caseFamilies === undefined || options.caseFamilies === null ? null : [...options.caseFamilies],
     seeds: [...(options.seeds ?? [])],
     splitStatus: options.splitStatus ?? null,
-    budget: cloneRecord(options.budget ?? {}),
+    budget: cloneBenchmarkArtifactRecord(options.budget ?? {}),
     model,
     decision: options.decision ?? "model-experiment-only",
     summary: options.summary ?? "Model experiment artifact; no solver default changed.",
@@ -126,6 +123,6 @@ export function buildModelExperimentRegistryEntryDraft(
     ...(options.datasetFingerprint === undefined ? {} : { datasetFingerprint: options.datasetFingerprint }),
     ...(options.inputFingerprint === undefined ? {} : { inputFingerprint: options.inputFingerprint }),
     modelFingerprint,
-    summaryMetrics: cloneRecord(options.summaryMetrics ?? {})
+    summaryMetrics: cloneBenchmarkArtifactRecord(options.summaryMetrics ?? {})
   };
 }

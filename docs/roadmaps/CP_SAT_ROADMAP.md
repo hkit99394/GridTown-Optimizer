@@ -41,6 +41,12 @@ These are maintenance or gated extension lanes. The current solver roadmap remai
 
 Ordering note: this CP-SAT-specific list follows the consolidated [SOLVER_ROADMAP.md](./SOLVER_ROADMAP.md). Road-semantics, telemetry, async/portfolio failure-mode closeouts, and the local exact backend needed by label/replay workflows are delivered. There is no current active CP-SAT default-path change; future CP-SAT work should start only from a solver-roadmap trigger, and distributed CP-SAT remains gated.
 
+The trigger-gated plan for evaluating a non-CP-SAT exact provider lives in
+[EXTERNAL_EXACT_BACKEND_ADAPTER.md](../design/EXTERNAL_EXACT_BACKEND_ADAPTER.md).
+Keep external MILP/SCIP/Gurobi/cuOpt-style work behind that adapter boundary
+until exact bounds or incumbents remain blocked after an admitted CP-SAT tuning
+track.
+
 ### 1. Support future solver-roadmap label/replay triggers
 
 Status: delivered foundation, gated future use

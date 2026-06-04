@@ -261,6 +261,13 @@ Owns:
 - final solution serialization for long-running solve recovery/review
 - CP-SAT/LNS/Auto progress field normalization for persisted logs
 
+### R7 durable worker plan
+
+[DURABLE_WORKER_ARCHITECTURE.md](DURABLE_WORKER_ARCHITECTURE.md) is the
+trigger-gated deployment plan for hosted, multi-user, or restart-survivable
+planner execution. The current runtime remains local and in-process until that
+product requirement is admitted.
+
 ### `src/packages/runtime/dispatch/optimizerRegistry.ts`
 
 Single optimizer dispatch boundary.
@@ -406,6 +413,9 @@ When adding a new behavior:
 - If it changes static asset wiring, update `src/apps/planner-server/http/static.ts`.
 - If it changes background job lifecycle, status recovery, or concurrency admission, update `src/packages/runtime/jobs/solveJobManager.ts`.
 - If it changes persisted progress-log schema or sample projection, update `src/packages/runtime/jobs/solveProgressLog.ts`.
+- If it changes hosted, multi-user, restart-survivable, or multi-instance solve
+  ownership, follow [DURABLE_WORKER_ARCHITECTURE.md](DURABLE_WORKER_ARCHITECTURE.md)
+  before changing runtime behavior.
 - If it changes optimizer dispatch, update `src/packages/runtime/dispatch/optimizerRegistry.ts`.
 - If it changes Auto stage order or incumbent acceptance, update `src/packages/solvers/auto/solver.ts`.
 - If it changes Auto option defaults, Greedy seed clamps, LNS budget slicing, or CP-SAT reserve policy, update `src/packages/solvers/auto/stagePolicy.ts`.

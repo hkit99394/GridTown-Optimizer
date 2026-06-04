@@ -7,7 +7,56 @@ const {
   readLatestSolveProgressLogByRequestId,
   SolveProgressLogWriter
 } = require("../dist/packages/runtime/jobs/solveProgressLog.js");
+const {
+  isSolveProgressSampleSource,
+  isSolveRunStatus,
+  isSolveTerminalStatus,
+  SOLVE_PROGRESS_SAMPLE_SOURCE_FINAL_RESULT,
+  SOLVE_PROGRESS_SAMPLE_SOURCE_LIVE_SNAPSHOT,
+  SOLVE_PROGRESS_SAMPLE_SOURCES,
+  SOLVE_RUN_STATUS_COMPLETED,
+  SOLVE_RUN_STATUS_FAILED,
+  SOLVE_RUN_STATUS_RUNNING,
+  SOLVE_RUN_STATUS_STOPPED,
+  SOLVE_RUN_STATUSES,
+  SOLVE_TERMINAL_STATUSES,
+  SOLVER_LIFECYCLE_CONTRACT,
+  SOLVER_LIFECYCLE_TERMS
+} = require("../dist/packages/core/index.js");
 const { loadPlannerSolveRuntimeModule } = require("./helpers/plannerBrowserModules.cjs");
+
+function testSharedSolverLifecycleContractTermsStayStable() {
+  assert.deepEqual(Array.from(SOLVER_LIFECYCLE_TERMS), [
+    "start",
+    "progress",
+    "snapshot",
+    "cancel",
+    "recovered-solution",
+    "terminal-status"
+  ]);
+  assert.deepEqual(Array.from(SOLVE_RUN_STATUSES), ["running", "completed", "stopped", "failed"]);
+  assert.deepEqual(Array.from(SOLVE_TERMINAL_STATUSES), ["completed", "stopped", "failed"]);
+  assert.deepEqual(Array.from(SOLVE_PROGRESS_SAMPLE_SOURCES), ["live-snapshot", "final-result"]);
+
+  for (const term of SOLVER_LIFECYCLE_TERMS) {
+    assert.equal(SOLVER_LIFECYCLE_CONTRACT[term].term, term);
+    assert.equal(typeof SOLVER_LIFECYCLE_CONTRACT[term].summary, "string");
+    assert.notEqual(SOLVER_LIFECYCLE_CONTRACT[term].summary.trim(), "");
+  }
+
+  assert.equal(isSolveRunStatus(SOLVE_RUN_STATUS_RUNNING), true);
+  assert.equal(isSolveRunStatus(SOLVE_RUN_STATUS_COMPLETED), true);
+  assert.equal(isSolveRunStatus(SOLVE_RUN_STATUS_STOPPED), true);
+  assert.equal(isSolveRunStatus(SOLVE_RUN_STATUS_FAILED), true);
+  assert.equal(isSolveRunStatus("queued"), false);
+  assert.equal(isSolveTerminalStatus(SOLVE_RUN_STATUS_RUNNING), false);
+  assert.equal(isSolveTerminalStatus(SOLVE_RUN_STATUS_COMPLETED), true);
+  assert.equal(isSolveTerminalStatus(SOLVE_RUN_STATUS_STOPPED), true);
+  assert.equal(isSolveTerminalStatus(SOLVE_RUN_STATUS_FAILED), true);
+  assert.equal(isSolveProgressSampleSource(SOLVE_PROGRESS_SAMPLE_SOURCE_LIVE_SNAPSHOT), true);
+  assert.equal(isSolveProgressSampleSource(SOLVE_PROGRESS_SAMPLE_SOURCE_FINAL_RESULT), true);
+  assert.equal(isSolveProgressSampleSource("pending"), false);
+}
 
 function testPlannerSolveProgressLogCapturesSnapshotAndFinalResult() {
   const runtimeModule = loadPlannerSolveRuntimeModule();
@@ -34,7 +83,7 @@ function testPlannerSolveProgressLogCapturesSnapshotAndFinalResult() {
     {
       elapsedMs: 60000,
       capturedAt: "2026-04-14T11:00:00.000Z",
-      source: "live-snapshot"
+      source: SOLVE_PROGRESS_SAMPLE_SOURCE_LIVE_SNAPSHOT
     }
   );
 
@@ -42,7 +91,7 @@ function testPlannerSolveProgressLogCapturesSnapshotAndFinalResult() {
   assert.deepEqual(JSON.parse(JSON.stringify(logAfterSnapshot[0])), {
     capturedAt: "2026-04-14T11:00:00.000Z",
     elapsedMs: 60000,
-    source: "live-snapshot",
+    source: SOLVE_PROGRESS_SAMPLE_SOURCE_LIVE_SNAPSHOT,
     optimizer: "cp-sat",
     hasFeasibleSolution: true,
     totalPopulation: 1234,
@@ -89,12 +138,12 @@ function testPlannerSolveProgressLogCapturesSnapshotAndFinalResult() {
     {
       elapsedMs: 90000,
       capturedAt: "2026-04-14T11:00:30.000Z",
-      source: "final-result"
+      source: SOLVE_PROGRESS_SAMPLE_SOURCE_FINAL_RESULT
     }
   );
 
   assert.equal(logAfterFinal.length, 2);
-  assert.equal(logAfterFinal[1].source, "final-result");
+  assert.equal(logAfterFinal[1].source, SOLVE_PROGRESS_SAMPLE_SOURCE_FINAL_RESULT);
   assert.equal(logAfterFinal[1].totalPopulation, 1250);
   assert.equal(logAfterFinal[1].cpSatStatus, "OPTIMAL");
   assert.equal(logAfterFinal[1].bestPopulationUpperBound, 1250);
@@ -117,7 +166,7 @@ function testPlannerSolveProgressLogPrefersBackendProgressEntry() {
   const progressEntry = {
     capturedAt: "2026-04-14T12:00:00.000Z",
     elapsedMs: 12000,
-    source: "live-snapshot",
+    source: SOLVE_PROGRESS_SAMPLE_SOURCE_LIVE_SNAPSHOT,
     optimizer: "auto",
     activeOptimizer: "lns",
     autoStage: {
@@ -166,7 +215,7 @@ function testPlannerSolveProgressLogPrefersBackendProgressEntry() {
     },
     {
       elapsedMs: 99999,
-      source: "final-result"
+      source: SOLVE_PROGRESS_SAMPLE_SOURCE_FINAL_RESULT
     }
   );
 
@@ -194,7 +243,7 @@ function testPlannerSolveProgressLogCompactsUnchangedSamples() {
     {
       elapsedMs: 60000,
       capturedAt: "2026-04-14T18:00:00.000Z",
-      source: "live-snapshot"
+      source: SOLVE_PROGRESS_SAMPLE_SOURCE_LIVE_SNAPSHOT
     }
   );
   const compactedLog = runtimeModule.appendSolveProgressLog(
@@ -213,7 +262,7 @@ function testPlannerSolveProgressLogCompactsUnchangedSamples() {
     {
       elapsedMs: 70000,
       capturedAt: "2026-04-14T18:00:10.000Z",
-      source: "live-snapshot"
+      source: SOLVE_PROGRESS_SAMPLE_SOURCE_LIVE_SNAPSHOT
     }
   );
 
@@ -240,7 +289,7 @@ function testPlannerSolveProgressLogCompactsUnchangedSamples() {
     {
       elapsedMs: 80000,
       capturedAt: "2026-04-14T18:00:20.000Z",
-      source: "live-snapshot"
+      source: SOLVE_PROGRESS_SAMPLE_SOURCE_LIVE_SNAPSHOT
     }
   );
 
@@ -275,12 +324,12 @@ function testFilesystemSolveLogCompactsUnchangedLiveSamples() {
   writer.appendSolutionSample(buildSolution(100), {
     elapsedMs: 60000,
     capturedAt: "2026-04-14T18:00:00.000Z",
-    source: "live-snapshot"
+    source: SOLVE_PROGRESS_SAMPLE_SOURCE_LIVE_SNAPSHOT
   });
   writer.appendSolutionSample(buildSolution(100), {
     elapsedMs: 70000,
     capturedAt: "2026-04-14T18:00:10.000Z",
-    source: "live-snapshot"
+    source: SOLVE_PROGRESS_SAMPLE_SOURCE_LIVE_SNAPSHOT
   });
 
   let payload = JSON.parse(fs.readFileSync(writer.filePath, "utf8"));
@@ -296,7 +345,7 @@ function testFilesystemSolveLogCompactsUnchangedLiveSamples() {
   writer.appendSolutionSample(buildSolution(120), {
     elapsedMs: 80000,
     capturedAt: "2026-04-14T18:00:20.000Z",
-    source: "live-snapshot"
+    source: SOLVE_PROGRESS_SAMPLE_SOURCE_LIVE_SNAPSHOT
   });
 
   payload = JSON.parse(fs.readFileSync(writer.filePath, "utf8"));
@@ -347,7 +396,7 @@ function testFilesystemSolveLogTracksSolverClockAcrossHeartbeats() {
   writer.appendSolutionSample(feasibleSolution, {
     elapsedMs: 100025,
     capturedAt: "2026-04-14T19:00:00.000Z",
-    source: "live-snapshot"
+    source: SOLVE_PROGRESS_SAMPLE_SOURCE_LIVE_SNAPSHOT
   });
 
   writer.appendSolutionSample(
@@ -361,11 +410,11 @@ function testFilesystemSolveLogTracksSolverClockAcrossHeartbeats() {
     {
       elapsedMs: 160025,
       capturedAt: "2026-04-14T19:01:00.000Z",
-      source: "live-snapshot"
+      source: SOLVE_PROGRESS_SAMPLE_SOURCE_LIVE_SNAPSHOT
     }
   );
 
-  writer.finish("completed", {
+  writer.finish(SOLVE_RUN_STATUS_COMPLETED, {
     finishedAtMs: 160025,
     solution: feasibleSolution
   });
@@ -476,7 +525,7 @@ function testFilesystemSolveLogFinishWithSolutionSampleWritesTerminalDocumentInO
       totalPopulation: 10
     };
 
-    writer.finishWithSolutionSample("completed", {
+    writer.finishWithSolutionSample(SOLVE_RUN_STATUS_COMPLETED, {
       finishedAtMs: Date.parse("2026-04-14T21:00:01.234Z"),
       elapsedMs: 1234,
       solution,
@@ -490,20 +539,26 @@ function testFilesystemSolveLogFinishWithSolutionSampleWritesTerminalDocumentInO
 
   const partialFinalDocuments = capturedDocuments.filter((document) => {
     const lastEntry = document.entries[document.entries.length - 1] ?? null;
-    return document.status === "running" && lastEntry?.source === "final-result";
+    return (
+      document.status === SOLVE_RUN_STATUS_RUNNING && lastEntry?.source === SOLVE_PROGRESS_SAMPLE_SOURCE_FINAL_RESULT
+    );
   });
   const terminalDocuments = capturedDocuments.filter((document) => {
     const lastEntry = document.entries[document.entries.length - 1] ?? null;
-    return document.status === "completed" && Boolean(document.finalResult) && lastEntry?.source === "final-result";
+    return (
+      document.status === SOLVE_RUN_STATUS_COMPLETED &&
+      Boolean(document.finalResult) &&
+      lastEntry?.source === SOLVE_PROGRESS_SAMPLE_SOURCE_FINAL_RESULT
+    );
   });
 
   assert.equal(capturedDocuments.length, 1);
   assert.deepEqual(partialFinalDocuments, []);
   assert.equal(terminalDocuments.length, 1);
-  assert.equal(payload.status, "completed");
+  assert.equal(payload.status, SOLVE_RUN_STATUS_COMPLETED);
   assert.equal(payload.message, "Solve completed.");
   assert.equal(payload.entries.length, 1);
-  assert.equal(payload.entries[0].source, "final-result");
+  assert.equal(payload.entries[0].source, SOLVE_PROGRESS_SAMPLE_SOURCE_FINAL_RESULT);
   assert.equal(payload.entries[0].capturedAt, "2026-04-14T21:00:01.234Z");
   assert.equal(payload.finalResult.totalPopulation, 10);
   assert.equal(payload.finalResult.solution.totalPopulation, 10);
@@ -595,7 +650,7 @@ function testFilesystemSolveLogRecoverySkipsTruncatedJsonAndTempWrites() {
       optimizer: "greedy",
       createdAt: "2099-12-31T23:59:59.000Z",
       updatedAt: "2099-12-31T23:59:59.000Z",
-      status: "completed",
+      status: SOLVE_RUN_STATUS_COMPLETED,
       input: { grid: [[1]], params: { optimizer: "greedy" } },
       entries: []
     }),
@@ -614,7 +669,7 @@ function testFilesystemSolveLogRecoverySkipsTruncatedJsonAndTempWrites() {
 
   assert.ok(recovered);
   assert.equal(recovered.filePath, writer.filePath);
-  assert.equal(recovered.document.status, "running");
+  assert.equal(recovered.document.status, SOLVE_RUN_STATUS_RUNNING);
   assert.equal(recovered.document.entries.length, 1);
   assert.equal(recovered.document.entries[0].note, "Valid progress survived.");
 }
@@ -643,7 +698,7 @@ function testFilesystemSolveLogRecoveryRejectsInconsistentFinalResult() {
     totalPopulation: 0
   };
 
-  writer.finishWithSolutionSample("completed", {
+  writer.finishWithSolutionSample(SOLVE_RUN_STATUS_COMPLETED, {
     finishedAtMs: Date.parse("2026-04-14T23:00:01.000Z"),
     elapsedMs: 1000,
     solution
@@ -658,6 +713,7 @@ function testFilesystemSolveLogRecoveryRejectsInconsistentFinalResult() {
 }
 
 function main() {
+  testSharedSolverLifecycleContractTermsStayStable();
   testPlannerSolveProgressLogCapturesSnapshotAndFinalResult();
   testPlannerSolveProgressLogPrefersBackendProgressEntry();
   testPlannerSolveProgressLogCompactsUnchangedSamples();

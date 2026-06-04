@@ -5,6 +5,7 @@ const os = require("node:os");
 const path = require("node:path");
 
 const {
+  buildCliArtifactRunMetadata,
   prepareArtifactBundleDirectory,
   resolveRepoInputPath,
   writeJsonArtifact,
@@ -36,6 +37,15 @@ try {
     () => resolveRepoInputPath(path.dirname(repoRoot), "--input"),
     /--input must stay inside the repository: /
   );
+
+  const runMetadata = buildCliArtifactRunMetadata("dist/exampleCli.js", ["--keep", "--drop=1", "case name"], {
+    filterArg: (arg) => !arg.startsWith("--drop")
+  });
+  assert.equal(runMetadata.command, "node dist/exampleCli.js --keep 'case name'");
+  assert.equal(typeof runMetadata.git.commit, "string");
+  assert.equal(typeof runMetadata.git.branch, "string");
+  assert.equal(runMetadata.hardware.captured, true);
+  assert.equal(runMetadata.hardware.gpuUsed, false);
 
   const nonEmptyDir = `${relativeTempRoot}/non-empty`;
   const absoluteNonEmptyDir = path.join(repoRoot, nonEmptyDir);

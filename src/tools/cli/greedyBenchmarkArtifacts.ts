@@ -1,12 +1,11 @@
 import {
-  captureExperimentRegistryHardwareMetadata,
+  buildBenchmarkArtifactRunId,
   DEFAULT_CROSS_MODE_PRODUCT_WORKFLOW_CORPUS,
-  formatGreedyDeterministicAblation,
-  resolveExperimentRegistryGitMetadata
+  formatGreedyDeterministicAblation
 } from "../../benchmarkApi.js";
 import type { GreedyDeterministicAblationSuiteResult } from "../../benchmarkApi.js";
 import {
-  defaultCliReplayCommand,
+  buildCliArtifactRunMetadata,
   prepareArtifactBundleDirectory,
   writeJsonArtifact,
   writeTextArtifact
@@ -45,9 +44,7 @@ interface GreedyDeterministicAblationArtifactBundlePaths {
   absoluteArtifactPath(fileName: string): string;
 }
 
-function defaultGreedyBenchmarkCommand(argv: readonly string[]): string {
-  return defaultCliReplayCommand("dist/greedyBenchmarkCli.js", argv);
-}
+const GREEDY_BENCHMARK_CLI_PATH = "dist/greedyBenchmarkCli.js";
 
 function prepareGreedyDeterministicAblationArtifactBundlePaths(
   artifactDirValue: string,
@@ -65,12 +62,6 @@ function prepareGreedyDeterministicAblationArtifactBundlePaths(
     artifactPath: artifacts.artifactPath,
     absoluteArtifactPath: artifacts.absoluteArtifactPath
   };
-}
-
-function dateSlug(value: string): string {
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) return value.slice(0, 10) || "unknown-date";
-  return parsed.toISOString().slice(0, 10);
 }
 
 function selectedProductCases(result: GreedyDeterministicAblationSuiteResult) {
@@ -197,7 +188,7 @@ function buildGreedyDeterministicAblationRegistryEntryDraft(
 ): Record<string, unknown> {
   return {
     schemaVersion: 1,
-    runId: args.ablationRunId ?? `greedy-deterministic-ablation-${dateSlug(result.generatedAt)}`,
+    runId: args.ablationRunId ?? buildBenchmarkArtifactRunId("greedy-deterministic-ablation", result.generatedAt),
     artifactType: "ablation-gate",
     generatedAt: result.generatedAt,
     commands: [command],
@@ -256,20 +247,18 @@ export function writeGreedyDeterministicAblationArtifactBundle(
     throw new Error("Greedy deterministic ablation artifact bundles require explicit --seeds.");
   }
   const artifacts = prepareGreedyDeterministicAblationArtifactBundlePaths(args.artifactDir, args.forceArtifactDir);
-  const command = defaultGreedyBenchmarkCommand(argv);
-  const git = resolveExperimentRegistryGitMetadata();
-  const hardware = captureExperimentRegistryHardwareMetadata();
+  const metadata = buildCliArtifactRunMetadata(GREEDY_BENCHMARK_CLI_PATH, argv);
   const telemetryManifest = buildGreedyDeterministicAblationTelemetryManifest(result, {
-    command,
-    git,
-    hardware,
+    command: metadata.command,
+    git: metadata.git,
+    hardware: metadata.hardware,
     productCorpus: args.productCorpus
   });
   const registryEntryDraft = buildGreedyDeterministicAblationRegistryEntryDraft(
     result,
     artifacts.artifactPaths,
     args,
-    command
+    metadata.command
   );
 
   writeJsonArtifact(artifacts.absoluteArtifactPath("greedy-deterministic-ablation.json"), result, {

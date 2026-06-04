@@ -99,7 +99,12 @@ export function startCpSatSolve(G: Grid, params: SolverParams): CpSatSolveHandle
     getSnapshotState: (raw) => ({
       hasFeasibleSolution: Boolean(raw),
       totalPopulation: raw?.totalPopulation ?? null,
-      cpSatStatus: raw?.status ?? null
+      cpSatStatus: raw?.status ?? null,
+      bestPopulationUpperBound: raw?.telemetry?.bestPopulationUpperBound ?? null,
+      populationGapUpperBound: raw?.telemetry?.populationGapUpperBound ?? null,
+      solveWallTimeSeconds: raw?.telemetry?.solveWallTimeSeconds ?? null,
+      lastImprovementAtSeconds: raw?.telemetry?.lastImprovementAtSeconds ?? null,
+      secondsSinceLastImprovement: raw?.telemetry?.secondsSinceLastImprovement ?? null
     }),
     readStoppedByUser: (raw) => Boolean(raw.stoppedByUser),
     stoppedBeforeFeasibleMessage: "CP-SAT solve was stopped before finding a feasible solution.",

@@ -3,7 +3,7 @@
  * best-so-far snapshots through local temp files.
  */
 
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { spawn } from "node:child_process";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -47,6 +47,14 @@ interface ClosedSolverState<TRaw> {
   stopRequested: boolean;
   streamError: Error | null;
   snapshotRaw: TRaw | null;
+}
+
+interface SnapshotCache<TRaw> {
+  raw: TRaw | null;
+  signature: string | null;
+  materialized: Solution | null;
+  materializedSignature: string | null;
+  materializedStoppedByUser: boolean | null;
 }
 
 function createSolverTempFiles(stopDirectoryPrefix: string): SolverTempFiles {
@@ -135,16 +143,33 @@ function resolveClosedSolverSolution<TRaw>(
   }
 }
 
+function readSnapshotSignature(snapshotFilePath: string): string | null {
+  try {
+    const stats = statSync(snapshotFilePath);
+    return `${stats.mtimeMs}:${stats.size}`;
+  } catch {
+    return null;
+  }
+}
+
 function readSnapshotFileIfPresent<TRaw>(
   snapshotFilePath: string,
   parseRaw: (text: string) => TRaw,
-  fallback: TRaw | null
+  cache: SnapshotCache<TRaw>
 ): TRaw | null {
-  if (!existsSync(snapshotFilePath)) return fallback;
+  if (!existsSync(snapshotFilePath)) return cache.raw;
+  const signature = readSnapshotSignature(snapshotFilePath);
+  if (signature && signature === cache.signature) return cache.raw;
   try {
-    return parseRaw(readFileSync(snapshotFilePath, "utf8"));
+    const raw = parseRaw(readFileSync(snapshotFilePath, "utf8"));
+    cache.raw = raw;
+    cache.signature = signature;
+    cache.materialized = null;
+    cache.materializedSignature = null;
+    cache.materializedStoppedByUser = null;
+    return raw;
   } catch {
-    return fallback;
+    return cache.raw;
   }
 }
 
@@ -159,7 +184,13 @@ export function startJsonBackgroundSolve<TRaw>(config: JsonBackgroundSolverConfi
   let forcedTerminationTimer: NodeJS.Timeout | undefined;
   let streamError: Error | null = null;
   let cleanedUp = false;
-  let latestSnapshotRaw: TRaw | null = null;
+  const snapshotCache: SnapshotCache<TRaw> = {
+    raw: null,
+    signature: null,
+    materialized: null,
+    materializedSignature: null,
+    materializedStoppedByUser: null
+  };
 
   const cleanupTempDirectory = (): void => {
     if (cleanedUp) return;
@@ -187,14 +218,24 @@ export function startJsonBackgroundSolve<TRaw>(config: JsonBackgroundSolverConfi
   }
 
   const readLatestSnapshotRaw = (): TRaw | null => {
-    latestSnapshotRaw = readSnapshotFileIfPresent(tempFiles.snapshotFilePath, config.parseRaw, latestSnapshotRaw);
-    return latestSnapshotRaw;
+    return readSnapshotFileIfPresent(tempFiles.snapshotFilePath, config.parseRaw, snapshotCache);
   };
 
   const materializeSnapshot = (stoppedByUser: boolean): Solution | null => {
     const raw = readLatestSnapshotRaw();
     if (!raw) return null;
-    return config.materializeSolution(raw, stoppedByUser);
+    if (
+      snapshotCache.materialized &&
+      snapshotCache.materializedSignature === snapshotCache.signature &&
+      snapshotCache.materializedStoppedByUser === stoppedByUser
+    ) {
+      return snapshotCache.materialized;
+    }
+    const materialized = config.materializeSolution(raw, stoppedByUser);
+    snapshotCache.materialized = materialized;
+    snapshotCache.materializedSignature = snapshotCache.signature;
+    snapshotCache.materializedStoppedByUser = stoppedByUser;
+    return materialized;
   };
 
   const killChildProcessGroup = (signal: NodeJS.Signals): void => {

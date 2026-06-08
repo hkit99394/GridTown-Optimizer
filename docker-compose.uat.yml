@@ -1,0 +1,38 @@
+services:
+  city-builder-uat:
+    build:
+      context: .
+      args:
+        NODE_IMAGE: ${CITY_BUILDER_NODE_IMAGE:-node:24-bookworm-slim}
+    image: ${CITY_BUILDER_UAT_IMAGE:-city-builder-uat:local}
+    container_name: ${CITY_BUILDER_UAT_CONTAINER:-city-builder-uat}
+    restart: unless-stopped
+    ports:
+      - "${CITY_BUILDER_UAT_PORT:-4173}:4173"
+    environment:
+      NODE_ENV: production
+      HOST: 0.0.0.0
+      PORT: 4173
+      MAX_RUNNING_SOLVES: ${MAX_RUNNING_SOLVES:-1}
+      PROGRESS_LOG_INTERVAL_SECONDS: ${PROGRESS_LOG_INTERVAL_SECONDS:-10}
+      PROGRESS_LOG_POLL_INTERVAL_SECONDS: ${PROGRESS_LOG_POLL_INTERVAL_SECONDS:-2}
+      CITY_BUILDER_CP_SAT_PYTHON: /opt/cp-sat-venv/bin/python
+    volumes:
+      - city-builder-uat-progress:/app/artifacts/solve-progress
+    cpus: ${CITY_BUILDER_UAT_CPUS:-2}
+    mem_limit: ${CITY_BUILDER_UAT_MEMORY:-2g}
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:' + (process.env.PORT || '4173') + '/api/health').then((response) => process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1))"
+        ]
+      interval: 30s
+      timeout: 5s
+      start_period: 20s
+      retries: 3
+
+volumes:
+  city-builder-uat-progress:

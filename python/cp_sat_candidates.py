@@ -71,10 +71,17 @@ def iter_active_type_orientations(building_types, orientation_fn):
         yield from orientation_fn(building_type)
 
 
-def add_protected_reachable_border_cells(protected, grid, reachable_allowed, placement_map, dimensions):
+def add_protected_reachable_border_cells(
+    protected,
+    grid,
+    reachable_allowed,
+    placement_map,
+    dimensions,
+    road_anchor_boundary_enabled=True,
+):
     for rows, cols in dimensions:
         for placement in placement_map.get(f"{rows}x{cols}", []):
-            if touches_road_anchor_boundary(placement):
+            if touches_road_anchor_boundary(placement, road_anchor_boundary_enabled):
                 continue
             for cell in rectangle_border_cells(grid, placement["r"], placement["c"], rows, cols):
                 if cell in reachable_allowed:
@@ -106,8 +113,20 @@ def build_candidate_placement_maps(grid, params) -> CandidatePlacementMaps:
     )
 
 
-def collect_protected_road_cells(grid, params, reachable_allowed, placement_maps: CandidatePlacementMaps):
-    protected = {cell for cell in road_anchor_cells(grid) if cell in reachable_allowed}
+def collect_protected_road_cells(
+    grid,
+    params,
+    reachable_allowed,
+    placement_maps: CandidatePlacementMaps,
+    fixed_road_cells=None,
+    use_fixed_road_anchors_only=False,
+):
+    road_anchor_boundary_enabled = not use_fixed_road_anchors_only
+    protected = {
+        cell
+        for cell in road_anchor_cells(grid, fixed_road_cells, use_fixed_road_anchors_only)
+        if cell in reachable_allowed
+    }
     service_types = params.get("serviceTypes") or []
     add_protected_reachable_border_cells(
         protected,
@@ -115,6 +134,7 @@ def collect_protected_road_cells(grid, params, reachable_allowed, placement_maps
         reachable_allowed,
         placement_maps.service,
         iter_active_type_orientations(service_types, service_type_orientations),
+        road_anchor_boundary_enabled,
     )
 
     residential_types = params.get("residentialTypes")
@@ -125,6 +145,7 @@ def collect_protected_road_cells(grid, params, reachable_allowed, placement_maps
             reachable_allowed,
             placement_maps.residential,
             iter_active_type_orientations(residential_types, residential_type_orientations),
+            road_anchor_boundary_enabled,
         )
     else:
         add_protected_reachable_border_cells(
@@ -133,6 +154,7 @@ def collect_protected_road_cells(grid, params, reachable_allowed, placement_maps
             reachable_allowed,
             placement_maps.fallback_residential,
             ((2, 2), (2, 3)),
+            road_anchor_boundary_enabled,
         )
 
     return protected
@@ -317,7 +339,7 @@ def build_service_type_order(service_types):
     )
 
 
-def materialize_candidate_geometry(grid, cell_to_id, placement, rows, cols):
+def materialize_candidate_geometry(grid, cell_to_id, placement, rows, cols, road_anchor_boundary_enabled=True):
     r = int(placement["r"])
     c = int(placement["c"])
     cells = rectangle_cells(r, c, rows, cols)
@@ -325,7 +347,7 @@ def materialize_candidate_geometry(grid, cell_to_id, placement, rows, cols):
         return None
 
     border = [cell_to_id[cell] for cell in rectangle_border_cells(grid, r, c, rows, cols) if cell in cell_to_id]
-    if not border and not touches_road_anchor_boundary(placement):
+    if not border and not touches_road_anchor_boundary(placement, road_anchor_boundary_enabled):
         return None
 
     return {
@@ -338,8 +360,18 @@ def materialize_candidate_geometry(grid, cell_to_id, placement, rows, cols):
     }
 
 
-def build_service_candidate(grid, cell_to_id, placement, rows, cols, type_index, effect_range, bonus):
-    candidate = materialize_candidate_geometry(grid, cell_to_id, placement, rows, cols)
+def build_service_candidate(
+    grid,
+    cell_to_id,
+    placement,
+    rows,
+    cols,
+    type_index,
+    effect_range,
+    bonus,
+    road_anchor_boundary_enabled=True,
+):
+    candidate = materialize_candidate_geometry(grid, cell_to_id, placement, rows, cols, road_anchor_boundary_enabled)
     if candidate is None:
         return None
 
@@ -360,8 +392,18 @@ def resolve_candidate_max_population(configured_max, base_population, total_bonu
     return int(configured_max)
 
 
-def build_residential_candidate(grid, cell_to_id, placement, rows, cols, type_index, base_population, max_population):
-    candidate = materialize_candidate_geometry(grid, cell_to_id, placement, rows, cols)
+def build_residential_candidate(
+    grid,
+    cell_to_id,
+    placement,
+    rows,
+    cols,
+    type_index,
+    base_population,
+    max_population,
+    road_anchor_boundary_enabled=True,
+):
+    candidate = materialize_candidate_geometry(grid, cell_to_id, placement, rows, cols, road_anchor_boundary_enabled)
     if candidate is None:
         return None
 
@@ -371,7 +413,7 @@ def build_residential_candidate(grid, cell_to_id, placement, rows, cols, type_in
     return candidate
 
 
-def enumerate_service_candidates(grid, params, cell_to_id, placement_map):
+def enumerate_service_candidates(grid, params, cell_to_id, placement_map, road_anchor_boundary_enabled=True):
     candidates = []
     service_types = params.get("serviceTypes") or []
     for type_index in build_service_type_order(service_types):
@@ -392,13 +434,21 @@ def enumerate_service_candidates(grid, params, cell_to_id, placement_map):
                     type_index,
                     effect_range,
                     bonus,
+                    road_anchor_boundary_enabled,
                 )
                 if candidate is not None:
                     candidates.append(candidate)
     return prune_dominated_service_candidates(candidates, params)
 
 
-def enumerate_residential_candidates(grid, params, cell_to_id, total_bonus_upper_bound: int, placement_maps: CandidatePlacementMaps):
+def enumerate_residential_candidates(
+    grid,
+    params,
+    cell_to_id,
+    total_bonus_upper_bound: int,
+    placement_maps: CandidatePlacementMaps,
+    road_anchor_boundary_enabled=True,
+):
     candidates = []
     residential_types = params.get("residentialTypes")
     if residential_types:
@@ -424,6 +474,7 @@ def enumerate_residential_candidates(grid, params, cell_to_id, total_bonus_upper
                         type_index,
                         base_population,
                         max_population,
+                        road_anchor_boundary_enabled,
                     )
                     if candidate is not None:
                         candidates.append(candidate)
@@ -449,6 +500,7 @@ def enumerate_residential_candidates(grid, params, cell_to_id, total_bonus_upper
                 NO_RESIDENTIAL_TYPE,
                 base,
                 max_pop,
+                road_anchor_boundary_enabled,
             )
             if candidate is not None:
                 candidates.append(candidate)

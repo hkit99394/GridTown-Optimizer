@@ -1,6 +1,10 @@
 import { normalizeServicePlacement, serviceEffectZone } from "./buildings.js";
 import { height, isAllowed, width } from "./grid.js";
-import { computeRoadAnchorReachableEmptyFrontier, measureBuildingConnectivityShadowFromFrontier } from "./roads.js";
+import {
+  computeRoadAnchorReachableEmptyFrontier,
+  measureBuildingConnectivityShadowFromFrontier,
+  roadAnchorsFromParams
+} from "./roads.js";
 import { getResidentialBaseMax } from "./rules.js";
 import { cellKey } from "./types.js";
 
@@ -206,7 +210,8 @@ export function buildPlannerExplainabilityMap(
   const cols = width(grid);
   const occupiedKind = buildOccupiedKindMap(grid, solution);
   const occupiedBuildings = buildBuildingOccupancy(grid, solution);
-  const frontier = computeRoadAnchorReachableEmptyFrontier(grid, occupiedBuildings);
+  const roadAnchors = roadAnchorsFromParams(params);
+  const frontier = computeRoadAnchorReachableEmptyFrontier(grid, occupiedBuildings, roadAnchors);
   const serviceValueByCell = buildServiceValueByCell(grid, solution);
   const remainingServiceTypes = buildRemainingServiceTypes(params, solution);
   const remainingResidentialTypes = buildRemainingResidentialTypes(params, solution);
@@ -239,7 +244,8 @@ export function buildPlannerExplainabilityMap(
               occupiedBuildings,
               frontier,
               { r, c, rows: 1, cols: 1 },
-              [key]
+              [key],
+              roadAnchors
             )
           : {
               reachableBefore: frontier.reachable.size,

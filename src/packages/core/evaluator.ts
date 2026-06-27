@@ -22,7 +22,7 @@ import {
   buildServiceEffectZoneSet,
   normalizeServicePlacement
 } from "./buildings.js";
-import { isAdjacentToRoads, roadsConnectedToRoadAnchor } from "./roads.js";
+import { isAdjacentToRoads, roadAnchorsFromParams, roadsConnectedToRoadAnchor } from "./roads.js";
 import {
   compatibleResidentialTypeIndices,
   getBuildingLimits,
@@ -256,6 +256,8 @@ export function validateLayoutConstraints(input: LayoutEvaluationInput): LayoutC
 
   const buildingCells = new Set<string>();
   const canonicalRoads = new Set<string>();
+  const fixedRoads = new Set(params.fixedRoads ?? []);
+  const roadAnchors = roadAnchorsFromParams(params);
 
   if (maxServices !== undefined && services.length > maxServices) {
     errors.push(`Layout uses ${services.length} services, exceeding the limit of ${maxServices}.`);
@@ -337,28 +339,40 @@ export function validateLayoutConstraints(input: LayoutEvaluationInput): LayoutC
     }
   }
 
-  // Road connectivity to row 0 or column 0.
-  const connected = roadsConnectedToRoadAnchor(grid, canonicalRoads);
-  if (connected.size === 0) {
-    errors.push("Road network does not touch row 0 or column 0.");
+  for (const key of fixedRoads) {
+    if (!canonicalRoads.has(key)) {
+      errors.push(`Fixed road ${formatCellKey(key)} is missing from the road network.`);
+    }
+  }
+
+  // Road connectivity to the active road anchors.
+  const connected = roadsConnectedToRoadAnchor(grid, canonicalRoads, roadAnchors);
+  const needsRoadNetwork = canonicalRoads.size > 0 || services.length > 0 || residentials.length > 0;
+  if (needsRoadNetwork && connected.size === 0) {
+    errors.push(
+      roadAnchors !== undefined
+        ? "Road network does not touch a configured fixed road anchor."
+        : "Road network does not touch row 0 or column 0."
+    );
   }
   if (connected.size !== canonicalRoads.size) {
     const disconnectedRoads = [...canonicalRoads].filter((key) => !connected.has(key));
     const disconnectedSummary =
       disconnectedRoads.length > 0 ? ` Disconnected road cells: ${summarizeCellKeys(disconnectedRoads)}.` : "";
     errors.push(
-      `Some road cells are not connected to any row-0-or-column-0-connected road component.${disconnectedSummary}`
+      roadAnchors !== undefined
+        ? `Some road cells are not connected to a configured fixed-road-anchor-connected road component.${disconnectedSummary}`
+        : `Some road cells are not connected to any row-0-or-column-0-connected road component.${disconnectedSummary}`
     );
   }
 
   // Building-road adjacency.
-  // Buildings that cover row 0 or column 0 are treated as connected to the road anchor.
   for (let i = 0; i < services.length; i++) {
     const s = services[i];
     if (validateServicePlacementGeometry(s, i).length > 0) continue;
     if (validatePlacementWithinGrid(grid, s, `Service at (${s.r},${s.c}) size ${s.rows}x${s.cols}`)) continue;
     const normalized = normalizeServicePlacement(s);
-    if (!isAdjacentToRoads(canonicalRoads, normalized.r, normalized.c, normalized.rows, normalized.cols)) {
+    if (!isAdjacentToRoads(canonicalRoads, normalized.r, normalized.c, normalized.rows, normalized.cols, roadAnchors)) {
       errors.push(`Service at (${s.r},${s.c}) is not adjacent to a road.`);
     }
   }
@@ -368,7 +382,7 @@ export function validateLayoutConstraints(input: LayoutEvaluationInput): LayoutC
     if (validatePlacementWithinGrid(grid, res, `Residential at (${res.r},${res.c}) size ${res.rows}x${res.cols}`)) {
       continue;
     }
-    if (!isAdjacentToRoads(canonicalRoads, res.r, res.c, res.rows, res.cols)) {
+    if (!isAdjacentToRoads(canonicalRoads, res.r, res.c, res.rows, res.cols, roadAnchors)) {
       errors.push(`Residential at (${res.r},${res.c}) size ${res.rows}x${res.cols} is not adjacent to a road.`);
     }
   }

@@ -11,6 +11,7 @@
    * @typedef {object} RequestBuilderState
    * @property {OptimizerName | string} optimizer
    * @property {number[][]} grid
+   * @property {string[] | undefined} [roadAnchors]
    * @property {JsonObject[]} serviceTypes
    * @property {JsonObject[]} residentialTypes
    * @property {JsonObject} availableBuildings
@@ -21,6 +22,7 @@
    * @property {JsonObject | null | undefined} result
    * @property {JsonObject | null | undefined} resultContext
    * @property {number} resultElapsedMs
+   * @property {JsonObject | null | undefined} [layoutEditor]
    */
 
   /**
@@ -466,6 +468,116 @@
     }
 
     /**
+     * @param {unknown} searchStrategy
+     * @returns {"incumbent" | "elite-archive"}
+     */
+    function normalizeLnsSearchStrategy(searchStrategy) {
+      return searchStrategy === "elite-archive" ? "elite-archive" : "incumbent";
+    }
+
+    /** @param {string} roadKey @returns {{ r: number, c: number } | null} */ function parseRoadKey(roadKey) {
+      const match = /^(\d+),(\d+)$/.exec(roadKey);
+      if (!match) return null;
+      return {
+        r: Number(match[1]),
+        c: Number(match[2])
+      };
+    }
+
+    /** @param {string} roadKey @returns {boolean} */ function isAllowedCurrentGridRoadKey(roadKey) {
+      const cell = parseRoadKey(roadKey);
+      return Boolean(cell && state.grid?.[cell.r]?.[cell.c] === 1);
+    }
+
+    /**
+     * @param {string} leftKey
+     * @param {string} rightKey
+     * @returns {number}
+     */
+    function compareRoadKeys(leftKey, rightKey) {
+      const left = parseRoadKey(leftKey);
+      const right = parseRoadKey(rightKey);
+      if (!left || !right) return leftKey.localeCompare(rightKey);
+      return left.r - right.r || left.c - right.c;
+    }
+
+    /**
+     * @returns {string[] | null}
+     */
+    function readInitialRoadAnchors() {
+      if (!Array.isArray(state.roadAnchors)) return null;
+      /** @type {string[]} */
+      const roadKeys = [];
+      for (const roadKey of state.roadAnchors) {
+        if (typeof roadKey === "string" && isAllowedCurrentGridRoadKey(roadKey)) {
+          const cell = parseRoadKey(roadKey);
+          if (cell) roadKeys.push(`${cell.r},${cell.c}`);
+        }
+      }
+      return [...new Set(roadKeys)].sort(compareRoadKeys);
+    }
+
+    /**
+     * @returns {string[]}
+     */
+    function readDisplayedFixedRoads() {
+      const solution = state.result?.solution;
+      if (state.layoutEditor?.pendingValidation) return [];
+      if (state.result?.validation?.valid !== true) return [];
+      if (!Array.isArray(solution?.roads)) return [];
+      const manualLayout = Boolean(solution?.manualLayout || state.result?.stats?.manualLayout);
+      const fixedRoads = Array.isArray(solution.fixedRoads)
+        ? solution.fixedRoads
+        : manualLayout
+          ? []
+          : state.resultContext?.params?.fixedRoads;
+      if (!Array.isArray(fixedRoads)) return [];
+
+      /** @type {Set<string>} */
+      const displayedRoads = new Set();
+      for (const roadKey of solution.roads) {
+        if (typeof roadKey === "string") displayedRoads.add(roadKey);
+      }
+      /** @type {string[]} */
+      const roadKeys = [];
+      for (const roadKey of fixedRoads) {
+        if (typeof roadKey === "string" && displayedRoads.has(roadKey) && isAllowedCurrentGridRoadKey(roadKey)) {
+          roadKeys.push(roadKey);
+        }
+      }
+      return [...new Set(roadKeys)].sort(compareRoadKeys);
+    }
+
+    /** @param {unknown} value */
+    function hasFixedRoadsField(value) {
+      return Boolean(value && Object.prototype.hasOwnProperty.call(value, "fixedRoads"));
+    }
+
+    /**
+     * @returns {boolean}
+     */
+    function shouldIncludeDisplayedFixedRoads() {
+      const solution = state.result?.solution;
+      if (state.layoutEditor?.pendingValidation) return false;
+      if (state.result?.validation?.valid !== true) return false;
+      if (!Array.isArray(solution?.roads)) return false;
+      return hasFixedRoadsField(solution) || hasFixedRoadsField(state.resultContext?.params);
+    }
+
+    /**
+     * @returns {JsonObject}
+     */
+    function buildLnsSearchStrategyPayload() {
+      const searchStrategy = normalizeLnsSearchStrategy(state.lns.searchStrategy);
+      if (searchStrategy !== "elite-archive") return {};
+      return {
+        searchStrategy,
+        eliteArchiveSize: clampInteger(state.lns.eliteArchiveSize, 4, 1),
+        multiStartSeeds: clampInteger(state.lns.multiStartSeeds, 4, 1)
+      };
+    }
+
+    /**
      * @param {any} value
      * @returns {number[] | undefined}
      */
@@ -559,9 +671,13 @@
       const defaultNeighborhoodRows = Math.max(1, Math.ceil(state.grid.length / 2));
       const defaultNeighborhoodCols = Math.max(1, Math.ceil((state.grid[0]?.length ?? 1) / 2));
       const grid = cloneGrid(state.grid);
+      const initialRoadAnchors = readInitialRoadAnchors();
+      const includeDisplayedFixedRoads = initialRoadAnchors === null && shouldIncludeDisplayedFixedRoads();
+      const fixedRoads = initialRoadAnchors ?? readDisplayedFixedRoads();
       /** @type {JsonObject} */
       const params = {
         optimizer,
+        ...(initialRoadAnchors !== null || fixedRoads.length > 0 || includeDisplayedFixedRoads ? { fixedRoads } : {}),
         serviceTypes: state.serviceTypes.map((entry, index) => parseServiceCatalogEntry(entry, index)),
         residentialTypes: state.residentialTypes.map((entry, index) => parseResidentialCatalogEntry(entry, index)),
         ...(autoWallClockLimitSeconds !== undefined || autoContinueAfterPopulationCapSeconds !== undefined
@@ -591,8 +707,14 @@
           maxNoImprovementIterations: clampInteger(state.lns.maxNoImprovementIterations, 4, 1),
           neighborhoodRows: clampInteger(state.lns.neighborhoodRows, defaultNeighborhoodRows, 1),
           neighborhoodCols: clampInteger(state.lns.neighborhoodCols, defaultNeighborhoodCols, 1),
-          repairTimeLimitSeconds: clampInteger(state.lns.repairTimeLimitSeconds, 5, 1)
+          repairTimeLimitSeconds: clampInteger(state.lns.repairTimeLimitSeconds, 5, 1),
+          ...buildLnsSearchStrategyPayload()
         };
+      } else {
+        const autoLnsStrategy = buildLnsSearchStrategyPayload();
+        if (Object.keys(autoLnsStrategy).length > 0) {
+          params.lns = autoLnsStrategy;
+        }
       }
       const cpSatPortfolio = buildCpSatPortfolioPayload(optimizer, timeLimitSeconds);
       if (cpSatPortfolio) {

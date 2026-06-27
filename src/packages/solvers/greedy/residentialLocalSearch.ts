@@ -6,7 +6,7 @@ import type {
   ServicePlacement,
   SolverParams
 } from "../../core/index.js";
-import { createRoadProbeScratch, NO_TYPE_INDEX, overlaps } from "../../core/index.js";
+import { createRoadProbeScratch, NO_TYPE_INDEX, overlaps, roadAnchorsFromParams } from "../../core/index.js";
 import { commitExplicitRoadConnectedPlacement, probeExplicitRoadConnection } from "./attemptState.js";
 import type { RoadConnectionProbe } from "./attemptState.js";
 import {
@@ -190,6 +190,7 @@ function localSearchImprove(state: ResidentialLocalSearchState): number {
   } = state;
   const layoutState = new ResidentialLayoutState(state);
   const explicitRoadProbeScratch = state.explicitRoadProbeScratch ?? createRoadProbeScratch(G);
+  const roadAnchors = roadAnchorsFromParams(params);
   const useTypes =
     remainingAvail !== null && residentialCandidates.length > 0 && "typeIndex" in residentialCandidates[0];
   const maxIter = 20;
@@ -207,7 +208,8 @@ function localSearchImprove(state: ResidentialLocalSearchState): number {
       snapshotOccupied,
       { r, c, rows, cols },
       explicitRoadProbeScratch,
-      profileCounters
+      profileCounters,
+      roadAnchors
     );
 
   for (let iter = 0; iter < maxIter; iter++) {
@@ -250,7 +252,17 @@ function localSearchImprove(state: ResidentialLocalSearchState): number {
         }
         if (roads.size === 0) {
           if (profileCounters) profileCounters.roads.roadAnchorChecks++;
-          if (!placementLeavesRoadAnchorCellAvailable(G, othersOccupied, cand.r, cand.c, cand.rows, cand.cols))
+          if (
+            !placementLeavesRoadAnchorCellAvailable(
+              G,
+              othersOccupied,
+              cand.r,
+              cand.c,
+              cand.rows,
+              cand.cols,
+              roadAnchors
+            )
+          )
             continue;
         }
         if (overlaps(othersOccupied, cand.r, cand.c, cand.rows, cand.cols)) continue;
@@ -318,7 +330,9 @@ function localSearchImprove(state: ResidentialLocalSearchState): number {
         }
         if (roads.size === 0) {
           if (profileCounters) profileCounters.roads.roadAnchorChecks++;
-          if (!placementLeavesRoadAnchorCellAvailable(G, occupied, cand.r, cand.c, cand.rows, cand.cols)) continue;
+          if (!placementLeavesRoadAnchorCellAvailable(G, occupied, cand.r, cand.c, cand.rows, cand.cols, roadAnchors)) {
+            continue;
+          }
         }
         if (overlaps(occupied, cand.r, cand.c, cand.rows, cand.cols)) continue;
         if (profileCounters) profileCounters.localSearch.addChecks++;

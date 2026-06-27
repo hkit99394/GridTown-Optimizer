@@ -10,14 +10,19 @@ def orthogonal_neighbors(grid, r: int, c: int):
             yield (r2, c2)
 
 
-def road_anchor_cells(grid):
-    anchors = [(0, c) for c in range(len(grid[0])) if is_allowed(grid, 0, c)]
-    anchors.extend((r, 0) for r in range(1, len(grid)) if is_allowed(grid, r, 0))
+def road_anchor_cells(grid, fixed_road_cells=None, use_fixed_road_anchors_only=False):
+    anchors = []
+    if not use_fixed_road_anchors_only:
+        anchors = [(0, c) for c in range(len(grid[0])) if is_allowed(grid, 0, c)]
+        anchors.extend((r, 0) for r in range(1, len(grid)) if is_allowed(grid, r, 0))
+    for cell in fixed_road_cells or []:
+        if is_allowed(grid, cell[0], cell[1]) and cell not in anchors:
+            anchors.append(cell)
     return anchors
 
 
-def reachable_allowed_from_road_anchors(grid):
-    anchor_cells = road_anchor_cells(grid)
+def reachable_allowed_from_road_anchors(grid, fixed_road_cells=None, use_fixed_road_anchors_only=False):
+    anchor_cells = road_anchor_cells(grid, fixed_road_cells, use_fixed_road_anchors_only)
     if not anchor_cells:
         return set()
 

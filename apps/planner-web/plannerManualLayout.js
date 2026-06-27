@@ -20,6 +20,7 @@
    *   residentials: ManualPlacement[],
    *   residentialTypeIndices: number[],
    *   roads?: string[],
+   *   fixedRoads?: string[],
    *   servicePopulationIncreases: number[],
    *   services: ManualPlacement[],
    *   serviceTypeIndices: number[]
@@ -281,7 +282,63 @@
       if (!state.result?.solution) {
         throw new Error("Run or load a layout before editing it.");
       }
-      return cloneJson(state.result.solution);
+      const solution = cloneJson(state.result.solution);
+      if (!Array.isArray(solution.fixedRoads) && Array.isArray(state.resultContext?.params?.fixedRoads)) {
+        const roads = new Set(solution.roads ?? []);
+        solution.fixedRoads = [...new Set(state.resultContext.params.fixedRoads)].filter((roadKey) =>
+          roads.has(roadKey)
+        );
+      }
+      return solution;
+    }
+
+    /** @param {ManualLayoutSolution} solution @returns {string[]} */
+    function normalizeFixedRoadKeys(solution) {
+      const roads = new Set(Array.isArray(solution.roads) ? solution.roads : []);
+      return [...new Set(Array.isArray(solution.fixedRoads) ? solution.fixedRoads : [])]
+        .filter((roadKey) => typeof roadKey === "string" && roads.has(roadKey))
+        .sort();
+    }
+
+    /** @param {unknown} value */
+    function hasFixedRoadsField(value) {
+      return Boolean(value && Object.prototype.hasOwnProperty.call(value, "fixedRoads"));
+    }
+
+    /** @param {ManualLayoutSolution} solution */
+    function shouldKeepFixedRoadField(solution) {
+      return hasFixedRoadsField(solution) || hasFixedRoadsField(state.resultContext?.params);
+    }
+
+    /**
+     * @param {ManualLayoutSolution} solution
+     * @param {Iterable<string>} fixedRoads
+     * @param {boolean} [preserveEmpty]
+     * @returns {string[]}
+     */
+    function writeFixedRoadKeys(solution, fixedRoads, preserveEmpty = false) {
+      const roads = new Set(Array.isArray(solution.roads) ? solution.roads : []);
+      const normalized = [...new Set(fixedRoads)]
+        .filter((roadKey) => typeof roadKey === "string" && roads.has(roadKey))
+        .sort();
+      if (normalized.length > 0 || preserveEmpty) {
+        solution.fixedRoads = normalized;
+      } else {
+        delete solution.fixedRoads;
+      }
+      return normalized;
+    }
+
+    /** @param {ManualLayoutSolution} solution @returns {JsonObject} */
+    function buildManualLayoutEvaluationParams(solution) {
+      const params = { ...(state.resultContext?.params ?? {}) };
+      const fixedRoads = normalizeFixedRoadKeys(solution);
+      if (fixedRoads.length > 0 || shouldKeepFixedRoadField(solution)) {
+        params.fixedRoads = fixedRoads;
+      } else {
+        delete params.fixedRoads;
+      }
+      return params;
     }
 
     /**
@@ -434,6 +491,7 @@
     return {
       buildPendingManualLayoutResult,
       buildPendingPlacementDefinition,
+      buildManualLayoutEvaluationParams,
       buildResidentialPlacementForType,
       buildServicePlacementForType,
       cloneEditableSolution,
@@ -445,8 +503,11 @@
       isCellInsideAnyServiceFootprint,
       isCellInsidePlacement,
       isCellInsideServiceEffect,
+      normalizeFixedRoadKeys,
       readPendingPlacementFootprint,
-      removePlacementFromSolution
+      removePlacementFromSolution,
+      shouldKeepFixedRoadField,
+      writeFixedRoadKeys
     };
   }
 

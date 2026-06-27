@@ -17,7 +17,7 @@ Maximization problem: choose a feasible placement of roads and buildings so that
 **Assumptions:**
 
 - Row index `r ∈ [0, H)` and column index `c ∈ [0, W)`.
-- Every road component must **touch the road-anchor boundary**: each connected component of road cells must contain at least one road cell in row `0` or column `0`.
+- Every road component must **touch a road anchor**. When `fixedRoads` is omitted, each connected component of road cells must contain at least one road cell in row `0` or column `0`. When `fixedRoads` is supplied, those configured cells are the complete road-anchor set. If `fixedRoads` is supplied as an empty list, no road anchor exists and the optimizer returns a zero-population solution with no buildings.
 - All coordinates in this spec use `(row, col)` or `(r, c)`.
 
 ---
@@ -32,8 +32,9 @@ Maximization problem: choose a feasible placement of roads and buildings so that
 ### 3.2 Roads
 
 - A **road** occupies a single allowed cell. Roads are placed on the grid.
-- **Connected component**: Road cells may form multiple orthogonally connected components; each component must be connected to the road-anchor boundary.
-- **Road-anchor boundary**: Every connected road component must include **at least one cell in row index 0 or column index 0** (i.e. some road cell in that component has `r = 0` or `c = 0`). The whole row or column need not be road.
+- **Connected component**: Road cells may form multiple orthogonally connected components; each component must be connected to at least one road anchor.
+- **Road anchors**: Every connected road component must include at least one cell from the active road-anchor set. The active set is row index `0` plus column index `0` only when `fixedRoads` is omitted; otherwise it is exactly the configured fixed road cells.
+- **Fixed road**: An optional instance parameter may require specific allowed cells to remain roads. When present, fixed road cells are disjoint from buildings and replace the legacy row/column road anchors. An empty fixed-road list means there is no road anchor.
 
 ### 3.3 Service building
 
@@ -77,11 +78,11 @@ A solution is **feasible** iff all of the following hold.
 
 3. **Road connectivity**
    - Road cells may form multiple connected components (orthogonal moves only).
-   - Every road component has at least one road cell with row index `r = 0` or column index `c = 0`.
+   - Every road component has at least one road cell in the active road-anchor set.
 
 4. **Building–road connectivity**
    Every building must be **connected to a road-anchor-connected road component**: for each building, at least one cell of its footprint is **orthogonally adjacent** to some road cell.
-   Buildings whose footprint covers row index `r = 0` or column index `c = 0` are treated as connected to the road anchor automatically.
+   Buildings whose footprint covers row index `r = 0` or column index `c = 0` are treated as connected to the road anchor automatically only when `fixedRoads` is omitted. When `fixedRoads` is supplied, buildings must be adjacent to roads connected to the configured anchors.
 
 5. **No overlap with buildings**
    Roads may be placed on allowed cells that are not part of any building; building footprints do not overlap with each other or with roads.
@@ -124,7 +125,7 @@ The solver returns a feasible `(R, S, Z)` and the corresponding `P`; goal is to 
 ## 7. Parameters (to be fixed per instance)
 
 - Grid `G` (required).
-- Optional: `base_pop`, `max_pop`, service-building footprint sizes, service bonus per service, service effect range per service, `max_services`, `max_residentials`, etc., depending on the desired variant.
+- Optional: `base_pop`, `max_pop`, service-building footprint sizes, service bonus per service, service effect range per service, `max_services`, `max_residentials`, `fixed_roads`, etc., depending on the desired variant.
 
 ---
 
@@ -132,5 +133,5 @@ The solver returns a feasible `(R, S, Z)` and the corresponding `P`; goal is to 
 
 - **In:** Grid `G[H][W]` of 0/1 (allowed/not).
 - **Out:** Roads `R`, service buildings `S`, residential buildings `Z`, and total population `P`.
-- **Constraints:** All on allowed cells; buildings disjoint; every road component touches row `0` or column `0`; every building is adjacent to some road or touches the road-anchor boundary.
+- **Constraints:** All on allowed cells; buildings disjoint; every road component touches the active road-anchor set; every building is adjacent to an anchored road component, or touches the legacy road-anchor boundary when `fixedRoads` is omitted.
 - **Goal:** Maximize `P`.

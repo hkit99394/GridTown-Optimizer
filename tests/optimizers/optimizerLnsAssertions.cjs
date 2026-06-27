@@ -539,6 +539,57 @@ function testLnsTelemetryRecordsRepairPolicyAndOutcomes() {
   }
 }
 
+function testLnsShrinksCpSatRepairWindowAfterBackendTimeout() {
+  const cpSatModule = require("../../dist/packages/solvers/cp-sat/solver.js");
+  const originalSolveCpSat = cpSatModule.solveCpSat;
+  const seenWindows = [];
+
+  cpSatModule.solveCpSat = (_grid, params) => {
+    seenWindows.push(params.cpSat.warmStartHint.neighborhoodWindow);
+    throw new Error("CP-SAT backend timed out after 3s.");
+  };
+
+  try {
+    const grid = Array.from({ length: 10 }, () => Array.from({ length: 14 }, () => 1));
+    const solution = solveLns(grid, {
+      optimizer: "lns",
+      residentialTypes: [{ w: 2, h: 2, min: 10, max: 10, avail: 1 }],
+      availableBuildings: { residentials: 1, services: 0 },
+      lns: {
+        iterations: 3,
+        maxNoImprovementIterations: 3,
+        repairTimeLimitSeconds: 1,
+        neighborhoodRows: 6,
+        neighborhoodCols: 10,
+        seedHint: {
+          solution: {
+            roads: ["0,0"],
+            services: [],
+            residentials: [],
+            populations: [],
+            totalPopulation: 0
+          }
+        }
+      }
+    });
+
+    assert.equal(solution.lnsTelemetry.stopReason, "stale-iteration-limit");
+    assert.equal(solution.lnsTelemetry.recoverableFailures, 3);
+    assert.equal(solution.lnsTelemetry.outcomes[0].repairBackend, "cp-sat");
+    assert.equal(solution.lnsTelemetry.outcomes[0].cpSatStatus, "BACKEND_TIMEOUT");
+    assert.equal(seenWindows.length, 2);
+    assert.equal(seenWindows[0].rows, 6);
+    assert.equal(seenWindows[0].cols, 10);
+    assert(seenWindows[1].rows <= Math.ceil(seenWindows[0].rows / 2));
+    assert(seenWindows[1].cols <= Math.ceil(seenWindows[0].cols / 2));
+    assert.equal(solution.lnsTelemetry.outcomes[2].cpSatStatus, "BACKEND_TIMEOUT_SUPPRESSED");
+    assert(solution.lnsTelemetry.outcomes[2].window.rows <= Math.ceil(seenWindows[0].rows / 4));
+    assert(solution.lnsTelemetry.outcomes[2].window.cols <= Math.ceil(seenWindows[0].cols / 4));
+  } finally {
+    cpSatModule.solveCpSat = originalSolveCpSat;
+  }
+}
+
 function testLnsSmallWindowDpRepairImprovesWithoutCpSat() {
   const cpSatModule = require("../../dist/packages/solvers/cp-sat/solver.js");
   const originalSolveCpSat = cpSatModule.solveCpSat;
@@ -773,6 +824,269 @@ function testLnsGreedySeedReportsBudgetAndProfile() {
   }
 }
 
+function testLnsEliteArchiveStrategyReportsArchiveTelemetry() {
+  const cpSatModule = require("../../dist/packages/solvers/cp-sat/solver.js");
+  const originalSolveCpSat = cpSatModule.solveCpSat;
+
+  cpSatModule.solveCpSat = (_grid, params) => ({
+    optimizer: "cp-sat",
+    cpSatStatus: "FEASIBLE",
+    roads: new Set(params.cpSat.warmStartHint.solution.roads),
+    services: params.cpSat.warmStartHint.solution.services.map((service) => ({
+      r: service.r,
+      c: service.c,
+      rows: service.rows,
+      cols: service.cols,
+      range: service.range
+    })),
+    serviceTypeIndices: [...params.cpSat.warmStartHint.solution.services.map((service) => service.typeIndex)],
+    servicePopulationIncreases: [...params.cpSat.warmStartHint.solution.services.map((service) => service.bonus)],
+    residentials: params.cpSat.warmStartHint.solution.residentials.map((residential) => ({
+      r: residential.r,
+      c: residential.c,
+      rows: residential.rows,
+      cols: residential.cols
+    })),
+    residentialTypeIndices: [
+      ...params.cpSat.warmStartHint.solution.residentials.map((residential) => residential.typeIndex)
+    ],
+    populations: [...params.cpSat.warmStartHint.solution.populations],
+    totalPopulation: params.cpSat.warmStartHint.solution.totalPopulation
+  });
+
+  try {
+    const grid = Array.from({ length: 5 }, () => Array.from({ length: 5 }, () => 1));
+    const params = {
+      optimizer: "lns",
+      residentialTypes: [{ w: 2, h: 2, min: 10, max: 10, avail: 2 }],
+      availableBuildings: { residentials: 2, services: 0 },
+      greedy: {
+        randomSeed: 3,
+        localSearch: false,
+        restarts: 2,
+        serviceRefineIterations: 0,
+        serviceRefineCandidateLimit: 1,
+        exhaustiveServiceSearch: false,
+        serviceExactPoolLimit: 1,
+        serviceExactMaxCombinations: 1
+      },
+      lns: {
+        searchStrategy: "elite-archive",
+        eliteArchiveSize: 3,
+        multiStartSeeds: 3,
+        iterations: 1,
+        maxNoImprovementIterations: 1,
+        seedTimeLimitSeconds: 3,
+        repairTimeLimitSeconds: 1,
+        neighborhoodRows: 2,
+        neighborhoodCols: 2
+      }
+    };
+    const solution = solveLns(grid, params);
+
+    assert.equal(solution.optimizer, "lns");
+    assert.equal(solution.lnsTelemetry.searchStrategy, "elite-archive");
+    assert.equal(solution.lnsTelemetry.eliteArchiveSize, 3);
+    assert.equal(solution.lnsTelemetry.multiStartSeeds, 3);
+    assert.equal(solution.lnsTelemetry.archiveSeedCount, 3);
+    assert.ok(solution.lnsTelemetry.eliteArchiveFinalSize >= 1);
+    assert.equal(solution.lnsTelemetry.archiveBestPopulation, solution.totalPopulation);
+    assert.equal(validateSolution({ grid, solution, params }).valid, true);
+
+    const seeded = solveLns(grid, {
+      ...params,
+      lns: {
+        ...params.lns,
+        seedHint: {
+          solution: {
+            roads: [...solution.roads],
+            services: solution.services.map((service, index) => ({
+              r: service.r,
+              c: service.c,
+              rows: service.rows,
+              cols: service.cols,
+              range: service.range,
+              typeIndex: solution.serviceTypeIndices[index] ?? -1,
+              bonus: solution.servicePopulationIncreases[index] ?? 0
+            })),
+            residentials: solution.residentials.map((residential, index) => ({
+              r: residential.r,
+              c: residential.c,
+              rows: residential.rows,
+              cols: residential.cols,
+              typeIndex: solution.residentialTypeIndices[index] ?? -1,
+              population: solution.populations[index] ?? 0
+            })),
+            populations: [...solution.populations],
+            totalPopulation: solution.totalPopulation
+          }
+        }
+      }
+    });
+
+    assert.equal(seeded.lnsTelemetry.searchStrategy, "elite-archive");
+    assert.ok(seeded.lnsTelemetry.archiveSeedCount >= 1);
+    assert.ok(seeded.totalPopulation >= solution.totalPopulation);
+  } finally {
+    cpSatModule.solveCpSat = originalSolveCpSat;
+  }
+}
+
+function testLnsEliteArchiveDefaultsToUnboundedSingleGreedySeed() {
+  const grid = Array.from({ length: 5 }, () => Array.from({ length: 5 }, () => 1));
+  const params = {
+    optimizer: "lns",
+    residentialTypes: [{ w: 2, h: 2, min: 10, max: 10, avail: 1 }],
+    availableBuildings: { residentials: 1, services: 0 },
+    greedy: {
+      localSearch: false,
+      restarts: 1,
+      serviceRefineIterations: 0,
+      serviceRefineCandidateLimit: 1,
+      exhaustiveServiceSearch: false,
+      serviceExactPoolLimit: 1,
+      serviceExactMaxCombinations: 1
+    },
+    lns: {
+      searchStrategy: "elite-archive",
+      multiStartSeeds: 2,
+      iterations: 1,
+      maxNoImprovementIterations: 1,
+      repairTimeLimitSeconds: 2,
+      neighborhoodRows: 2,
+      neighborhoodCols: 2
+    }
+  };
+  const solution = solveLns(grid, params);
+
+  assert.equal(solution.lnsTelemetry.searchStrategy, "elite-archive");
+  assert.equal(solution.lnsTelemetry.seedTimeLimitSeconds, null);
+  assert.equal(solution.lnsTelemetry.multiStartSeeds, 2);
+  assert.equal(solution.lnsTelemetry.archiveSeedCount, 1);
+  assert.equal(validateSolution({ grid, solution, params }).valid, true);
+}
+
+function testLnsEliteArchiveHonorsExplicitBoundedSeedBudget() {
+  const grid = Array.from({ length: 6 }, () => Array.from({ length: 6 }, () => 1));
+  const params = {
+    optimizer: "lns",
+    residentialTypes: [{ w: 2, h: 2, min: 10, max: 10, avail: 2 }],
+    availableBuildings: { residentials: 2, services: 0 },
+    greedy: {
+      localSearch: false,
+      restarts: 1,
+      serviceRefineIterations: 0,
+      serviceRefineCandidateLimit: 1,
+      exhaustiveServiceSearch: false,
+      serviceExactPoolLimit: 1,
+      serviceExactMaxCombinations: 1
+    },
+    lns: {
+      searchStrategy: "elite-archive",
+      multiStartSeeds: 3,
+      iterations: 1,
+      maxNoImprovementIterations: 1,
+      seedTimeLimitSeconds: 3,
+      repairTimeLimitSeconds: 1,
+      neighborhoodRows: 2,
+      neighborhoodCols: 2,
+      smallWindowDpRepair: true
+    }
+  };
+  const solution = solveLns(grid, params);
+
+  assert.equal(solution.lnsTelemetry.searchStrategy, "elite-archive");
+  assert.equal(solution.lnsTelemetry.seedTimeLimitSeconds, 3);
+  assert.ok(solution.lnsTelemetry.archiveSeedCount >= 1);
+  assert.equal(validateSolution({ grid, solution, params }).valid, true);
+}
+
+function testLnsEliteArchiveRunsBoundedGreedyBeforeEmergencySeed() {
+  const greedyModule = require("../../dist/packages/solvers/greedy/solver.js");
+  const originalSolveGreedy = greedyModule.solveGreedy;
+  const timeLimits = [];
+  let greedyCalls = 0;
+
+  greedyModule.solveGreedy = (_grid, params) => {
+    greedyCalls += 1;
+    timeLimits.push(params.greedy.timeLimitSeconds);
+    return {
+      optimizer: "greedy",
+      roads: new Set(["0,0"]),
+      services: [],
+      serviceTypeIndices: [],
+      servicePopulationIncreases: [],
+      residentials: [{ r: 1, c: 0, rows: 1, cols: 1 }],
+      residentialTypeIndices: [0],
+      populations: [10],
+      totalPopulation: 10
+    };
+  };
+
+  try {
+    const grid = Array.from({ length: 3 }, () => Array.from({ length: 3 }, () => 1));
+    const params = {
+      optimizer: "lns",
+      residentialTypes: [{ w: 1, h: 1, min: 10, max: 10, avail: 1 }],
+      availableBuildings: { residentials: 1, services: 0 },
+      lns: {
+        searchStrategy: "elite-archive",
+        multiStartSeeds: 3,
+        iterations: 1,
+        maxNoImprovementIterations: 1,
+        seedTimeLimitSeconds: 3,
+        repairTimeLimitSeconds: 1,
+        neighborhoodRows: 2,
+        neighborhoodCols: 2
+      }
+    };
+    const solution = solveLns(grid, params);
+
+    assert.equal(greedyCalls, 3);
+    assert.deepEqual(timeLimits, [1, 1, 1]);
+    assert.equal(solution.lnsTelemetry.archiveSeedCount, 3);
+    assert.equal(solution.lnsTelemetry.stopReason, "population-cap-reached");
+    assert.equal(validateSolution({ grid, solution, params }).valid, true);
+  } finally {
+    greedyModule.solveGreedy = originalSolveGreedy;
+  }
+}
+
+function testLnsEliteArchiveFallsBackWhenSeedSlicesExpireBeforeIncumbent() {
+  const grid = Array.from({ length: 6 }, () => Array.from({ length: 6 }, () => 1));
+  const params = {
+    optimizer: "lns",
+    residentialTypes: [{ w: 2, h: 2, min: 10, max: 10, avail: 1 }],
+    availableBuildings: { residentials: 1, services: 0 },
+    greedy: {
+      localSearch: false,
+      restarts: 1,
+      serviceRefineIterations: 0,
+      serviceRefineCandidateLimit: 1,
+      exhaustiveServiceSearch: false,
+      serviceExactPoolLimit: 1,
+      serviceExactMaxCombinations: 1
+    },
+    lns: {
+      searchStrategy: "elite-archive",
+      multiStartSeeds: 2,
+      iterations: 1,
+      maxNoImprovementIterations: 1,
+      seedTimeLimitSeconds: 0.001,
+      repairTimeLimitSeconds: 1,
+      neighborhoodRows: 2,
+      neighborhoodCols: 2,
+      smallWindowDpRepair: true
+    }
+  };
+  const solution = solveLns(grid, params);
+
+  assert.equal(solution.optimizer, "lns");
+  assert.equal(solution.lnsTelemetry.searchStrategy, "elite-archive");
+  assert.ok(solution.lnsTelemetry.archiveSeedCount >= 1);
+  assert.equal(validateSolution({ grid, solution, params }).valid, true);
+}
+
 function testLnsStopsAfterNoImprovementTimeout() {
   const cpSatModule = require("../../dist/packages/solvers/cp-sat/solver.js");
   const originalSolveCpSat = cpSatModule.solveCpSat;
@@ -885,6 +1199,25 @@ function testLnsRejectsMalformedScalarOptions() {
         }
       }),
     /Invalid solver input: LNS option lns\.smallWindowDpMaxMutableCells must be an integer between 1 and 24\./
+  );
+  assert.throws(
+    () =>
+      solveLns(grid, {
+        optimizer: "lns",
+        lns: {
+          searchStrategy: "beam",
+          seedHint: {
+            solution: {
+              roads: ["0,0"],
+              services: [],
+              residentials: [],
+              populations: [],
+              totalPopulation: 0
+            }
+          }
+        }
+      }),
+    /Invalid solver input: LNS option lns\.searchStrategy must be one of: incumbent, elite-archive\./
   );
 }
 
@@ -1091,9 +1424,15 @@ async function runLnsOptimizerTests() {
   testLnsNeighborhoodWindowsEscalateWhenStagnating();
   testLnsRunsFinalEscalationWithinConfiguredBudget();
   testLnsTelemetryRecordsRepairPolicyAndOutcomes();
+  testLnsShrinksCpSatRepairWindowAfterBackendTimeout();
   testLnsSmallWindowDpRepairImprovesWithoutCpSat();
   testLnsSmallWindowDpRepairFallsBackToCpSatWhenIneligible();
   testLnsGreedySeedReportsBudgetAndProfile();
+  testLnsEliteArchiveStrategyReportsArchiveTelemetry();
+  testLnsEliteArchiveDefaultsToUnboundedSingleGreedySeed();
+  testLnsEliteArchiveHonorsExplicitBoundedSeedBudget();
+  testLnsEliteArchiveRunsBoundedGreedyBeforeEmergencySeed();
+  testLnsEliteArchiveFallsBackWhenSeedSlicesExpireBeforeIncumbent();
   testLnsStopsAfterNoImprovementTimeout();
   testLnsRejectsMalformedScalarOptions();
   maybeTestSmallWindowDpMatchesCpSatOnEligibleRepair();

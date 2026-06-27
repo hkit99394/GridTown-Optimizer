@@ -1,4 +1,5 @@
 import type { Grid, GreedyProfileCounters, ServiceCandidate, Solution, SolverParams } from "../../core/index.js";
+import { roadAnchorsFromParams } from "../../core/index.js";
 import type { RoadOpportunityRecorder } from "./roadOpportunity.js";
 import { createSeededRandom, deriveSeed, shuffle } from "./runtime.js";
 import { collectRoadAnchorRefinementSeeds } from "./roadAnchors.js";
@@ -78,6 +79,7 @@ export function runGreedySearchPipeline(options: {
     lifecycle
   } = options;
   const { maybeStop, updateBest, requireBest, runProfiledPhase } = lifecycle;
+  const roadAnchors = roadAnchorsFromParams(params);
 
   const runCapRestarts = (cap: number, bestForCap: Solution | null, restartBudget: number): Solution | null => {
     if (restartBudget <= 1) return bestForCap;
@@ -104,7 +106,7 @@ export function runGreedySearchPipeline(options: {
     let refined = bestForCap;
     for (let pass = 0; pass < 2; pass++) {
       let improved = false;
-      for (const roadSeed of collectRoadAnchorRefinementSeeds(refined)) {
+      for (const roadSeed of collectRoadAnchorRefinementSeeds(refined, roadAnchors)) {
         maybeStop();
         if (profileCounters) profileCounters.attempts.serviceRefineTrials++;
         const trial = solveWithOrder(serviceOrderSorted, {

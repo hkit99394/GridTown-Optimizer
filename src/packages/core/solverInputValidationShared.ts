@@ -6,7 +6,8 @@ import { validateSolution } from "./evaluator.js";
 import { computeCpSatRequestFingerprint } from "./cpSatContinuation.js";
 import { validateGridShape } from "./gridValidation.js";
 import { NO_TYPE_INDEX } from "./rules.js";
-import { isCellKey, isOptimizerName, OMITTED_SOLVER_OPTIMIZER } from "./types.js";
+import { cellFromKey, isCellKey, isOptimizerName, OMITTED_SOLVER_OPTIMIZER } from "./types.js";
+import { isAllowed } from "./grid.js";
 
 import type { CpSatWarmStartHint, Grid, OptimizerName, SerializedSolution, Solution, SolverParams } from "./types.js";
 
@@ -566,6 +567,16 @@ export function assertValidCpSatReusableInputs(G: Grid, params: SolverParams): v
   assertValidReusableSolution(G, params, solution, "CP-SAT warm-start hint cpSat.warmStartHint.solution");
 }
 
+export function assertValidFixedRoadInputs(G: Grid, params: SolverParams): void {
+  const fixedRoads = params.fixedRoads ?? [];
+  fixedRoads.forEach((roadKey, index) => {
+    const { r, c } = cellFromKey(roadKey);
+    if (!isAllowed(G, r, c)) {
+      throw new SolverInputError(`Problem definition fixedRoads[${index}] must refer to an allowed grid cell.`);
+    }
+  });
+}
+
 export function isRoadKey(value: unknown): value is string {
   return isCellKey(value);
 }
@@ -712,6 +723,9 @@ export function assertValidSerializedSolutionPayload(
 ): asserts value is SerializedSolution {
   const solution = requireValidationRecord(value, path);
   requireValidationRoadKeys(solution.roads, `${path}.roads`);
+  if (solution.fixedRoads !== undefined) {
+    requireValidationRoadKeys(solution.fixedRoads, `${path}.fixedRoads`);
+  }
   const services = requireValidationArray(solution.services, `${path}.services`);
   services.forEach((service, index) => assertValidSerializedServicePlacement(service, `${path}.services[${index}]`));
   const serviceTypeIndices = requireValidationArray(solution.serviceTypeIndices, `${path}.serviceTypeIndices`);
@@ -831,6 +845,7 @@ export function assertValidProblemDefinition(params: SolverParams): void {
       "Problem definition availableBuildings.residentials"
     );
   }
+  requireOptionalRoadKeys(paramsRecord, "fixedRoads", "Problem definition fixedRoads");
   requireOptionalIntegerForValidation(paramsRecord, "maxServices", "Problem definition maxServices");
   requireOptionalIntegerForValidation(paramsRecord, "maxResidentials", "Problem definition maxResidentials");
   requireOptionalIntegerForValidation(paramsRecord, "basePop", "Problem definition basePop");

@@ -1,5 +1,12 @@
 import type { Grid, GreedyProfileCounters, ServiceCandidate, Solution, SolverParams } from "../../core/index.js";
-import { createRoadProbeScratch, NO_TYPE_INDEX, overlaps, serviceFootprint } from "../../core/index.js";
+import {
+  createRoadProbeScratch,
+  NO_TYPE_INDEX,
+  overlaps,
+  roadAnchorsFromParams,
+  serviceFootprint
+} from "../../core/index.js";
+import type { RoadAnchorKeys } from "../../core/index.js";
 import { probeExplicitRoadConnection } from "./attemptState.js";
 import {
   recordRoadOpportunityPlacementFromOccupiedBuildings,
@@ -80,10 +87,12 @@ function createServiceNeighborhoodMoveServices(options: {
   solveWithOrder: GreedySolveAttempt;
 }): ServiceNeighborhoodMoveServices {
   const { G, params, serviceOrderSorted, precomputedIndexes, solveWithOrder } = options;
+  const roadAnchors = roadAnchorsFromParams(params);
   const materializeCurrentServiceSet = (solution: Solution): ServiceCandidate[] =>
     solution.services.map((_, index) => materializeChosenServiceCandidate(solution, index));
 
   const currentRoadSeedFromSolution = (solution: Solution): Set<string> | undefined => {
+    if (roadAnchors !== undefined) return undefined;
     const seed = new Set<string>();
     for (const key of solution.roads) {
       if (key.startsWith("0,")) seed.add(key);
@@ -577,7 +586,8 @@ export function runGreedyServiceNeighborhoodSearch(options: {
   return incumbent;
 }
 
-function solutionRoadAnchorSeed(solution: Solution): Set<string> | undefined {
+function solutionRoadAnchorSeed(solution: Solution, roadAnchors?: RoadAnchorKeys): Set<string> | undefined {
+  if (roadAnchors !== undefined && roadAnchors !== null) return undefined;
   const seed = new Set<string>();
   for (const key of solution.roads) {
     const [rowText, colText] = key.split(",");
@@ -773,7 +783,7 @@ export function runGreedyResidualServiceBundleRepair(options: {
   );
 
   let best = initialBest;
-  const initialRoadSeed = solutionRoadAnchorSeed(initialBest);
+  const initialRoadSeed = solutionRoadAnchorSeed(initialBest, roadAnchorsFromParams(params));
   for (const trialEntry of trials) {
     maybeStop?.();
     const trial = solveWithOrder(serviceOrderSorted, {

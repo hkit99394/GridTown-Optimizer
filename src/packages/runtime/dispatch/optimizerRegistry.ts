@@ -18,6 +18,11 @@ import { solveLns } from "../../solvers/lns/solver.js";
 import { isOptimizerName, OMITTED_SOLVER_OPTIMIZER } from "../../core/index.js";
 import { startAutoSolve } from "./autoBackgroundSolver.js";
 import { startCpSatSolve, startGreedySolve, startLnsSolve } from "./backgroundSolvers.js";
+import {
+  buildNoRoadAnchorSolution,
+  shouldReturnNoRoadAnchorSolution,
+  startNoRoadAnchorSolve
+} from "./noRoadAnchorSolution.js";
 
 import type {
   BackgroundSolveHandle,
@@ -58,33 +63,54 @@ function describeLnsRecoveredSolution(_solution: Solution, error: unknown): stri
   return "LNS kept the best available solution after a repair step ended early.";
 }
 
+function solveWithRoadAnchorGuard(
+  optimizer: OptimizerName,
+  grid: Grid,
+  params: SolverParams,
+  solve: (grid: Grid, params: SolverParams) => Solution
+): Solution {
+  return shouldReturnNoRoadAnchorSolution(params) ? buildNoRoadAnchorSolution(optimizer) : solve(grid, params);
+}
+
+function startWithRoadAnchorGuard(
+  optimizer: OptimizerName,
+  grid: Grid,
+  params: SolverParams,
+  start: (grid: Grid, params: SolverParams) => BackgroundSolveHandle
+): BackgroundSolveHandle {
+  return shouldReturnNoRoadAnchorSolution(params) ? startNoRoadAnchorSolve(grid, optimizer) : start(grid, params);
+}
+
 const optimizerAdapters: Record<OptimizerName, OptimizerAdapter> = {
   auto: {
     name: "auto",
-    solve: solveAuto,
-    solveAsync: (grid, params) => startAutoSolve(grid, params).promise,
-    startBackgroundSolve: startAutoSolve,
+    solve: (grid, params) => solveWithRoadAnchorGuard("auto", grid, params, solveAuto),
+    solveAsync: (grid, params) => startWithRoadAnchorGuard("auto", grid, params, startAutoSolve).promise,
+    startBackgroundSolve: (grid, params) => startWithRoadAnchorGuard("auto", grid, params, startAutoSolve),
     normalizeTerminalSolution: normalizeAutoTerminalSolution,
     describeCompletedSolution: describeAutoCompletedSolution,
     describeRecoveredSolution: describeAutoRecoveredSolution
   },
   greedy: {
     name: "greedy",
-    solve: solveGreedy,
-    startBackgroundSolve: startGreedySolve,
+    solve: (grid, params) => solveWithRoadAnchorGuard("greedy", grid, params, solveGreedy),
+    startBackgroundSolve: (grid, params) => startWithRoadAnchorGuard("greedy", grid, params, startGreedySolve),
     describeRecoveredSolution: describeDefaultRecoveredSolution
   },
   "cp-sat": {
     name: "cp-sat",
-    solve: solveCpSat,
-    solveAsync: (grid, params, cpSatAsyncOptions) => solveCpSatAsync(grid, params, cpSatAsyncOptions),
-    startBackgroundSolve: startCpSatSolve,
+    solve: (grid, params) => solveWithRoadAnchorGuard("cp-sat", grid, params, solveCpSat),
+    solveAsync: (grid, params, cpSatAsyncOptions) =>
+      shouldReturnNoRoadAnchorSolution(params)
+        ? Promise.resolve(buildNoRoadAnchorSolution("cp-sat"))
+        : solveCpSatAsync(grid, params, cpSatAsyncOptions),
+    startBackgroundSolve: (grid, params) => startWithRoadAnchorGuard("cp-sat", grid, params, startCpSatSolve),
     describeRecoveredSolution: describeDefaultRecoveredSolution
   },
   lns: {
     name: "lns",
-    solve: solveLns,
-    startBackgroundSolve: startLnsSolve,
+    solve: (grid, params) => solveWithRoadAnchorGuard("lns", grid, params, solveLns),
+    startBackgroundSolve: (grid, params) => startWithRoadAnchorGuard("lns", grid, params, startLnsSolve),
     describeRecoveredSolution: describeLnsRecoveredSolution
   }
 };

@@ -435,6 +435,7 @@
     function getConfigSnapshot() {
       return {
         grid: cloneGrid(state.grid),
+        roadAnchors: Array.isArray(state.roadAnchors) ? state.roadAnchors.slice() : [],
         optimizer: state.optimizer,
         serviceTypes: cloneJson(state.serviceTypes),
         residentialTypes: cloneJson(state.residentialTypes),
@@ -451,6 +452,7 @@
      */
     function applyConfigSnapshot(snapshot) {
       state.grid = isGridLike(snapshot?.grid) ? cloneGrid(snapshot.grid) : cloneGrid(sampleGrid);
+      state.roadAnchors = Array.isArray(snapshot?.roadAnchors) ? snapshot.roadAnchors.slice() : [];
       state.optimizer = normalizeOptimizer(snapshot?.optimizer);
       state.serviceTypes = Array.isArray(snapshot?.serviceTypes)
         ? snapshot.serviceTypes.map((entry) => ({

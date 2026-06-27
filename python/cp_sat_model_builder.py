@@ -31,6 +31,7 @@ from cp_sat_candidates import (
     typed_service_bonus_upper_bound,
 )
 from cp_sat_grid import (
+    is_allowed,
     index_reachable_allowed_cells,
     reachable_allowed_from_road_anchors,
     trim_road_eligible_cells,
@@ -197,15 +198,54 @@ def create_building_selection_variables(model, params, service_candidates, resid
     return service_vars, residential_vars
 
 
+def parse_fixed_road_cells(grid, params):
+    fixed_road_keys = params.get("fixedRoads") or []
+    fixed_road_cells = set()
+    for index, road_key in enumerate(fixed_road_keys):
+        if not isinstance(road_key, str) or "," not in road_key:
+            fail(f"Problem definition fixedRoads[{index}] must be a road key like 'r,c'.")
+        parts = road_key.split(",")
+        if len(parts) != 2 or not parts[0].isdigit() or not parts[1].isdigit():
+            fail(f"Problem definition fixedRoads[{index}] must be a road key like 'r,c'.")
+        cell = (int(parts[0]), int(parts[1]))
+        if not is_allowed(grid, cell[0], cell[1]):
+            fail(f"Problem definition fixedRoads[{index}] must refer to an allowed grid cell.")
+        fixed_road_cells.add(cell)
+    return fixed_road_cells
+
+
+def uses_explicit_fixed_road_anchors(params):
+    return "fixedRoads" in params
+
+
 def build_cp_sat_cell_index(grid, params, placement_maps: CandidatePlacementMaps) -> CpSatCellIndex:
-    reachable_allowed = reachable_allowed_from_road_anchors(grid)
+    fixed_road_cells = parse_fixed_road_cells(grid, params)
+    use_fixed_road_anchors_only = uses_explicit_fixed_road_anchors(params)
+    reachable_allowed = reachable_allowed_from_road_anchors(
+        grid,
+        fixed_road_cells,
+        use_fixed_road_anchors_only,
+    )
     if not reachable_allowed:
-        fail("No feasible solution found: no allowed road cell exists in row 0 or column 0.")
-    protected_road_cells = collect_protected_road_cells(grid, params, reachable_allowed, placement_maps)
+        if use_fixed_road_anchors_only:
+            fail("No feasible solution found: no configured fixed road anchor exists.")
+        fail("No feasible solution found: no allowed road anchor exists in row 0, column 0, or fixedRoads.")
+    protected_road_cells = collect_protected_road_cells(
+        grid,
+        params,
+        reachable_allowed,
+        placement_maps,
+        fixed_road_cells,
+        use_fixed_road_anchors_only,
+    )
+    protected_road_cells.update(fixed_road_cells)
     road_eligible_cells = trim_road_eligible_cells(grid, reachable_allowed, protected_road_cells)
 
     allowed_cells, cell_to_id, id_to_cell = index_reachable_allowed_cells(grid, reachable_allowed)
-    anchor_ids = [idx for idx, (r, c) in enumerate(allowed_cells) if r == 0 or c == 0]
+    if use_fixed_road_anchors_only:
+        anchor_ids = [idx for idx, cell in enumerate(allowed_cells) if cell in fixed_road_cells]
+    else:
+        anchor_ids = [idx for idx, (r, c) in enumerate(allowed_cells) if r == 0 or c == 0 or (r, c) in fixed_road_cells]
     road_eligible_ids = {cell_to_id[cell] for cell in road_eligible_cells if cell in cell_to_id}
 
     return CpSatCellIndex(
@@ -219,10 +259,29 @@ def build_cp_sat_cell_index(grid, params, placement_maps: CandidatePlacementMaps
     )
 
 
+def force_fixed_road_variables(model, cell_to_id, road_vars, fixed_road_cells):
+    for cell in fixed_road_cells:
+        model.Add(road_vars[cell_to_id[cell]] == 1)
+
+
 def build_cp_sat_candidate_bundle(grid, params, cell_to_id, placement_maps: CandidatePlacementMaps) -> CpSatCandidateBundle:
-    service_candidates = enumerate_service_candidates(grid, params, cell_to_id, placement_maps.service)
+    road_anchor_boundary_enabled = not uses_explicit_fixed_road_anchors(params)
+    service_candidates = enumerate_service_candidates(
+        grid,
+        params,
+        cell_to_id,
+        placement_maps.service,
+        road_anchor_boundary_enabled,
+    )
     total_bonus_upper_bound = typed_service_bonus_upper_bound(params)
-    residential_candidates = enumerate_residential_candidates(grid, params, cell_to_id, total_bonus_upper_bound, placement_maps)
+    residential_candidates = enumerate_residential_candidates(
+        grid,
+        params,
+        cell_to_id,
+        total_bonus_upper_bound,
+        placement_maps,
+        road_anchor_boundary_enabled,
+    )
     service_candidates = prune_objectively_useless_service_candidates(service_candidates, residential_candidates)
     residential_candidates = annotate_residential_population_upper_bounds(params, service_candidates, residential_candidates)
     total_population_upper_bound = compute_total_population_upper_bound(params, residential_candidates)
@@ -246,6 +305,7 @@ def add_cp_sat_layout_constraints(
     residential_vars,
     residential_candidates,
     gate_access_analysis,
+    road_anchor_boundary_enabled,
 ):
     if use_no_overlap_2d_encoding(params):
         add_no_overlap_2d_occupancy_constraints(
@@ -274,6 +334,7 @@ def add_cp_sat_layout_constraints(
         service_candidates,
         residential_vars,
         residential_candidates,
+        road_anchor_boundary_enabled,
     )
     add_aggregated_border_capacity_constraints(
         model,
@@ -282,6 +343,7 @@ def add_cp_sat_layout_constraints(
         service_candidates,
         residential_vars,
         residential_candidates,
+        road_anchor_boundary_enabled,
     )
     add_gate_implied_access_constraints(
         model,
@@ -303,7 +365,9 @@ def build_model(grid, params) -> BuiltCpSatModel:
         fail("Grid must be non-empty.")
 
     reject_removed_road_connectivity_mode(params)
+    road_anchor_boundary_enabled = not uses_explicit_fixed_road_anchors(params)
     placement_maps = build_candidate_placement_maps(grid, params)
+    fixed_road_cells = parse_fixed_road_cells(grid, params)
     cell_index = build_cp_sat_cell_index(grid, params, placement_maps)
     candidates = build_cp_sat_candidate_bundle(grid, params, cell_index.cell_to_id, placement_maps)
 
@@ -318,12 +382,14 @@ def build_model(grid, params) -> BuiltCpSatModel:
         cell_index.id_to_cell,
         cell_index.cell_to_id,
     )
+    force_fixed_road_variables(model, cell_index.cell_to_id, road_network.road_vars, fixed_road_cells)
     gate_access_analysis = analyze_gate_access_constraints(
         cell_index.road_eligible_ids,
         road_network.road_neighbor_ids,
         road_network.eligible_anchor_ids,
         candidates.service_candidates,
         candidates.residential_candidates,
+        road_anchor_boundary_enabled,
     )
 
     service_vars, residential_vars = create_building_selection_variables(
@@ -344,6 +410,7 @@ def build_model(grid, params) -> BuiltCpSatModel:
         residential_vars,
         candidates.residential_candidates,
         gate_access_analysis,
+        road_anchor_boundary_enabled,
     )
     directed_edges = add_flow_connectivity_constraints(
         model,

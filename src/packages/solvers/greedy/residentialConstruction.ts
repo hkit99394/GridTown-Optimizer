@@ -1,4 +1,5 @@
 import type { Grid, GreedyProfileCounters, ResidentialPlacement, SolverParams } from "../../core/index.js";
+import { roadAnchorsFromParams } from "../../core/index.js";
 import { GreedyAttemptState } from "./attemptState.js";
 import type { ConnectivityProbe } from "./attemptState.js";
 import {
@@ -106,6 +107,7 @@ export function constructGreedyResidentialPhase(options: {
           serviceBonuses,
           profileCounters
         );
+  const roadAnchors = roadAnchorsFromParams(params);
 
   const residentials: ResidentialPlacement[] = [];
   const residentialTypeIndices: number[] = [];
@@ -147,7 +149,9 @@ export function constructGreedyResidentialPhase(options: {
       if (profileCounters) profileCounters.residentialPhase.candidateScans++;
       if (roads.size === 0) {
         if (profileCounters) profileCounters.roads.roadAnchorChecks++;
-        if (!placementLeavesRoadAnchorCellAvailable(G, occupied, cand.r, cand.c, cand.rows, cand.cols)) continue;
+        if (!placementLeavesRoadAnchorCellAvailable(G, occupied, cand.r, cand.c, cand.rows, cand.cols, roadAnchors)) {
+          continue;
+        }
       }
       if (profileCounters) profileCounters.residentialPhase.canConnectChecks++;
       const probe = probeRoadConnection(occupied, cand.r, cand.c, cand.rows, cand.cols);

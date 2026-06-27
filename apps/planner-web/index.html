@@ -25,7 +25,7 @@
                 <h2>Sector map</h2>
               </div>
               <p class="module-note">
-                Resize the board, switch paint modes, and stamp allowed or blocked cells before launching a solve.
+                Resize the board, switch paint modes, and stamp allowed, blocked, or road-anchor cells before launching a solve.
               </p>
             </div>
             <div class="module-body">
@@ -64,6 +64,7 @@
                     <button type="button" data-paint-mode="toggle">Toggle</button>
                     <button type="button" data-paint-mode="allow">Allow</button>
                     <button type="button" data-paint-mode="block">Block</button>
+                    <button type="button" data-paint-mode="anchor">Anchor</button>
                   </div>
                 </div>
               </div>
@@ -294,6 +295,7 @@
                     <div class="map-legend">
                       <span class="legend-chip"><span class="legend-swatch empty"></span>Empty</span>
                       <span class="legend-chip"><span class="legend-swatch road"></span>Road</span>
+                      <span class="legend-chip"><span class="legend-swatch fixed-road"></span>Fixed road</span>
                       <span class="legend-chip"><span class="legend-swatch service"></span>Service</span>
                       <span class="legend-chip"><span class="legend-swatch residential"></span>Residential</span>
                       <span class="legend-chip"><span class="legend-swatch blocked"></span>Blocked</span>
@@ -330,6 +332,7 @@
                       >
                         <button type="button" data-layout-edit-mode="inspect">Inspect</button>
                         <button type="button" data-layout-edit-mode="road">Road</button>
+                        <button type="button" data-layout-edit-mode="fixed-road">Fixed road</button>
                         <button type="button" data-layout-edit-mode="erase">Erase</button>
                         <button type="button" data-layout-edit-mode="move">Move</button>
                       </div>
@@ -526,6 +529,21 @@
                           placeholder="0 = stop at cap"
                         />
                       </label>
+                      <label class="field">
+                        <span>LNS search strategy</span>
+                        <select id="autoLnsSearchStrategy">
+                          <option value="incumbent">Incumbent</option>
+                          <option value="elite-archive">Elite archive</option>
+                        </select>
+                      </label>
+                      <label class="field">
+                        <span>Archive size</span>
+                        <input id="autoLnsEliteArchiveSize" type="number" min="1" max="32" step="1" />
+                      </label>
+                      <label class="field">
+                        <span>Multistart seeds</span>
+                        <input id="autoLnsMultiStartSeeds" type="number" min="1" max="64" step="1" />
+                      </label>
                     </div>
                     <div class="actions-row compact-actions">
                       <button id="autoPopulationCapGracePresetButton" type="button" class="button ghost">
@@ -628,6 +646,21 @@
                       <label class="field">
                         <span>Repair time limit (seconds)</span>
                         <input id="lnsRepairTimeLimitSeconds" type="number" min="1" step="1" />
+                      </label>
+                      <label class="field">
+                        <span>Search strategy</span>
+                        <select id="lnsSearchStrategy">
+                          <option value="incumbent">Incumbent</option>
+                          <option value="elite-archive">Elite archive</option>
+                        </select>
+                      </label>
+                      <label class="field">
+                        <span>Archive size</span>
+                        <input id="lnsEliteArchiveSize" type="number" min="1" max="32" step="1" />
+                      </label>
+                      <label class="field">
+                        <span>Multistart seeds</span>
+                        <input id="lnsMultiStartSeeds" type="number" min="1" max="64" step="1" />
                       </label>
                     </div>
                     <div class="actions-row compact-actions">

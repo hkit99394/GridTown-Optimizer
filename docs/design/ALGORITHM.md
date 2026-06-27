@@ -4,17 +4,17 @@
 
 The problem decomposes into:
 
-1. **Road access**: Ensure every placed building either touches the road-anchor boundary itself or can connect to an explicit road component that touches row 0 or column 0.
+1. **Road access**: Ensure every placed building either touches the legacy road-anchor boundary itself or can connect to an explicit road component that touches the active road-anchor set.
 2. **Building placement**: Place service and residential buildings on allowed cells without overlap, each with explicit or implicit road access, so that total population is maximized.
 
-We design a support-road approach: place buildings for value, then materialize the explicit road cells needed for validation and for non-boundary building access. The final road set may have multiple components, and each explicit component must touch the road-anchor boundary.
+We design a support-road approach: place buildings for value, then materialize the explicit road cells needed for validation and for non-boundary building access. The final road set may have multiple components, and each explicit component must touch a road anchor.
 
 ---
 
 ## 2. Notation
 
 - `G[r][c]`: 1 = allowed, 0 = blocked.
-- **Road anchor boundary**: row `r = 0` or column `c = 0` (allowed cells only).
+- **Road anchor**: the active starting cells for road connectivity. When `fixedRoads` is omitted, anchors are row `r = 0` and column `c = 0`; when `fixedRoads` is supplied, anchors are exactly those configured fixed road cells. `fixedRoads: []` means no road anchor exists, so optimizers return a zero-population/no-building solution.
 - **Service**: rectangular block `(rows_s × cols_s)` with its own population bonus and its own outward effect range `range_s`.
 - **Residential**: rectangular block `(rows_r × cols_r)` with its own population bounds; population = min(base + service bonuses, max_pop).
 
@@ -24,37 +24,37 @@ We design a support-road approach: place buildings for value, then materialize t
 
 **Goal:** A set of road cells `R` such that:
 
-- All cells in `R` are allowed and connected to the road-anchor boundary via orthogonal moves on `R`.
+- All cells in `R` are allowed and connected to an active road anchor via orthogonal moves on `R`.
 - Every cell that might host a building can be made adjacent to some road (we can build roads as needed when placing buildings).
 
 - All cells in `R` are allowed.
-- Each connected component of `R` contains at least one cell in row `0` or column `0`.
-- `R` may start empty during candidate construction, but returned solutions materialize at least one explicit road-anchor component.
+- Each connected component of `R` contains at least one cell in the active road-anchor set.
+- `R` may start empty during candidate construction, but returned solutions materialize at least one explicit road-anchor component when anchors exist and roads/buildings are placed.
 - Every non-boundary building is orthogonally adjacent to a cell in `R`.
 
 **Strategy A — Connectivity oracle first:**
 
-1. Treat cells in row `0` or column `0` as road-anchor cells.
-2. For each possible building footprint, record whether it has implicit anchor access because the footprint touches row `0` or column `0`.
+1. Resolve the active road-anchor set from `fixedRoads`: legacy row `0`/column `0` if omitted, exactly the configured fixed roads if supplied.
+2. For each possible building footprint, record whether it has implicit anchor access because the footprint touches row `0` or column `0` in legacy-anchor mode.
 3. For non-boundary footprints, use BFS/DFS over allowed, unoccupied cells to find a path from an adjacent road candidate cell to either:
    - an existing explicit road component, or
-   - any road-anchor cell that can start a new road component.
+   - any active road-anchor cell that can start a new road component.
 4. Defer exact road materialization until after the building choice when possible, then prune support roads that are no longer needed.
 
 **Strategy B — Roads as needed (integrated with placement):**
 
 - Start with `R = ∅` or with a small seed from an incumbent layout, then materialize an available road-anchor cell if no explicit roads are otherwise needed.
-- A building that touches row `0` or column `0` is connected without adding roads.
-- When placing a non-boundary building, require that its footprint is orthogonally adjacent to at least one cell that is either in `R`, or can be connected by a shortest allowed path to an existing anchored road component or directly to the road-anchor boundary.
+- A building that touches row `0` or column `0` is connected without adding roads only in legacy-anchor mode.
+- When placing a non-boundary building, require that its footprint is orthogonally adjacent to at least one cell that is either in `R`, or can be connected by a shortest allowed path to an existing anchored road component or directly to an active road anchor.
 - When adding explicit roads, add only the path needed for that building. The path may connect to an existing road component or create a new anchored component.
 
-**Recommended for implementation:** Strategy B. Maintain `R` and validate it by reachability from all road-anchor cells rather than one global source. When placing a building at a rectangle `B`, first accept it if `B` touches row `0` or column `0`. Otherwise, check that some border-adjacent allowed cell can be connected to an anchored explicit road component or to the road-anchor boundary. If roads are needed, add a shortest support path and later prune any road cells that are no longer needed for non-boundary building access.
+**Recommended for implementation:** Strategy B. Maintain `R` and validate it by reachability from all active road-anchor cells rather than one global source. In legacy-anchor mode, first accept a building rectangle `B` if it touches row `0` or column `0`. Otherwise, check that some border-adjacent allowed cell can be connected to an anchored explicit road component or directly to an active road anchor. If roads are needed, add a shortest support path and later prune any road cells that are no longer needed for non-boundary building access.
 
 **Algorithm — Ensure road connectivity when adding a building at rectangle B:**
 
-1. If `B` touches row `0` or column `0`, the building has implicit road access; return true without adding roads.
+1. If `fixedRoads` is omitted and `B` touches row `0` or column `0`, the building has implicit road access; return true without adding roads.
 2. For each cell `u` in `B`, for each orthogonal neighbor `v`: if `v` is allowed and in `R`, the building is connected; return true.
-3. If none: for each allowed neighbor `v`, compute a shortest path from `v` to either an existing anchored road component or any road-anchor cell. If a path exists, add that path to `R` and return true.
+3. If none: for each allowed neighbor `v`, compute a shortest path from `v` to either an existing anchored road component or any active road-anchor cell. If a path exists, add that path to `R` and return true.
 4. If no such path exists, placement at `B` is invalid.
 
 This keeps Phase 2 “placement” and “road extension” in one place.
@@ -104,6 +104,12 @@ If grid is small:
 - **Backtracking:** Enumerate placements in order (e.g. by row then column). For each building type, try all valid positions; recurse and prune when remaining population upper bound is below best solution so far.
 - **Upper bound:** For each remaining cell, optimistic population if we put a max-pop residential there and assume all services boost it; sum and cap by geometry to get a bound.
 
+### 4.4 Opt-in elite-archive LNS
+
+For larger or more deceptive layouts, the single-incumbent LNS path can stay too close to the first Greedy layout. The opt-in `lns.searchStrategy = "elite-archive"` path keeps a small archive of distinct Greedy and seed-hint incumbents, repairs from alternate archive entries when the best incumbent is stalled, and still returns only the best valid layout found.
+
+See [ELITE_ARCHIVE_LNS.md](ELITE_ARCHIVE_LNS.md) for the search policy, option shape, telemetry, and promotion guardrails.
+
 ---
 
 ## 5. End-to-end algorithm (recommended)
@@ -138,7 +144,7 @@ If grid is small:
 ## 6. Data structures
 
 - **Grid:** `G[r][c]`; keep `H`, `W`.
-- **Road set:** `R` as set of `(r, c)`. Connectivity: every connected component of `R` must be reachable from row 0 or column 0. Construction may start from an empty seed, but returned solutions materialize an anchored explicit road set.
+- **Road set:** `R` as set of `(r, c)`. Connectivity: every connected component of `R` must be reachable from the active road-anchor set. Construction may start from an empty seed, but returned solutions materialize an anchored explicit road set when anchors exist and roads/buildings are placed.
 - **Buildings:** List of rectangles (top-left `(r,c)` + size). For service: `(rows_s, cols_s, bonus_s, range_s)`. For residential: `(rows_r, cols_r, base_r, max_r)` or a typed residential record.
 - **Effect zones:** For each placed service, compute the expanded rectangle using that service’s own range `range_s`, excluding the footprint itself. For population computation, for each residential check if its footprint intersects any service effect zone.
 

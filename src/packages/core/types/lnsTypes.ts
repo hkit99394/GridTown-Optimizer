@@ -34,7 +34,7 @@ export interface LnsOptions {
   timeLimitSeconds?: number;
   /** Stop after this many seconds without an improving neighborhood. Omit to rely on iteration-based stopping. */
   noImprovementTimeoutSeconds?: number;
-  /** Optional greedy seed construction budget in seconds when no saved seed is provided. */
+  /** Optional greedy seed construction budget in seconds. Elite-archive mode divides this across multistart seeds. */
   seedTimeLimitSeconds?: number;
   /** Height of each repair neighborhood. Defaults to about half the grid height. */
   neighborhoodRows?: number;
@@ -58,6 +58,12 @@ export interface LnsOptions {
   smallWindowDpMaxStates?: number;
   /** Opt-in learned window scorer. Disabled unless a caller provides this object. */
   windowRanker?: LnsWindowRankerRuntimeOptions;
+  /** Opt-in search strategy. Default incumbent keeps the historical single-incumbent LNS path. */
+  searchStrategy?: LnsSearchStrategy;
+  /** Maximum distinct incumbents retained by the opt-in elite-archive search strategy. */
+  eliteArchiveSize?: number;
+  /** Number of deterministic greedy starts used to seed the opt-in elite archive, in addition to any seed hint. */
+  multiStartSeeds?: number;
   /** Optional saved-layout seed used instead of rebuilding the initial greedy incumbent. */
   seedHint?: CpSatWarmStartHint;
   /** Internal stop-token path used by the local web server. */
@@ -67,6 +73,8 @@ export interface LnsOptions {
 }
 
 export type LnsRepairPhase = "focused" | "escalated";
+
+export type LnsSearchStrategy = "incumbent" | "elite-archive";
 
 export type LnsRepairBackend = "cp-sat" | "small-window-dp";
 
@@ -372,6 +380,12 @@ export interface LnsTelemetry {
   seedSource: "greedy" | "hint";
   seedWallClockSeconds: number;
   seedTimeLimitSeconds: number | null;
+  searchStrategy?: LnsSearchStrategy;
+  eliteArchiveSize?: number;
+  eliteArchiveFinalSize?: number;
+  multiStartSeeds?: number;
+  archiveSeedCount?: number;
+  archiveBestPopulation?: number;
   wallClockLimitSeconds: number | null;
   noImprovementTimeoutSeconds: number | null;
   focusedRepairTimeLimitSeconds: number;

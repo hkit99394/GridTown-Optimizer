@@ -120,6 +120,32 @@ function buildResponseStats(solution: Solution, params: SolverParams): SolveResp
   };
 }
 
+function normalizeFixedRoadsForResponse(solution: Solution, params: SolverParams): string[] {
+  const roadKeys = new Set(solution.roads);
+  const fixedRoads = Array.isArray(solution.fixedRoads) ? solution.fixedRoads : params.fixedRoads;
+  return [...new Set((fixedRoads ?? []).filter((roadKey) => roadKeys.has(roadKey)))].sort();
+}
+
+function hasFixedRoadsField(value: Pick<Solution | SolverParams, "fixedRoads">): boolean {
+  return Object.prototype.hasOwnProperty.call(value, "fixedRoads");
+}
+
+function shouldIncludeFixedRoads(solution: Solution, params: SolverParams): boolean {
+  return hasFixedRoadsField(solution) || hasFixedRoadsField(params);
+}
+
+function buildResponseSolution(solution: Solution, params: SolverParams): ReturnType<typeof serializeSolution> {
+  const serialized = serializeSolution(solution);
+  delete serialized.fixedRoads;
+  const fixedRoads = normalizeFixedRoadsForResponse(solution, params);
+  return fixedRoads.length > 0 || shouldIncludeFixedRoads(solution, params)
+    ? {
+        ...serialized,
+        fixedRoads
+      }
+    : serialized;
+}
+
 function buildPlannerSolutionResponse(
   grid: Grid,
   params: SolverParams,
@@ -128,7 +154,7 @@ function buildPlannerSolutionResponse(
   options: PlannerSolutionResponseOptions & { populationValidation?: ResponsePopulationValidation } = {}
 ) {
   const response = {
-    solution: serializeSolution(solution),
+    solution: buildResponseSolution(solution, params),
     validation: buildResponseValidation(
       validation,
       options.populationValidation ?? buildPopulationValidation(solution, "full-recompute")
@@ -315,11 +341,11 @@ function collectRoadCleanupBuildings(grid: Grid, solution: Solution): BuildingPl
   return buildings;
 }
 
-function cleanManualLayoutRoads(grid: Grid, solution: Solution): Solution {
+function cleanManualLayoutRoads(grid: Grid, params: SolverParams, solution: Solution): Solution {
   const buildings = collectRoadCleanupBuildings(grid, solution);
   if (!buildings) return solution;
 
-  const cleanedRoads = pruneRedundantRoads(grid, solution.roads, buildings);
+  const cleanedRoads = pruneRedundantRoads(grid, solution.roads, buildings, params.fixedRoads);
   if (cleanedRoads.size === solution.roads.size && [...cleanedRoads].every((roadKey) => solution.roads.has(roadKey))) {
     return solution;
   }
@@ -330,8 +356,13 @@ function cleanManualLayoutRoads(grid: Grid, solution: Solution): Solution {
   };
 }
 
-function normalizeManualLayoutSolution(solution: Solution, validation: SolutionMapValidationResult): Solution {
-  return {
+function normalizeManualLayoutSolution(
+  solution: Solution,
+  validation: SolutionMapValidationResult,
+  params: SolverParams
+): Solution {
+  const fixedRoads = normalizeFixedRoadsForResponse(solution, params);
+  const normalized: Solution = {
     ...solution,
     optimizer: undefined,
     manualLayout: true,
@@ -345,17 +376,23 @@ function normalizeManualLayoutSolution(solution: Solution, validation: SolutionM
     populations: [...validation.recomputedPopulations],
     totalPopulation: validation.recomputedTotalPopulation
   };
+  if (fixedRoads.length > 0 || shouldIncludeFixedRoads(solution, params)) {
+    normalized.fixedRoads = fixedRoads;
+  } else {
+    delete normalized.fixedRoads;
+  }
+  return normalized;
 }
 
 export function buildManualLayoutResponse(grid: Grid, params: SolverParams, solution: Solution) {
-  const cleanedSolution = cleanManualLayoutRoads(grid, solution);
+  const cleanedSolution = cleanManualLayoutRoads(grid, params, solution);
   const validation = buildSolveResponsePayload(grid, params, cleanedSolution, {
     ignoreReportedPopulation: true
   });
   return buildPlannerSolutionResponse(
     grid,
     params,
-    normalizeManualLayoutSolution(cleanedSolution, validation),
+    normalizeManualLayoutSolution(cleanedSolution, validation, params),
     validation
   );
 }

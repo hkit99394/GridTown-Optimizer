@@ -165,6 +165,14 @@
     }
 
     /**
+     * @param {unknown} value
+     * @returns {boolean}
+     */
+    function isOptionalRoadKeyArray(value) {
+      return value === undefined || (Array.isArray(value) && value.every(isRoadKey));
+    }
+
+    /**
      * @param {unknown} settings
      * @param {{ requireGrid: boolean }} options
      * @returns {boolean}
@@ -177,6 +185,7 @@
       }
       if (!isOptionalJsonObjectArray(settings.serviceTypes)) return false;
       if (!isOptionalJsonObjectArray(settings.residentialTypes)) return false;
+      if (!isOptionalRoadKeyArray(settings.roadAnchors)) return false;
       if (!isOptionalJsonObject(settings.availableBuildings)) return false;
       if (!isOptionalJsonObject(settings.greedy)) return false;
       if (!isOptionalJsonObject(settings.cpSat)) return false;
@@ -235,6 +244,9 @@
     function isValidSerializedSolution(value) {
       if (!isJsonObject(value)) return false;
       if (!Array.isArray(value.roads) || !value.roads.every(isRoadKey)) return false;
+      if (value.fixedRoads !== undefined && (!Array.isArray(value.fixedRoads) || !value.fixedRoads.every(isRoadKey))) {
+        return false;
+      }
       const services = value.services;
       if (!Array.isArray(services) || !services.every((service) => isValidPlacement(service, { includeRange: true }))) {
         return false;

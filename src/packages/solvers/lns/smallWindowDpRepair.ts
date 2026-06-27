@@ -12,6 +12,7 @@ import {
   enumerateResidentialCandidates,
   enumerateResidentialCandidatesFromTypes,
   enumerateServiceCandidates,
+  fixedRoadsFromParams,
   getBuildingLimits,
   getResidentialBaseMax,
   height,
@@ -19,6 +20,7 @@ import {
   isAllowed,
   normalizeServicePlacement,
   residentialFootprint,
+  roadAnchorsFromParams,
   roadsConnectedToRoadAnchor,
   serviceEffectZone,
   serviceFootprint,
@@ -300,7 +302,10 @@ export function repairSmallWindowWithDp(
     return finish("ineligible-window-size", null, 0, 0, 0, 0, 0);
   }
 
+  const requiredFixedRoads = fixedRoadsFromParams(params);
+  const roadAnchors = roadAnchorsFromParams(params);
   const fixedRoads = new Set([...incumbent.roads].filter((key) => !isInsideWindow(key, window)));
+  for (const key of requiredFixedRoads) fixedRoads.add(key);
   const fixedServices: DpServicePlacement[] = [];
   const fixedResidentials: DpResidentialPlacement[] = [];
   const fixedBlocked = new Set<string>(fixedRoads);
@@ -337,6 +342,7 @@ export function repairSmallWindowWithDp(
     for (let c = window.left; c < Math.min(W, window.left + window.cols); c++) {
       if (!isAllowed(G, r, c)) continue;
       const key = cellKey(r, c);
+      if (requiredFixedRoads.has(key)) continue;
       roadCellKeys.push(key);
       mutableCellKeys.add(key);
     }
@@ -459,7 +465,7 @@ export function repairSmallWindowWithDp(
     for (let roadMask = 0; roadMask < roadMaskCount; roadMask++) {
       const selectedRoadKeys = materializeWindowRoadMask(roadCellKeys, roadMask);
       const roads = new Set([...fixedRoads, ...selectedRoadKeys]);
-      if (roads.size === 0 || roadsConnectedToRoadAnchor(G, roads).size !== roads.size) continue;
+      if (roads.size === 0 || roadsConnectedToRoadAnchor(G, roads, roadAnchors).size !== roads.size) continue;
 
       const roadOccupancyMask = buildRoadMaskOccupancy(roadCellKeys, roadMask, cellIndexByKey);
       const serviceSelections: DpServiceSelection[] = [];
@@ -490,7 +496,8 @@ export function repairSmallWindowWithDp(
             candidate.placement.r,
             candidate.placement.c,
             candidate.placement.rows,
-            candidate.placement.cols
+            candidate.placement.cols,
+            roadAnchors
           )
         ) {
           return;
@@ -549,7 +556,8 @@ export function repairSmallWindowWithDp(
               candidate.placement.r,
               candidate.placement.c,
               candidate.placement.rows,
-              candidate.placement.cols
+              candidate.placement.cols,
+              roadAnchors
             )
           ) {
             const nextRemainingTypes = [...remainingTypes];

@@ -137,6 +137,13 @@ export function assertValidCpSatOptions(params: SolverParams, optimizer: Optimiz
   );
   requireOptionalFiniteNumberInRange(
     cpSat,
+    "backendTimeoutSeconds",
+    "CP-SAT runtime option cpSat.backendTimeoutSeconds",
+    0,
+    CP_SAT_MAX_TIME_LIMIT_SECONDS
+  );
+  requireOptionalFiniteNumberInRange(
+    cpSat,
     "maxDeterministicTime",
     "CP-SAT runtime option cpSat.maxDeterministicTime",
     0,

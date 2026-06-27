@@ -15,7 +15,12 @@ import type {
   SolverParams,
   Solution
 } from "../../core/index.js";
-import { assertValidLayout, assertValidSolveInputs, validateSolution } from "../../core/index.js";
+import {
+  assertValidLayout,
+  assertValidSolveInputs,
+  hasExplicitEmptyRoadAnchors,
+  validateSolution
+} from "../../core/index.js";
 import { parseCpSatRawSolution, parseCpSatStreamEvent, type CpSatRawSolution } from "./protocol.js";
 
 export { parseCpSatRawSolution };
@@ -23,6 +28,20 @@ export type { CpSatRawSolution };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
+}
+
+function buildNoRoadAnchorCpSatSolution(): Solution {
+  return {
+    optimizer: "cp-sat",
+    roads: new Set<string>(),
+    services: [],
+    serviceTypeIndices: [],
+    servicePopulationIncreases: [],
+    residentials: [],
+    residentialTypeIndices: [],
+    populations: [],
+    totalPopulation: 0
+  };
 }
 
 export function defaultPythonExecutable(): string {
@@ -41,6 +60,29 @@ export interface CpSatReadiness {
 
 function cpSatSetupHint(): string {
   return "Run npm run setup:cp-sat, or set CITY_BUILDER_CP_SAT_PYTHON to a Python executable with OR-Tools installed.";
+}
+
+export function resolveCpSatBackendTimeout(
+  params: SolverParams
+): { milliseconds: number; seconds: number } | undefined {
+  const seconds = params.cpSat?.backendTimeoutSeconds;
+  if (seconds === undefined) return undefined;
+  return {
+    milliseconds: Math.max(1, Math.ceil(seconds * 1000)),
+    seconds
+  };
+}
+
+function formatTimeoutSeconds(seconds: number): string {
+  return Number.isInteger(seconds) ? `${seconds}` : `${Number(seconds.toFixed(3))}`;
+}
+
+export function cpSatBackendTimeoutMessage(timeout: { seconds: number }): string {
+  return `CP-SAT backend timed out after ${formatTimeoutSeconds(timeout.seconds)}s.`;
+}
+
+function isSpawnTimeoutError(error: Error): boolean {
+  return (error as NodeJS.ErrnoException).code === "ETIMEDOUT";
 }
 
 export function checkCpSatReadiness(
@@ -127,6 +169,7 @@ function buildCpSatBackendParams(params: SolverParams, asyncOptions?: CpSatAsync
   const normalizedWarmStartHint = params.cpSat?.warmStartHint
     ? normalizeWarmStartHint(params.cpSat.warmStartHint)
     : undefined;
+  const { backendTimeoutSeconds: _backendTimeoutSeconds, ...pythonCpSatOptions } = params.cpSat ?? {};
   const streamProgress = Boolean(
     asyncOptions &&
     (params.cpSat?.streamProgress || asyncOptions.onProgress || asyncOptions.progressIntervalSeconds !== undefined)
@@ -145,7 +188,7 @@ function buildCpSatBackendParams(params: SolverParams, asyncOptions?: CpSatAsync
   return {
     ...params,
     cpSat: {
-      ...params.cpSat,
+      ...pythonCpSatOptions,
       ...(normalizedWarmStartHint
         ? { warmStartHint: normalizedWarmStartHint as NonNullable<SolverParams["cpSat"]>["warmStartHint"] }
         : {}),
@@ -178,13 +221,18 @@ function buildCpSatBackendInvocation(G: Grid, params: SolverParams, asyncOptions
 
 function runCpSatBackend(G: Grid, params: SolverParams) {
   const { pythonExecutable, scriptPath, request } = buildCpSatBackendInvocation(G, params);
+  const backendTimeout = resolveCpSatBackendTimeout(params);
   const result = spawnSync(pythonExecutable, [scriptPath], {
     input: request,
     encoding: "utf8",
-    maxBuffer: 16 * 1024 * 1024
+    maxBuffer: 16 * 1024 * 1024,
+    ...(backendTimeout ? { timeout: backendTimeout.milliseconds, killSignal: "SIGKILL" as const } : {})
   });
 
   if (result.error) {
+    if (backendTimeout && isSpawnTimeoutError(result.error)) {
+      throw new Error(`${cpSatBackendTimeoutMessage(backendTimeout)} ${cpSatSetupHint()}`);
+    }
     throw new Error(
       `Failed to launch CP-SAT backend with ${pythonExecutable}: ${result.error.message}. ${cpSatSetupHint()}`
     );
@@ -221,6 +269,21 @@ async function runCpSatBackendAsync(
     let lineBuffer = "";
     let sawStreamEvent = false;
     let finalPayload: CpSatRawSolution | null = null;
+    let backendTimeoutFired = false;
+    const backendTimeout = resolveCpSatBackendTimeout(params);
+    const backendTimeoutId = backendTimeout
+      ? setTimeout(() => {
+          backendTimeoutFired = true;
+          child.kill("SIGKILL");
+          rejectPromise(new Error(`${cpSatBackendTimeoutMessage(backendTimeout)} ${cpSatSetupHint()}`));
+        }, backendTimeout.milliseconds)
+      : undefined;
+    backendTimeoutId?.unref?.();
+    const clearBackendTimeout = () => {
+      if (backendTimeoutId) {
+        clearTimeout(backendTimeoutId);
+      }
+    };
 
     child.stdout.setEncoding("utf8");
     child.stderr.setEncoding("utf8");
@@ -260,11 +323,15 @@ async function runCpSatBackendAsync(
       stderr += chunk;
     });
     child.on("error", (error) => {
+      clearBackendTimeout();
+      if (backendTimeoutFired) return;
       rejectPromise(
         new Error(`Failed to launch CP-SAT backend with ${pythonExecutable}: ${error.message}. ${cpSatSetupHint()}`)
       );
     });
     child.on("close", (code, signal) => {
+      clearBackendTimeout();
+      if (backendTimeoutFired) return;
       if (code !== 0) {
         const trimmedStderr = stderr.trim();
         const trimmedStdout = stdout.trim();
@@ -401,12 +468,18 @@ export async function solveCpSatAsync(
   asyncOptions?: CpSatAsyncOptions
 ): Promise<Solution> {
   assertValidSolveInputs(G, params);
+  if (hasExplicitEmptyRoadAnchors(params)) {
+    return buildNoRoadAnchorCpSatSolution();
+  }
   const raw = await runCpSatBackendAsync(G, params, asyncOptions);
   return materializeCpSatSolution(G, params, raw);
 }
 
 export function solveCpSat(G: Grid, params: SolverParams): Solution {
   assertValidSolveInputs(G, params);
+  if (hasExplicitEmptyRoadAnchors(params)) {
+    return buildNoRoadAnchorCpSatSolution();
+  }
   const raw = parseCpSatRawSolution(runCpSatBackend(G, params));
   return materializeCpSatSolution(G, params, raw);
 }

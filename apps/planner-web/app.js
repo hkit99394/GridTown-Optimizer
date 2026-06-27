@@ -85,6 +85,7 @@ const sampleProblemPresets = createSampleProblemPresets({
 
 const state = /** @type {JsonObject} */ ({
   grid: cloneGrid(SAMPLE_GRID),
+  roadAnchors: [],
   paintMode: "toggle",
   advancedMode: false,
   optimizer: "auto",
@@ -133,6 +134,9 @@ const state = /** @type {JsonObject} */ ({
     neighborhoodRows: 6,
     neighborhoodCols: 8,
     repairTimeLimitSeconds: 5,
+    searchStrategy: "incumbent",
+    eliteArchiveSize: 4,
+    multiStartSeeds: 4,
     useDisplayedSeed: true
   },
   auto: {
@@ -562,6 +566,41 @@ function init() {
     elements[elementKey].addEventListener("input", () => {
       state.lns[stateKey] = elements[elementKey].value;
       requestBuilderController.updatePayloadPreview();
+    });
+  });
+
+  const lnsSearchStrategyControls = [elements.autoLnsSearchStrategy, elements.lnsSearchStrategy].filter(Boolean);
+  lnsSearchStrategyControls.forEach((control) => {
+    control.addEventListener("change", () => {
+      const nextStrategy = control.value === "elite-archive" ? "elite-archive" : "incumbent";
+      state.lns.searchStrategy = nextStrategy;
+      lnsSearchStrategyControls.forEach((peer) => {
+        peer.value = nextStrategy;
+      });
+      requestBuilderController.updatePayloadPreview();
+    });
+  });
+
+  const lnsEliteBindings = [
+    {
+      elementKeys: ["autoLnsEliteArchiveSize", "lnsEliteArchiveSize"],
+      stateKey: "eliteArchiveSize"
+    },
+    {
+      elementKeys: ["autoLnsMultiStartSeeds", "lnsMultiStartSeeds"],
+      stateKey: "multiStartSeeds"
+    }
+  ];
+  lnsEliteBindings.forEach(({ elementKeys, stateKey }) => {
+    const controls = elementKeys.map((elementKey) => elements[elementKey]).filter(Boolean);
+    controls.forEach((control) => {
+      control.addEventListener("input", () => {
+        state.lns[stateKey] = control.value;
+        controls.forEach((peer) => {
+          if (peer !== control) peer.value = control.value;
+        });
+        requestBuilderController.updatePayloadPreview();
+      });
     });
   });
 

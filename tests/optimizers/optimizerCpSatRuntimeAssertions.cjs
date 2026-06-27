@@ -97,6 +97,39 @@ async function maybeTestCpSatUsesColumnZeroRoadAnchor() {
   );
 }
 
+async function maybeTestCpSatUsesOnlyConfiguredRoadAnchors() {
+  const pythonExecutable = resolveCpSatPython();
+  if (!pythonExecutable) {
+    return;
+  }
+
+  const grid = [
+    [1, 1, 1, 1],
+    [1, 1, 1, 1],
+    [1, 1, 1, 1],
+    [1, 1, 1, 1]
+  ];
+  const params = {
+    optimizer: "cp-sat",
+    fixedRoads: ["3,3"],
+    cpSat: {
+      pythonExecutable,
+      timeLimitSeconds: 5,
+      numWorkers: 1
+    },
+    residentialTypes: [{ w: 2, h: 2, min: 10, max: 10, avail: 1 }],
+    availableBuildings: { residentials: 1, services: 0 }
+  };
+
+  const solution = await solveCpSatAsync(grid, params);
+  const validation = validateSolution({ grid, solution, params });
+
+  assert.match(solution.cpSatStatus ?? "", /^(OPTIMAL|FEASIBLE)$/);
+  assert.equal(solution.totalPopulation, 10);
+  assert.equal(solution.roads.has("3,3"), true);
+  assert.equal(validation.valid, true);
+}
+
 async function maybeTestCpSatAllowsMultiAnchorComponentsInOptimization() {
   const pythonExecutable = resolveCpSatPython();
   if (!pythonExecutable) {
@@ -193,6 +226,30 @@ function maybeTestCpSatSyncCompatibility() {
   assert.match(direct.cpSatStatus ?? "", /^(OPTIMAL|FEASIBLE)$/);
   assert.equal(dispatched.totalPopulation, 10);
   assert.equal(direct.totalPopulation, 10);
+}
+
+async function testCpSatDirectReturnsZeroForExplicitEmptyRoadAnchors() {
+  const grid = [
+    [1, 1],
+    [1, 1]
+  ];
+  const params = {
+    optimizer: "cp-sat",
+    fixedRoads: [],
+    residentialTypes: [{ w: 2, h: 2, min: 10, max: 10, avail: 1 }],
+    availableBuildings: { residentials: 1, services: 0 }
+  };
+
+  const sync = solveCpSat(grid, params);
+  const asyncSolution = await solveCpSatAsync(grid, params);
+
+  for (const solution of [sync, asyncSolution]) {
+    assert.equal(solution.optimizer, "cp-sat");
+    assert.equal(solution.totalPopulation, 0);
+    assert.deepEqual([...solution.roads], []);
+    assert.deepEqual(solution.residentials, []);
+    assert.equal(validateSolution({ grid, solution, params }).valid, true);
+  }
 }
 
 function testCpSatRejectsSemanticallyInvalidRawSolution() {
@@ -615,6 +672,30 @@ print(json.dumps({
   assert.equal(noLimitPayload.configured_max_time_in_seconds, noLimitPayload.baseline_max_time_in_seconds);
 }
 
+function testCpSatSyncEnforcesBackendTimeout() {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "cp-sat-timeout-"));
+  const scriptPath = path.join(tempDir, "sleep-backend.js");
+  fs.writeFileSync(scriptPath, "process.stdin.resume(); setTimeout(() => {}, 10000);\n");
+
+  try {
+    assert.throws(
+      () =>
+        solveCpSat([[1]], {
+          optimizer: "cp-sat",
+          cpSat: {
+            pythonExecutable: process.execPath,
+            scriptPath,
+            backendTimeoutSeconds: 0.1
+          },
+          availableBuildings: { residentials: 0, services: 0 }
+        }),
+      /CP-SAT backend timed out after 0\.1s/
+    );
+  } finally {
+    fs.rmSync(tempDir, { recursive: true, force: true });
+  }
+}
+
 function maybeTestCpSatWarmStartHelpers() {
   const pythonExecutable = resolveCpSatPython();
   if (!pythonExecutable) {
@@ -910,9 +991,11 @@ print(json.dumps({
 module.exports = {
   maybeTestCpSatOptimizer,
   maybeTestCpSatUsesColumnZeroRoadAnchor,
+  maybeTestCpSatUsesOnlyConfiguredRoadAnchors,
   maybeTestCpSatAllowsMultiAnchorComponentsInOptimization,
   maybeTestCpSatNoOverlap2dEncodingProducesValidSolution,
   maybeTestCpSatSyncCompatibility,
+  testCpSatDirectReturnsZeroForExplicitEmptyRoadAnchors,
   testCpSatRejectsSemanticallyInvalidRawSolution,
   testCpSatNormalizesUnderReportedRawPopulation,
   maybeTestCpSatSupportsShapedServices,
@@ -921,6 +1004,7 @@ module.exports = {
   maybeTestCpSatObjectivePolicyHelpers,
   maybeTestCpSatNoOverlap2dModelEncodingHelpers,
   maybeTestCpSatRuntimeOptionHelpers,
+  testCpSatSyncEnforcesBackendTimeout,
   maybeTestCpSatWarmStartHelpers,
   maybeTestCpSatSnapshotResponseHelpers,
   maybeTestCpSatNoImprovementTimeoutHelpers,

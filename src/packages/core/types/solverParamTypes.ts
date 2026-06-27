@@ -19,6 +19,12 @@ import type { LnsOptions } from "./lnsTypes.js";
 export interface SolverParams {
   /** Optimizer backend. Defaults to auto. */
   optimizer?: OptimizerName;
+  /**
+   * Explicit road cells that must remain roads. These cells also act as road-anchor
+   * roots, so generated road components may connect to them instead of only to
+   * row 0 or column 0.
+   */
+  fixedRoads?: string[];
   /** Auto-orchestration options, used when optimizer = "auto". */
   auto?: AutoOptions;
   /** CP-SAT backend options, used when optimizer = "cp-sat". */

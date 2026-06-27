@@ -255,6 +255,8 @@ export interface CpSatOptions {
   scriptPath?: string;
   /** Optional max solve time in seconds. When omitted, CP-SAT runs until it finishes or is stopped externally. */
   timeLimitSeconds?: number;
+  /** Internal Node bridge subprocess wall-clock cap. When omitted, the Python backend is not capped by Node. */
+  backendTimeoutSeconds?: number;
   /** Max deterministic time. Useful for more reproducible benchmark comparisons. */
   maxDeterministicTime?: number;
   /** CP-SAT worker count. Default 8. */

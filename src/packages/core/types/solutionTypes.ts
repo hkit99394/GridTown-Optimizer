@@ -49,6 +49,8 @@ export interface Solution {
   stoppedByUser?: boolean;
   /** True when a greedy wall-clock budget stopped the run and this is the best feasible result found so far. */
   stoppedByTimeLimit?: boolean;
+  /** Road cells that were supplied as fixed anchors for this layout. */
+  fixedRoads?: string[];
   roads: Set<string>;
   services: ServicePlacement[];
   /** Service type index per placement; -1 only for manual solutions without configured service types */

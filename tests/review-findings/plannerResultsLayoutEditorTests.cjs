@@ -296,10 +296,142 @@ function testPlannerResultsRenderClipsCorruptPlacementGeometry() {
   assert(Number.parseFloat(elements.resultOverlay.children[0].style.width) < 100);
 }
 
+function testPlannerResultsFixedRoadModePinsAndUnpinsRoadAnchors() {
+  class FakeElement {}
+  class FakeHTMLDivElement extends FakeElement {
+    constructor(row, col) {
+      super();
+      this.dataset = {
+        r: String(row),
+        c: String(col)
+      };
+    }
+
+    closest(selector) {
+      return selector === ".grid-cell" ? this : null;
+    }
+  }
+
+  const plannerResults = loadPlannerResultsModule({
+    context: {
+      Element: FakeElement,
+      HTMLDivElement: FakeHTMLDivElement,
+      document: {
+        createElement() {
+          return createRecordingElement();
+        }
+      }
+    }
+  });
+  const grid = [
+    [1, 1],
+    [1, 1]
+  ];
+  const state = {
+    isSolving: false,
+    grid,
+    result: {
+      solution: {
+        roads: [],
+        services: [],
+        serviceTypeIndices: [],
+        servicePopulationIncreases: [],
+        residentials: [],
+        residentialTypeIndices: [],
+        populations: [],
+        totalPopulation: 0
+      },
+      stats: {
+        manualLayout: false
+      },
+      validation: {
+        valid: true,
+        errors: []
+      }
+    },
+    resultContext: {
+      grid,
+      params: {
+        optimizer: "greedy",
+        serviceTypes: [],
+        residentialTypes: []
+      }
+    },
+    solveProgressLog: [],
+    resultIsLiveSnapshot: false,
+    resultError: "",
+    resultElapsedMs: 1000,
+    resultExplainabilityMode: "layout",
+    resultHeatmapEnabled: false,
+    selectedMapBuilding: null,
+    selectedMapCell: null,
+    layoutEditor: {
+      mode: "fixed-road",
+      pendingPlacement: null,
+      isApplying: false,
+      edited: false,
+      pendingValidation: false,
+      status: ""
+    }
+  };
+  const fixedRoadModeButton = createFakeDomElement({ dataset: { layoutEditMode: "fixed-road" } });
+  const elements = new Proxy(
+    {
+      layoutEditModeToggle: {
+        querySelectorAll() {
+          return [fixedRoadModeButton];
+        }
+      },
+      layoutEditorStatus: createRecordingElement()
+    },
+    {
+      get(target, key) {
+        if (!target[key]) target[key] = createRecordingElement();
+        return target[key];
+      }
+    }
+  );
+  const controller = plannerResults.createPlannerResultsController({
+    state,
+    elements,
+    helpers: {
+      cloneJson(value) {
+        return JSON.parse(JSON.stringify(value));
+      },
+      formatElapsedTime(value) {
+        return `${value}ms`;
+      }
+    },
+    callbacks: {
+      applyMatrixLayout() {},
+      clearExpansionAdvice() {},
+      getOptimizerLabel(value) {
+        return String(value);
+      },
+      renderExpansionAdvice() {},
+      setSolveState() {},
+      syncActionAvailability() {}
+    }
+  });
+
+  controller.handleResultMapClick({ target: new FakeHTMLDivElement(1, 1) });
+
+  assert.equal(JSON.stringify(state.result.solution.roads), JSON.stringify(["1,1"]));
+  assert.equal(JSON.stringify(state.result.solution.fixedRoads), JSON.stringify(["1,1"]));
+  assert.equal(state.layoutEditor.pendingValidation, true);
+
+  state.layoutEditor.pendingValidation = false;
+  controller.handleResultMapClick({ target: new FakeHTMLDivElement(1, 1) });
+
+  assert.equal(JSON.stringify(state.result.solution.roads), JSON.stringify(["1,1"]));
+  assert.equal(JSON.stringify(state.result.solution.fixedRoads), JSON.stringify([]));
+}
+
 function runPlannerResultsLayoutEditorTests() {
   testPlannerResultsRotatePendingPlacementUpdatesFootprint();
   testManualLayoutClipsCorruptFootprintHelpersToGrid();
   testPlannerResultsRenderClipsCorruptPlacementGeometry();
+  testPlannerResultsFixedRoadModePinsAndUnpinsRoadAnchors();
 }
 
 module.exports = { runPlannerResultsLayoutEditorTests };

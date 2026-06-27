@@ -8,7 +8,7 @@ import {
   summarizeDecisionTraceReason
 } from "../core/index.js";
 import { buildSolverProgressSummary } from "../core/index.js";
-import { isAdjacentToRoads, isRoadAnchorCell, roadsConnectedToRoadAnchor } from "../core/index.js";
+import { isAdjacentToRoads, isRoadAnchorCell, roadAnchorsFromParams, roadsConnectedToRoadAnchor } from "../core/index.js";
 import { solveAsync } from "../runtime/index.js";
 import {
   assertBenchmarkCasesSelected,
@@ -570,12 +570,18 @@ function buildCrossModeBenchmarkTraceArtifacts(
   };
 }
 
-function buildRoadSemanticsSummary(grid: Grid, solution: Solution): CrossModeRoadSemanticsSummary {
+function buildRoadSemanticsSummary(
+  grid: Grid,
+  solution: Solution,
+  params: Pick<SolverParams, "fixedRoads">
+): CrossModeRoadSemanticsSummary {
   const roads = solution.roads;
-  const connectedRoads = roadsConnectedToRoadAnchor(grid, roads);
+  const fixedRoads = new Set(params.fixedRoads ?? []);
+  const roadAnchors = roadAnchorsFromParams(params);
+  const connectedRoads = roadsConnectedToRoadAnchor(grid, roads, roadAnchors);
   const anchorRoadCount = [...roads].filter((key) => {
     const [r, c] = key.split(",").map(Number);
-    return isRoadAnchorCell(r, c);
+    return roadAnchors !== undefined ? fixedRoads.has(key) : isRoadAnchorCell(r, c);
   }).length;
   const disconnectedRoadCount = Math.max(0, roads.size - connectedRoads.size);
   const buildings = [
@@ -588,7 +594,7 @@ function buildRoadSemanticsSummary(grid: Grid, solution: Solution): CrossModeRoa
     ...solution.residentials
   ];
   const roadAdjacentBuildingCount = countBenchmarkMatches(buildings, (building) =>
-    isAdjacentToRoads(roads, building.r, building.c, building.rows, building.cols)
+    isAdjacentToRoads(roads, building.r, building.c, building.rows, building.cols, roadAnchors)
   );
   const status: CrossModeRoadSemanticStatus =
     roads.size === 0
@@ -710,7 +716,7 @@ async function runCrossModeBenchmarkCase(
       populationPerWorkerCpuBudgetSecond: safePopulationRate(solution.totalPopulation, workerCpuBudgetSecondsValue),
       populationPerObservedCpuSecond: safePopulationRate(solution.totalPopulation, observedWorkerCpuSecondsValue),
       roadCount: solution.roads.size,
-      roadSemantics: buildRoadSemanticsSummary(benchmarkCase.grid, solution),
+      roadSemantics: buildRoadSemanticsSummary(benchmarkCase.grid, solution, benchmarkCase.params),
       serviceCount: solution.services.length,
       residentialCount: solution.residentials.length,
       cpSatStatus: solution.cpSatStatus ?? null,

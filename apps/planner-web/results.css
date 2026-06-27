@@ -95,6 +95,14 @@
   background: var(--grid-road);
 }
 
+.legend-swatch.fixed-road {
+  background:
+    radial-gradient(circle at center, #f8fbff 0 22%, transparent 24%),
+    linear-gradient(145deg, #bde8ff, #3aa7d8);
+  border-color: rgba(14, 94, 135, 0.68);
+  box-shadow: inset 0 0 0 2px rgba(14, 94, 135, 0.24);
+}
+
 .legend-swatch.service {
   background: var(--grid-service);
 }
@@ -385,6 +393,10 @@ textarea:focus {
 .segmented-wide {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+#layoutEditModeToggle {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .segmented button {

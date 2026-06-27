@@ -996,6 +996,9 @@ function testPlannerRequestBuilderTreatsBlankAutoCapAsUnlimited() {
       neighborhoodRows: 2,
       neighborhoodCols: 2,
       repairTimeLimitSeconds: 1,
+      searchStrategy: "incumbent",
+      eliteArchiveSize: 4,
+      multiStartSeeds: 4,
       useDisplayedSeed: false
     },
     result: null,
@@ -1229,6 +1232,24 @@ function testPlannerRequestBuilderKeepsAutoPayloadMinimal() {
   assert.equal(request.params.greedy, undefined);
   assert.equal(request.params.cpSat, undefined);
   assert.equal(request.params.lns, undefined);
+
+  state.lns.searchStrategy = "elite-archive";
+  state.lns.eliteArchiveSize = "5";
+  state.lns.multiStartSeeds = "7";
+  const autoEliteArchiveRequest = controller.buildSolveRequest({
+    hintMismatch: "ignore",
+    includeWarmStartHint: false,
+    includeLnsSeed: false
+  });
+  assert.equal(autoEliteArchiveRequest.params.optimizer, "auto");
+  assert.equal(autoEliteArchiveRequest.params.greedy, undefined);
+  assert.equal(autoEliteArchiveRequest.params.cpSat, undefined);
+  assert.equal(autoEliteArchiveRequest.params.lns.searchStrategy, "elite-archive");
+  assert.equal(autoEliteArchiveRequest.params.lns.eliteArchiveSize, 5);
+  assert.equal(autoEliteArchiveRequest.params.lns.multiStartSeeds, 7);
+  state.lns.searchStrategy = "incumbent";
+  state.lns.eliteArchiveSize = 4;
+  state.lns.multiStartSeeds = 4;
 
   state.optimizer = "legacy-or-missing";
   const normalizedRequest = controller.buildSolveRequest({

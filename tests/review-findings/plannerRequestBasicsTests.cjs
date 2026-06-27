@@ -328,11 +328,292 @@ function testPlannerBuildSolveRequestEnablesGreedyDiagnosticsOnlyForStandaloneGr
   assert.equal(cpSatRequest.params.greedy.densityTieBreakerTolerancePercent, undefined);
 }
 
+function testPlannerBuildSolveRequestPinsValidatedFixedRoads() {
+  const plannerShared = loadPlannerSharedModule();
+  const plannerRequestBuilder = loadPlannerRequestBuilderModule();
+  const state = {
+    optimizer: "greedy",
+    grid: [
+      [1, 1],
+      [1, 1]
+    ],
+    serviceTypes: [],
+    residentialTypes: [],
+    availableBuildings: {
+      services: "",
+      residentials: ""
+    },
+    greedy: {
+      localSearch: true,
+      randomSeed: "",
+      restarts: 1,
+      serviceRefineIterations: 0,
+      serviceRefineCandidateLimit: 1,
+      exhaustiveServiceSearch: false,
+      serviceExactPoolLimit: 1,
+      serviceExactMaxCombinations: 1
+    },
+    cpSat: {
+      timeLimitSeconds: "",
+      noImprovementTimeoutSeconds: "",
+      randomSeed: "",
+      numWorkers: 8,
+      logSearchProgress: false,
+      useDisplayedHint: false
+    },
+    lns: {
+      iterations: 1,
+      maxNoImprovementIterations: 1,
+      neighborhoodRows: 1,
+      neighborhoodCols: 1,
+      repairTimeLimitSeconds: 1,
+      useDisplayedSeed: false
+    },
+    layoutEditor: {
+      pendingValidation: false
+    },
+    result: {
+      solution: {
+        manualLayout: true,
+        roads: ["1,1", "0,1", "1,1"],
+        fixedRoads: ["1,1", "0,1", "1,1"]
+      },
+      stats: {
+        manualLayout: true
+      },
+      validation: {
+        valid: true
+      }
+    },
+    resultContext: null,
+    resultElapsedMs: 0
+  };
+  const controller = plannerRequestBuilder.createPlannerRequestBuilderController({
+    state,
+    elements: {
+      cpSatRandomSeed: createFakeDomElement(),
+      cpSatHintStatus: createFakeDomElement(),
+      lnsSeedStatus: createFakeDomElement(),
+      payloadPreview: createFakeDomElement(),
+      layoutStorageName: createFakeDomElement()
+    },
+    helpers: {
+      buildCpSatContinuationModelInput: plannerShared.buildCpSatContinuationModelInput,
+      buildCpSatWarmStartCheckpoint: plannerShared.buildCpSatWarmStartCheckpoint,
+      clampInteger: plannerShared.clampInteger,
+      cloneGrid: plannerShared.cloneGrid,
+      cloneJson: plannerShared.cloneJson,
+      computeCpSatModelFingerprint: plannerShared.computeCpSatModelFingerprint,
+      getSavedLayoutElapsedMs: plannerShared.getSavedLayoutElapsedMs,
+      readOptionalInteger: plannerShared.readOptionalInteger,
+      parseResidentialCatalogEntry: plannerShared.parseResidentialCatalogEntry,
+      parseServiceCatalogEntry: plannerShared.parseServiceCatalogEntry
+    }
+  });
+
+  assert.deepEqual([...controller.buildSolveRequest().params.fixedRoads], ["0,1", "1,1"]);
+
+  state.layoutEditor.pendingValidation = true;
+  assert.equal(controller.buildSolveRequest().params.fixedRoads, undefined);
+
+  state.layoutEditor.pendingValidation = false;
+  state.result.solution.fixedRoads = [];
+  assert.equal(Object.prototype.hasOwnProperty.call(controller.buildSolveRequest().params, "fixedRoads"), true);
+  assert.deepEqual([...controller.buildSolveRequest().params.fixedRoads], []);
+}
+
+function testPlannerBuildSolveRequestPreservesFixedRoadsFromSolvedContext() {
+  const plannerShared = loadPlannerSharedModule();
+  const plannerRequestBuilder = loadPlannerRequestBuilderModule();
+  const state = {
+    optimizer: "greedy",
+    grid: [
+      [1, 1],
+      [1, 1]
+    ],
+    serviceTypes: [],
+    residentialTypes: [],
+    availableBuildings: {
+      services: "",
+      residentials: ""
+    },
+    greedy: {
+      localSearch: true,
+      randomSeed: "",
+      restarts: 1,
+      serviceRefineIterations: 0,
+      serviceRefineCandidateLimit: 1,
+      exhaustiveServiceSearch: false,
+      serviceExactPoolLimit: 1,
+      serviceExactMaxCombinations: 1
+    },
+    cpSat: {
+      timeLimitSeconds: "",
+      noImprovementTimeoutSeconds: "",
+      randomSeed: "",
+      numWorkers: 8,
+      logSearchProgress: false,
+      useDisplayedHint: false
+    },
+    lns: {
+      iterations: 1,
+      maxNoImprovementIterations: 1,
+      neighborhoodRows: 1,
+      neighborhoodCols: 1,
+      repairTimeLimitSeconds: 1,
+      useDisplayedSeed: false
+    },
+    layoutEditor: {
+      pendingValidation: false
+    },
+    result: {
+      solution: {
+        manualLayout: false,
+        roads: ["1,1", "0,1"]
+      },
+      stats: {
+        manualLayout: false
+      },
+      validation: {
+        valid: true
+      }
+    },
+    resultContext: {
+      params: {
+        fixedRoads: ["1,1", "0,1", "1,0"]
+      }
+    },
+    resultElapsedMs: 0
+  };
+  const controller = plannerRequestBuilder.createPlannerRequestBuilderController({
+    state,
+    elements: {
+      cpSatRandomSeed: createFakeDomElement(),
+      cpSatHintStatus: createFakeDomElement(),
+      lnsSeedStatus: createFakeDomElement(),
+      payloadPreview: createFakeDomElement(),
+      layoutStorageName: createFakeDomElement()
+    },
+    helpers: {
+      buildCpSatContinuationModelInput: plannerShared.buildCpSatContinuationModelInput,
+      buildCpSatWarmStartCheckpoint: plannerShared.buildCpSatWarmStartCheckpoint,
+      clampInteger: plannerShared.clampInteger,
+      cloneGrid: plannerShared.cloneGrid,
+      cloneJson: plannerShared.cloneJson,
+      computeCpSatModelFingerprint: plannerShared.computeCpSatModelFingerprint,
+      getSavedLayoutElapsedMs: plannerShared.getSavedLayoutElapsedMs,
+      readOptionalInteger: plannerShared.readOptionalInteger,
+      parseResidentialCatalogEntry: plannerShared.parseResidentialCatalogEntry,
+      parseServiceCatalogEntry: plannerShared.parseServiceCatalogEntry
+    }
+  });
+
+  assert.deepEqual([...controller.buildSolveRequest().params.fixedRoads], ["0,1", "1,1"]);
+}
+
+function testPlannerBuildSolveRequestUsesInitialRoadAnchors() {
+  const plannerShared = loadPlannerSharedModule();
+  const plannerRequestBuilder = loadPlannerRequestBuilderModule();
+  const state = {
+    optimizer: "greedy",
+    grid: [
+      [1, 1],
+      [1, 1]
+    ],
+    roadAnchors: ["1,1", "0,1", "1,1", "9,9"],
+    serviceTypes: [],
+    residentialTypes: [],
+    availableBuildings: {
+      services: "",
+      residentials: ""
+    },
+    greedy: {
+      localSearch: true,
+      randomSeed: "",
+      restarts: 1,
+      serviceRefineIterations: 0,
+      serviceRefineCandidateLimit: 1,
+      exhaustiveServiceSearch: false,
+      serviceExactPoolLimit: 1,
+      serviceExactMaxCombinations: 1
+    },
+    cpSat: {
+      timeLimitSeconds: "",
+      noImprovementTimeoutSeconds: "",
+      randomSeed: "",
+      numWorkers: 8,
+      logSearchProgress: false,
+      useDisplayedHint: false
+    },
+    lns: {
+      iterations: 1,
+      maxNoImprovementIterations: 1,
+      neighborhoodRows: 1,
+      neighborhoodCols: 1,
+      repairTimeLimitSeconds: 1,
+      useDisplayedSeed: false
+    },
+    layoutEditor: {
+      pendingValidation: false
+    },
+    result: {
+      solution: {
+        manualLayout: false,
+        roads: ["0,0"]
+      },
+      stats: {
+        manualLayout: false
+      },
+      validation: {
+        valid: true
+      }
+    },
+    resultContext: {
+      params: {
+        fixedRoads: ["0,0"]
+      }
+    },
+    resultElapsedMs: 0
+  };
+  const controller = plannerRequestBuilder.createPlannerRequestBuilderController({
+    state,
+    elements: {
+      cpSatRandomSeed: createFakeDomElement(),
+      cpSatHintStatus: createFakeDomElement(),
+      lnsSeedStatus: createFakeDomElement(),
+      payloadPreview: createFakeDomElement(),
+      layoutStorageName: createFakeDomElement()
+    },
+    helpers: {
+      buildCpSatContinuationModelInput: plannerShared.buildCpSatContinuationModelInput,
+      buildCpSatWarmStartCheckpoint: plannerShared.buildCpSatWarmStartCheckpoint,
+      clampInteger: plannerShared.clampInteger,
+      cloneGrid: plannerShared.cloneGrid,
+      cloneJson: plannerShared.cloneJson,
+      computeCpSatModelFingerprint: plannerShared.computeCpSatModelFingerprint,
+      getSavedLayoutElapsedMs: plannerShared.getSavedLayoutElapsedMs,
+      readOptionalInteger: plannerShared.readOptionalInteger,
+      parseResidentialCatalogEntry: plannerShared.parseResidentialCatalogEntry,
+      parseServiceCatalogEntry: plannerShared.parseServiceCatalogEntry
+    }
+  });
+
+  assert.deepEqual([...controller.buildSolveRequest().params.fixedRoads], ["0,1", "1,1"]);
+
+  state.roadAnchors = [];
+  const emptyAnchorRequest = controller.buildSolveRequest();
+  assert.equal(Object.prototype.hasOwnProperty.call(emptyAnchorRequest.params, "fixedRoads"), true);
+  assert.deepEqual([...emptyAnchorRequest.params.fixedRoads], []);
+}
+
 async function runPlannerRequestBasicsTests() {
   testPlannerServiceAvailabilityRoundTrip();
   testPlannerAutoFillsCpSatRandomSeed();
   testPlannerBuildSolveRequestIncludesCpSatNoImprovementTimeout();
   testPlannerBuildSolveRequestEnablesGreedyDiagnosticsOnlyForStandaloneGreedy();
+  testPlannerBuildSolveRequestPinsValidatedFixedRoads();
+  testPlannerBuildSolveRequestPreservesFixedRoadsFromSolvedContext();
+  testPlannerBuildSolveRequestUsesInitialRoadAnchors();
 }
 
 module.exports = {

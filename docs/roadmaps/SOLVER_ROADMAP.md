@@ -52,6 +52,7 @@ There is no ungated default-path solver change active after the May 2026 evidenc
 Current decisions:
 
 - **Auto policy:** unchanged. Short-budget and repair-allocation evidence did not justify changing Greedy seed time, LNS repair time, or CP-SAT reserve defaults.
+- **Elite-archive LNS:** opt-in diagnostics strategy. It adds multistart archive repair under `lns.searchStrategy = "elite-archive"` but does not change default `auto` or default LNS behavior. See [ELITE_ARCHIVE_LNS.md](../design/ELITE_ARCHIVE_LNS.md).
 - **CP-SAT NoOverlap2D geometry encoding:** diagnostics-only. The opt-in `cpSat.useNoOverlap2d` path is evaluator-valid but blocked from promotion by a repeatable protected holdout population regression and worse aggregate time-to-best.
 - **Service-master shortlist:** diagnostics-only. The opt-in Greedy shortlist is useful and evaluator-valid, but Auto/default ties baseline and the measurable lift is concentrated in standalone Greedy holdout rows.
 - **Learned LNS ranking:** diagnostics-only. Offline and product-axis signals are real, but protected/fresh online value remains blocked by neutral overrides, all-fallback behavior, or safety/selectivity tradeoffs.

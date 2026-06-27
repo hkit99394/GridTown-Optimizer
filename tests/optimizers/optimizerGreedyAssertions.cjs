@@ -54,6 +54,29 @@ function testGreedyDispatcher() {
   assert.equal(dispatched.totalPopulation, direct.totalPopulation);
 }
 
+function testGreedyDispatcherReturnsZeroWithoutRoadAnchors() {
+  const grid = [
+    [1, 1, 1],
+    [1, 1, 1],
+    [1, 1, 1]
+  ];
+  const params = {
+    optimizer: "greedy",
+    fixedRoads: [],
+    residentialTypes: [{ w: 1, h: 1, min: 10, max: 10, avail: 3 }],
+    availableBuildings: { services: 0, residentials: 3 },
+    greedy: { localSearch: false }
+  };
+
+  const solution = solve(grid, params);
+
+  assert.equal(solution.optimizer, "greedy");
+  assert.equal(solution.totalPopulation, 0);
+  assert.equal(solution.roads.size, 0);
+  assert.equal(solution.residentials.length, 0);
+  assert.equal(validateSolution({ grid, params, solution }).valid, true);
+}
+
 function testGreedyRandomSeedIsDeterministic() {
   const grid = [
     [1, 1, 1, 1, 1, 1],
@@ -794,6 +817,57 @@ function testGreedyDiagnosticsReportsNoServiceCoverage() {
   assert.equal(diagnostics.services.overallAvailability.remaining, 2);
 }
 
+function testGreedyKeepsFixedRoadAnchor() {
+  const grid = [
+    [0, 0, 0],
+    [0, 1, 1],
+    [0, 1, 1]
+  ];
+  const params = {
+    optimizer: "greedy",
+    fixedRoads: ["1,1"],
+    residentialTypes: [{ w: 1, h: 1, min: 10, max: 10, avail: 1 }],
+    availableBuildings: { services: 0, residentials: 1 },
+    greedy: {
+      localSearch: false,
+      restarts: 1,
+      serviceRefineIterations: 0,
+      exhaustiveServiceSearch: false
+    }
+  };
+
+  const solution = solveGreedy(grid, params);
+
+  assert.equal(solution.roads.has("1,1"), true);
+  assert.equal(solution.totalPopulation, 10);
+  assert.equal(validateSolution({ grid, params, solution }).valid, true);
+}
+
+function testGreedyLocalSearchRespectsConfiguredRoadAnchor() {
+  const grid = Array.from({ length: 10 }, () => Array.from({ length: 9 }, () => 1));
+  const params = {
+    optimizer: "greedy",
+    fixedRoads: ["5,5"],
+    residentialTypes: [
+      { w: 3, h: 2, min: 10, max: 30, avail: 8 },
+      { w: 2, h: 2, min: 8, max: 20, avail: 4 }
+    ],
+    availableBuildings: { services: 0, residentials: 8 },
+    greedy: {
+      localSearch: true,
+      restarts: 1,
+      serviceRefineIterations: 0,
+      exhaustiveServiceSearch: false
+    }
+  };
+
+  const solution = solveGreedy(grid, params);
+  const validation = validateSolution({ grid, params, solution });
+
+  assert.equal(validation.valid, true, validation.errors.join("; "));
+  assert.equal(solution.roads.has("5,5"), true);
+}
+
 async function runGreedyOptimizerTests() {
   testGeometryHelperVisitorParity();
   testBuildingGeometryHelpersParity();
@@ -804,6 +878,7 @@ async function runGreedyOptimizerTests() {
   testRoadPruningDropsConnectorsOnlyNeededByAnchorBoundaryBuildings();
   testRoadPruningRevisitsCandidatesAfterDependentRoadRemoval();
   testGreedyDispatcher();
+  testGreedyDispatcherReturnsZeroWithoutRoadAnchors();
   testGreedyRandomSeedIsDeterministic();
   testGreedyConnectivityShadowScoringIsOptInTieBreaker();
   testGreedyRoadOpportunityCounterfactualsAreBoundedAndObservational();
@@ -824,6 +899,8 @@ async function runGreedyOptimizerTests() {
   runGreedyServiceLookaheadOptimizerAssertions();
   testGreedyDiagnosticsAreOptInDeterministicAndAdditive();
   testGreedyDiagnosticsReportsNoServiceCoverage();
+  testGreedyKeepsFixedRoadAnchor();
+  testGreedyLocalSearchRespectsConfiguredRoadAnchor();
   testBuildingGeometryCachesParity();
   testPlannerExplainabilityMapSummarizesOpportunityAndRisk();
   testRoadProbeScratchRepeatability();

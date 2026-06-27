@@ -19,6 +19,9 @@ const LNS_MAX_SMALL_WINDOW_DP_MUTABLE_CELLS = 24;
 const LNS_MAX_SMALL_WINDOW_DP_CANDIDATES = 64;
 const LNS_MAX_SMALL_WINDOW_DP_STATES = 1_000_000;
 const LNS_MAX_WINDOW_RANKER_SCORE_DELTA = 1_000_000;
+const LNS_SEARCH_STRATEGIES = Object.freeze(["incumbent", "elite-archive"] as const);
+const LNS_MAX_ELITE_ARCHIVE_SIZE = 32;
+const LNS_MAX_MULTI_START_SEEDS = 64;
 function assertValidWindowRankerAllowedTransitions(windowRanker: Record<string, unknown>): void {
   const value = windowRanker.allowedTransitions;
   if (value === undefined) return;
@@ -337,6 +340,15 @@ export function assertValidLnsOptions(params: SolverParams): void {
     1,
     LNS_MAX_SMALL_WINDOW_DP_STATES
   );
+  requireOptionalStringInSet(lns, "searchStrategy", "LNS option lns.searchStrategy", LNS_SEARCH_STRATEGIES);
+  requireOptionalIntegerInRange(
+    lns,
+    "eliteArchiveSize",
+    "LNS option lns.eliteArchiveSize",
+    1,
+    LNS_MAX_ELITE_ARCHIVE_SIZE
+  );
+  requireOptionalIntegerInRange(lns, "multiStartSeeds", "LNS option lns.multiStartSeeds", 1, LNS_MAX_MULTI_START_SEEDS);
   assertValidWindowRankerOptions(lns);
   requireOptionalString(lns, "stopFilePath", "LNS runtime option lns.stopFilePath");
   requireOptionalString(lns, "snapshotFilePath", "LNS runtime option lns.snapshotFilePath");

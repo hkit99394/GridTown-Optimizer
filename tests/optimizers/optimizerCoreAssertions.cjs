@@ -328,20 +328,92 @@ function testGreedyAttemptStateRejectsMismatchedProbeKind() {
   ];
   const placement = { r: 1, c: 0, rows: 1, cols: 1 };
 
-  const deferredAttempt = new GreedyAttemptState(grid, undefined, true);
+  const deferredAttempt = new GreedyAttemptState(grid, {}, undefined, true);
   assert.equal(
     deferredAttempt.commitPlacement({ kind: "explicit", roadCost: 0, roadProbe: { path: null } }, placement),
     null
   );
   assert.equal(deferredAttempt.occupied.size, 0);
 
-  const explicitAttempt = new GreedyAttemptState(grid, new Set(["0,0"]), false);
+  const explicitAttempt = new GreedyAttemptState(grid, {}, new Set(["0,0"]), false);
   assert.equal(
     explicitAttempt.commitPlacement({ kind: "deferred", roadCost: 0, frontierProbe: { distance: 0 } }, placement),
     null
   );
   assert.equal(explicitAttempt.occupied.size, 1);
   assert.equal(explicitAttempt.occupied.has("0,0"), true);
+}
+
+function testFixedRoadsExtendRoadAnchorValidation() {
+  const grid = [
+    [0, 0, 0],
+    [0, 1, 1],
+    [0, 1, 1]
+  ];
+  const params = {
+    fixedRoads: ["1,1"],
+    residentialTypes: [{ w: 1, h: 1, min: 10, max: 10, avail: 1 }]
+  };
+  const solution = {
+    roads: new Set(["1,1"]),
+    services: [],
+    serviceTypeIndices: [],
+    servicePopulationIncreases: [],
+    residentials: [{ r: 1, c: 2, rows: 1, cols: 1 }],
+    residentialTypeIndices: [0],
+    populations: [10],
+    totalPopulation: 10
+  };
+
+  const valid = validateSolution({ grid, params, solution });
+  assert.equal(valid.valid, true);
+
+  const withoutFixedAnchor = validateSolution({ grid, params: {}, solution });
+  assert.equal(withoutFixedAnchor.valid, false);
+  assert.match(withoutFixedAnchor.errors.join(" "), /row 0 or column 0/);
+
+  const missingFixedRoad = validateSolution({
+    grid,
+    params,
+    solution: {
+      ...solution,
+      roads: new Set()
+    }
+  });
+  assert.equal(missingFixedRoad.valid, false);
+  assert.match(missingFixedRoad.errors.join(" "), /Fixed road \(1,1\) is missing/);
+
+  const noAnchorParams = { fixedRoads: [] };
+  const zeroSolution = {
+    roads: new Set(),
+    services: [],
+    serviceTypeIndices: [],
+    servicePopulationIncreases: [],
+    residentials: [],
+    residentialTypeIndices: [],
+    populations: [],
+    totalPopulation: 0
+  };
+  assert.equal(validateSolution({ grid, params: noAnchorParams, solution: zeroSolution }).valid, true);
+
+  const boundaryRoadSolution = {
+    ...zeroSolution,
+    roads: new Set(["0,0"]),
+    residentials: [{ r: 0, c: 1, rows: 1, cols: 1 }],
+    residentialTypeIndices: [-1],
+    populations: [10],
+    totalPopulation: 10
+  };
+  const invalidExplicitNoAnchor = validateSolution({
+    grid: [
+      [1, 1],
+      [1, 1]
+    ],
+    params: noAnchorParams,
+    solution: boundaryRoadSolution
+  });
+  assert.equal(invalidExplicitNoAnchor.valid, false);
+  assert.match(invalidExplicitNoAnchor.errors.join(" "), /configured fixed road anchor/);
 }
 
 function testRoadPruningDropsConnectorsOnlyNeededByAnchorBoundaryBuildings() {
@@ -824,6 +896,66 @@ process.stdin.on("end", () => {
   }
 }
 
+async function testBackgroundSolveIgnoresInvalidLiveSnapshotMaterialization() {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "city-builder-bg-invalid-live-snapshot-"));
+  const workerScriptPath = path.join(tempDir, "invalid-live-snapshot-worker.cjs");
+  const readyPath = path.join(tempDir, "ready.txt");
+
+  fs.writeFileSync(
+    workerScriptPath,
+    `
+const fs = require("node:fs");
+let input = "";
+process.stdin.setEncoding("utf8");
+process.stdin.on("data", (chunk) => {
+  input += chunk;
+});
+process.stdin.on("end", () => {
+  const request = JSON.parse(input || "{}");
+  fs.writeFileSync(request.snapshotFilePath, JSON.stringify({ totalPopulation: 10, status: "FEASIBLE" }));
+  fs.writeFileSync(request.readyPath, "ready");
+  setInterval(() => {}, 1000);
+});
+`,
+    "utf8"
+  );
+
+  const handle = startJsonBackgroundSolve({
+    solverLabel: "Test invalid live snapshot",
+    stopDirectoryPrefix: "city-builder-bg-invalid-live-snapshot-test-",
+    command: process.execPath,
+    args: [workerScriptPath],
+    buildRequest: (paths) => ({
+      snapshotFilePath: paths.snapshotFilePath,
+      readyPath
+    }),
+    parseRaw: JSON.parse,
+    materializeSolution: () => {
+      throw new Error("invalid live snapshot");
+    },
+    getSnapshotState: (raw) => ({
+      hasFeasibleSolution: Boolean(raw),
+      totalPopulation: raw?.totalPopulation ?? null,
+      cpSatStatus: raw?.status ?? null
+    }),
+    stoppedBeforeFeasibleMessage: "Test invalid live snapshot stopped before feasible.",
+    noSolutionMessage: "Test invalid live snapshot returned no solution.",
+    forcedTerminationDelayMs: 20
+  });
+
+  try {
+    await waitForFile(readyPath);
+
+    assert.equal(handle.getLatestSnapshotState().hasFeasibleSolution, true);
+    assert.equal(handle.getLatestSnapshotState().totalPopulation, 10);
+    assert.equal(handle.getLatestSnapshot(), null);
+  } finally {
+    handle.forceKill?.();
+    await handle.promise.catch(() => {});
+    fs.rmSync(tempDir, { recursive: true, force: true });
+  }
+}
+
 async function testBackgroundSolveCancellationKillsProcessGroupChildren() {
   if (process.platform === "win32") {
     console.log("Skipping process-group cancellation regression on Windows.");
@@ -925,11 +1057,13 @@ async function runCoreOptimizerTests() {
   testValidateSolutionRejectsMalformedRoadSetKey();
   testValidateSolutionRejectsMalformedGridEvenWhenLayoutAvoidsBadCells();
   testValidationApisRejectMalformedPlacementGeometryWithoutThrowing();
+  testFixedRoadsExtendRoadAnchorValidation();
   await testPublicSolverDispatchValidatesInputs();
   await testDirectSolverEntrypointsValidateSharedInputs();
   testBackgroundSolverStartersValidateSharedInputs();
   testBackgroundSolveCleansTempDirectoryWhenRequestBuildFails();
   await testBackgroundSolveCachesUnchangedSnapshots();
+  await testBackgroundSolveIgnoresInvalidLiveSnapshotMaterialization();
   await testBackgroundSolveCancellationKillsProcessGroupChildren();
 }
 
@@ -946,6 +1080,7 @@ module.exports = {
   testRoadProbeScratchWorkspaceResetsBetweenCalls,
   testBuildingConnectivityShadowMeasuresDisconnectedReachableCells,
   testGreedyAttemptStateRejectsMismatchedProbeKind,
+  testFixedRoadsExtendRoadAnchorValidation,
   testRoadPruningDropsConnectorsOnlyNeededByAnchorBoundaryBuildings,
   testRoadPruningRevisitsCandidatesAfterDependentRoadRemoval,
   testValidateSolutionRejectsMalformedRoadSetKey,
@@ -956,5 +1091,6 @@ module.exports = {
   testBackgroundSolverStartersValidateSharedInputs,
   testBackgroundSolveCleansTempDirectoryWhenRequestBuildFails,
   testBackgroundSolveCachesUnchangedSnapshots,
+  testBackgroundSolveIgnoresInvalidLiveSnapshotMaterialization,
   testBackgroundSolveCancellationKillsProcessGroupChildren
 };

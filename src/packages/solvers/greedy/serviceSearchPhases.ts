@@ -1,5 +1,5 @@
-import type { Grid, GreedyProfileCounters, ServiceCandidate, Solution } from "../../core/index.js";
-import { roadAnchorRepresentativeSeedCandidates } from "../../core/index.js";
+import type { Grid, GreedyProfileCounters, ServiceCandidate, Solution, SolverParams } from "../../core/index.js";
+import { roadAnchorRepresentativeSeedCandidates, roadAnchorsFromParams } from "../../core/index.js";
 import { startGreedyProfilePhase } from "./profile.js";
 import type { GreedyProfilePhaseRecorder } from "./profile.js";
 import { collectRoadAnchorRefinementSeeds } from "./roadAnchors.js";
@@ -160,6 +160,7 @@ export function runGreedyExhaustiveServiceSearch(options: {
 }
 export function createGreedyForcedServiceEvaluator(options: {
   G: Grid;
+  params: SolverParams;
   serviceOrderSorted: ServiceCandidate[];
   solveWithOrder: GreedySolveAttempt;
   updateBest: GreedyBestUpdater;
@@ -170,6 +171,7 @@ export function createGreedyForcedServiceEvaluator(options: {
 }): GreedyForcedServiceEvaluator {
   const {
     G,
+    params,
     serviceOrderSorted,
     solveWithOrder,
     updateBest,
@@ -178,6 +180,7 @@ export function createGreedyForcedServiceEvaluator(options: {
     getBestPopulation,
     maybeStop
   } = options;
+  const roadAnchors = roadAnchorsFromParams(params);
   const serviceOrderRankByKey = new Map(
     serviceOrderSorted.map((candidate, index) => [serviceCandidateKey(candidate), index])
   );
@@ -251,13 +254,13 @@ export function createGreedyForcedServiceEvaluator(options: {
     };
 
     for (const solution of successfulSolutions) {
-      for (const seed of collectRoadAnchorRefinementSeeds(solution)) {
+      for (const seed of collectRoadAnchorRefinementSeeds(solution, roadAnchors)) {
         addSeed(seed);
         if (seeds.length > maxSeeds) return seeds;
       }
     }
 
-    for (const fallbackSeed of roadAnchorRepresentativeSeedCandidates(G, maxSeeds)) {
+    for (const fallbackSeed of roadAnchorRepresentativeSeedCandidates(G, maxSeeds, roadAnchors)) {
       addSeed(fallbackSeed);
       if (seeds.length > maxSeeds) break;
     }

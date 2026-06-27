@@ -21,8 +21,10 @@ The input grid is a `number[][]`:
 
 A feasible solution places roads, services, and residential buildings so that:
 
-- every road component touches row `0` or column `0`;
-- every building is either boundary-connected or adjacent to an anchored road component;
+- every road component touches a road anchor;
+- when `fixedRoads` is omitted, row `0` and column `0` are the legacy road anchors;
+- when `fixedRoads` is provided, those cells are the only road anchors, and `fixedRoads: []` means no starting anchor so the optimizer returns a zero-population/no-building solution;
+- every building is adjacent to an anchored road component, or touches the legacy road-anchor boundary when `fixedRoads` is omitted;
 - buildings and roads occupy only allowed cells;
 - buildings do not overlap each other or roads;
 - service effects increase residential population up to each residential type's max.
@@ -140,6 +142,8 @@ The main package exports runtime APIs from [src/index.ts](./src/index.ts). Bench
 | `greedy` | Fast heuristic and diagnostics | Seed generation, quick checks, and placement diagnostics                 |
 | `lns`    | Large Neighborhood Search      | Improving an incumbent through bounded CP-SAT repair windows             |
 | `cp-sat` | Exact OR-Tools backend         | Bounded polish, exact repair, proof, bounds, and semantic checks         |
+
+LNS also has an opt-in elite-archive strategy for hybrid multistart repair experiments. See [docs/design/ELITE_ARCHIVE_LNS.md](./docs/design/ELITE_ARCHIVE_LNS.md).
 
 Current solver strategy, promotion gates, and research tracks live in [docs/roadmaps/SOLVER_ROADMAP.md](./docs/roadmaps/SOLVER_ROADMAP.md).
 

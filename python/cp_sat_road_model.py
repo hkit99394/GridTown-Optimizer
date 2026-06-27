@@ -25,8 +25,8 @@ class GateAccessAnalysis:
     residential_region_coefficients_by_gate: dict[int, dict[int, int]]
 
 
-def touches_road_anchor_boundary(candidate):
-    return int(candidate["r"]) == 0 or int(candidate["c"]) == 0
+def touches_road_anchor_boundary(candidate, road_anchor_boundary_enabled=True):
+    return road_anchor_boundary_enabled and (int(candidate["r"]) == 0 or int(candidate["c"]) == 0)
 
 
 def undirected_adjacent_pairs(cell_ids_by_neighbor):
@@ -82,11 +82,11 @@ def compute_gate_downstream_cells(road_neighbor_ids, road_eligible_ids, eligible
     return gate_downstream_cells
 
 
-def compute_candidate_gate_requirements(candidates, gate_downstream_cells, road_eligible_ids):
+def compute_candidate_gate_requirements(candidates, gate_downstream_cells, road_eligible_ids, road_anchor_boundary_enabled=True):
     road_eligible_ids = set(road_eligible_ids)
     gate_requirements = defaultdict(list)
     for candidate_index, candidate in enumerate(candidates):
-        if touches_road_anchor_boundary(candidate):
+        if touches_road_anchor_boundary(candidate, road_anchor_boundary_enabled):
             continue
         viable_border = {cell_id for cell_id in candidate["border"] if cell_id in road_eligible_ids}
         if not viable_border:
@@ -107,11 +107,26 @@ def build_gate_regional_capacity_coefficients(candidates, gate_candidate_indices
     return coefficients
 
 
-def analyze_gate_access_constraints(road_eligible_ids, road_neighbor_ids, eligible_anchor_ids, service_candidates, residential_candidates):
+def analyze_gate_access_constraints(
+    road_eligible_ids,
+    road_neighbor_ids,
+    eligible_anchor_ids,
+    service_candidates,
+    residential_candidates,
+    road_anchor_boundary_enabled=True,
+):
     gate_downstream_cells = compute_gate_downstream_cells(road_neighbor_ids, road_eligible_ids, eligible_anchor_ids)
-    service_gate_requirements = compute_candidate_gate_requirements(service_candidates, gate_downstream_cells, road_eligible_ids)
+    service_gate_requirements = compute_candidate_gate_requirements(
+        service_candidates,
+        gate_downstream_cells,
+        road_eligible_ids,
+        road_anchor_boundary_enabled,
+    )
     residential_gate_requirements = compute_candidate_gate_requirements(
-        residential_candidates, gate_downstream_cells, road_eligible_ids
+        residential_candidates,
+        gate_downstream_cells,
+        road_eligible_ids,
+        road_anchor_boundary_enabled,
     )
 
     service_candidate_indices_by_gate = defaultdict(list)
@@ -155,24 +170,38 @@ def analyze_gate_access_constraints(road_eligible_ids, road_neighbor_ids, eligib
     )
 
 
-def add_candidate_border_access_constraints(model, road_vars, placement_vars, candidates):
+def add_candidate_border_access_constraints(model, road_vars, placement_vars, candidates, road_anchor_boundary_enabled=True):
     for candidate_index, variable in enumerate(placement_vars):
         candidate = candidates[candidate_index]
-        if touches_road_anchor_boundary(candidate):
+        if touches_road_anchor_boundary(candidate, road_anchor_boundary_enabled):
             continue
         model.Add(sum(road_vars[cell_id] for cell_id in candidate["border"]) >= variable)
 
 
-def add_border_access_constraints(model, road_vars, service_vars, service_candidates, residential_vars, residential_candidates):
-    add_candidate_border_access_constraints(model, road_vars, service_vars, service_candidates)
-    add_candidate_border_access_constraints(model, road_vars, residential_vars, residential_candidates)
+def add_border_access_constraints(
+    model,
+    road_vars,
+    service_vars,
+    service_candidates,
+    residential_vars,
+    residential_candidates,
+    road_anchor_boundary_enabled=True,
+):
+    add_candidate_border_access_constraints(model, road_vars, service_vars, service_candidates, road_anchor_boundary_enabled)
+    add_candidate_border_access_constraints(
+        model,
+        road_vars,
+        residential_vars,
+        residential_candidates,
+        road_anchor_boundary_enabled,
+    )
 
 
-def build_border_access_capacity_coefficients(cell_count, candidates):
+def build_border_access_capacity_coefficients(cell_count, candidates, road_anchor_boundary_enabled=True):
     coefficients = [0] * cell_count
     non_anchor_candidate_indices = []
     for candidate_index, candidate in enumerate(candidates):
-        if touches_road_anchor_boundary(candidate):
+        if touches_road_anchor_boundary(candidate, road_anchor_boundary_enabled):
             continue
         non_anchor_candidate_indices.append(candidate_index)
         for cell_id in candidate["border"]:
@@ -202,8 +231,20 @@ def merge_sparse_capacity_coefficients(*coefficient_maps):
     return combined_coefficients
 
 
-def add_aggregated_border_capacity_constraints(model, road_vars, service_vars, service_candidates, residential_vars, residential_candidates):
-    service_indices, service_coefficients = build_border_access_capacity_coefficients(len(road_vars), service_candidates)
+def add_aggregated_border_capacity_constraints(
+    model,
+    road_vars,
+    service_vars,
+    service_candidates,
+    residential_vars,
+    residential_candidates,
+    road_anchor_boundary_enabled=True,
+):
+    service_indices, service_coefficients = build_border_access_capacity_coefficients(
+        len(road_vars),
+        service_candidates,
+        road_anchor_boundary_enabled,
+    )
     if service_indices:
         add_capacity_upper_bound_constraint(
             model,
@@ -212,7 +253,11 @@ def add_aggregated_border_capacity_constraints(model, road_vars, service_vars, s
             service_coefficients,
         )
 
-    residential_indices, residential_coefficients = build_border_access_capacity_coefficients(len(road_vars), residential_candidates)
+    residential_indices, residential_coefficients = build_border_access_capacity_coefficients(
+        len(road_vars),
+        residential_candidates,
+        road_anchor_boundary_enabled,
+    )
     if residential_indices:
         add_capacity_upper_bound_constraint(
             model,

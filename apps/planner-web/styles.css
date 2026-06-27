@@ -20,6 +20,7 @@
   --grid-allow: linear-gradient(145deg, #edf7dd, #dbeeb4);
   --grid-block: linear-gradient(145deg, #2d3e42, #192326);
   --grid-empty: linear-gradient(145deg, #edf7dd, #dbeeb4);
+  --grid-anchor: #f8fbff;
   --grid-road: linear-gradient(145deg, #c1c7c9, #7f878b);
   --grid-service: linear-gradient(145deg, #e8a14f, #bf6f28);
   --grid-residential: linear-gradient(145deg, #73b98f, #3e8c68);
@@ -329,6 +330,7 @@ details.payload-preview {
 }
 
 .grid-cell {
+  position: relative;
   width: var(--matrix-cell-size);
   min-width: var(--matrix-cell-size);
   height: var(--matrix-cell-size);
@@ -356,6 +358,17 @@ details.payload-preview {
 .grid-cell.blocked {
   --cell-base-bg: var(--grid-block);
   background: var(--cell-base-bg);
+}
+
+.grid-cell.road-anchor {
+  --cell-base-bg: var(--grid-allow);
+  background:
+    radial-gradient(circle at center, var(--grid-anchor) 0 21%, transparent 23%),
+    linear-gradient(145deg, #bde8ff, #3aa7d8);
+  border-color: rgba(14, 94, 135, 0.72);
+  box-shadow:
+    inset 0 0 0 2px rgba(255, 255, 255, 0.45),
+    0 0 0 2px rgba(14, 94, 135, 0.2);
 }
 
 .grid-cell.road {
@@ -415,6 +428,22 @@ details.payload-preview {
   box-shadow:
     inset 0 0 0 2px rgba(255, 255, 255, 0.7),
     0 0 0 2px rgba(15, 102, 80, 0.16);
+}
+
+.result-grid .grid-cell.road.fixed-road {
+  border-color: rgba(14, 94, 135, 0.72);
+  box-shadow:
+    inset 0 0 0 2px rgba(255, 255, 255, 0.5),
+    0 0 0 2px rgba(14, 94, 135, 0.2);
+}
+
+.result-grid .grid-cell.road.fixed-road::after {
+  content: "";
+  position: absolute;
+  inset: calc(50% - 4px);
+  border-radius: 999px;
+  background: var(--grid-anchor);
+  box-shadow: 0 0 0 2px rgba(14, 94, 135, 0.66);
 }
 
 .result-grid .grid-cell:hover {

@@ -17,6 +17,7 @@
    *   lns: JsonObject,
    *   optimizer: string,
    *   paintMode: string,
+   *   roadAnchors?: string[],
    *   residentialTypes: JsonObject[],
    *   serviceTypes: JsonObject[]
    * }} WorkbenchState
@@ -131,6 +132,7 @@
 
       const params = request.params;
       state.grid = cloneGrid(request.grid);
+      state.roadAnchors = Array.isArray(params.fixedRoads) ? params.fixedRoads.slice() : [];
       const requestServiceTypes = /** @type {JsonObject[]} */ (
         Array.isArray(params.serviceTypes) ? params.serviceTypes : []
       );
@@ -268,6 +270,66 @@
     }
 
     /**
+     * @param {number} row
+     * @param {number} col
+     * @returns {string}
+     */
+    function cellKey(row, col) {
+      return `${row},${col}`;
+    }
+
+    /**
+     * @param {unknown} roadKey
+     * @returns {{ r: number, c: number } | null}
+     */
+    function parseRoadKey(roadKey) {
+      if (typeof roadKey !== "string") return null;
+      const match = /^(0|[1-9]\d*),(0|[1-9]\d*)$/.exec(roadKey);
+      if (!match) return null;
+      return {
+        r: Number(match[1]),
+        c: Number(match[2])
+      };
+    }
+
+    /**
+     * @param {string} leftKey
+     * @param {string} rightKey
+     * @returns {number}
+     */
+    function compareRoadKeys(leftKey, rightKey) {
+      const left = parseRoadKey(leftKey);
+      const right = parseRoadKey(rightKey);
+      if (!left || !right) return leftKey.localeCompare(rightKey);
+      return left.r - right.r || left.c - right.c;
+    }
+
+    /**
+     * @returns {string[]}
+     */
+    function normalizeRoadAnchorsForGrid() {
+      /** @type {Set<string>} */
+      const next = new Set();
+      if (Array.isArray(state.roadAnchors)) {
+        for (const roadKey of state.roadAnchors) {
+          const cell = parseRoadKey(roadKey);
+          if (!cell) continue;
+          if (state.grid?.[cell.r]?.[cell.c] !== 1) continue;
+          next.add(cellKey(cell.r, cell.c));
+        }
+      }
+      state.roadAnchors = [...next].sort(compareRoadKeys);
+      return state.roadAnchors;
+    }
+
+    /**
+     * @returns {number}
+     */
+    function countRoadAnchors() {
+      return normalizeRoadAnchorsForGrid().length;
+    }
+
+    /**
      * @param {number} cols
      * @param {number} frameWidth
      * @param {string} [layoutMode]
@@ -320,24 +382,40 @@
      * @param {number} col
      * @returns {string}
      */
-    function buildCanvasCellLabel(value, row, col) {
-      return `Cell ${row},${col} is ${value === 1 ? "allowed" : "blocked"}`;
+    function buildCanvasCellLabel(value, row, col, isRoadAnchor = false) {
+      return `Cell ${row},${col} is ${isRoadAnchor ? "a road anchor" : value === 1 ? "allowed" : "blocked"}`;
+    }
+
+    /**
+     * @param {HTMLElement} cellElement
+     * @param {number} value
+     * @param {number} row
+     * @param {number} col
+     * @param {boolean} isRoadAnchor
+     */
+    function syncGridCellElement(cellElement, value, row, col, isRoadAnchor) {
+      cellElement.classList.toggle("allowed", value === 1);
+      cellElement.classList.toggle("blocked", value === 0);
+      cellElement.classList.toggle("road-anchor", isRoadAnchor);
+      cellElement.setAttribute("aria-label", buildCanvasCellLabel(value, row, col, isRoadAnchor));
+      cellElement.title = `(${row}, ${col}) = ${isRoadAnchor ? "road anchor" : value}`;
     }
 
     function renderGrid() {
       const rows = state.grid.length;
       const cols = state.grid[0]?.length ?? 0;
+      const roadAnchors = new Set(normalizeRoadAnchorsForGrid());
       elements.gridEditor.innerHTML = "";
       elements.gridEditor.dataset.cols = String(cols);
       for (let r = 0; r < rows; r += 1) {
         for (let c = 0; c < cols; c += 1) {
           const cell = document.createElement("button");
           cell.type = "button";
-          cell.className = `grid-cell ${state.grid[r][c] === 1 ? "allowed" : "blocked"}`;
+          const isRoadAnchor = roadAnchors.has(cellKey(r, c));
+          cell.className = "grid-cell";
           cell.dataset.r = String(r);
           cell.dataset.c = String(c);
-          cell.setAttribute("aria-label", buildCanvasCellLabel(state.grid[r][c], r, c));
-          cell.title = `(${r}, ${c}) = ${state.grid[r][c]}`;
+          syncGridCellElement(cell, state.grid[r][c], r, c, isRoadAnchor);
           elements.gridEditor.append(cell);
         }
       }
@@ -349,8 +427,9 @@
       const rows = state.grid.length;
       const cols = state.grid[0]?.length ?? 0;
       const allowed = countAllowedCells();
+      const anchors = countRoadAnchors();
       const total = rows * cols;
-      elements.gridStats.textContent = `${rows} x ${cols} grid, ${allowed} allowed, ${total - allowed} blocked.`;
+      elements.gridStats.textContent = `${rows} x ${cols} grid, ${allowed} allowed, ${anchors} road anchors, ${total - allowed} blocked.`;
       updateSummary();
     }
 
@@ -361,14 +440,30 @@
       const row = Number(cellElement.dataset.r);
       const col = Number(cellElement.dataset.c);
       if (!Number.isInteger(row) || !Number.isInteger(col)) return;
+      const roadAnchors = new Set(normalizeRoadAnchorsForGrid());
+      const key = cellKey(row, col);
+      if (state.paintMode === "anchor") {
+        if (roadAnchors.has(key)) {
+          roadAnchors.delete(key);
+        } else {
+          state.grid[row][col] = 1;
+          roadAnchors.add(key);
+        }
+        state.roadAnchors = [...roadAnchors].sort(compareRoadKeys);
+        syncGridCellElement(cellElement, state.grid[row][col], row, col, roadAnchors.has(key));
+        updateGridStats();
+        updatePayloadPreview();
+        return;
+      }
       const current = state.grid[row][col];
       const next = state.paintMode === "toggle" ? (current === 1 ? 0 : 1) : state.paintMode === "allow" ? 1 : 0;
       if (current === next) return;
       state.grid[row][col] = next;
-      cellElement.classList.toggle("allowed", next === 1);
-      cellElement.classList.toggle("blocked", next === 0);
-      cellElement.setAttribute("aria-label", buildCanvasCellLabel(next, row, col));
-      cellElement.title = `(${row}, ${col}) = ${next}`;
+      if (next === 0) {
+        roadAnchors.delete(key);
+        state.roadAnchors = [...roadAnchors].sort(compareRoadKeys);
+      }
+      syncGridCellElement(cellElement, next, row, col, roadAnchors.has(key));
       updateGridStats();
       updatePayloadPreview();
     }
@@ -385,6 +480,7 @@
         }
       }
       state.grid = next;
+      normalizeRoadAnchorsForGrid();
       updateGridDimensionInputs();
       renderGrid();
       updatePayloadPreview();
@@ -404,6 +500,7 @@
         state.grid = cloneGrid(sampleGrid);
         updateGridDimensionInputs();
       }
+      state.roadAnchors = [];
       renderGrid();
       updatePayloadPreview();
     }
@@ -593,6 +690,17 @@
       elements.lnsNeighborhoodRows.value = String(state.lns.neighborhoodRows);
       elements.lnsNeighborhoodCols.value = String(state.lns.neighborhoodCols);
       elements.lnsRepairTimeLimitSeconds.value = String(state.lns.repairTimeLimitSeconds);
+      const lnsSearchStrategy = state.lns.searchStrategy === "elite-archive" ? "elite-archive" : "incumbent";
+      if (elements.autoLnsSearchStrategy) elements.autoLnsSearchStrategy.value = lnsSearchStrategy;
+      if (elements.lnsSearchStrategy) elements.lnsSearchStrategy.value = lnsSearchStrategy;
+      if (elements.autoLnsEliteArchiveSize) {
+        elements.autoLnsEliteArchiveSize.value = String(state.lns.eliteArchiveSize ?? 4);
+      }
+      if (elements.lnsEliteArchiveSize) elements.lnsEliteArchiveSize.value = String(state.lns.eliteArchiveSize ?? 4);
+      if (elements.autoLnsMultiStartSeeds) {
+        elements.autoLnsMultiStartSeeds.value = String(state.lns.multiStartSeeds ?? 4);
+      }
+      if (elements.lnsMultiStartSeeds) elements.lnsMultiStartSeeds.value = String(state.lns.multiStartSeeds ?? 4);
       elements.lnsUseDisplayedSeed.checked = Boolean(state.lns.useDisplayedSeed);
 
       elements.cpSatTimeLimitSeconds.value = state.cpSat.timeLimitSeconds;
@@ -731,6 +839,7 @@
       applyRuntimePreset,
       applySolveRequestToPlanner,
       countAllowedCells,
+      countRoadAnchors,
       handleCatalogClick: catalogController.handleCatalogClick,
       handleCatalogInput: catalogController.handleCatalogInput,
       importCatalogText: catalogController.importCatalogText,

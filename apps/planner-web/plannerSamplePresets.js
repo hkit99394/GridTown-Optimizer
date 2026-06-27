@@ -65,6 +65,7 @@
    */
   function applySampleProblemPreset({ state, preset, cloneGrid }) {
     state.grid = cloneGrid(preset.grid);
+    state.roadAnchors = [];
     state.serviceTypes = preset.serviceTypes.map((entry) => ({ ...entry }));
     state.residentialTypes = preset.residentialTypes.map((entry) => ({ ...entry }));
     state.availableBuildings = { ...preset.availableBuildings };

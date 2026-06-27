@@ -23,6 +23,7 @@ const {
 const {
   maybeTestCpSatOptimizer,
   maybeTestCpSatUsesColumnZeroRoadAnchor,
+  maybeTestCpSatUsesOnlyConfiguredRoadAnchors,
   maybeTestCpSatAllowsMultiAnchorComponentsInOptimization,
   maybeTestCpSatNoOverlap2dEncodingProducesValidSolution,
   maybeTestCpSatSyncCompatibility,
@@ -34,6 +35,8 @@ const {
   maybeTestCpSatObjectivePolicyHelpers,
   maybeTestCpSatNoOverlap2dModelEncodingHelpers,
   maybeTestCpSatRuntimeOptionHelpers,
+  testCpSatSyncEnforcesBackendTimeout,
+  testCpSatDirectReturnsZeroForExplicitEmptyRoadAnchors,
   maybeTestCpSatWarmStartHelpers,
   maybeTestCpSatSnapshotResponseHelpers,
   maybeTestCpSatNoImprovementTimeoutHelpers,
@@ -47,6 +50,8 @@ const {
   testCpSatAsyncRejectsMalformedStreamedProgress,
   testCpSatAsyncRejectsStreamedProgressWithoutFinalResult,
   testCpSatAsyncRejectsChildProcessFailureWithDiagnostics,
+  testCpSatBackgroundHonorsBackendTimeout,
+  testCpSatBackgroundReturnsZeroForExplicitEmptyRoadAnchors,
   testCpSatBackgroundCancelReturnsPortfolioSnapshot,
   testCpSatAsyncRejectsMalformedPortfolioProgressAndStopsBackend,
   maybeTestCpSatPortfolioSolve,
@@ -66,6 +71,8 @@ async function runCpSatOptimizerTests() {
   maybeTestCpSatObjectivePolicyHelpers();
   maybeTestCpSatNoOverlap2dModelEncodingHelpers();
   maybeTestCpSatRuntimeOptionHelpers();
+  testCpSatSyncEnforcesBackendTimeout();
+  await testCpSatDirectReturnsZeroForExplicitEmptyRoadAnchors();
   maybeTestCpSatWarmStartHelpers();
   maybeTestCpSatSnapshotResponseHelpers();
   maybeTestCpSatNoImprovementTimeoutHelpers();
@@ -75,12 +82,15 @@ async function runCpSatOptimizerTests() {
   await testCpSatAsyncRejectsMalformedStreamedProgress();
   await testCpSatAsyncRejectsStreamedProgressWithoutFinalResult();
   await testCpSatAsyncRejectsChildProcessFailureWithDiagnostics();
+  await testCpSatBackgroundHonorsBackendTimeout();
+  await testCpSatBackgroundReturnsZeroForExplicitEmptyRoadAnchors();
   await testCpSatAsyncRejectsMalformedPortfolioProgressAndStopsBackend();
   await testCpSatBackgroundCancelReturnsPortfolioSnapshot();
   maybeTestCpSatPopulationUpperBoundHelpers();
   maybeTestCpSatResidentialPopulationUpperBoundHelpers();
   await maybeTestCpSatOptimizer();
   await maybeTestCpSatUsesColumnZeroRoadAnchor();
+  await maybeTestCpSatUsesOnlyConfiguredRoadAnchors();
   await maybeTestCpSatAllowsMultiAnchorComponentsInOptimization();
   await maybeTestCpSatNoOverlap2dEncodingProducesValidSolution();
   maybeTestCpSatSyncCompatibility();

@@ -16,10 +16,13 @@ import { createConnectivityShadowDecisionRecorder } from "./connectivityShadowSc
 import { createRoadOpportunityRecorder } from "./roadOpportunity.js";
 import {
   createRoadProbeScratch,
+  fixedRoadsFromParams,
+  hasExplicitEmptyRoadAnchors,
   ensureBuildingConnectedToRoads,
   roadsConnectedToRoadAnchor,
   findAvailableRoadAnchorCell,
-  pruneRedundantRoads
+  pruneRedundantRoads,
+  roadAnchorsFromParams
 } from "../../core/index.js";
 import { assertValidLayoutConstraints } from "../../core/index.js";
 import { assertValidSolveInputs } from "../../core/index.js";
@@ -70,10 +73,13 @@ function finalizeGreedyConstructiveLayout(options: {
   for (const r of residentials) addPlacementCellsToSet(occupiedBuildings, r);
   const normalizedServices = services.map((service) => normalizeServicePlacement(service));
   const roadConnectedBuildings = [...normalizedServices, ...residentials];
+  const fixedRoads = fixedRoadsFromParams(params);
+  const roadAnchors = roadAnchorsFromParams(params);
+  for (const key of fixedRoads) roads.add(key);
 
-  let roadsValid = roadsConnectedToRoadAnchor(G, roads);
+  let roadsValid = roadsConnectedToRoadAnchor(G, roads, roadAnchors);
   if (roadsValid.size === 0) {
-    const fallbackRoad = findAvailableRoadAnchorCell(G, occupiedBuildings);
+    const fallbackRoad = findAvailableRoadAnchorCell(G, occupiedBuildings, roadAnchors);
     if (!fallbackRoad) return null;
     if (profileCounters) profileCounters.roads.fallbackRoads++;
     roadsValid.add(fallbackRoad);
@@ -89,7 +95,8 @@ function finalizeGreedyConstructiveLayout(options: {
       normalized.c,
       normalized.rows,
       normalized.cols,
-      explicitRoadProbeScratch
+      explicitRoadProbeScratch,
+      roadAnchors
     );
   }
   for (const r of residentials) {
@@ -102,11 +109,12 @@ function finalizeGreedyConstructiveLayout(options: {
       r.c,
       r.rows,
       r.cols,
-      explicitRoadProbeScratch
+      explicitRoadProbeScratch,
+      roadAnchors
     );
   }
 
-  roadsValid = pruneRedundantRoads(G, roadsValid, roadConnectedBuildings);
+  roadsValid = pruneRedundantRoads(G, roadsValid, roadConnectedBuildings, roadAnchors);
 
   assertValidLayoutConstraints(
     {
@@ -158,6 +166,7 @@ function solveOne(context: GreedySolveContext, options: SolveOneOptions): Soluti
   const { maxServices, initialRoadSeed, fixedServices, profileCounters } = options;
   const attemptState = new GreedyAttemptState(
     G,
+    params,
     initialRoadSeed,
     (params.greedy?.deferRoadCommitment ?? false) && !fixedServices,
     profileCounters
@@ -361,6 +370,7 @@ function solveGreedyUnchecked(G: Grid, params: SolverParams): Solution {
 
   const evaluateForcedServiceSet = createGreedyForcedServiceEvaluator({
     G,
+    params,
     serviceOrderSorted,
     solveWithOrder,
     updateBest,
@@ -415,5 +425,18 @@ function solveGreedyUnchecked(G: Grid, params: SolverParams): Solution {
 
 export function solveGreedy(G: Grid, params: SolverParams): Solution {
   assertValidSolveInputs(G, params);
+  if (hasExplicitEmptyRoadAnchors(params)) {
+    return {
+      optimizer: "greedy",
+      roads: new Set<string>(),
+      services: [],
+      serviceTypeIndices: [],
+      servicePopulationIncreases: [],
+      residentials: [],
+      residentialTypeIndices: [],
+      populations: [],
+      totalPopulation: 0
+    };
+  }
   return solveGreedyUnchecked(G, params);
 }

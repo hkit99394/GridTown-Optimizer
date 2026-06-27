@@ -108,6 +108,58 @@ function testManualLayoutResponseCleansRedundantRoads() {
   assert.equal(response.stats.totalPopulation, 10);
 }
 
+function testManualLayoutResponsePreservesFixedRoadsDuringCleanup() {
+  const response = buildManualLayoutResponse(
+    [
+      [1, 1, 1],
+      [1, 1, 1],
+      [1, 1, 1]
+    ],
+    {
+      fixedRoads: ["1,1"],
+      residentialTypes: [{ name: "House", w: 1, h: 1, min: 10, max: 10, avail: 1 }],
+      availableBuildings: { residentials: 1, services: 0 }
+    },
+    {
+      fixedRoads: ["1,1"],
+      roads: new Set(["0,1", "1,1", "2,1", "2,0"]),
+      services: [],
+      serviceTypeIndices: [],
+      servicePopulationIncreases: [],
+      residentials: [{ r: 2, c: 2, rows: 1, cols: 1 }],
+      residentialTypeIndices: [0],
+      populations: [0],
+      totalPopulation: 0
+    }
+  );
+
+  assert.equal(response.validation.valid, true);
+  assert.deepEqual([...response.solution.roads].sort(), ["1,1", "2,1"]);
+  assert.deepEqual(response.solution.fixedRoads, ["1,1"]);
+  assert.equal(response.stats.roadCount, 2);
+}
+
+function testManualLayoutResponsePreservesExplicitEmptyFixedRoads() {
+  const response = buildManualLayoutResponse(
+    [[1]],
+    { fixedRoads: [], availableBuildings: { residentials: 0, services: 0 } },
+    {
+      fixedRoads: [],
+      roads: new Set(),
+      services: [],
+      serviceTypeIndices: [],
+      servicePopulationIncreases: [],
+      residentials: [],
+      residentialTypeIndices: [],
+      populations: [],
+      totalPopulation: 0
+    }
+  );
+
+  assert.equal(response.validation.valid, true);
+  assert.deepEqual(response.solution.fixedRoads, []);
+}
+
 function testManualLayoutResponseReportsOutOfBoundsRoads() {
   const response = buildManualLayoutResponse(
     [[1]],
@@ -315,6 +367,8 @@ function testPlannerRequestBuilderSkipsLegacySavedCheckpointWithoutValidation() 
 async function runPlannerResponseTests() {
   testManualLayoutResponseClearsSolverMetadata();
   testManualLayoutResponseCleansRedundantRoads();
+  testManualLayoutResponsePreservesFixedRoadsDuringCleanup();
+  testManualLayoutResponsePreservesExplicitEmptyFixedRoads();
   testManualLayoutResponseReportsOutOfBoundsRoads();
   testBuildCpSatWarmStartCheckpointRejectsInvalidLayouts();
   testBuildCpSatWarmStartCheckpointRejectsLegacyLayoutsWithoutValidation();

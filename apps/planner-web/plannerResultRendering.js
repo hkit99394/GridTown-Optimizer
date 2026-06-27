@@ -10,7 +10,7 @@
    * @typedef {{ kind: "service" | "residential", index: number }} ResultSelection
    * @typedef {{ kind: "service" | "residential", placement: ResultPlacement, index: number }} SelectedResultPlacement
    * @typedef {SelectedResultPlacement | null} MaybeSelectedResultPlacement
-   * @typedef {JsonObject & { populations: number[], residentials: ResultPlacement[], residentialTypeIndices: number[], roads: string[], servicePopulationIncreases: number[], services: ResultPlacement[], serviceTypeIndices: number[] }} ResultSolution
+   * @typedef {JsonObject & { fixedRoads?: string[], populations: number[], residentials: ResultPlacement[], residentialTypeIndices: number[], roads: string[], servicePopulationIncreases: number[], services: ResultPlacement[], serviceTypeIndices: number[] }} ResultSolution
    * @typedef {JsonObject | null | undefined} MaybeJson
    * @typedef {HTMLElement | null | undefined} MaybeElement
    * @typedef {PlannerGrid | null | undefined} MaybeGrid
@@ -86,6 +86,34 @@
       if (findBuildingAtCell(solution, row, col)?.kind === "residential") return "residential";
       if ((solution?.roads ?? []).includes?.(`${row},${col}`)) return "road";
       return "empty";
+    }
+
+    /**
+     * @param {ResultSolution | null | undefined} solution
+     * @returns {Set<string>}
+     */
+    function readFixedRoadSet(solution) {
+      const roads = new Set(Array.isArray(solution?.roads) ? solution.roads : []);
+      const manualLayout = Boolean(solution?.manualLayout || state.result?.stats?.manualLayout);
+      const fixedRoads = manualLayout
+        ? solution?.fixedRoads
+        : Array.isArray(solution?.fixedRoads)
+          ? solution.fixedRoads
+          : state.resultContext?.params?.fixedRoads;
+      return new Set(
+        [...new Set(Array.isArray(fixedRoads) ? fixedRoads : [])].filter(
+          (roadKey) => typeof roadKey === "string" && roads.has(roadKey)
+        )
+      );
+    }
+
+    /**
+     * @param {ResultSolution | null | undefined} solution
+     * @param {number} row
+     * @param {number} col
+     */
+    function isFixedRoadCell(solution, row, col) {
+      return readFixedRoadSet(solution).has(`${row},${col}`);
     }
 
     function getCellBonusCoverage(
@@ -238,7 +266,9 @@
           ? coverage.map((entry) => `${entry.name} (${entry.id})`).join(", ")
           : "no nearby service zones";
         const categoryLabel =
-          kind === "road"
+          kind === "road" && isFixedRoadCell(solution, selectedCell.r, selectedCell.c)
+            ? "Fixed road"
+            : kind === "road"
             ? "Road"
             : kind === "empty"
               ? "Empty cell"
@@ -271,7 +301,9 @@
               ? "Open and anchor reachable"
               : "Open cell"
             : kind === "road"
-              ? anchorReachable
+              ? isFixedRoadCell(solution, selectedCell.r, selectedCell.c)
+                ? "Fixed anchor road"
+                : anchorReachable
                 ? "Occupied by anchor reachable road"
                 : "Occupied by road"
               : kind === "blocked"
@@ -584,16 +616,17 @@
       if (hoverLabel) {
         return `Solved cell ${row},${col} belongs to ${hoverLabel}`;
       }
+      if (kind === "road") {
+        return `Solved cell ${row},${col} is road`;
+      }
       const label =
-        kind === "road"
-          ? "road"
-          : kind === "service"
-            ? "service building"
-            : kind === "residential"
-              ? "residential building"
-              : kind === "blocked"
-                ? "blocked"
-                : "empty allowed";
+        kind === "service"
+          ? "service building"
+          : kind === "residential"
+            ? "residential building"
+            : kind === "blocked"
+              ? "blocked"
+              : "empty allowed";
       return `Solved cell ${row},${col} is ${label}`;
     }
 
@@ -770,6 +803,7 @@
       const matrix = createSolvedMapMatrix(grid, solution);
       const cols = matrix[0]?.length ?? 0;
       const hoverLabels = createSolvedMapHoverLabels(solution, matrix.length, cols);
+      const fixedRoads = readFixedRoadSet(solution);
       const explainabilityMode = getActiveExplainabilityMode();
       const showExplainabilityMap = explainabilityMode !== "layout";
       const hideOverlayForMode = hidesBuildingOverlayForMode(explainabilityMode);
@@ -784,6 +818,7 @@
           const kind = matrix[r][c];
           const visualKind = hideOverlayForMode && kind !== "blocked" ? "empty" : kind;
           const hoverLabel = hideOverlayForMode ? "" : hoverLabels[r]?.[c] || "";
+          const isFixedRoad = !hideOverlayForMode && kind === "road" && fixedRoads.has(`${r},${c}`);
           const explainabilityValue = heatmap?.values?.[r]?.[c] ?? 0;
           const explainabilityDetail = heatmap?.details?.[r]?.[c] ?? "";
           const explainabilityValueLabel = describeExplainabilityValue(
@@ -796,8 +831,12 @@
           cell.className = `grid-cell ${visualKind}`;
           cell.dataset.r = String(r);
           cell.dataset.c = String(c);
-          cell.setAttribute("aria-label", `${describeSolvedCell(visualKind, r, c, hoverLabel)}${explainabilityLabel}`);
-          cell.title = `${hoverLabel || `(${r}, ${c}) ${visualKind}`}${explainabilityLabel}`;
+          if (isFixedRoad) cell.classList.add("fixed-road");
+          cell.setAttribute(
+            "aria-label",
+            `${isFixedRoad ? `Solved cell ${r},${c} is fixed road anchor` : describeSolvedCell(visualKind, r, c, hoverLabel)}${explainabilityLabel}`
+          );
+          cell.title = `${hoverLabel || `(${r}, ${c}) ${isFixedRoad ? "fixed road anchor" : visualKind}`}${explainabilityLabel}`;
           applyExplainabilityHeatmapStyle(cell, explainabilityMode, explainabilityValue, heatmap?.maxValue ?? 0);
           if (!hideOverlayForMode && (kind === "service" || kind === "residential")) {
             cell.classList.add("selectable");

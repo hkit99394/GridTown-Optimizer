@@ -12,7 +12,7 @@ import {
   isRoadAnchorCell,
   normalizeServicePlacement
 } from "../../core/index.js";
-import type { Grid, Solution } from "../../core/index.js";
+import type { Grid, RoadAnchorKeys, Solution } from "../../core/index.js";
 
 export function placementLeavesRoadAnchorCellAvailable(
   G: Grid,
@@ -20,15 +20,17 @@ export function placementLeavesRoadAnchorCellAvailable(
   r: number,
   c: number,
   rows: number,
-  cols: number
+  cols: number,
+  roadAnchors?: RoadAnchorKeys
 ): boolean {
-  if (!buildingTouchesRoadAnchorBoundary(r, c)) return true;
+  if (!buildingTouchesRoadAnchorBoundary(r, c, roadAnchors)) return true;
   const blocked = new Set<string>(occupied);
   forEachRectangleCell(r, c, rows, cols, (rr, cc) => blocked.add(cellKey(rr, cc)));
-  return hasAvailableRoadAnchorCell(G, blocked);
+  return hasAvailableRoadAnchorCell(G, blocked, roadAnchors);
 }
 
-export function collectRoadAnchorRefinementSeeds(solution: Solution): Set<string>[] {
+export function collectRoadAnchorRefinementSeeds(solution: Solution, roadAnchors?: RoadAnchorKeys): Set<string>[] {
+  if (roadAnchors !== undefined && roadAnchors !== null) return [];
   const seedKeys = new Set<string>();
   for (const key of solution.roads) {
     const { r, c } = cellFromKey(key);

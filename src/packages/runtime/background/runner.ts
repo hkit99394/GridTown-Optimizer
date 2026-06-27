@@ -37,6 +37,8 @@ export interface JsonBackgroundSolverConfig<TRaw> {
   launchContext?: string;
   readStoppedByUser?: (raw: TRaw) => boolean;
   forcedTerminationDelayMs?: number;
+  backendTimeoutMs?: number;
+  backendTimeoutMessage?: string;
 }
 
 interface ClosedSolverState<TRaw> {
@@ -177,11 +179,16 @@ export function startJsonBackgroundSolve<TRaw>(config: JsonBackgroundSolverConfi
   const tempFiles = createSolverTempFiles(config.stopDirectoryPrefix);
   const bufferLimitBytes = config.bufferLimitBytes ?? DEFAULT_BUFFER_LIMIT;
   const forcedTerminationDelayMs = Math.max(0, config.forcedTerminationDelayMs ?? 5000);
+  const backendTimeoutMs =
+    config.backendTimeoutMs === undefined || !Number.isFinite(config.backendTimeoutMs)
+      ? 0
+      : Math.max(0, config.backendTimeoutMs);
 
   let stdout = "";
   let stderr = "";
   let stopRequested = false;
   let forcedTerminationTimer: NodeJS.Timeout | undefined;
+  let backendTimeoutTimer: NodeJS.Timeout | undefined;
   let streamError: Error | null = null;
   let cleanedUp = false;
   const snapshotCache: SnapshotCache<TRaw> = {
@@ -238,6 +245,25 @@ export function startJsonBackgroundSolve<TRaw>(config: JsonBackgroundSolverConfi
     return materialized;
   };
 
+  const tryMaterializeSnapshot = (stoppedByUser: boolean): Solution | null => {
+    try {
+      return materializeSnapshot(stoppedByUser);
+    } catch {
+      return null;
+    }
+  };
+
+  const readLatestSnapshotState = (): BackgroundSolveSnapshotState => {
+    try {
+      return config.getSnapshotState(readLatestSnapshotRaw());
+    } catch {
+      return {
+        hasFeasibleSolution: false,
+        totalPopulation: null
+      };
+    }
+  };
+
   const killChildProcessGroup = (signal: NodeJS.Signals): void => {
     if (!processStillRunning(child)) return;
     try {
@@ -251,6 +277,22 @@ export function startJsonBackgroundSolve<TRaw>(config: JsonBackgroundSolverConfi
     child.kill(signal);
   };
 
+  const clearBackendTimeout = (): void => {
+    if (!backendTimeoutTimer) return;
+    clearTimeout(backendTimeoutTimer);
+    backendTimeoutTimer = undefined;
+  };
+
+  const scheduleBackendTimeout = (): void => {
+    if (backendTimeoutMs <= 0 || backendTimeoutTimer) return;
+    backendTimeoutTimer = setTimeout(() => {
+      if (stopRequested || !processStillRunning(child)) return;
+      streamError = new Error(config.backendTimeoutMessage ?? `${config.solverLabel} backend timed out.`);
+      killChildProcessGroup("SIGKILL");
+    }, backendTimeoutMs);
+    backendTimeoutTimer.unref?.();
+  };
+
   const scheduleForcedTermination = (): void => {
     if (forcedTerminationTimer) return;
     forcedTerminationTimer = setTimeout(() => {
@@ -261,6 +303,7 @@ export function startJsonBackgroundSolve<TRaw>(config: JsonBackgroundSolverConfi
 
   const cancel = (): void => {
     stopRequested = true;
+    clearBackendTimeout();
     if (!processStillRunning(child)) return;
     try {
       writeFileSync(tempFiles.stopFilePath, "stop\n");
@@ -272,12 +315,15 @@ export function startJsonBackgroundSolve<TRaw>(config: JsonBackgroundSolverConfi
 
   const forceKill = (): void => {
     stopRequested = true;
+    clearBackendTimeout();
     if (forcedTerminationTimer) clearTimeout(forcedTerminationTimer);
     killChildProcessGroup("SIGKILL");
   };
 
   const promise = new Promise<Solution>((resolvePromise, rejectPromise) => {
     child.once("error", (error) => {
+      clearBackendTimeout();
+      if (forcedTerminationTimer) clearTimeout(forcedTerminationTimer);
       cleanupTempDirectory();
       rejectPromise(new Error(buildLaunchErrorMessage(config.solverLabel, config.launchContext, error)));
     });
@@ -301,6 +347,7 @@ export function startJsonBackgroundSolve<TRaw>(config: JsonBackgroundSolverConfi
     });
 
     child.once("close", (code, signal) => {
+      clearBackendTimeout();
       if (forcedTerminationTimer) clearTimeout(forcedTerminationTimer);
       const snapshotRaw = readLatestSnapshotRaw();
       cleanupTempDirectory();
@@ -322,6 +369,8 @@ export function startJsonBackgroundSolve<TRaw>(config: JsonBackgroundSolverConfi
       }
     });
 
+    scheduleBackendTimeout();
+
     try {
       child.stdin.end(JSON.stringify(request));
     } catch (error) {
@@ -334,7 +383,7 @@ export function startJsonBackgroundSolve<TRaw>(config: JsonBackgroundSolverConfi
     promise,
     cancel,
     forceKill,
-    getLatestSnapshot: () => materializeSnapshot(stopRequested),
-    getLatestSnapshotState: () => config.getSnapshotState(readLatestSnapshotRaw())
+    getLatestSnapshot: () => tryMaterializeSnapshot(stopRequested),
+    getLatestSnapshotState: readLatestSnapshotState
   };
 }

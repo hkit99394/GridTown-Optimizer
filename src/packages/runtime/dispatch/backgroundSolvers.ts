@@ -6,13 +6,16 @@ import {
 } from "../background/serializedSolutionBridge.js";
 import { startJsonBackgroundSolve } from "../background/runner.js";
 import {
+  cpSatBackendTimeoutMessage,
   defaultPythonExecutable,
   buildCpSatRequest,
   checkCpSatReadiness,
   materializeCpSatSolution,
-  parseCpSatRawSolution
+  parseCpSatRawSolution,
+  resolveCpSatBackendTimeout
 } from "../../solvers/cp-sat/solver.js";
 import { assertValidSolveInputs } from "../../core/index.js";
+import { shouldReturnNoRoadAnchorSolution, startNoRoadAnchorSolve } from "./noRoadAnchorSolution.js";
 
 import type { BackgroundSolveHandle, Grid, SerializedSolution, Solution, SolverParams } from "../../core/index.js";
 
@@ -66,9 +69,13 @@ export function startLnsSolve(G: Grid, params: SolverParams): LnsSolveHandle {
 
 export function startCpSatSolve(G: Grid, params: SolverParams): CpSatSolveHandle {
   assertValidSolveInputs(G, params);
+  if (shouldReturnNoRoadAnchorSolution(params)) {
+    return startNoRoadAnchorSolve(G, "cp-sat");
+  }
   const pythonExecutable =
     params.cpSat?.pythonExecutable ?? process.env.CITY_BUILDER_CP_SAT_PYTHON ?? defaultPythonExecutable();
   const scriptPath = params.cpSat?.scriptPath ?? resolve(__dirname, "../../../../python/cp_sat_solver.py");
+  const backendTimeout = resolveCpSatBackendTimeout(params);
   if (!params.cpSat?.scriptPath) {
     const readiness = checkCpSatReadiness(pythonExecutable);
     if (!readiness.ready) {
@@ -81,6 +88,12 @@ export function startCpSatSolve(G: Grid, params: SolverParams): CpSatSolveHandle
     command: pythonExecutable,
     args: [scriptPath],
     launchContext: `with ${pythonExecutable}`,
+    ...(backendTimeout
+      ? {
+          backendTimeoutMs: backendTimeout.milliseconds,
+          backendTimeoutMessage: cpSatBackendTimeoutMessage(backendTimeout)
+        }
+      : {}),
     buildRequest: ({ stopFilePath, snapshotFilePath }) =>
       buildCpSatRequest(G, {
         ...params,

@@ -9,7 +9,7 @@
    * @typedef {{ kind: "service" | "residential", index: number }} ResultSelection
    * @typedef {{ kind: "service" | "residential", placement: ResultPlacement, index: number }} SelectedResultPlacement
    * @typedef {SelectedResultPlacement | null} MaybeSelectedResultPlacement
-   * @typedef {JsonObject & { populations: number[], residentials: ResultPlacement[], residentialTypeIndices: number[], roads: string[], servicePopulationIncreases: number[], services: ResultPlacement[], serviceTypeIndices: number[] }} ResultSolution
+   * @typedef {JsonObject & { fixedRoads?: string[], populations: number[], residentials: ResultPlacement[], residentialTypeIndices: number[], roads: string[], servicePopulationIncreases: number[], services: ResultPlacement[], serviceTypeIndices: number[] }} ResultSolution
    * @typedef {JsonObject & { grid: PlannerGrid, params: JsonObject }} ResultContext
    * @typedef {ResultSolution | null | undefined} MaybeResultSolution
    * @typedef {JsonObject | null | undefined} MaybeJson
@@ -65,6 +65,7 @@
     const {
       buildPendingManualLayoutResult,
       buildPendingPlacementDefinition,
+      buildManualLayoutEvaluationParams,
       buildResidentialPlacementForType,
       buildServicePlacementForType,
       cloneEditableSolution,
@@ -76,8 +77,11 @@
       isCellInsideAnyServiceFootprint,
       isCellInsidePlacement,
       isCellInsideServiceEffect,
+      normalizeFixedRoadKeys,
       readPendingPlacementFootprint,
-      removePlacementFromSolution
+      removePlacementFromSolution,
+      shouldKeepFixedRoadField,
+      writeFixedRoadKeys
     } = resultsGlobal.PlannerManualLayout.createPlannerManualLayoutModel({
       state,
       cloneJson,
@@ -292,6 +296,8 @@
           message = `Placing ${pendingPlacement.name} (${pendingFootprint?.rows}x${pendingFootprint?.cols}). ${PLACEMENT_MODE_STATUS_PREFIX}`;
         } else if (state.layoutEditor.mode === "road") {
           message = "Road mode: click an empty allowed cell to add road, or an existing road cell to remove it.";
+        } else if (state.layoutEditor.mode === "fixed-road") {
+          message = "Fixed road mode: click an allowed cell to pin an anchor road, or a fixed road to unpin it.";
         } else if (state.layoutEditor.mode === "erase") {
           message = "Erase mode: click a road, service, or residential building to remove it.";
         } else if (state.layoutEditor.mode === "move") {
@@ -352,7 +358,7 @@
           },
           body: JSON.stringify({
             grid: state.resultContext.grid,
-            params: state.resultContext.params,
+            params: buildManualLayoutEvaluationParams(nextSolution),
             solution: nextSolution
           })
         });
@@ -459,14 +465,47 @@
       const nextSolution = cloneEditableSolution();
       const key = `${row},${col}`;
       const roads = new Set(nextSolution.roads ?? []);
+      const fixedRoads = new Set(normalizeFixedRoadKeys(nextSolution));
       if (roads.has(key)) {
         roads.delete(key);
+        fixedRoads.delete(key);
       } else {
         roads.add(key);
       }
       nextSolution.roads = Array.from(roads);
+      writeFixedRoadKeys(nextSolution, fixedRoads, shouldKeepFixedRoadField(nextSolution));
       applyEditedLayoutLocally(nextSolution, {
         message: roads.has(key) ? `Added road at (${row}, ${col}).` : `Removed road at (${row}, ${col}).`,
+        selectedCell: { r: row, c: col },
+        keepMode: true
+      });
+    }
+    /** @param {number} row @param {number} col */ function toggleManualFixedRoad(row, col) {
+      const grid = state.resultContext?.grid ?? state.grid;
+      if (grid?.[row]?.[col] !== 1) {
+        throw new Error("Fixed roads can only be edited on allowed cells.");
+      }
+      if (findBuildingAtCell(state.result?.solution, row, col)) {
+        throw new Error("That cell is occupied by a building. Move or erase the building first.");
+      }
+
+      const nextSolution = cloneEditableSolution();
+      const key = `${row},${col}`;
+      const roads = new Set(nextSolution.roads ?? []);
+      const fixedRoads = new Set(normalizeFixedRoadKeys(nextSolution));
+      const wasFixed = fixedRoads.has(key);
+      if (wasFixed) {
+        fixedRoads.delete(key);
+      } else {
+        roads.add(key);
+        fixedRoads.add(key);
+      }
+      nextSolution.roads = Array.from(roads);
+      writeFixedRoadKeys(nextSolution, fixedRoads, true);
+      applyEditedLayoutLocally(nextSolution, {
+        message: wasFixed
+          ? `Unpinned fixed road at (${row}, ${col}).`
+          : `Pinned fixed road at (${row}, ${col}).`,
         selectedCell: { r: row, c: col },
         keepMode: true
       });
@@ -490,6 +529,11 @@
         throw new Error("There is no road or building at that cell to erase.");
       }
       nextSolution.roads = /** @type {string[]} */ (nextSolution.roads ?? []).filter((roadKey) => roadKey !== key);
+      writeFixedRoadKeys(
+        nextSolution,
+        normalizeFixedRoadKeys(nextSolution).filter(/** @param {string} roadKey */ (roadKey) => roadKey !== key),
+        shouldKeepFixedRoadField(nextSolution)
+      );
       applyEditedLayoutLocally(nextSolution, {
         message: `Removed road at (${row}, ${col}).`,
         selectedCell: { r: row, c: col },
@@ -785,6 +829,10 @@
         }
         if (state.layoutEditor.mode === "road") {
           toggleManualRoad(row, col);
+          return;
+        }
+        if (state.layoutEditor.mode === "fixed-road") {
+          toggleManualFixedRoad(row, col);
           return;
         }
         if (state.layoutEditor.mode === "erase") {

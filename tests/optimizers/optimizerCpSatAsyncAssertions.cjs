@@ -473,6 +473,83 @@ process.exit(3);
   }
 }
 
+async function testCpSatBackgroundHonorsBackendTimeout() {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "city-builder-cp-sat-background-timeout-"));
+  const scriptPath = path.join(tempDir, "hanging-background.cjs");
+  fs.writeFileSync(
+    scriptPath,
+    `
+process.stdin.resume();
+setTimeout(() => process.exit(0), 1000);
+`,
+    "utf8"
+  );
+
+  try {
+    const handle = startCpSatSolve([[1]], {
+      optimizer: "cp-sat",
+      cpSat: {
+        pythonExecutable: process.execPath,
+        scriptPath,
+        backendTimeoutSeconds: 0.1
+      },
+      residentialTypes: [{ w: 1, h: 1, min: 1, max: 1, avail: 1 }],
+      availableBuildings: { residentials: 1, services: 0 }
+    });
+
+    await assert.rejects(handle.promise, /CP-SAT backend timed out after 0\.1s/);
+  } finally {
+    fs.rmSync(tempDir, { recursive: true, force: true });
+  }
+}
+
+async function testCpSatBackgroundReturnsZeroForExplicitEmptyRoadAnchors() {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "city-builder-cp-sat-no-anchor-"));
+  const scriptPath = path.join(tempDir, "unexpected-backend.cjs");
+  const invokedPath = path.join(tempDir, "invoked.txt");
+  fs.writeFileSync(
+    scriptPath,
+    `
+const fs = require("node:fs");
+fs.writeFileSync(${JSON.stringify(invokedPath)}, "called\\n");
+process.stdin.resume();
+`,
+    "utf8"
+  );
+
+  try {
+    const grid = [
+      [1, 1],
+      [1, 1]
+    ];
+    const params = {
+      optimizer: "cp-sat",
+      fixedRoads: [],
+      cpSat: {
+        pythonExecutable: process.execPath,
+        scriptPath
+      },
+      residentialTypes: [{ w: 2, h: 2, min: 10, max: 10, avail: 1 }],
+      availableBuildings: { residentials: 1, services: 0 }
+    };
+    const handle = startCpSatSolve(grid, params);
+    const snapshot = handle.getLatestSnapshot();
+    const snapshotState = handle.getLatestSnapshotState();
+    const solution = await handle.promise;
+
+    assert.equal(solution.optimizer, "cp-sat");
+    assert.equal(solution.totalPopulation, 0);
+    assert.deepEqual([...solution.roads], []);
+    assert.deepEqual(solution.residentials, []);
+    assert.equal(snapshot?.totalPopulation, 0);
+    assert.equal(snapshotState.hasFeasibleSolution, true);
+    assert.equal(snapshotState.totalPopulation, 0);
+    assert.equal(fs.existsSync(invokedPath), false);
+  } finally {
+    fs.rmSync(tempDir, { recursive: true, force: true });
+  }
+}
+
 async function waitForCpSatSnapshotState(handle, timeoutMs = 1000) {
   const startedAt = Date.now();
   while (Date.now() - startedAt < timeoutMs) {
@@ -743,6 +820,8 @@ module.exports = {
   testCpSatAsyncRejectsMalformedStreamedProgress,
   testCpSatAsyncRejectsStreamedProgressWithoutFinalResult,
   testCpSatAsyncRejectsChildProcessFailureWithDiagnostics,
+  testCpSatBackgroundHonorsBackendTimeout,
+  testCpSatBackgroundReturnsZeroForExplicitEmptyRoadAnchors,
   waitForCpSatSnapshotState,
   testCpSatBackgroundCancelReturnsPortfolioSnapshot,
   testCpSatAsyncRejectsMalformedPortfolioProgressAndStopsBackend,
